@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.11';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 11';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.12';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 12';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -28,7 +28,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     status: 'UI 준비', lastDomError: '', lastHookError: '', hooks: { output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null }, badgePosition: 'lb', compactContainer: true,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
-    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: []
+    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
   };
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
@@ -349,7 +349,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-position-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-position-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}
 .itemx2-position-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}
 .itemx2-root-setting-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx2-root-setting-card span{display:grid;gap:3px}.itemx2-root-setting-card small{color:#77839c;line-height:1.4}.itemx2-root-setting-button{min-height:36px;padding:0 11px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9;cursor:pointer}
-.itemx2-status-row{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:5px!important;margin-top:3px}.itemx2-status-chip{display:inline-flex!important;padding:3px 7px;border:1px solid #354157;border-radius:999px;background:#131a26;color:#93a2ba;font-size:.66rem;font-weight:800;font-style:normal}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-warn{border-color:#6a5530;color:#e8c987;background:#241d10}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-root-setting-button-primary{border-color:#6e5a32;background:#2a2316;color:#f0d79d}.itemx2-setting-on{border-color:#4e8968!important;background:#12241a!important;color:#a9e6c2!important}.itemx2-root-setting-button:disabled,.itemx2-root-setting-button-busy{opacity:.58;cursor:default;pointer-events:none}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}
+.itemx2-status-row{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:5px!important;margin-top:3px}.itemx2-status-chip{display:inline-flex!important;padding:3px 7px;border:1px solid #354157;border-radius:999px;background:#131a26;color:#93a2ba;font-size:.66rem;font-weight:800;font-style:normal}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-warn{border-color:#6a5530;color:#e8c987;background:#241d10}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-root-setting-button-primary{border-color:#6e5a32;background:#2a2316;color:#f0d79d}.itemx2-setting-on{border-color:#4e8968!important;background:#12241a!important;color:#a9e6c2!important}.itemx2-setting-cleanup{border-color:#65333a!important;background:#241216!important;color:#ffadb5!important}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-root-setting-button:disabled,.itemx2-root-setting-button-busy{opacity:.58;cursor:default;pointer-events:none}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}
 .itemx2-manager-fold{border:1px solid #283247;border-radius:12px;background:#0b1019;overflow:hidden}.itemx2-manager-fold summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;cursor:pointer;color:#f0d79d;font-weight:800;list-style:none}.itemx2-manager-fold summary::-webkit-details-marker{display:none}.itemx2-manager-fold summary::after{content:'＋';color:#8291aa}.itemx2-manager-fold[open] summary::after{content:'－'}.itemx2-manager-body{display:grid;gap:10px;padding:0 12px 12px}.itemx2-manager-label{display:grid;gap:5px;color:#8592a8;font-size:.72rem}.itemx2-manager-editor{min-height:58px;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}.itemx2-manager-editor:focus{border-color:#637ba3}.itemx2-manager-list{display:grid;gap:7px}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#6f7e96;font-size:.67rem}.itemx2-manager-actions{display:flex;gap:5px}.itemx2-manager-actions button{min-height:31px;padding:0 8px;border:1px solid #344159;border-radius:7px;background:#172131;color:#cbd7e9;cursor:pointer}.itemx2-manager-actions .itemx2-manager-remove{border-color:#65333a;color:#ffadb5}.itemx2-manager-create{display:grid;gap:7px;padding-top:3px;border-top:1px solid #1d2737}
 .itemx2-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-domain-card{display:grid;gap:5px;padding:10px;border:1px solid #273247;border-radius:10px;background:#101722;color:#dce5f2;text-align:left}.itemx2-domain-card small{color:#718199;font-size:.62rem}.itemx2-debug-fold{border-color:#334056}.itemx2-debug-body{display:grid;gap:8px;padding:0 12px 12px}.itemx2-debug-grid{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 8px;font-size:.64rem}.itemx2-debug-grid b{color:#718199}.itemx2-debug-grid span{color:#c4cfdf;overflow-wrap:anywhere}.itemx2-debug-log{display:grid;gap:4px;max-height:180px;overflow:auto;padding:8px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item{display:none}.itemx2-root-panel .itemx2-root-item:has(.itemx2-root-detail-choice:checked){display:block}.itemx2-root-detail-choice:checked~.itemx2-root-tile-label{display:none}.itemx2-root-detail-choice:checked~.itemx2-root-detail{display:block}
@@ -492,16 +492,32 @@ ${codexPageStyle()}
     return output + source.slice(cursor);
   }
 
-  function embedStoredRefViews(chat) {
+  function bareRefMarker(prefix, ref) {
+    return `<!--${prefix}@${ref}-->`;
+  }
+
+  function reconcileStoredRefViews(chat, preferredLatestIndex = null) {
     const rows = messageEventLedger(chat);
     if (!rows.length) return { chat, changed: false };
     const byKey = new Map(rows.map((row) => [`${row.domain}:${row.ref}`, row.payload]));
-    let next = null, changed = false;
     const messages = Array.isArray(chat?.message) ? chat.message : [];
+    let latestIndex = Number.isInteger(preferredLatestIndex) ? preferredLatestIndex : -1;
+    if (latestIndex < 0 || latestIndex >= messages.length) {
+      for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const source = messageData(messages[index]);
+        if (source.match(ITEMX_REF_RE) || source.match(ITEMX_CODEX_REF_RE)) { latestIndex = index; break; }
+      }
+    }
+    let next = null, changed = false;
     for (let index = 0; index < messages.length; index += 1) {
       const original = messageData(messages[index]);
-      let source = original.replace(ITEMX_REF_RE, (raw, ref, inline) => inline ? raw : compactRefMarker('ITEMX2', ref, byKey.get(`item:${ref}`), 'item'));
-      source = source.replace(ITEMX_CODEX_REF_RE, (raw, ref, inline) => inline ? raw : compactRefMarker('CODEX2', ref, byKey.get(`codex:${ref}`), 'codex'));
+      const keepInline = index === latestIndex;
+      let source = original.replace(ITEMX_REF_RE, (raw, ref, inline) => keepInline
+        ? (inline ? raw : compactRefMarker('ITEMX2', ref, byKey.get(`item:${ref}`), 'item'))
+        : bareRefMarker('ITEMX2', ref));
+      source = source.replace(ITEMX_CODEX_REF_RE, (raw, ref, inline) => keepInline
+        ? (inline ? raw : compactRefMarker('CODEX2', ref, byKey.get(`codex:${ref}`), 'codex'))
+        : bareRefMarker('CODEX2', ref));
       if (source === original) continue;
       if (!next) next = ITEMXCore.clone(chat);
       const message = next.message[index];
@@ -567,7 +583,7 @@ ${codexPageStyle()}
     }
     const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row).slice(-512);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(kept) };
-    return { chat: next, changed: true };
+    return { chat: reconcileStoredRefViews(next, index).chat, changed: true };
   }
 
   function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat)) {
@@ -597,11 +613,11 @@ ${codexPageStyle()}
       let latestChat = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
       if (!latestChat) return null;
       if (upgradeDisplayRefs && !latestChat.isStreaming && !(latestChat.message || []).some((message) => message?.isStreaming)) {
-        const embedded = embedStoredRefViews(latestChat);
-        if (embedded.changed && runtime.activeContextKey === ctx.key) {
-          await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, embedded.chat);
-          latestChat = embedded.chat;
-          debugRecord('display refs', 'embedded self-contained views');
+        const reconciled = reconcileStoredRefViews(latestChat);
+        if (reconciled.changed && runtime.activeContextKey === ctx.key) {
+          await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, reconciled.chat);
+          latestChat = reconciled.chat;
+          debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
       }
       const lookup = buildMessageEventLookup(latestChat);
@@ -618,6 +634,67 @@ ${codexPageStyle()}
       runtime.cachedGeneration = runtime.generation;
       return loaded;
     });
+  }
+
+  const CHAT_DATA_KEYS = [
+    ITEMXCore.STATE_KEY, ITEMXCore.CHAT_KEY, ITEMXCodex.STATE_KEY,
+    ITEMX_MANUAL_KEY, ITEMX_MESSAGE_EVENT_KEY, ITEMX_AUX_KEY
+  ];
+
+  function cleanChatPluginData(chat) {
+    const next = ITEMXCore.clone(chat), messages = Array.isArray(next?.message) ? next.message : [];
+    let cleanedMessages = 0, removedMarkers = 0, removedStateKeys = 0;
+    for (const message of messages) {
+      const original = messageData(message);
+      const markers = original.match(/<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g) || [];
+      let source = stripAllTransport(original)
+        .replace(ITEMX_REF_RE, '')
+        .replace(ITEMX_CODEX_REF_RE, '')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n');
+      removedMarkers += markers.length;
+      if (source === original) continue;
+      if (typeof message.data === 'string') message.data = source;
+      else if (typeof message.content === 'string') message.content = source;
+      cleanedMessages += 1;
+    }
+    next.scriptstate = { ...(next.scriptstate || {}) };
+    for (const key of CHAT_DATA_KEYS) {
+      if (!Object.prototype.hasOwnProperty.call(next.scriptstate, key)) continue;
+      delete next.scriptstate[key]; removedStateKeys += 1;
+    }
+    return { chat: next, cleanedMessages, removedMarkers, removedStateKeys };
+  }
+
+  async function cleanCurrentChatItemx() {
+    const ctx = await context();
+    if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
+    const result = await enqueue(ctx.key, async () => {
+      const active = await context();
+      if (!active || active.key !== ctx.key) throw new Error('정리 중 채팅이 바뀌었습니다. 다시 시도하세요.');
+      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
+      if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
+        throw new Error('출력 스트리밍이 끝난 뒤 정리할 수 있습니다.');
+      }
+      const cleaned = cleanChatPluginData(latest);
+      await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
+      // Cleanup is intended for leaving ITEMX behind. Disable this bot only
+      // after the chat write succeeds so catch-up cannot immediately recreate
+      // the markers that were just removed.
+      await setEnabled(ctx.character, false);
+      return cleaned;
+    });
+    runtime.cleanupArmedUntil = 0;
+    runtime.latestMarkers.clear(); runtime.latestOutput = ''; runtime.pendingMarkers.clear(); runtime.pendingMarkersAt = 0;
+    runtime.eventPayloads = new Map(); runtime.markerHtmlCache.clear(); runtime.detailHtmlCache.clear();
+    runtime.catchUpFingerprint = ''; runtime.catchUpFailedFingerprint = ''; runtime.catchUpFailures = 0; runtime.catchUpRetryAt = 0;
+    runtime.auxCandidateFingerprint = ''; runtime.auxCandidateSince = 0; runtime.auxCandidateChecks = 0;
+    runtime.cachedLoaded = null; runtime.cachedGeneration = -1; runtime.generation += 1;
+    runtime.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
+    const loaded = await rebuildCurrent();
+    if (loaded) loaded.enabled = false;
+    return { ...result, loaded };
   }
 
   async function cachedOrRebuildCurrent() {
@@ -1657,6 +1734,7 @@ ${codexPageStyle()}
     runtime.catchUpFailures = 0;
     runtime.catchUpRetryAt = 0;
     runtime.auxCandidateFingerprint = '';
+    runtime.cleanupArmedUntil = 0;
     runtime.uiRemountAfter = 0;
     if (runtime.legacyCommitTimer) globalThis.clearTimeout(runtime.legacyCommitTimer);
     runtime.legacyCommitTimer = null;
@@ -1841,7 +1919,8 @@ ${codexPageStyle()}
     const domainControls = [['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'], ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'], ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']].map(([key, label, value, note]) => `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label} · ${value ? 'ON' : 'OFF'}</strong><small>${note}</small></button>`).join('');
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
-    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const cleanupArmed = runtime.cleanupArmedUntil > Date.now();
+    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
     const pager = pageCount > 1 ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>` : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
     const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
@@ -2214,6 +2293,32 @@ ${codexPageStyle()}
             return;
           }
         }
+        const cleanup = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-cleanup');
+        if (cleanup) {
+          const rect = await cleanup.getBoundingClientRect();
+          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+            if (runtime.cleanupArmedUntil <= Date.now()) {
+              runtime.cleanupArmedUntil = Date.now() + 7000;
+              runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+              await showRootFeedback('되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 제거합니다.', 'error', 6500);
+              await openRootInventory({ open: true, tab: 'settings' });
+              return;
+            }
+            runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+            await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
+            try {
+              const result = await cleanCurrentChatItemx();
+              await showRootFeedback(`정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`, 'success', 3600);
+              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+            } catch (error) {
+              runtime.cleanupArmedUntil = 0;
+              runtime.status = '현재 채팅 정리 실패';
+              await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
+              if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 정리 실패: ${error.message || error}`);
+            }
+            return;
+          }
+        }
         const rebuild = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rebuild');
         if (rebuild) {
           const rect = await rebuild.getBoundingClientRect();
@@ -2326,7 +2431,8 @@ ${codexPageStyle()}
     const domainControls = [['items', '무기·아이템', loaded.itemsEnabled], ['skills', '스킬', loaded.skillsEnabled], ['encounters', '전투 도감', loaded.encountersEnabled]].map(([key, label, value]) => `<button class="itemx-tool ${value ? 'itemx-setting-on' : ''}" data-action="domain-${key}">${label} ${value ? 'ON' : 'OFF'}</button>`).join('');
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
-    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 누락 복구합니다.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
+    const cleanupArmed = runtime.cleanupArmedUntil > Date.now();
+    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 누락 복구합니다.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section><section class="itemx-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다.</small></span><button class="itemx-tool itemx-manager-danger" data-action="cleanup-chat">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
     const iframeSkills = ui.tab === 'skills' ? (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean) : [];
     const iframeMonsters = ui.tab === 'bestiary' ? (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean) : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
@@ -2353,6 +2459,22 @@ ${codexPageStyle()}
     root.querySelector('[data-action="rarity-mode"]')?.addEventListener('click', async () => { loaded.rarityMode = loaded.rarityMode === 'itemx' ? 'world' : 'itemx'; await setRarityMode(loaded.character, loaded.rarityMode); runtime.status = `등급 기준 · ${RARITY_MODE_LABELS[loaded.rarityMode]}`; drawInventory(loaded); });
     root.querySelector('[data-action="effects"]')?.addEventListener('click', async () => { loaded.effectsEnabled = !loaded.effectsEnabled; await setEffectsEnabled(loaded.character, loaded.effectsEnabled); runtime.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`; drawInventory(loaded); });
     root.querySelector('[data-action="rebuild"]')?.addEventListener('click', async () => { const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); } });
+    root.querySelector('[data-action="cleanup-chat"]')?.addEventListener('click', async () => {
+      if (runtime.cleanupArmedUntil <= Date.now()) {
+        runtime.cleanupArmedUntil = Date.now() + 7000;
+        runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+        drawInventory(loaded); return;
+      }
+      runtime.status = '현재 채팅 ITEMX 기록 정리 중'; drawInventory(loaded);
+      try {
+        const result = await cleanCurrentChatItemx();
+        if (result.loaded) drawInventory(result.loaded);
+      } catch (error) {
+        runtime.cleanupArmedUntil = 0; runtime.status = '현재 채팅 정리 실패';
+        if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 정리 실패: ${error.message || error}`);
+        drawInventory(loaded);
+      }
+    });
     root.querySelector('[data-action="permissions"]')?.addEventListener('click', async () => {
       runtime.status = '모델 처리 권한 확인 중'; drawInventory(loaded);
       const connected = await installPipelineHooks({ prompt: true });

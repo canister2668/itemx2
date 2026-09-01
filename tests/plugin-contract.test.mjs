@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.11$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.12$/m);
   assert.match(source, /^\/\/@display-name ITEMX CODEX$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 11'/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 12'/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -217,7 +217,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const ITEMXQuality =/);
   assert.match(source, /state: unresolvedPartials\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /아이템 상세정보 보완 중/);
-  assert.ok(source.length < 391000, 'plugin bundle must stay compact with discovery and recovery quality controls');
+  assert.ok(source.length < 400000, 'plugin bundle must stay compact with discovery, cleanup and recovery quality controls');
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
   assert.match(source, /\}, 1200\)/);
@@ -275,6 +275,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const styled = await installMainStyle\(\)/);
   assert.match(source, /getRootDocument\(/);
   assert.match(source, /setChatToIndex\(/);
+  assert.match(source, /현재 채팅 ITEMX 기록 제거/);
+  assert.match(source, /async function cleanCurrentChatItemx\(\)/);
+  assert.match(source, /const CHAT_DATA_KEYS = \[/);
+  assert.match(source, /await setEnabled\(ctx\.character, false\)/);
+  assert.match(source, /runtime\.cleanupArmedUntil = Date\.now\(\) \+ 7000/);
+  assert.match(source, /function reconcileStoredRefViews\(chat, preferredLatestIndex = null\)/);
+  assert.match(source, /const keepInline = index === latestIndex/);
   assert.match(source, /\.chattext \.x-risu-itemx-card/);
   assert.equal(source.includes('__ITEMX_'), false);
   assert.equal(source.includes('{{moduleenabled'), false);

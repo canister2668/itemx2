@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.11\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.12\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,7 +43,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.11');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.12');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -196,4 +196,94 @@ test('legacy bare refs are upgraded once from the per-chat event ledger', async 
   const rendered = handlers.display(chat.message[0].data);
   assert.match(rendered, /itemx-card/);
   assert.match(rendered, /복원된 옛 검/);
+});
+
+test('only the newest event message keeps an inline display view', async () => {
+  const handlers = {}, replacers = {};
+  const makePayload = (id, name) => {
+    const view = { id, name, itemType: '장검', emoji: '⚔️', rarity: 'rare', displayRarity: '레어', possession: 'owned', location: 'inventory', count: 1, theme: 'oriental', affinity: '', effects: [], augments: [] };
+    const item = { ...view, required: '', power: '', durability: '', cost: '', slot: '', affinity2: '', condition: '', trivia: '' };
+    return { v: 2, event: { kind: 'exam', item }, view };
+  };
+  const oldRef = 'i0_0_oldbeef', newRef = 'i1_0_newbeef';
+  const oldPayload = makePayload('old_blade', '오래된 검'), newPayload = makePayload('new_blade', '새 검');
+  const inline = (payload) => Buffer.from(JSON.stringify({ v: 2, view: payload.view })).toString('base64url');
+  const ledger = [
+    { ref: oldRef, domain: 'item', payload: oldPayload },
+    { ref: newRef, domain: 'item', payload: newPayload }
+  ];
+  let chat = {
+    id: 'hybrid-ref-chat',
+    message: [
+      { role: 'char', data: `첫 기록\n<!--ITEMX2@${oldRef}:${inline(oldPayload)}-->` },
+      { role: 'char', data: `최신 기록\n<!--ITEMX2@${newRef}-->` }
+    ],
+    scriptstate: { $__itemx2_message_events: JSON.stringify(ledger) }
+  };
+  let writes = 0;
+  const Risuai = {
+    pluginStorage: { getItem: async () => null, setItem: async () => {} },
+    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
+    getCurrentCharacterIndex: async () => 0,
+    getCurrentChatIndex: async () => 0,
+    getCharacter: async () => ({ chaId: 'hybrid-char', name: '혼합 봇' }),
+    getChatFromIndex: async () => structuredClone(chat),
+    setChatToIndex: async (_ci, _hi, value) => { writes += 1; chat = structuredClone(value); },
+    registerSetting: async () => ({ id: 'setting' }),
+    addRisuScriptHandler: async (mode, fn) => { handlers[mode] = fn; },
+    removeRisuScriptHandler: async () => {},
+    requestPluginPermission: async () => true,
+    addRisuReplacer: async (mode, fn) => { replacers[mode] = fn; },
+    removeRisuReplacer: async () => {},
+    getRootDocument: async () => null,
+    unregisterUIPart: async () => {}, onUnload: async () => {}, hideContainer: async () => {}
+  };
+  const sandbox = vm.createContext({
+    console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
+    setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} }
+  });
+  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
+  assert.equal(writes, 1);
+  assert.equal(chat.message[0].data, `첫 기록\n<!--ITEMX2@${oldRef}-->`);
+  assert.match(chat.message[1].data, new RegExp(`<!--ITEMX2@${newRef}:[A-Za-z0-9_-]+-->`));
+  const request = await replacers.beforeRequest(chat.message.map((message) => ({ role: 'assistant', content: message.data })), 'main');
+  assert.equal(request.some((message) => String(message.content || '').includes('ITEMX2@')), false);
+});
+
+test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated chat state', async () => {
+  const Risuai = {
+    pluginStorage: { getItem: async () => null, setItem: async () => {} },
+    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
+    getCurrentCharacterIndex: async () => { throw new TypeError("Cannot read properties of undefined (reading 'chatPage')"); },
+    getCurrentChatIndex: async () => { throw new TypeError("Cannot read properties of undefined (reading 'chatPage')"); },
+    getCharacter: async () => null,
+    registerSetting: async () => ({ id: 'setting' }),
+    addRisuScriptHandler: async () => {}, removeRisuScriptHandler: async () => {},
+    unregisterUIPart: async () => {}, onUnload: async () => {}, hideContainer: async () => {}
+  };
+  const sandbox = vm.createContext({
+    console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
+    setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} }
+  });
+  const built = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
+  const instrumented = built.replace(
+    '  async function cachedOrRebuildCurrent() {',
+    '  globalThis.__itemxCleanChatForTest = cleanChatPluginData;\n  async function cachedOrRebuildCurrent() {'
+  );
+  assert.notEqual(instrumented, built);
+  await vm.runInContext(instrumented, sandbox);
+  const payload = Buffer.from(JSON.stringify({ v: 2, event: { kind: 'exam', item: { id: 'x', name: '검' } } })).toString('base64url');
+  const cleaned = sandbox.__itemxCleanChatForTest({
+    message: [{ role: 'char', data: `본문\n<!--ITEMX2:${payload}-->\n<!--CODEX2@c0_0_deadbeef:${payload}-->\n<state>보존</state>` }],
+    scriptstate: {
+      $__itemx2_state: '{}', $__itemx2_chat_id: 'id', $__itemx2_codex_state: '{}',
+      $__itemx2_manual_events: '[]', $__itemx2_message_events: '[]', $__itemx2_aux_processed: '{}',
+      unrelated: 'keep'
+    }
+  });
+  assert.equal(cleaned.removedMarkers, 2);
+  assert.equal(cleaned.removedStateKeys, 6);
+  assert.doesNotMatch(cleaned.chat.message[0].data, /ITEMX2|CODEX2/);
+  assert.match(cleaned.chat.message[0].data, /<state>보존<\/state>/);
+  assert.equal(JSON.stringify(cleaned.chat.scriptstate), JSON.stringify({ unrelated: 'keep' }));
 });
