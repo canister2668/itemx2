@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.10\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.11\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,7 +43,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.10');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.11');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -144,6 +144,21 @@ test('self-contained compact refs render on first display without hydrated chat 
   assert.doesNotMatch(rendered, /기록 복원 중/);
   const legacyFallback = handlers.display('<!--ITEMX2@i0_0_deadbeef-->');
   assert.match(legacyFallback, /기록 복원 중/);
+
+  const repairedView = { ...view, name: '최종 +12 검', augments: [{ name: '+12강화', desc: '보띿빛 오라' }] };
+  const repairedCode = Buffer.from(JSON.stringify({ v: 2, view: repairedView })).toString('base64url');
+  const coalesced = handlers.display(`감정과 보완이 이어졌다.\n<!--ITEMX2@i0_0_exam:${code}-->\n<!--ITEMX2@i0_1_patch:${repairedCode}-->`);
+  assert.equal((coalesced.match(/data-itemx-id="first_entry_blade"/g) || []).length, 1);
+  assert.match(coalesced, /최종 \+12 검/);
+  assert.match(coalesced, /\+12강화/);
+
+  const otherView = { ...view, id: 'other_blade', name: '다른 검' };
+  const otherCode = Buffer.from(JSON.stringify({ v: 2, view: otherView })).toString('base64url');
+  const separate = handlers.display(`두 검을 감정했다.\n<!--ITEMX2@i0_0_first:${code}-->\n<!--ITEMX2@i0_1_other:${otherCode}-->`);
+  assert.equal((separate.match(/data-itemx-id=/g) || []).length, 2);
+
+  const laterChange = handlers.display(`첫 감정.\n<!--ITEMX2@i0_0_exam:${code}-->\n\n이후 전투에서 별도로 강화됐다.\n<!--ITEMX2@i0_1_later:${repairedCode}-->`);
+  assert.equal((laterChange.match(/data-itemx-id="first_entry_blade"/g) || []).length, 2);
 });
 
 test('legacy bare refs are upgraded once from the per-chat event ledger', async () => {

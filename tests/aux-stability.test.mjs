@@ -175,6 +175,21 @@ test('auxiliary regeneration receives the triggering turn and recent visible nar
   assert.match(prompt, /weapon_state = 오른손에 차가운 검을 들었다/);
 });
 
+test('auxiliary treats the first confirmed already-owned player skill as a discovery event', async () => {
+  const result = await bootWithOutput(
+    '동료는 챗붕이 [보법]을 실전에서 오랫동안 사용해 온 고수라고 확인했다.',
+    { modelOutput: '<skillExam><id>footwork</id><name>보법</name><glyph>💨</glyph><type>passive</type><status>learned</status><description>실전에서 오랫동안 익힌 이동 기술.</description></skillExam>' }
+  );
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.chatWrites, 1);
+  assert.match(result.prompts[0], /first explicit confirmation that the player character owns, uses, has mastered, has equipped/);
+  assert.match(result.prompts[0], /Do not put an NPC or opponent's technique into the player skill registry/);
+  const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
+  const skill = ledger.find((row) => row.domain === 'codex' && row.payload?.event?.domain === 'skill');
+  assert.equal(skill.payload.event.entity.id, 'footwork');
+  assert.equal(skill.payload.event.entity.name, '보법');
+});
+
 test('detailed multi-item appraisal keeps safe partials and repairs them in one batch with one chat write', async () => {
   const initial = [
     '<itemExam><id>abyssal_apocalypse</id><name>+12 심연의 묵시록</name><type>한손검</type><emoji>❔</emoji><internalrarity>epic</internalrarity><power>1500-3999</power><required>레벨 100</required><durability>350/350</durability><cost>150000000</cost><possession>owned</possession><location>inventory</location></itemExam>',

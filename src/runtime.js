@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.10';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 10';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.11';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 11';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -458,6 +458,40 @@ ${codexPageStyle()}
     } };
   }
 
+  function itemMarkerPayload(marker) {
+    const full = String(marker || '').match(/^<!--ITEMX2:([A-Za-z0-9_-]+)-->$/);
+    if (full) return ITEMXCore.decodePayload(full[1]);
+    const ref = String(marker || '').match(/^<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->$/);
+    if (!ref) return null;
+    return inlineViewPayload(ref[2], 'item') || runtime.eventPayloads.get(`item:${ref[1]}`) || null;
+  }
+
+  function itemPayloadId(payload) {
+    return payload?.view?.id || payload?.event?.item?.id || payload?.event?.patch?.id || '';
+  }
+
+  function coalesceAdjacentItemMarkers(content) {
+    const source = String(content || '');
+    const re = /<!--ITEMX2:[A-Za-z0-9_-]+-->|<!--ITEMX2@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?-->/g;
+    const rows = []; let match;
+    while ((match = re.exec(source))) rows.push({ start: match.index, end: re.lastIndex, raw: match[0], payload: itemMarkerPayload(match[0]) });
+    if (rows.length < 2) return source;
+    const hidden = new Set();
+    for (let index = 0; index < rows.length - 1; index += 1) {
+      const current = rows[index], next = rows[index + 1];
+      const id = itemPayloadId(current.payload), nextId = itemPayloadId(next.payload);
+      if (id && id === nextId && next.payload?.view && !source.slice(current.end, next.start).trim()) hidden.add(index);
+    }
+    if (!hidden.size) return source;
+    let output = '', cursor = 0;
+    rows.forEach((row, index) => {
+      output += source.slice(cursor, row.start);
+      if (!hidden.has(index)) output += row.raw;
+      cursor = row.end;
+    });
+    return output + source.slice(cursor);
+  }
+
   function embedStoredRefViews(chat) {
     const rows = messageEventLedger(chat);
     if (!rows.length) return { chat, changed: false };
@@ -905,7 +939,7 @@ ${codexPageStyle()}
       const domains = enabledCodexDomains(settings);
       const requested = [settings.itemsEnabled && 'items', settings.skillsEnabled && 'skills', settings.encountersEnabled && 'encounters'].filter(Boolean).join(', ');
       const itemRecoveryRules = settings.itemsEnabled ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.` : '';
-      const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains. For skills, track any persistent named capability, technique, proficiency or mastery regardless of surrounding wrapper tags, including actual learning, mastery, equipment, sealing or loss; exclude transient buffs and flavor text. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
+      const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill that is absent from CURRENT ACTIVE SKILLS. For skills, the first explicit confirmation that the player character owns, uses, has mastered, has equipped, or is concretely known to possess a persistent named capability, technique or proficiency is a settled discovery event even when it was learned before this turn; emit one skillExam and reuse an existing id when present. A bracketed word or generic action alone is not proof. Do not put an NPC or opponent's technique into the player skill registry; keep it only in that encounter's moves unless the player actually acquires it. Continue to track later learning, mastery, equipment, sealing or loss, and exclude transient buffs and flavor text. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
       const prompt = `${protocolForSettings(settings, ctx.character)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
       runtime.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
@@ -1239,7 +1273,8 @@ ${codexPageStyle()}
   const displayHandler = (content) => {
     const raw = String(content || '');
     if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return content;
-    const source = raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
+    const positioned = raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
+    const source = coalesceAdjacentItemMarkers(positioned);
     let found = false, hasFullCard = false;
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;

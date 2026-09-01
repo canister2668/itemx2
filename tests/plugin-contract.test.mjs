@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.10$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.11$/m);
   assert.match(source, /^\/\/@display-name ITEMX CODEX$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 10'/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 11'/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -217,7 +217,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const ITEMXQuality =/);
   assert.match(source, /state: unresolvedPartials\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /아이템 상세정보 보완 중/);
-  assert.ok(source.length < 390000, 'plugin bundle must stay compact with evidence-based recovery quality controls');
+  assert.ok(source.length < 391000, 'plugin bundle must stay compact with discovery and recovery quality controls');
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
   assert.match(source, /\}, 1200\)/);
