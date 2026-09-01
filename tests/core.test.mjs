@@ -24,6 +24,23 @@ test('multiple items are extracted in order and raw transports never survive', (
   assert.equal(core.eventsFromText(result.content).length, 3);
 });
 
+test('exam provenance stays on the event but never leaks into registry or view', () => {
+  const result = core.extractResponse('<itemExam><id>plain_ore</id><name>무쇠 광석</name><type>재료</type><emoji>❔</emoji><possession>owned</possession><location>inventory</location></itemExam>', core.newRegistry());
+  assert.ok(result.events[0].item._provided.includes('emoji'));
+  assert.equal(result.events[0].item._provided.includes('effects'), false);
+  assert.equal('_provided' in result.registry.items.plain_ore, false);
+  assert.equal(result.registry.items.plain_ore.emoji, '🧱');
+  const payload = core.decodePayload(result.content.match(/<!--ITEMX2:([A-Za-z0-9_-]+)-->/)[1]);
+  assert.equal('_provided' in payload.view, false);
+});
+
+test('valid model emoji is preserved while missing or question-mark glyphs get deterministic domain fallbacks', () => {
+  assert.equal(core.resolveItemEmoji({ name: '심연검', itemType: '장검', emoji: '🌌' }), '🌌');
+  assert.equal(core.resolveItemEmoji({ name: '심연검', itemType: '장검', emoji: '❔' }), '🗡️');
+  assert.equal(core.resolveSkillGlyph({ name: '빙결 폭풍', glyph: '❔' }), '❄️');
+  assert.equal(core.resolveMonsterGlyph({ name: '고대 용', glyph: '' }), '🐉');
+});
+
 test('an unfinished tag is quarantined while prose before it remains', () => {
   const result = core.extractResponse('검이 부딪혀 금이 갔다.\n<itemPatch><id>blade_a</id><op>merge</op><durability>30/100', core.newRegistry());
   assert.equal(result.content, '검이 부딪혀 금이 갔다.');

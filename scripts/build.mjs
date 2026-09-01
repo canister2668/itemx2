@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const demoPath = resolve(root, 'design/itemx-multi-affinity-demo.html');
 const protocolPath = resolve(root, 'src/main-protocol.txt');
-const [demo, protocol, core, codex, renderer, runtime, packageRaw] = await Promise.all([
+const [demo, protocol, core, quality, codex, renderer, runtime, packageRaw] = await Promise.all([
   readFile(demoPath, 'utf8'), readFile(protocolPath, 'utf8'),
-  readFile(resolve(root, 'src/core.js'), 'utf8'), readFile(resolve(root, 'src/codex.js'), 'utf8'), readFile(resolve(root, 'src/renderer.js'), 'utf8'),
+  readFile(resolve(root, 'src/core.js'), 'utf8'), readFile(resolve(root, 'src/quality.js'), 'utf8'), readFile(resolve(root, 'src/codex.js'), 'utf8'), readFile(resolve(root, 'src/renderer.js'), 'utf8'),
   readFile(resolve(root, 'src/runtime.js'), 'utf8'), readFile(resolve(root, 'package.json'), 'utf8')
 ]);
 const packageVersion = JSON.parse(packageRaw).version;
@@ -65,7 +65,7 @@ const builtRuntime = runtime
 if (/__ITEMX_[A-Z_]+__/.test(builtRuntime)) throw new Error('unreplaced build placeholder');
 
 await mkdir(resolve(root, 'dist'), { recursive: true });
-const plugin = `${metadata}${core.trimEnd()}\n${codex.trimEnd()}\n${renderer.trimEnd()}\n${builtRuntime.trimEnd()}\n`;
+const plugin = `${metadata}${core.trimEnd()}\n${quality.trimEnd()}\n${codex.trimEnd()}\n${renderer.trimEnd()}\n${builtRuntime.trimEnd()}\n`;
 await writeFile(resolve(root, 'dist/itemx2.plugin.js'), plugin);
 await writeFile(resolve(root, 'dist/itemx2-ui.css'), `${css}\n`);
 await writeFile(resolve(root, 'dist/itemx2-main-scoped.css'), `${mainCss.trimEnd()}\n`);

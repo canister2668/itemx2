@@ -64,6 +64,40 @@ const ITEMXCore = (() => {
   };
   const marker = (payload) => `<!--ITEMX2:${encodePayload(payload)}-->`;
 
+  function isUsableGlyph(value) {
+    const glyph = clean(value, 24);
+    if (!glyph || glyph === '❔' || /[\s<>\u0000-\u001f]/u.test(glyph) || /[\p{L}\p{N}]/u.test(glyph)) return false;
+    try {
+      const pictographs = glyph.match(/\p{Extended_Pictographic}/gu) || [];
+      const regions = glyph.match(/\p{Regional_Indicator}/gu) || [];
+      return (pictographs.length === 1 || (glyph.includes('\u200d') && pictographs.length > 1) || regions.length === 2) && pictographs.length + regions.length > 0;
+    } catch { return /[\u{1F000}-\u{1FAFF}\u2600-\u27BF]/u.test(glyph); }
+  }
+
+  function itemEmojiFallback(item = {}) {
+    const text = `${item.itemType || item.type || ''} ${item.name || ''}`.toLowerCase();
+    const choices = [
+      [/(?:검|도|blade|sword|katana)/, '🗡️'], [/(?:방패|갑옷|방어구|shield|armor)/, '🛡️'],
+      [/(?:활|석궁|bow|crossbow)/, '🏹'], [/(?:지팡이|완드|staff|wand)/, '🪄'], [/(?:총|포|gun|rifle|cannon)/, '🔫'],
+      [/(?:반지|ring)/, '💍'], [/(?:목걸이|부적|necklace|amulet|talisman)/, '📿'], [/(?:장화|신발|boots?|shoes?)/, '👢'],
+      [/(?:물약|포션|약품|potion|elixir)/, '🧪'], [/(?:책|서|두루마리|book|tome|scroll)/, '📖'],
+      [/(?:광석|금속|재료|원석|ore|ingot|material|stone)/, '🧱']
+    ];
+    return choices.find(([pattern]) => pattern.test(text))?.[1] || '📦';
+  }
+
+  const resolveItemEmoji = (item) => isUsableGlyph(item?.emoji) ? clean(item.emoji, 24) : itemEmojiFallback(item);
+  const resolveSkillGlyph = (skill = {}) => {
+    if (isUsableGlyph(skill.glyph || skill.emoji)) return clean(skill.glyph || skill.emoji, 24);
+    const text = `${skill.affinity || ''} ${skill.type || skill.kind || ''} ${skill.name || ''}`.toLowerCase();
+    return [[/(?:fire|화염|불꽃)/, '🔥'], [/(?:ice|빙결|서리)/, '❄️'], [/(?:lightning|번개|뇌전)/, '⚡'], [/(?:heal|회복|치유)/, '💚'], [/(?:shield|방어|보호)/, '🛡️'], [/(?:stealth|은신|암영)/, '🌫️'], [/(?:slash|검|도법)/, '🗡️']].find(([p]) => p.test(text))?.[1] || '✨';
+  };
+  const resolveMonsterGlyph = (monster = {}) => {
+    if (isUsableGlyph(monster.glyph || monster.emoji)) return clean(monster.glyph || monster.emoji, 24);
+    const text = `${monster.kind || monster.type || ''} ${monster.name || ''}`.toLowerCase();
+    return [[/(?:dragon|용|룡)/, '🐉'], [/(?:wolf|늑대)/, '🐺'], [/(?:rabbit|토끼)/, '🐇'], [/(?:undead|망자|해골|좀비)/, '💀'], [/(?:slime|슬라임)/, '🫧'], [/(?:golem|골렘)/, '🗿'], [/(?:insect|벌레|곤충)/, '🐛']].find(([p]) => p.test(text))?.[1] || '🐾';
+  };
+
   function field(xml, name) {
     const re = new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)<\\/${name}\\s*>`, 'i');
     const m = String(xml).match(re);
@@ -107,8 +141,19 @@ const ITEMXCore = (() => {
     return out;
   }
 
+  function providedFields(raw) {
+    const out = [];
+    for (const [key, value] of Object.entries(raw || {})) {
+      const canonical = FIELD_ALIASES[String(key).toLowerCase()] || FIELD_ALIASES[key];
+      if (!canonical || value == null) continue;
+      if (Array.isArray(value) ? value.length > 0 : clean(value) !== '') out.push(canonical);
+    }
+    return [...new Set(out)];
+  }
+
   function normalizeItem(raw, seed = '') {
     const f = canonicalFields(raw);
+    const _provided = providedFields(raw);
     const name = clean(f.name, 160);
     if (!name) return { error: 'exam_no_name' };
     const id = ID_RE.test(f.id || '') ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
@@ -122,15 +167,18 @@ const ITEMXCore = (() => {
     let possession = POSSESSIONS.has((f.possession || '').toLowerCase()) ? f.possession.toLowerCase() : (location === 'unknown' ? 'observed' : 'owned');
     if (possession === 'removed') location = 'unknown';
     const count = /^\d+$/.test(f.count || '') ? Math.max(0, Number(f.count)) : 1;
-    return { item: {
-      id, name, itemType: clean(f.type, 160) || '기타', emoji: clean(f.emoji, 16) || '❔', rarity,
+    const item = {
+      id, name, itemType: clean(f.type, 160) || '기타', emoji: clean(f.emoji, 24), rarity,
       displayRarity: clean(f.displayrarity, 80) || RARITY_LABELS[rarity], power: clean(f.power, 160),
       required: clean(f.required, 160), durability: clean(f.durability, 160), cost: clean(f.cost, 160),
       possession, location, count, slot: clean(f.slot, 80) || null, pin: /^(1|true)$/i.test(f.pin || ''),
       trivia: clean(f.trivia, 1200), theme, affinity, affinity2, condition,
       effects: Array.isArray(raw.effects) ? raw.effects.slice(0, 12).map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) })).filter((x) => x.name) : listPairs(f.effects),
-      augments: Array.isArray(raw.augments) ? raw.augments.slice(0, 12).map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) })).filter((x) => x.name) : listPairs(f.augments)
-    } };
+      augments: Array.isArray(raw.augments) ? raw.augments.slice(0, 12).map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) })).filter((x) => x.name) : listPairs(f.augments),
+      _provided
+    };
+    item.emoji = resolveItemEmoji(item);
+    return { item };
   }
 
   function parseXml(tag, attrText, body, seed) {
@@ -142,8 +190,10 @@ const ITEMXCore = (() => {
         if (value) raw[key] = value;
       }
     }
-    raw.effects = nestedPairs(body, 'effect');
-    raw.augments = nestedPairs(body, 'augment');
+    const effects = nestedPairs(body, 'effect');
+    const augments = nestedPairs(body, 'augment');
+    if (effects.length || /<effects?\b/i.test(body)) raw.effects = effects;
+    if (augments.length || /<augments?\b/i.test(body)) raw.augments = augments;
     const visual = field(body, 'visual') ? (body.match(/<visual\b[^>]*>([\s\S]*?)<\/visual\s*>/i)?.[1] || '') : body;
     for (const key of ['theme', 'craft', 'affinity', 'affinity2', 'condition']) {
       const value = field(visual, key); if (value) raw[key] = value;
@@ -224,6 +274,8 @@ const ITEMXCore = (() => {
 
   function applyExam(reg, source) {
     const item = clone(source), prev = reg.items[item.id];
+    delete item._provided;
+    item.emoji = resolveItemEmoji(item);
     if (prev) {
       // An exam describes/appraises an identity. Ownership transitions belong
       // to explicit patches so a reappraisal can never unequip, resurrect or
@@ -248,6 +300,7 @@ const ITEMXCore = (() => {
     if (!AFFINITIES.has(item.affinity)) item.affinity = null;
     if (!AFFINITIES.has(item.affinity2) || item.affinity2 === item.affinity) item.affinity2 = null;
     if (!CONDITIONS.has(item.condition)) item.condition = null;
+    item.emoji = resolveItemEmoji(item);
   }
 
   function applyPatch(reg, patch) {
@@ -386,7 +439,7 @@ const ITEMXCore = (() => {
   function requestView(text) {
     return String(text || '').replace(MARKER_RE, (_, encoded) => {
       const payload = decodePayload(encoded); const item = payload?.event?.kind === 'exam' ? payload.event.item : null;
-      return item ? `[${item.emoji || '❔'} ${item.name} | id=${item.id}]` : '';
+      return item ? `[${resolveItemEmoji(item)} ${item.name} | id=${item.id}]` : '';
     });
   }
   function anchor(snapshot, max = 12000) {
@@ -405,7 +458,7 @@ const ITEMXCore = (() => {
     return lines.join('\n');
   }
 
-  return { VERSION, STATE_KEY, CHAT_KEY, MARKER_RE, RARITY_LABELS, esc, fnv1a, marker, decodePayload, parseXml, parseBracket, normalizeItem, normalizePatch, newRegistry, applyEvent, extractResponse, eventsFromText, rebuild, readSnapshot, writeSnapshot, requestView, anchor, messageText, clone };
+  return { VERSION, STATE_KEY, CHAT_KEY, MARKER_RE, RARITY_LABELS, esc, fnv1a, marker, decodePayload, parseXml, parseBracket, normalizeItem, normalizePatch, newRegistry, applyEvent, extractResponse, eventsFromText, rebuild, readSnapshot, writeSnapshot, requestView, anchor, messageText, clone, isUsableGlyph, itemEmojiFallback, resolveItemEmoji, resolveSkillGlyph, resolveMonsterGlyph };
 })();
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCore = ITEMXCore;

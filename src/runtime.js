@@ -885,7 +885,7 @@ ${codexPageStyle()}
     const source = messageData(ctx.chat.message[index]);
     if (!force && !automaticAuxReady(ctx.chat, index, source)) return null;
     const sourceHash = ITEMXCore.fnv1a(source);
-    const guardKey = `${index}:visible-${auxiliarySemanticHash(source)}:${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}`;
+    const guardKey = `${index}:visible-${auxiliarySemanticHash(source)}:${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}:q${ITEMXQuality.REVISION}`;
     if (auxiliaryHistory(ctx.chat)[guardKey] && !force) return [];
     if ((await auxiliaryZeroHistory(ctx))[guardKey] && !force) return [];
     if (typeof Risuai.runLLMModel !== 'function') return null;
@@ -905,7 +905,7 @@ ${codexPageStyle()}
       const domains = enabledCodexDomains(settings);
       const requested = [settings.itemsEnabled && 'items', settings.skillsEnabled && 'skills', settings.encountersEnabled && 'encounters'].filter(Boolean).join(', ');
       const itemRecoveryRules = settings.itemsEnabled ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.` : '';
-      const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains. For skills, track actual learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
+      const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains. For skills, track any persistent named capability, technique, proficiency or mastery regardless of surrounding wrapper tags, including actual learning, mastery, equipment, sealing or loss; exclude transient buffs and flavor text. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
       const prompt = `${protocolForSettings(settings, ctx.character)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
       runtime.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
@@ -913,12 +913,45 @@ ${codexPageStyle()}
       if (!raw) throw new Error('보조 출력이 비어 있습니다.');
       const parsed = settings.itemsEnabled ? ITEMXCore.extractResponse(raw, snapshot.registry) : { content: stripItemTransport(raw), events: [], errors: [] };
       const validationRegistry = ITEMXCore.clone(snapshot.registry);
-      const validItems = parsed.events.filter((event) => ITEMXCore.applyEvent(validationRegistry, event) != null);
+      const validItems = [], partials = [];
+      const itemSiblings = parsed.events.filter((event) => event.kind === 'exam').map((event) => event.item);
+      for (const event of parsed.events) {
+        if (event.kind !== 'exam') {
+          if (ITEMXCore.applyEvent(validationRegistry, event) != null) validItems.push(event);
+          continue;
+        }
+        const evidence = ITEMXQuality.detectItemEvidence(committedNarrative, event.item, itemSiblings);
+        const quality = ITEMXQuality.validateRecoveredItem(event, evidence);
+        if (quality.status === 'rejected') continue;
+        const accepted = quality.status === 'partial' ? ITEMXQuality.projectSafePartial(event, quality, validationRegistry) : event;
+        if (ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
+        validItems.push(accepted);
+        if (quality.status === 'partial') partials.push({ ...quality, event: accepted, sourceEvent: event });
+      }
+      let unresolvedPartials = partials;
+      if (partials.length) {
+        const partialMap = new Map(partials.map((one) => [one.event.item.id, one]));
+        const repaired = new Map();
+        try {
+          const repairResponse = await runAuxModel(ITEMXQuality.repairPrompt(partials, committedNarrative), '아이템 상세정보 보완 중');
+          const repairRaw = modelText(repairResponse);
+          const repairParsed = repairRaw ? ITEMXCore.extractResponse(repairRaw, validationRegistry) : { events: [] };
+          for (const event of repairParsed.events) {
+            const accepted = ITEMXQuality.acceptRepair(event, partialMap, validationRegistry);
+            if (!accepted || ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
+            validItems.push(accepted);
+            const fields = repaired.get(accepted.patch.id) || new Set();
+            Object.keys(accepted.patch.fields || {}).forEach((key) => fields.add(key));
+            repaired.set(accepted.patch.id, fields);
+          }
+        } catch (error) { fail('auxiliary partial repair', error); }
+        unresolvedPartials = partials.filter((one) => one.missing.some((key) => !repaired.get(one.event.item.id)?.has(key)));
+      }
       const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, { enabledDomains: domains });
       const validationCodex = ITEMXCodex.clone(codexSnapshot);
       const validCodex = codexParsed.events.filter((event) => ITEMXCodex.applyEvent(validationCodex, event) != null);
       const valid = [...validItems, ...validCodex];
-      debugRecord('auxiliary', { requested, events: valid.length, itemEvents: validItems.length, codexEvents: validCodex.length });
+      debugRecord('auxiliary', { requested, events: valid.length, itemEvents: validItems.length, codexEvents: validCodex.length, partials: partials.length, partialFinal: unresolvedPartials.length });
       const allErrors = [...parsed.errors, ...codexParsed.errors];
       if (!valid.length && allErrors.length) throw new Error(`보조 출력 검증 실패 (${allErrors[0]})`);
 
@@ -949,7 +982,7 @@ ${codexPageStyle()}
       if (typeof message?.data === 'string') message.data = positionMarkersByNarrative(`${message.data.trimEnd()}\n\n${markerText}`);
       else if (typeof message?.content === 'string') message.content = positionMarkersByNarrative(`${message.content.trimEnd()}\n\n${markerText}`);
       else return null;
-      const record = { at: Date.now(), events: valid.length };
+      const record = { at: Date.now(), qualityRevision: ITEMXQuality.REVISION, state: unresolvedPartials.length ? 'partial_final' : 'complete', events: valid.length, partialIds: unresolvedPartials.map((one) => one.event.item.id) };
       history[guardKey] = record;
       next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64))) };
       const compacted = compactMessageTransports(next, index).chat;
@@ -1224,7 +1257,7 @@ ${codexPageStyle()}
       const html = renderPayload(`item:${code}`, payload, itemMotion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
-      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
+      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
     }).replace(ITEMXCodex.MARKER_RE, (_, code) => {
       found = true;
       const payload = ITEMXCodex.decodePayload(code), entity = payload?.view || payload?.event?.entity;
@@ -1238,7 +1271,7 @@ ${codexPageStyle()}
       const html = renderPayload(`item-ref:${ref}`, payload, itemMotion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.view || payload.event?.item;
-      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX · ${ITEMXCore.esc(ref)}</span>`;
+      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX · ${ITEMXCore.esc(ref)}</span>`;
     }).replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
       found = true;
       const payload = inlineViewPayload(inline, 'codex') || runtime.eventPayloads.get(`codex:${ref}`), entity = payload?.view || payload?.event?.entity;
@@ -1704,8 +1737,8 @@ ${codexPageStyle()}
     return result;
   }
 
-  const skillEmoji = (skill) => !skill?.glyph || skill.glyph === '✦' ? '✨' : skill.glyph;
-  const encounterEmoji = (monster) => !monster?.glyph || monster.glyph === '◈' ? '⚔️' : monster.glyph;
+  const skillEmoji = (skill) => ITEMXCore.resolveSkillGlyph(skill);
+  const encounterEmoji = (monster) => ITEMXCore.resolveMonsterGlyph(monster);
 
   function skillSummaryHtml(skill) {
     const filled = Math.max(0, Math.min(5, Math.ceil((Number(skill.mastery) || 0) / 20)));
@@ -1766,7 +1799,7 @@ ${codexPageStyle()}
     }).join('') || '<div class="itemx2-root-empty">표시할 아이템이 없답니다.</div>') : '';
     const enabled = loaded.enabled === true;
     const positionChoices = tab === 'settings' ? BADGE_POSITIONS.map(([key, label]) => `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button">${label}</button>`).join('') : '';
-    const managerRows = tab === 'settings' ? (all.map((item, index) => `<div class="itemx2-manager-row"><span class="itemx2-manager-name"><strong>${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name)}</strong><small>${ITEMXCore.esc(item.displayRarity || item.rarity)} · ${ITEMXCore.esc(item.possession)} / ${ITEMXCore.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">재감정</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>제거</button></span></div>`).join('') || '<div class="itemx2-root-empty">관리할 아이템이 없습니다.</div>') : '';
+    const managerRows = tab === 'settings' ? (all.map((item, index) => `<div class="itemx2-manager-row"><span class="itemx2-manager-name"><strong>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)}</strong><small>${ITEMXCore.esc(item.displayRarity || item.rarity)} · ${ITEMXCore.esc(item.possession)} / ${ITEMXCore.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">재감정</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>제거</button></span></div>`).join('') || '<div class="itemx2-root-empty">관리할 아이템이 없습니다.</div>') : '';
     const manager = `<details class="itemx2-manager-fold"><summary>아이템 관리 <small>현재 화면에서 접기·펼치기</small></summary><div class="itemx2-manager-body"><label class="itemx2-manager-label">수정 지시 · 비워두면 순수 재감정<div class="itemx2-manager-editor itemx2-manager-note" contenteditable="true" role="textbox" aria-label="아이템 수정 지시"></div></label><div class="itemx2-manager-list">${managerRows}</div><div class="itemx2-manager-create"><label class="itemx2-manager-label">신규 아이템 생성 지시<div class="itemx2-manager-editor itemx2-manager-create-note" contenteditable="true" role="textbox" aria-label="신규 아이템 생성 지시"></div></label><button class="itemx2-root-setting-button itemx2-manager-create-button" type="button">＋ 신규 아이템 생성</button></div></div></details>`;
     const connection = connectionSummary();
     const chips = [['hook', connection.hook], ['dom', connection.dom], ['listener', connection.listener]].map(([key, [label, tone]]) => `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`).join('');
@@ -2246,7 +2279,7 @@ ${codexPageStyle()}
     const visible = ui.tab === 'inventory' ? all.filter(matches).slice(0, 60) : [];
     if (ui.tab === 'settings' && (!ui.manageId || !all.some((item) => item.id === ui.manageId))) ui.manageId = all.find((item) => item.possession !== 'removed')?.id || all[0]?.id || null;
     const managed = ui.tab === 'settings' && ui.manageId ? all.find((item) => item.id === ui.manageId) : null;
-    const manageOptions = ui.tab === 'settings' ? all.map((item) => `<option value="${ITEMXCore.esc(item.id)}" ${item.id === ui.manageId ? 'selected' : ''}>${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name)} · ${ITEMXCore.esc(item.id)}</option>`).join('') : '';
+    const manageOptions = ui.tab === 'settings' ? all.map((item) => `<option value="${ITEMXCore.esc(item.id)}" ${item.id === ui.manageId ? 'selected' : ''}>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)} · ${ITEMXCore.esc(item.id)}</option>`).join('') : '';
     const enabled = loaded.enabled === true;
     const inventoryContent = !enabled
       ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`

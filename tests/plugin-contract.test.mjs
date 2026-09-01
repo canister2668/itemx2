@@ -213,7 +213,10 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /ITEMX CODEX · ACTIVE CONTEXT/);
   assert.match(source, /AVAILABLE PORTRAIT ASSET NAMES/);
   assert.match(source, /Risuai\.readImage\(asset\.id\)/);
-  assert.ok(source.length < 375000, 'plugin bundle must stay compact after cached settings and global effect controls');
+  assert.match(source, /const ITEMXQuality =/);
+  assert.match(source, /state: unresolvedPartials\.length \? 'partial_final' : 'complete'/);
+  assert.match(source, /아이템 상세정보 보완 중/);
+  assert.ok(source.length < 390000, 'plugin bundle must stay compact with evidence-based recovery quality controls');
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
   assert.match(source, /\}, 1200\)/);

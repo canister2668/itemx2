@@ -34,6 +34,7 @@ async function bootWithOutput(data, options = {}) {
     runLLMModel: async (request) => {
       modelCalls += 1; prompts.push(request?.messages?.[0]?.content || '');
       if (options.failFirst && modelCalls === 1) throw new Error('temporary aux failure');
+      if (Array.isArray(options.modelOutputs)) return options.modelOutputs[modelCalls - 1] ?? 'NONE';
       if (options.modelOutput != null) return options.modelOutput;
       return handlers.output ? handlers.output('NONE') : 'NONE';
     },
@@ -172,4 +173,40 @@ test('auxiliary regeneration receives the triggering turn and recent visible nar
   assert.doesNotMatch(prompt, /음검을 만들 계획만 세운다/);
   assert.doesNotMatch(prompt, /LEGACY_ITEMX_MUST_NOT_LEAK/);
   assert.match(prompt, /weapon_state = 오른손에 차가운 검을 들었다/);
+});
+
+test('detailed multi-item appraisal keeps safe partials and repairs them in one batch with one chat write', async () => {
+  const initial = [
+    '<itemExam><id>abyssal_apocalypse</id><name>+12 심연의 묵시록</name><type>한손검</type><emoji>❔</emoji><internalrarity>epic</internalrarity><power>1500-3999</power><required>레벨 100</required><durability>350/350</durability><cost>150000000</cost><possession>owned</possession><location>inventory</location></itemExam>',
+    '<itemExam><id>plain_ore</id><name>무쇠 광석</name><type>재료</type><emoji>❔</emoji><internalrarity>normal</internalrarity><possession>owned</possession><location>inventory</location></itemExam>'
+  ].join('\n');
+  const repair = '<itemPatch><id>abyssal_apocalypse</id><op>merge</op><power>4850-5320</power><effects><effect><effectname>심연의 포식</effectname><effectdesc>적중 시 생명력을 흡수한다.</effectdesc></effect><effect><effectname>종말의 전조</effectname><effectdesc>치명타 시 파동을 일으킨다.</effectdesc></effect><effect><effectname>완전한 결속</effectname><effectdesc>소유자와 결속한다.</effectdesc></effect></effects><augments><augment><augmentname>+12 강화</augmentname><augmentdesc>물리 피해 +185%, 관통 +35%</augmentdesc></augment></augments></itemPatch>';
+  const narrative = '+12 심연의 묵시록을 얻었다.\n공격력: 4,850~5,320\n강화: +12, 물리 피해 +185%, 관통 +35%\n특수 효과: [심연의 포식] [종말의 전조] [완전한 결속]\n\n무쇠 광석 세 덩이를 얻었다.';
+  const result = await bootWithOutput(narrative, { modelOutputs: [initial, repair] });
+  const state = JSON.parse(result.chat().scriptstate.$__itemx2_state).registry.items;
+  assert.equal(result.modelCalls, 2);
+  assert.equal(result.chatWrites, 1);
+  assert.equal(state.abyssal_apocalypse.power, '4850-5320');
+  assert.deepEqual(state.abyssal_apocalypse.effects.map((one) => one.name), ['심연의 포식', '종말의 전조', '완전한 결속']);
+  assert.equal(state.abyssal_apocalypse.augments[0].name, '+12 강화');
+  assert.equal(state.abyssal_apocalypse.required, '');
+  assert.equal(state.abyssal_apocalypse.durability, '');
+  assert.equal(state.abyssal_apocalypse.cost, '');
+  assert.equal(state.abyssal_apocalypse.emoji, '🗡️');
+  assert.equal(state.plain_ore.emoji, '🧱');
+  assert.match(result.prompts[1], /id=abyssal_apocalypse/);
+  assert.doesNotMatch(result.prompts[1], /id=plain_ore/);
+});
+
+test('failed partial repair commits once as partial_final and does not auto-retry', async () => {
+  const initial = '<itemExam><id>scarred_blade</id><name>상흔의 검</name><type>장검</type><emoji>❔</emoji><internalrarity>epic</internalrarity><power>1500-3999</power><possession>owned</possession><location>inventory</location></itemExam>';
+  const narrative = '상흔의 검을 감정했다.\n공격력: 4,200~4,600\n특수 효과: [핏빛 상흔]';
+  const result = await bootWithOutput(narrative, { modelOutputs: [initial, 'NONE'] });
+  assert.equal(result.modelCalls, 2);
+  assert.equal(result.chatWrites, 1);
+  const history = JSON.parse(result.chat().scriptstate.$__itemx2_aux_processed);
+  assert.equal(Object.values(history)[0].state, 'partial_final');
+  await result.intervals.find(({ ms }) => ms === 4500).fn();
+  await new Promise((resolveWait) => setTimeout(resolveWait, 500));
+  assert.equal(result.modelCalls, 2);
 });
