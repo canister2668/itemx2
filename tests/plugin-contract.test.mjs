@@ -10,10 +10,10 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.3$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.4$/m);
   assert.match(source, /^\/\/@display-name ITEMX 2$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 3'/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 4'/);
   assert.match(source, /ITEMX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -31,6 +31,12 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /activeRootTab: 'inventory'/);
   assert.match(source, /tab === 'bestiary' && loaded\.encountersEnabled \? await loadCodexPortraits/);
   assert.match(source, /선택한 탭만 준비하고 있답니다/);
+  assert.match(source, /itemx-body-scrolling/);
+  assert.match(source, /addEventListener\('scroll', scheduleBodyScrollEffects, true\)/);
+  assert.match(source, /bodyFxScrollTimer = globalThis\.setTimeout/);
+  assert.match(source, /const ITEMX_ROOT_PAGE_SIZE = 16/);
+  assert.match(source, /if \(!open\) return rootBadgeHtml\(\)/);
+  assert.match(source, /if \(open && tab === 'inventory'\) await installRootItemDetailClicks/);
   assert.match(source, /ITEMX 2 · 권한 및 설정/);
   assert.match(source, /itemx2-host-settings/);
   assert.match(source, /hostPluginSettingsVisible/);

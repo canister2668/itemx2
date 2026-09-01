@@ -4,14 +4,15 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.3';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 3';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.4';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 4';
 const ITEMX_MANUAL_KEY = '$__itemx2_manual_events';
 const ITEMX_MESSAGE_EVENT_KEY = '$__itemx2_message_events';
 const ITEMX_AUX_KEY = '$__itemx2_aux_processed';
 const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})-->/g;
 const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})-->/g;
 const ITEMX_AUX_SETTLE_MS = 1500;
+const ITEMX_ROOT_PAGE_SIZE = 16;
 const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX inventory"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="8.5" font-weight="900" letter-spacing="1.35">INVENTORY</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(ITEMX_BADGE_SVG)}`;
 
@@ -20,7 +21,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const queues = new Map();
   const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', activeRootTab: 'inventory', rootTabBusy: false, badgeEventOwner: null, badgeEventId: null, bodyFxEventOwner: null, bodyFxEventId: null, bodyFxTimer: null, bodyFxBusy: false, uiParts: [], generation: 0, remountTimer: null, catchUpTimer: null, hostSettingsTimer: null, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
+    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, badgeEventOwner: null, badgeEventId: null, bodyFxEventOwner: null, bodyFxEventId: null, bodyFxTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxBusy: false, uiParts: [], generation: 0, remountTimer: null, catchUpTimer: null, hostSettingsTimer: null, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', hooks: { output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null }, badgePosition: 'lb', compactContainer: true,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
@@ -215,6 +216,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-codex-card{position:relative;display:block;min-height:70px;border:1px solid #263247;border-radius:12px;background:linear-gradient(145deg,#121a28,#0b111b);overflow:hidden}.itemx2-codex-summary{position:relative;z-index:1;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(72px,auto);gap:10px;align-items:center;min-height:70px;padding:10px;cursor:pointer;list-style:none}.itemx2-codex-summary::-webkit-details-marker{display:none}.itemx2-codex-summary::after{content:'＋';position:absolute;right:8px;bottom:5px;color:#66758d;font-size:.7rem}.itemx2-codex-card[open]>.itemx2-codex-summary::after{content:'－';color:#d4af6e}.itemx2-codex-glyph{display:grid;place-items:center;width:48px;height:48px;border:1px solid #40506b;border-radius:11px;background:#0b111c;color:#dbe8ff;font-size:1.45rem}.itemx2-codex-copy{display:grid;gap:3px;min-width:0}.itemx2-codex-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#edf2fb;font-size:.82rem}.itemx2-codex-copy small{color:#8494ad;font-size:.66rem}.itemx2-codex-tags{display:flex;flex-wrap:wrap;gap:4px}.itemx2-codex-tags i{padding:2px 5px;border:1px solid #344259;border-radius:999px;color:#aebbd0;font-size:.58rem;font-style:normal}.itemx2-codex-detail{position:relative;z-index:1;display:grid;gap:8px;padding:10px 12px 12px;border-top:1px solid #202b3c;background:rgba(7,11,18,.72);color:#b8c4d7;font-size:.68rem;line-height:1.55}.itemx2-codex-detail p{margin:0;color:#c8d2e1;white-space:pre-wrap}.itemx2-codex-detail-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px}.itemx2-codex-detail-row b{color:#74849d;font-size:.62rem}.itemx2-codex-detail-row span{overflow-wrap:anywhere}.itemx2-skill-meta{position:relative;z-index:1;display:grid;grid-template-columns:auto auto;gap:2px 5px;align-items:center;padding:6px 7px;border:1px solid #2e3a50;border-radius:9px;background:rgba(9,14,23,.82);font-size:.58rem}.itemx2-skill-meta small{color:#6f809a}.itemx2-skill-meta b{color:#dce6f5;font-size:.62rem;text-align:right}.itemx2-mastery{grid-column:2/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.itemx2-mastery i{height:5px;border-radius:6px;background:#202a3a;overflow:hidden}.itemx2-mastery i.on{background:linear-gradient(90deg,#66b8ff,#a985ff);box-shadow:0 0 8px rgba(102,184,255,.35)}.itemx2-skill-card::after{content:'';position:absolute;right:-18px;top:-25px;width:82px;height:82px;border:1px solid rgba(114,181,255,.18);border-radius:50%;box-shadow:0 0 20px rgba(90,147,255,.12);animation:itemx2-skill-orbit 5s linear infinite}.itemx2-bestiary-card.active{border-color:#70404a;box-shadow:inset 3px 0 #b55b68}.itemx2-bestiary-card img{width:48px;height:48px;border-radius:11px;object-fit:cover}.itemx2-codex-empty{padding:34px 16px;text-align:center;color:#6f7e96;font-size:.75rem}.itemx2-codex-note{padding:9px 10px;border:1px solid #1c2635;border-radius:9px;background:#0c121c;color:#8594aa;font-size:.66rem;line-height:1.45}@keyframes itemx2-skill-orbit{to{transform:rotate(360deg)}}
 .itemx-tile,.itemx2-codex-card{content-visibility:auto;contain:layout paint style}.itemx-tile{contain-intrinsic-size:92px}.itemx2-codex-card{contain-intrinsic-size:78px}
 .itemx2-root-inventory{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-inventory>.itemx-body{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding-bottom:calc(.95em + env(safe-area-inset-bottom,0px))}
+.itemx2-root-inventory>.itemx-pf{display:flex;align-items:center;justify-content:space-between;gap:8px}.itemx2-root-pager{display:inline-flex;align-items:center;gap:7px}.itemx2-root-pager button{width:30px;height:28px;border:1px solid #2d394c;border-radius:7px;background:#151d2a;color:#d9e4f3;font:inherit;font-weight:900}.itemx2-root-pager button:disabled{opacity:.3}.itemx2-root-pager b{min-width:42px;color:#9eabc0;font-size:.65rem;text-align:center}
 .itemx2-root-item{display:block}.itemx2-root-tile-label{display:block;cursor:pointer}.itemx2-root-tile-label .itemx-tile{width:100%;pointer-events:none}
 .itemx2-root-detail{display:none}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-filters,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-tools,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-pf{display:none}
 .itemx2-root-settings{display:none;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-bestiary{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-settings{display:grid;gap:10px}
@@ -237,7 +239,8 @@ ${codexPageStyle()}
   function prefixRisuClasses(css) {
     return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) => name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`);
   }
-  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${rootDrawerStyle()}`)}\n${badgeStyle()}`;
+  const bodyScrollStyle = `.x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-fx, .x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-fx *, .x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-cond *{animation-play-state:paused!important}`;
+  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${badgeStyle()}`;
 
   function enqueue(key, work) {
     const prev = queues.get(key) || Promise.resolve();
@@ -254,7 +257,14 @@ ${codexPageStyle()}
       if (messageEvents(chat, text, 'item').length || messageEvents(chat, text, 'codex').length) { latest = text; break; }
     }
     runtime.latestOutput = latest;
-    runtime.latestMarkers = markerCodes(latest);
+    const persisted = markerCodes(latest);
+    if (runtime.pendingMarkersAt && Date.now() - runtime.pendingMarkersAt < 12000) {
+      for (const marker of runtime.pendingMarkers) persisted.add(marker);
+    } else {
+      runtime.pendingMarkers.clear();
+      runtime.pendingMarkersAt = 0;
+    }
+    runtime.latestMarkers = persisted;
   }
 
   function manualLedger(chat) {
@@ -959,6 +969,8 @@ ${codexPageStyle()}
       if (result.events.length || result.errors.length || codexResult.events.length || codexResult.errors.length || codexResult.content !== content) {
         runtime.latestOutput = positioned;
         runtime.latestMarkers = markerCodes(positioned);
+        runtime.pendingMarkers = new Set(runtime.latestMarkers);
+        runtime.pendingMarkersAt = Date.now();
         const errors = result.errors.length + codexResult.errors.length, events = result.events.length + codexResult.events.length;
         runtime.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
         runtime.generation += 1;
@@ -1038,6 +1050,21 @@ ${codexPageStyle()}
     }, 90);
   }
 
+  function scheduleBodyScrollEffects() {
+    if (!runtime.bodyFxEventOwner) return;
+    if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
+    if (!runtime.bodyFxScrollActive) {
+      runtime.bodyFxScrollActive = true;
+      void runtime.bodyFxEventOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
+    }
+    runtime.bodyFxScrollTimer = globalThis.setTimeout(() => {
+      runtime.bodyFxScrollTimer = null;
+      runtime.bodyFxScrollActive = false;
+      void runtime.bodyFxEventOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+      scheduleBodyEffectVisibility();
+    }, 180);
+  }
+
   async function updateBodyEffectVisibility() {
     if (!runtime.mainDoc || runtime.bodyFxBusy) return;
     runtime.bodyFxBusy = true;
@@ -1046,7 +1073,7 @@ ${codexPageStyle()}
       const cards = await Risuai.unwarpSafeArray(safeCards);
       for (const card of cards.slice(-32)) {
         const rect = await card.getBoundingClientRect();
-        const active = rect.bottom >= -360 && rect.top <= 1400;
+        const active = rect.bottom >= -120 && rect.top <= 1000;
         if (active) await card.removeClass('x-risu-itemx-fx-paused');
         else await card.addClass('x-risu-itemx-fx-paused');
       }
@@ -1060,7 +1087,7 @@ ${codexPageStyle()}
       const body = await runtime.mainDoc.querySelector('body');
       if (!body) return;
       runtime.bodyFxEventOwner = body;
-      runtime.bodyFxEventId = await body.addEventListener('scroll', scheduleBodyEffectVisibility, true);
+      runtime.bodyFxEventId = await body.addEventListener('scroll', scheduleBodyScrollEffects, true);
       scheduleBodyEffectVisibility();
     } catch (error) { debugRecord('body effect governor install', error?.message || String(error)); }
   }
@@ -1117,6 +1144,14 @@ ${codexPageStyle()}
     return reg.order.map((id) => reg.items[id]).filter(Boolean);
   }
 
+  function rootPageItems(loaded) {
+    const all = itemsOf(loaded?.snapshot).slice(0, 60);
+    const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
+    runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
+    const start = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
+    return all.slice(start, start + ITEMX_ROOT_PAGE_SIZE);
+  }
+
   function itemDetailHtml(item) {
     const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify(item))}`;
     if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
@@ -1133,7 +1168,7 @@ ${codexPageStyle()}
   }
 
   async function installRootItemDetailClicks(loaded) {
-    const detailItems = itemsOf(loaded?.snapshot).slice(0, 60);
+    const detailItems = rootPageItems(loaded);
     await Promise.all(detailItems.map(async (item, index) => {
       const tile = await queryMainClass(`itemx2-root-tile-${index}`);
       if (!tile) return;
@@ -1159,6 +1194,7 @@ ${codexPageStyle()}
     }
     runtime.rootDrawer = null;
     runtime.rootFingerprint = '';
+    runtime.rootContentReady = false;
     runtime.badgeEventOwner = null;
     runtime.badgeEventId = null;
   }
@@ -1254,10 +1290,13 @@ ${codexPageStyle()}
     const nextKey = active?.key || '';
     if (runtime.activeContextKey === nextKey) return false;
     runtime.activeContextKey = nextKey;
+    runtime.rootItemPage = 0;
     runtime.cachedLoaded = null;
     runtime.cachedGeneration = -1;
     runtime.latestMarkers = new Set();
     runtime.latestOutput = '';
+    runtime.pendingMarkers.clear();
+    runtime.pendingMarkersAt = 0;
     runtime.eventPayloads = new Map();
     runtime.markerHtmlCache.clear();
     runtime.detailHtmlCache.clear();
@@ -1271,6 +1310,12 @@ ${codexPageStyle()}
     runtime.legacyCommitTimer = null;
     if (runtime.bodyFxTimer) globalThis.clearTimeout(runtime.bodyFxTimer);
     runtime.bodyFxTimer = null;
+    if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
+    runtime.bodyFxScrollTimer = null;
+    if (runtime.bodyFxScrollActive && runtime.bodyFxEventOwner) {
+      try { await runtime.bodyFxEventOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
+    }
+    runtime.bodyFxScrollActive = false;
     await removeRootDrawer();
     return true;
   }
@@ -1393,8 +1438,17 @@ ${codexPageStyle()}
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero"><b class="itemx-threat-banner">THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '현재 교전 기록' : '보관 기록'}</strong></span></div>${monster.description ? `<section class="itemx-codex-section"><h4>관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('별칭', monster.aliases, '없음')}${chips('확인된 약점', monster.weaknesses, '미상')}${chips('확인된 내성', monster.resistances, '미상')}${chips('관측 행동', monster.moves, '미상')}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
   }
 
+  function rootBadgeHtml() {
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX"></div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+  }
+
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
+    if (!open) return rootBadgeHtml();
     const all = itemsOf(loaded.snapshot).slice(0, 60);
+    const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
+    runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
+    const pageStart = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
+    const inventoryPage = tab === 'inventory' ? all.slice(pageStart, pageStart + ITEMX_ROOT_PAGE_SIZE) : [];
     const skills = (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean).slice(0, 60);
     const monsters = (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean).slice(0, 60);
     const counts = {
@@ -1410,7 +1464,7 @@ ${codexPageStyle()}
       const portrait = loaded.portraits?.[monster.portrait] || '';
       return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label>${monsterPageHtml(monster, portrait, '<label class="itemx-codex-back" for="itemx2-monster-none">‹ 조우 목록</label>')}</div>`;
     }).join('') || '<div class="itemx2-codex-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>') : '';
-    const list = tab === 'inventory' ? (all.map((item, index) => {
+    const list = tab === 'inventory' ? (inventoryPage.map((item, index) => {
       const detailId = `itemx2-detail-${index}`;
       const tile = ITEMXRenderer.renderTile(item).replace(/^<button\b/, '<span').replace(/<\/button>$/, '</span>');
       const classes = [item.possession === 'owned' && 'itemx2-match-owned', item.location === 'equipped' && 'itemx2-match-equipped', item.possession === 'observed' && 'itemx2-match-observed', item.possession === 'removed' && 'itemx2-match-removed'].filter(Boolean).join(' ');
@@ -1426,12 +1480,14 @@ ${codexPageStyle()}
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
     const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
-    const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">✦ 속성 효과</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf">${all.length}점 표시${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</footer></div>`;
+    const pager = pageCount > 1 ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>` : '';
+    const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
+    const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">✦ 속성 효과</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
     const skillsContent = `<div class="itemx2-root-skills itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-skill-none" name="itemx2-skill-detail" type="radio" checked><div class="itemx2-codex-note">장착·봉인·본문에서 다시 언급된 스킬만 모델 문맥에 제한적으로 전달됩니다.</div>${skillList}</div>`;
     const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>${monsterList}</div>`;
     const activeContent = tab === 'skills' ? skillsContent : tab === 'bestiary' ? bestiaryContent : tab === 'settings' ? settings : inventoryContent;
     const tabs = [['inventory', '인벤'], ['skills', '스킬'], ['bestiary', '조우 도감'], ['settings', '설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
-    return `${controls}<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX"></div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div><div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${activeContent}</div></section></div>`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${activeContent}</div></section></div>`;
   }
 
   const rootStateFingerprint = (loaded) => [loaded.snapshot?.fingerprint, loaded.codexSnapshot?.fingerprint, Number(loaded.enabled), Number(loaded.itemsEnabled), Number(loaded.skillsEnabled), Number(loaded.encountersEnabled), Number(loaded.mainOutput), loaded.auxOutput, loaded.rarityMode, Number(loaded.debugEnabled)].join(':');
@@ -1449,7 +1505,7 @@ ${codexPageStyle()}
         if (!loaded) return;
         loaded.enabled = await isEnabled(loaded.character); Object.assign(loaded, await outputSettings(loaded.character));
         const fingerprint = rootStateFingerprint(loaded);
-        if (runtime.rootFingerprint !== fingerprint || !(await setRootOpen(true))) await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
+        if (!runtime.rootContentReady || runtime.rootFingerprint !== fingerprint || !(await setRootOpen(true))) await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
       } catch (error) { fail('native badge click', error); }
     });
     await owner.addEventListener('click', async (event) => {
@@ -1470,10 +1526,32 @@ ${codexPageStyle()}
           if (runtime.rootTabBusy || runtime.activeRootTab === tab) return;
           runtime.rootTabBusy = true;
           try {
+            if (tab === 'inventory') runtime.rootItemPage = 0;
             const body = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
             if (body) await body.setInnerHTML(`<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>${label} 불러오는 중</strong><small>선택한 탭만 준비하고 있답니다.</small></div>`);
             await delay(24);
             await openRootInventory({ open: true, tab });
+          } finally { runtime.rootTabBusy = false; }
+          return;
+        }
+        for (const [direction, selector] of [[-1, '.x-risu-itemx2-root-page-prev'], [1, '.x-risu-itemx2-root-page-next']]) {
+          const button = runtime.mainDoc && await runtime.mainDoc.querySelector(selector);
+          if (!button) continue;
+          const rect = await button.getBoundingClientRect();
+          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+          if (runtime.rootTabBusy) return;
+          const loaded = await cachedOrRebuildCurrent();
+          if (!loaded) return;
+          const pageCount = Math.max(1, Math.ceil(Math.min(60, itemsOf(loaded.snapshot).length) / ITEMX_ROOT_PAGE_SIZE));
+          const nextPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage + direction));
+          if (nextPage === runtime.rootItemPage) return;
+          runtime.rootItemPage = nextPage;
+          runtime.rootTabBusy = true;
+          try {
+            const body = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
+            if (body) await body.setInnerHTML('<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>');
+            await delay(24);
+            await openRootInventory({ open: true, tab: 'inventory', loaded });
           } finally { runtime.rootTabBusy = false; }
           return;
         }
@@ -1739,9 +1817,10 @@ ${codexPageStyle()}
       if (runtime.activeContextKey !== loaded.key) { await root.remove(); return; }
       runtime.rootDrawer = root;
       runtime.rootFingerprint = rootStateFingerprint(loaded);
+      runtime.rootContentReady = open;
       runtime.activeRootTab = tab;
       await installNativeBadgeClick(root);
-      if (tab === 'inventory') await installRootItemDetailClicks(loaded);
+      if (open && tab === 'inventory') await installRootItemDetailClicks(loaded);
     } catch (error) {
       runtime.status = '인벤토리 열기 오류';
       await removeRootDrawer();
@@ -2070,6 +2149,14 @@ ${codexPageStyle()}
     runtime.auxToastTimer = null;
     if (runtime.legacyCommitTimer) globalThis.clearTimeout(runtime.legacyCommitTimer);
     runtime.legacyCommitTimer = null;
+    if (runtime.bodyFxTimer) globalThis.clearTimeout(runtime.bodyFxTimer);
+    runtime.bodyFxTimer = null;
+    if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
+    runtime.bodyFxScrollTimer = null;
+    if (runtime.bodyFxScrollActive && runtime.bodyFxEventOwner) {
+      try { await runtime.bodyFxEventOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
+    }
+    runtime.bodyFxScrollActive = false;
     try { await Risuai.hideContainer(); } catch {}
     await removeRootDrawer();
     try { if (runtime.badgeEventOwner && runtime.badgeEventId) await runtime.badgeEventOwner.removeEventListener('click', runtime.badgeEventId); } catch {}

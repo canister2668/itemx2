@@ -43,6 +43,12 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   const cleaned = await replacers.afterRequest(raw, 'main');
   assert.equal(cleaned.includes('<itemExam>'), false);
   assert.match(cleaned, /<!--ITEMX2:/);
+  // The inventory poll can still see the pre-commit chat between the final
+  // response hook and the host's first display pass. That stale rebuild must
+  // not clear the just-produced marker or the card appears only after editing.
+  await replacers.beforeRequest([{ role: 'user', content: '커밋 전 경합을 재현한다.' }], 'main');
+  const immediateDisplay = await handlers.display(cleaned);
+  assert.match(immediateDisplay, /itemx-card/);
   chat.message.push({ role: 'char', data: cleaned });
   await new Promise((resolve) => setTimeout(resolve, 130));
   assert.equal(chat.scriptstate.$__itemx2_state, undefined);
