@@ -6,15 +6,16 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async () => {
+test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', async () => {
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.9$/m);
-  assert.match(source, /^\/\/@display-name ITEMX 2$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.10$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX$/m);
+  assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 9'/);
-  assert.match(source, /ITEMX · \$\{ITEMX_VERSION_LABEL\}/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 10'/);
+  assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
   assert.match(source, /addRisuReplacer\('afterRequest'/);
@@ -24,8 +25,8 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /runtime\.hooks\.listener = 'unsupported'/);
   assert.match(source, /scheduleLegacyCommitRecovery/);
   assert.match(source, /연결 및 권한/);
-  assert.match(source, /ITEMX 연결 및 권한 확인 완료/);
-  assert.match(source, /ITEMX 초기화 중…/);
+  assert.match(source, /ITEMX CODEX 연결 및 권한 확인 완료/);
+  assert.match(source, /ITEMX CODEX 초기화 중…/);
   assert.match(source, /itemx2-boot-card/);
   assert.match(source, /itemx2-feedback-success/);
   assert.match(source, /activeRootTab: 'inventory'/);
@@ -48,7 +49,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.equal((rootRouter.match(/addEventListener\('click'/g) || []).length, 1);
   assert.match(rootRouter, /rootClickBindings = \[\{ type: 'click', id, capture: true \}\]/);
   assert.match(rootRouter, /itemx2-root-detail-body-/);
-  assert.match(source, /ITEMX 2 · 권한 및 설정/);
+  assert.match(source, /ITEMX CODEX · 권한 및 설정/);
   assert.match(source, /itemx2-host-settings/);
   assert.match(source, /hostPluginSettingsVisible/);
   assert.match(source, /보조 모델 상태/);
@@ -136,7 +137,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /⚔️ ENCOUNTER ARCHIVE/);
   assert.match(source, /touch-action:pan-y;-webkit-overflow-scrolling:touch/);
   assert.equal(source.includes('registerButton('), false);
-  assert.match(source, /registerSetting\('ITEMX 2 · 권한 및 설정', openSettingsFromRisuMenu/);
+  assert.match(source, /registerSetting\('ITEMX CODEX · 권한 및 설정', openSettingsFromRisuMenu/);
   assert.equal(source.includes('requestPermission: false'), false);
   assert.match(source, /requestPluginPermission\('replacer'\)/);
   assert.match(source, /runtime\.permissions\.replacer = permission === true/);
@@ -174,7 +175,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /compactRefMarker\(prefix, ref, payload, domain\)/);
   assert.match(source, /embeddedViewCode/);
   assert.match(source, /inlineViewPayload\(inline, 'item'\)/);
-  assert.match(source, /ITEMX · 기록 복원 중/);
+  assert.match(source, /ITEMX CODEX · 기록 복원 중/);
   assert.match(source, /runtime\.catchUpFailedFingerprint = fingerprint/);
   assert.match(source, /runtime\.catchUpRetryAt = Date\.now\(\) \+ Math\.min\(120000/);
   assert.equal(source.includes("settings.auxOutput === 'missing' && sourceEvents.length"), false);
@@ -231,7 +232,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /runtime\.markerHtmlCache\.clear\(\)/);
   assert.match(source, /runtime\.lastDomError/);
   assert.match(source, /await delay\(300\)/);
-  assert.equal(source.includes("registerSetting('ITEMX 2 · 설정', () => openInventory('settings')"), false);
+  assert.equal(source.includes("registerSetting('ITEMX CODEX · 설정', () => openInventory('settings')"), false);
   assert.equal(source.includes("showContainer('fullscreen')"), false);
   assert.match(source, /async function openRootInventory/);
   assert.match(source, /x-itemx2-drawer/);

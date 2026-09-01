@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.9';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 9';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.10';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 10';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -16,7 +16,7 @@ const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/
 const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
 const ITEMX_AUX_SETTLE_MS = 1500;
 const ITEMX_ROOT_PAGE_SIZE = 16;
-const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX inventory"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="8.5" font-weight="900" letter-spacing="1.35">INVENTORY</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX CODEX"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="10.5" font-weight="900" letter-spacing="2">CODEX</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(ITEMX_BADGE_SVG)}`;
 
 (async () => {
@@ -296,10 +296,10 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       rm: 'right:4px!important;left:auto!important;top:50%!important;bottom:auto!important;transform:translateY(-50%)!important;border-radius:8px 0 0 8px!important',
       rt: 'right:4px!important;left:auto!important;top:calc(4.5rem + env(safe-area-inset-top,0px))!important;bottom:auto!important;transform:none!important;border-radius:8px 0 0 8px!important'
     };
-    const button = 'button[aria-label="ITEMX"],button:has(img[src*="ITEMX%20inventory"])';
-    const states = 'button[aria-label="ITEMX"]:hover,button[aria-label="ITEMX"]:active,button[aria-label="ITEMX"]:focus,button:has(img[src*="ITEMX%20inventory"]):hover,button:has(img[src*="ITEMX%20inventory"]):active,button:has(img[src*="ITEMX%20inventory"]):focus';
-    const wrappers = 'button[aria-label="ITEMX"]>div,button:has(img[src*="ITEMX%20inventory"])>div';
-    const images = 'button[aria-label="ITEMX"] img,button:has(img[src*="ITEMX%20inventory"]) img[src*="ITEMX%20inventory"]';
+    const button = 'button[aria-label="ITEMX CODEX"],button[aria-label="ITEMX"],button:has(img[src*="ITEMX%20CODEX"]),button:has(img[src*="ITEMX%20inventory"])';
+    const states = 'button[aria-label="ITEMX CODEX"]:hover,button[aria-label="ITEMX CODEX"]:active,button[aria-label="ITEMX CODEX"]:focus,button[aria-label="ITEMX"]:hover,button[aria-label="ITEMX"]:active,button[aria-label="ITEMX"]:focus,button:has(img[src*="ITEMX%20CODEX"]):hover,button:has(img[src*="ITEMX%20CODEX"]):active,button:has(img[src*="ITEMX%20CODEX"]):focus,button:has(img[src*="ITEMX%20inventory"]):hover,button:has(img[src*="ITEMX%20inventory"]):active,button:has(img[src*="ITEMX%20inventory"]):focus';
+    const wrappers = 'button[aria-label="ITEMX CODEX"]>div,button[aria-label="ITEMX"]>div,button:has(img[src*="ITEMX%20CODEX"])>div,button:has(img[src*="ITEMX%20inventory"])>div';
+    const images = 'button[aria-label="ITEMX CODEX"] img,button[aria-label="ITEMX"] img,button:has(img[src*="ITEMX%20CODEX"]) img[src*="ITEMX%20CODEX"],button:has(img[src*="ITEMX%20inventory"]) img[src*="ITEMX%20inventory"]';
     return `${button}{${positions[runtime.badgePosition] || positions.lb};display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;outline:0!important;background:none!important;background-color:transparent!important;box-shadow:none!important;cursor:pointer!important;touch-action:manipulation!important;z-index:50!important}${states}{background:none!important;background-color:transparent!important;box-shadow:none!important}${wrappers}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}${images}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;max-width:48px!important;max-height:176px!important;border-radius:0!important;object-fit:contain!important}`;
   }
 
@@ -1267,11 +1267,11 @@ ${codexPageStyle()}
     }).replace(ITEMX_REF_RE, (_, ref, inline) => {
       found = true;
       const payload = inlineViewPayload(inline, 'item') || runtime.eventPayloads.get(`item:${ref}`);
-      if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX · 기록 복원 중</span>`;
+      if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
       const html = renderPayload(`item-ref:${ref}`, payload, itemMotion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.view || payload.event?.item;
-      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX · ${ITEMXCore.esc(ref)}</span>`;
+      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX CODEX · ${ITEMXCore.esc(ref)}</span>`;
     }).replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
       found = true;
       const payload = inlineViewPayload(inline, 'codex') || runtime.eventPayloads.get(`codex:${ref}`), entity = payload?.view || payload?.event?.entity;
@@ -1473,7 +1473,7 @@ ${codexPageStyle()}
     runtime.rootContentReady = false;
   }
 
-  async function mountRootLoading(label = 'ITEMX 초기화 중…') {
+  async function mountRootLoading(label = 'ITEMX CODEX 초기화 중…') {
     if (!runtime.mainDoc) return false;
     await removeRootDrawer();
     const root = await runtime.mainDoc.createElement('div');
@@ -1573,7 +1573,7 @@ ${codexPageStyle()}
       const targets = await Risuai.unwarpSafeArray(safeTargets);
       for (const target of targets.slice(0, 96)) {
         const text = String(await target.textContent() || '').replace(/\s+/g, ' ').trim();
-        if (!text.includes('ITEMX 2 · 권한 및 설정')) continue;
+        if (!text.includes('ITEMX CODEX · 권한 및 설정')) continue;
         const rect = await target.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) return true;
       }
@@ -1763,14 +1763,14 @@ ${codexPageStyle()}
   }
 
   function rootBadgeHtml() {
-    const update = runtime.update.available ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX 업데이트 가능">↑</span>` : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    const update = runtime.update.available ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>` : '';
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
   const updateLabelHtml = () => runtime.update.available ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>` : '';
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
-    if (!open) return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
+    if (!open) return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
     const all = itemsOf(loaded.snapshot).slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
@@ -1806,7 +1806,7 @@ ${codexPageStyle()}
     const domainControls = [['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'], ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'], ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']].map(([key, label, value, note]) => `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label} · ${value ? 'ON' : 'OFF'}</strong><small>${note}</small></button>`).join('');
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
-    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
     const pager = pageCount > 1 ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>` : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
     const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
@@ -1815,7 +1815,7 @@ ${codexPageStyle()}
     const activeContent = tab === 'skills' ? skillsContent : tab === 'bestiary' ? bestiaryContent : tab === 'settings' ? settings : inventoryContent;
     const tabs = [['inventory', '📦 인벤'], ['skills', '✨ 스킬'], ['bestiary', '⚔️ 조우'], ['settings', '⚙️ 설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
     const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
-    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
   function rootInventoryRegions(html) {
@@ -1965,7 +1965,7 @@ ${codexPageStyle()}
                       await commitManualEvents(loaded, [itemEvent], note ? '정보 수정' : '재감정');
                     } catch (error) {
                       runtime.status = '재감정 실패';
-                      if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX: ${error.message || error}`);
+                      if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`);
                     }
                     await openRootInventory({ open: true, tab: 'settings' });
                     return;
@@ -1979,7 +1979,7 @@ ${codexPageStyle()}
                     if (typeof Risuai.alertConfirm === 'function' && !(await Risuai.alertConfirm(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
                     const itemEvent = { kind: 'patch', patch: { id: target.id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null } };
                     try { await commitManualEvents(loaded, [itemEvent], '수동 제거'); }
-                    catch (error) { runtime.status = '수동 제거 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX: ${error.message || error}`); }
+                    catch (error) { runtime.status = '수동 제거 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); }
                     await openRootInventory({ open: true, tab: 'settings' });
                     return;
                   }
@@ -1991,14 +1991,14 @@ ${codexPageStyle()}
                 if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
                   const createNoteElement = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-note');
                   const createNote = (await createNoteElement?.textContent())?.trim() || '';
-                  if (!createNote) { if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX: 생성할 아이템 설명을 입력하세요.'); return; }
+                  if (!createNote) { if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.'); return; }
                   runtime.status = '신규 아이템 생성 중';
                   try {
                     const itemEvent = await runItemModel('create', loaded, null, createNote);
                     await commitManualEvents(loaded, [itemEvent], '신규 생성');
                   } catch (error) {
                     runtime.status = '아이템 생성 실패';
-                    if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX: ${error.message || error}`);
+                    if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`);
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
                   return;
@@ -2015,18 +2015,18 @@ ${codexPageStyle()}
             runtime.connectionBusy = true;
             runtime.status = '연결 및 권한 확인 중';
             await updateConnectionUi();
-            await showRootFeedback('ITEMX 연결과 권한을 확인하는 중입니다…', 'working', 0);
+            await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
             try {
               const connected = await installPipelineHooks({ prompt: true });
               const styled = await installMainStyle();
               runtime.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
               if (connected && styled) {
-                await showRootFeedback('ITEMX 연결 및 권한 확인 완료', 'success');
+                await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
               } else {
                 await showRootFeedback(`연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`, 'error', 3600);
               }
               if ((!connected || !styled) && typeof Risuai.alertError === 'function') {
-                await Risuai.alertError(`ITEMX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`);
+                await Risuai.alertError(`ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`);
               }
             } finally {
               runtime.connectionBusy = false;
@@ -2221,7 +2221,7 @@ ${codexPageStyle()}
       const styled = await installMainStyle({ prompt: true });
       if (!styled || !runtime.mainDoc) {
         runtime.status = '메인 화면 권한 필요';
-        if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX 인벤토리를 열려면 메인 화면 권한이 필요합니다.');
+        if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.');
         return;
       }
       let root = runtime.rootDrawer, attached = false;
@@ -2282,7 +2282,7 @@ ${codexPageStyle()}
     const manageOptions = ui.tab === 'settings' ? all.map((item) => `<option value="${ITEMXCore.esc(item.id)}" ${item.id === ui.manageId ? 'selected' : ''}>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)} · ${ITEMXCore.esc(item.id)}</option>`).join('') : '';
     const enabled = loaded.enabled === true;
     const inventoryContent = !enabled
-      ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
+      ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX CODEX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
       : (selected ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion ? 'full' : 'off' })}</div></div>` : `<nav class="itemx-seg">${[['all', '전체'], ['owned', '보유'], ['equipped', '장착'], ['observed', '관찰'], ['removed', '소실']].map(([key, label]) => `<button class="itemx-seg-i ${ui.filter === key ? 'itemx-seg-on' : ''}" data-filter="${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></button>`).join('')}</nav><div class="itemx-tools"><button class="itemx-tool" data-action="motion">${ui.motion ? '✦ 모션' : '◇ 정지'}</button><input class="itemx-search itemx-search-input" value="${ITEMXCore.esc(ui.query)}" placeholder="검색" aria-label="검색"><button class="itemx-tool" data-action="rebuild">↻</button></div><div class="itemx-body"><div class="itemx-grid">${visible.map(ITEMXRenderer.renderTile).join('') || '<div class="itemx-empty">표시할 아이템이 없답니다.</div>'}</div></div><footer class="itemx-pf">${visible.length}점 표시${all.filter(matches).length > 60 ? ' · 첫 60점' : ''}</footer>`);
     const permissionLabel = runtime.permissions.replacer === true ? '연결됨' : runtime.permissions.replacer === false ? '권한 필요' : '확인 중';
     const styleLabel = runtime.permissions.mainDom === true ? '고정 스타일' : runtime.permissions.mainDom === false ? '본문 폴백' : '확인 중';
@@ -2291,7 +2291,7 @@ ${codexPageStyle()}
     const domainControls = [['items', '무기·아이템', loaded.itemsEnabled], ['skills', '스킬', loaded.skillsEnabled], ['encounters', '전투 도감', loaded.encountersEnabled]].map(([key, label, value]) => `<button class="itemx-tool ${value ? 'itemx-setting-on' : ''}" data-action="domain-${key}">${label} ${value ? 'ON' : 'OFF'}</button>`).join('');
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
-    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 누락 복구합니다.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
+    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 누락 복구합니다.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
     const iframeSkills = ui.tab === 'skills' ? (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean) : [];
     const iframeMonsters = ui.tab === 'bestiary' ? (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean) : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
@@ -2301,7 +2301,7 @@ ${codexPageStyle()}
     const skillsContent = `<div class="itemx-settings">${selectedSkill ? skillPageHtml(selectedSkill, '<button class="itemx-codex-back" data-action="back-skill">‹ 스킬 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${skillRows || '<div class="itemx-empty">아직 확정된 스킬이 없답니다.</div>'}</div>`}</div>`;
     const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.portrait] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
     const content = ui.tab === 'settings' ? settingsContent : ui.tab === 'skills' ? skillsContent : ui.tab === 'bestiary' ? bestiaryContent : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${content}</section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${content}</section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => { void closeInventory(); });
     root.querySelector('[data-action="back"]')?.addEventListener('click', () => { ui.selected = null; drawInventory(loaded); });
     root.querySelector('[data-action="back-skill"]')?.addEventListener('click', () => { ui.selectedSkill = null; drawInventory(loaded); });
@@ -2321,15 +2321,15 @@ ${codexPageStyle()}
     root.querySelector('[data-action="permissions"]')?.addEventListener('click', async () => {
       runtime.status = '모델 처리 권한 확인 중'; drawInventory(loaded);
       const connected = await installPipelineHooks({ prompt: true });
-      if (connected && typeof Risuai.alert === 'function') await Risuai.alert('ITEMX 모델 처리 권한이 연결되었습니다.');
-      else if (!connected && typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`);
+      if (connected && typeof Risuai.alert === 'function') await Risuai.alert('ITEMX CODEX 모델 처리 권한이 연결되었습니다.');
+      else if (!connected && typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`);
       const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
     });
     root.querySelector('[data-action="style"]')?.addEventListener('click', async () => {
       runtime.status = '본문 화면 연결 중'; drawInventory(loaded);
       const styled = await installMainStyle({ prompt: true });
-      if (styled && typeof Risuai.alert === 'function') await Risuai.alert('ITEMX 본문 화면 연결이 완료되었습니다.');
-      else if (!styled && typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`);
+      if (styled && typeof Risuai.alert === 'function') await Risuai.alert('ITEMX CODEX 본문 화면 연결이 완료되었습니다.');
+      else if (!styled && typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`);
       drawInventory(loaded);
     });
     root.querySelector('[data-action="badge-position"]')?.addEventListener('change', async (event) => { const value = event.target.value; if (!BADGE_POSITIONS.some(([key]) => key === value)) return; runtime.badgePosition = value; await Risuai.pluginStorage.setItem('badgePosition', value); if (runtime.rootDrawer) { for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`); await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`); } await installMainStyle(); runtime.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`; drawInventory(loaded); });
@@ -2341,7 +2341,7 @@ ${codexPageStyle()}
         runtime.status = '수동 제거 처리 중'; drawInventory(loaded);
         const event = { kind: 'patch', patch: { id: target.id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null } };
         const next = await commitManualEvents(loaded, [event], '수동 제거'); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '수동 제거 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX: ${error.message || error}`); drawInventory(loaded); }
+      } catch (error) { runtime.status = '수동 제거 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); drawInventory(loaded); }
     });
     root.querySelector('[data-action="manage-reroll"]')?.addEventListener('click', async () => {
       try {
@@ -2350,7 +2350,7 @@ ${codexPageStyle()}
         runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중'; drawInventory(loaded);
         const event = await runItemModel('reroll', loaded, target, note);
         const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정'); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '재감정 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX: ${error.message || error}`); drawInventory(loaded); }
+      } catch (error) { runtime.status = '재감정 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); drawInventory(loaded); }
     });
     root.querySelector('[data-action="manage-create"]')?.addEventListener('click', async () => {
       try {
@@ -2358,7 +2358,7 @@ ${codexPageStyle()}
         runtime.status = '신규 아이템 생성 중'; drawInventory(loaded);
         const event = await runItemModel('create', loaded, null, note);
         const next = await commitManualEvents(loaded, [event], '신규 생성'); ui.manageId = event.item.id; if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '아이템 생성 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX: ${error.message || error}`); drawInventory(loaded); }
+      } catch (error) { runtime.status = '아이템 생성 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); drawInventory(loaded); }
     });
     root.querySelectorAll('[data-tab]').forEach((el) => el.addEventListener('click', () => {
       if (ui.tab === el.dataset.tab) return;
@@ -2444,7 +2444,7 @@ ${codexPageStyle()}
     if (!active) {
       runtime.allowDrawerOverSettings = false;
       runtime.status = '채팅 진입 대기';
-      const message = 'ITEMX 설정과 인벤토리는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
+      const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
       if (typeof Risuai.alertNormal === 'function') await Risuai.alertNormal(message);
       else if (typeof Risuai.alertError === 'function') await Risuai.alertError(message);
       return;
@@ -2453,13 +2453,13 @@ ${codexPageStyle()}
     runtime.allowDrawerOverSettings = true;
     let styled = Boolean(runtime.mainDoc) || await installMainStyle();
     const loadingStarted = styled ? Date.now() : 0;
-    if (styled) await mountRootLoading('ITEMX 설정 불러오는 중…');
+    if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     await updateRootLoading('연결과 권한 확인 중…');
     const connected = await installPipelineHooks({ prompt: true });
     if (!styled) {
       await delay(300);
       styled = await installMainStyle();
-      if (styled) await mountRootLoading('ITEMX 설정 불러오는 중…');
+      if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     }
     await updateRootLoading('인벤토리 상태 확인 중…');
     runtime.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
@@ -2536,7 +2536,7 @@ ${codexPageStyle()}
 
   try {
     await loadBadgePosition();
-    const setting = await Risuai.registerSetting('ITEMX 2 · 권한 및 설정', openSettingsFromRisuMenu, '💎', 'html', 'itemx2-current-bot');
+    const setting = await Risuai.registerSetting('ITEMX CODEX · 권한 및 설정', openSettingsFromRisuMenu, '💎', 'html', 'itemx2-current-bot');
     if (setting?.id) runtime.uiParts.push(setting.id);
     await installDisplayHooks();
     const initial = await context();
@@ -2547,7 +2547,7 @@ ${codexPageStyle()}
       await outputSettings(initial.character);
       styled = await installMainStyle();
       const loadingStarted = styled ? Date.now() : 0;
-      if (styled) await mountRootLoading('ITEMX 초기화 중…');
+      if (styled) await mountRootLoading('ITEMX CODEX 초기화 중…');
       await updateRootLoading('모델 처리 연결 중…');
       connected = await installPipelineHooks();
       await updateRootLoading('채팅 인벤토리 복원 중…');
@@ -2570,7 +2570,7 @@ ${codexPageStyle()}
   } catch (error) {
     runtime.status = '초기화 오류';
     await removeRootDrawer();
-    if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX 초기화 실패: ${error.message || error}`);
+    if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 초기화 실패: ${error.message || error}`);
     fail('bootstrap', error);
   }
 

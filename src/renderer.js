@@ -120,7 +120,7 @@ const ITEMXRenderer = (() => {
     if (!payload || payload.error) return '';
     if (payload.view) return renderCard(payload.view, options);
     const id = payload.event?.patch?.id;
-    return id ? `<span class="itemx-event-chip">ITEMX · ${esc(id)} 변경</span>` : '';
+    return id ? `<span class="itemx-event-chip">ITEMX CODEX · ${esc(id)} 변경</span>` : '';
   }
 
   return { affinities, crafts, rarityLabels, reactions, particleBudget, renderCard, renderTile, renderMarkerPayload, itemVars };
