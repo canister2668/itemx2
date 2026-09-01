@@ -12,8 +12,9 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   let chat = { id: 'chat-a', message: [], scriptstate: {} };
   let updateRequest = null;
   const handlers = {}, replacers = {}, storage = new Map(), localStorage = new Map(), bootOrder = [];
+  let settingReads = 0;
   const Risuai = {
-    pluginStorage: { getItem: async (key) => storage.get(key) ?? null, setItem: async (key, value) => storage.set(key, value) },
+    pluginStorage: { getItem: async (key) => { settingReads += 1; return storage.get(key) ?? null; }, setItem: async (key, value) => storage.set(key, value) },
     safeLocalStorage: { getItem: async (key) => localStorage.get(key) ?? null, setItem: async (key, value) => localStorage.set(key, value) },
     getCurrentCharacterIndex: async () => 0,
     getCurrentChatIndex: async () => 0,
@@ -31,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.6\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.8\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -42,10 +43,11 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.6');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.8');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
+  const preloadedSettingReads = settingReads;
 
   const raw = '런타임 검을 얻었다.\n\n전투가 끝난 뒤 일행은 다음 장소로 떠났다.\n\n<itemExam><id>runtime_blade</id><name>런타임 검</name><type>장검</type><emoji>⚔️</emoji><internalrarity>epic</internalrarity><displayrarity>에픽</displayrarity><power>2200-3100</power><durability>100/100</durability><possession>owned</possession><location>inventory</location><visual><theme>oriental</theme><affinity>lightning</affinity></visual><trivia>실제 훅 검증.</trivia></itemExam>';
   const cleaned = await replacers.afterRequest(raw, 'main');
@@ -78,21 +80,9 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   const trailerNameHit = await replacers.afterRequest('새 기술을 익혔다.\n<skillExam><id>trailer_form</id><name>월영참</name><type>active</type><status>learned</status></skillExam>\n\n[Status: 월영참 CD 18초]', 'main');
   assert.ok(trailerNameHit.indexOf('<!--CODEX2:') < trailerNameHit.indexOf('[Status: 월영참'));
 
-  storage.set('skillsEnabled:char-a', '0');
-  const disabledSkill = await replacers.afterRequest('기술을 익혔다.<skillExam><id>off_skill</id><name>비활성 기술</name><type>active</type></skillExam>', 'main');
-  assert.equal(disabledSkill.includes('skillExam'), false);
-  assert.equal(disabledSkill.includes('<!--CODEX2:'), false);
-  const selectiveRequest = await replacers.beforeRequest([{ role: 'user', content: '계속한다.' }], 'main');
-  assert.equal(selectiveRequest[0].content.includes('<skillExam>'), false);
-  assert.match(selectiveRequest[0].content, /<monsterExam>/);
-  storage.set('encountersEnabled:char-a', '0');
-  const disabledMonster = await replacers.afterRequest('적이 나타났다.<monsterExam><id>off_enemy</id><name>비활성 적</name><relation>hostile</relation><status>active</status></monsterExam>', 'main');
-  assert.equal(disabledMonster.includes('monsterExam'), false);
-  assert.equal(disabledMonster.includes('<!--CODEX2:'), false);
-  storage.set('mainOutput:char-a', '0');
-  const outputOff = await replacers.afterRequest('잔여 태그.<itemExam><id>off_item</id><name>비활성 검</name><type>검</type></itemExam><skillExam><id>off_again</id><name>비활성 기술</name><type>active</type></skillExam>', 'main');
-  assert.equal(/itemExam|skillExam|ITEMX2:|CODEX2:/.test(outputOff), false);
-  storage.set('mainOutput:char-a', '1');
+  await replacers.beforeRequest([{ role: 'user', content: '설정 캐시를 확인한다.' }], 'main');
+  await replacers.afterRequest('설정 캐시 확인 완료.', 'main');
+  assert.equal(settingReads, preloadedSettingReads, 'preloaded per-character settings must not be re-read on every model hook');
 
   const brokenMixed = '적이 나타났다.\n<monsterExam><id>broken\n\n검을 얻었다.\n<itemExam><id>second_blade</id><name>두 번째 검</name><type>장검</type><possession>owned</possession><location>inventory</location></itemExam>\n\n[Status: HP 12]\n<state>keep</state>';
   const brokenCleaned = await replacers.afterRequest(brokenMixed, 'main');

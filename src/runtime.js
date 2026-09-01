@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.6';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 6';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.8';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 8';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -24,11 +24,11 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const queues = new Map();
   const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
+    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', hooks: { output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null }, badgePosition: 'lb', compactContainer: true,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
-    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, debugEntries: []
+    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: []
   };
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
@@ -168,61 +168,92 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     }
   }
 
-  async function isEnabled(character) {
-    const key = `enabled:${character?.chaId || 'unknown'}`;
-    const value = await Risuai.pluginStorage.getItem(key);
-    return value !== '0';
+  const settingsId = (character) => character?.chaId || 'unknown';
+  const cachedSettings = (character) => runtime.settingsCache.get(settingsId(character));
+  function updateCachedSettings(character, patch) {
+    const id = settingsId(character), current = runtime.settingsCache.get(id);
+    if (current) runtime.settingsCache.set(id, { ...current, ...patch });
+    if ('effectsEnabled' in patch) runtime.visualEffectsEnabled = Boolean(patch.effectsEnabled);
   }
 
-  async function setEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`enabled:${character?.chaId || 'unknown'}`, value ? '1' : '0');
-  }
-
-  async function outputSettings(character) {
+  async function outputSettings(character, { refresh = false } = {}) {
     const id = character?.chaId || 'unknown';
-    const [main, aux, rarity, items, skills, encounters, debug] = await Promise.all([
+    if (!refresh && runtime.settingsCache.has(id)) return { ...runtime.settingsCache.get(id) };
+    if (!refresh && runtime.settingsLoadPromises.has(id)) return { ...(await runtime.settingsLoadPromises.get(id)) };
+    const loading = Promise.all([
+      Risuai.pluginStorage.getItem(`enabled:${id}`),
       Risuai.pluginStorage.getItem(`mainOutput:${id}`),
       Risuai.pluginStorage.getItem(`auxOutput:${id}`),
       Risuai.pluginStorage.getItem(`rarityMode:${id}`),
       Risuai.pluginStorage.getItem(`itemsEnabled:${id}`),
       Risuai.pluginStorage.getItem(`skillsEnabled:${id}`),
       Risuai.pluginStorage.getItem(`encountersEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`debugEnabled:${id}`)
-    ]);
-    return {
-      mainOutput: main !== '0',
-      auxOutput: ['off', 'missing', 'always'].includes(aux) ? aux : 'missing',
-      rarityMode: ['world', 'itemx'].includes(rarity) ? rarity : 'world',
-      itemsEnabled: items !== '0', skillsEnabled: skills !== '0', encountersEnabled: encounters !== '0', debugEnabled: debug === '1'
-    };
+      Risuai.pluginStorage.getItem(`debugEnabled:${id}`),
+      Risuai.pluginStorage.getItem(`effectsEnabled:${id}`)
+    ]).then(([enabled, main, aux, rarity, items, skills, encounters, debug, effects]) => {
+      const settings = {
+        enabled: enabled !== '0', mainOutput: main !== '0',
+        auxOutput: ['off', 'missing', 'always'].includes(aux) ? aux : 'missing',
+        rarityMode: ['world', 'itemx'].includes(rarity) ? rarity : 'world',
+        itemsEnabled: items !== '0', skillsEnabled: skills !== '0', encountersEnabled: encounters !== '0', debugEnabled: debug === '1',
+        effectsEnabled: effects !== '0'
+      };
+      runtime.settingsCache.set(id, settings);
+      runtime.visualEffectsEnabled = settings.effectsEnabled;
+      return settings;
+    }).finally(() => runtime.settingsLoadPromises.delete(id));
+    runtime.settingsLoadPromises.set(id, loading);
+    return { ...(await loading) };
+  }
+
+  async function isEnabled(character) {
+    return (cachedSettings(character) || await outputSettings(character)).enabled;
+  }
+
+  async function setEnabled(character, value) {
+    await Risuai.pluginStorage.setItem(`enabled:${settingsId(character)}`, value ? '1' : '0');
+    updateCachedSettings(character, { enabled: Boolean(value) });
   }
 
   async function setDomainEnabled(character, domain, value) {
     const keys = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
     if (!keys[domain]) throw new Error('Invalid ITEMX domain');
     await Risuai.pluginStorage.setItem(`${keys[domain]}:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    updateCachedSettings(character, { [keys[domain]]: Boolean(value) });
     runtime.catchUpFingerprint = ''; runtime.catchUpFailedFingerprint = ''; runtime.auxCandidateFingerprint = '';
   }
 
   async function setDebugEnabled(character, value) {
     runtime.debugEnabled = Boolean(value);
     await Risuai.pluginStorage.setItem(`debugEnabled:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');
   }
 
   async function setMainOutput(character, value) {
     await Risuai.pluginStorage.setItem(`mainOutput:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    updateCachedSettings(character, { mainOutput: Boolean(value) });
   }
 
   async function setAuxOutput(character, value) {
     if (!['off', 'missing', 'always'].includes(value)) throw new Error('Invalid auxiliary output mode');
     await Risuai.pluginStorage.setItem(`auxOutput:${character?.chaId || 'unknown'}`, value);
+    updateCachedSettings(character, { auxOutput: value });
     runtime.catchUpFingerprint = ''; runtime.catchUpFailedFingerprint = ''; runtime.auxCandidateFingerprint = '';
   }
 
   async function setRarityMode(character, value) {
     if (!['world', 'itemx'].includes(value)) throw new Error('Invalid rarity mode');
     await Risuai.pluginStorage.setItem(`rarityMode:${character?.chaId || 'unknown'}`, value);
+    updateCachedSettings(character, { rarityMode: value });
+  }
+
+  async function setEffectsEnabled(character, value) {
+    await Risuai.pluginStorage.setItem(`effectsEnabled:${settingsId(character)}`, value ? '1' : '0');
+    updateCachedSettings(character, { effectsEnabled: Boolean(value) });
+    runtime.markerHtmlCache.clear();
+    runtime.detailHtmlCache.clear();
+    await syncMainEffectsState();
   }
 
   const AUX_LABELS = { off: '끔', missing: '누락 시', always: '항상 검토' };
@@ -275,7 +306,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const codexPageStyle = () => `
 .itemx-codex-page-active{display:grid!important}
 .itemx2-codex-card{position:relative;display:block;min-height:70px;border:1px solid #263247;border-radius:12px;background:linear-gradient(145deg,#121a28,#0b111b);overflow:hidden}.itemx2-codex-summary{position:relative;z-index:1;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(72px,auto);gap:10px;align-items:center;min-height:70px;padding:10px;cursor:pointer}.itemx2-codex-glyph{display:grid;place-items:center;width:48px;height:48px;border:1px solid #40506b;border-radius:11px;background:#0b111c;color:#dbe8ff;font-size:1.2rem}.itemx2-codex-copy{display:grid;gap:3px;min-width:0}.itemx2-codex-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#edf2fb;font-size:.82rem}.itemx2-codex-copy small{color:#8494ad;font-size:.66rem}.itemx2-codex-tags{display:flex;flex-wrap:wrap;gap:4px}.itemx2-codex-tags i{padding:2px 5px;border:1px solid #344259;border-radius:999px;color:#aebbd0;font-size:.58rem;font-style:normal}.itemx2-skill-meta{display:grid;grid-template-columns:auto auto;gap:2px 5px;align-items:center;padding:6px 7px;border:1px solid #2e3a50;border-radius:9px;background:rgba(9,14,23,.82);font-size:.58rem}.itemx2-skill-meta small{color:#6f809a}.itemx2-skill-meta b{color:#dce6f5;font-size:.62rem;text-align:right}.itemx2-mastery{grid-column:2/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.itemx2-mastery i{height:5px;border-radius:6px;background:#202a3a}.itemx2-mastery i.on{background:linear-gradient(90deg,#66b8ff,#a985ff);box-shadow:0 0 8px rgba(102,184,255,.35)}.itemx2-bestiary-card.active{border-color:#70404a;box-shadow:inset 3px 0 #b55b68}.itemx2-bestiary-card img{width:48px;height:48px;border-radius:11px;object-fit:cover}
-.itemx-codex-list{display:grid;gap:9px}.itemx-codex-list-button{width:100%;padding:0;border:0;color:inherit;text-align:left;font:inherit}.itemx2-codex-summary::after{content:'›';position:absolute;right:9px;bottom:5px;color:#71839f;font-size:.85rem;font-weight:900}.itemx-codex-page{position:relative;display:grid;gap:11px;min-height:100%;padding:2px 0 14px;animation:itemx-codex-page-in .22s cubic-bezier(.2,.78,.2,1) both}.itemx2-codex-page{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-summary{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-page{display:grid}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note,.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note{display:none}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)),.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)){display:none}.itemx-codex-back{justify-self:start;display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border:1px solid #2d3a50;border-radius:9px;background:#101824;color:#c8d4e7;cursor:pointer;font:inherit;font-size:.7rem;font-weight:800}.itemx-codex-hero{position:relative;isolation:isolate;display:grid;place-items:center;min-height:218px;padding:24px 18px 20px;overflow:hidden;border:1px solid #33435d;border-radius:17px;background:radial-gradient(circle at 50% 45%,rgba(91,150,255,.19),transparent 31%),linear-gradient(145deg,#121b2b,#080d16 70%);box-shadow:inset 0 0 45px rgba(63,116,205,.1),0 12px 34px rgba(0,0,0,.32)}.itemx-codex-hero::before,.itemx-codex-hero::after{content:'';position:absolute;left:50%;top:44%;z-index:-1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.itemx-codex-hero::before{width:158px;height:158px;border:1px solid rgba(113,181,255,.34);background:repeating-conic-gradient(from 0deg,rgba(128,195,255,.28) 0 2deg,transparent 2deg 28deg);mask:radial-gradient(circle,transparent 53%,#000 54% 58%,transparent 59%);animation:itemx-codex-orbit 8s linear infinite}.itemx-codex-hero::after{width:112px;height:112px;border:1px solid rgba(173,139,255,.32);box-shadow:0 0 42px rgba(76,142,255,.2),inset 0 0 26px rgba(151,105,255,.12);animation:itemx-codex-orbit-reverse 5.5s linear infinite}.itemx-codex-hero-glyph{position:relative;z-index:2;display:grid;place-items:center;width:82px;height:82px;border:1px solid rgba(177,210,255,.55);border-radius:24px;background:radial-gradient(circle at 45% 38%,#263e62,#101827 68%);box-shadow:0 0 25px rgba(94,164,255,.28),inset 0 0 22px rgba(132,184,255,.16);color:#eff7ff;font-size:2.6rem;text-shadow:0 0 14px rgba(142,202,255,.8)}.itemx-codex-hero-copy{position:relative;z-index:2;display:grid;gap:5px;margin-top:18px;text-align:center}.itemx-codex-hero-copy small{color:#8fa4c4;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.itemx-codex-hero-copy strong{color:#f3f7ff;font-size:1.08rem}.itemx-codex-hero-copy span{color:#9eb0ca;font-size:.68rem}.itemx-codex-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.itemx-codex-stat{display:grid;gap:4px;min-height:60px;padding:10px;border:1px solid #26344a;border-radius:11px;background:linear-gradient(145deg,#111a28,#0b111b)}.itemx-codex-stat small{color:#70819b;font-size:.59rem;font-weight:800}.itemx-codex-stat strong{color:#e8effa;font-size:.72rem;overflow-wrap:anywhere}.itemx-codex-section{display:grid;gap:7px;padding:12px;border:1px solid #243147;border-radius:12px;background:#0c131e;color:#becadd;font-size:.7rem;line-height:1.58}.itemx-codex-section h4{margin:0;color:#d9e6f8;font-size:.67rem;letter-spacing:.08em}.itemx-codex-section p{margin:0;white-space:pre-wrap}.itemx-codex-chip-row{display:flex;flex-wrap:wrap;gap:5px}.itemx-codex-chip-row i{padding:4px 7px;border:1px solid #34445e;border-radius:999px;background:#111a28;color:#b8c7dd;font-size:.61rem;font-style:normal}.itemx-codex-mastery{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.itemx-codex-mastery i{height:7px;border-radius:999px;background:#202b3c}.itemx-codex-mastery i.on{background:linear-gradient(90deg,#5cbcff,#a978ff);box-shadow:0 0 9px rgba(92,188,255,.42)}.itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{position:relative;z-index:2;width:112px;height:112px;border:1px solid rgba(255,124,143,.58);border-radius:18px;object-fit:cover;box-shadow:0 0 0 5px rgba(93,24,35,.35),0 0 32px rgba(255,65,94,.3);filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}.itemx-threat-banner{position:absolute;left:10px;top:10px;z-index:3;padding:5px 8px;border:1px solid rgba(255,109,130,.48);border-radius:999px;background:rgba(41,10,17,.82);color:#ff9aab;font-size:.58rem;font-weight:900;letter-spacing:.12em}@keyframes itemx-codex-page-in{from{opacity:0;transform:translate3d(12px,0,0)}to{opacity:1;transform:none}}@keyframes itemx-codex-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes itemx-codex-orbit-reverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}@keyframes itemx-codex-scan{0%,100%{top:18%;opacity:.2}50%{top:78%;opacity:1}}@media(prefers-reduced-motion:reduce){.itemx-codex-page,.itemx-codex-hero::before,.itemx-codex-hero::after{animation:none!important}}
+.itemx-codex-list{display:grid;gap:9px}.itemx-codex-list-button{width:100%;padding:0;border:0;color:inherit;text-align:left;font:inherit}.itemx2-codex-summary::after{content:'›';position:absolute;right:9px;bottom:5px;color:#71839f;font-size:.85rem;font-weight:900}.itemx-codex-page{position:relative;display:grid;gap:11px;min-height:100%;padding:2px 0 14px;animation:itemx-codex-page-in .22s cubic-bezier(.2,.78,.2,1) both}.itemx2-codex-page{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-summary{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-page{display:grid}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note,.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note{display:none}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)),.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)){display:none}.itemx-codex-back{justify-self:start;display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border:1px solid #2d3a50;border-radius:9px;background:#101824;color:#c8d4e7;cursor:pointer;font:inherit;font-size:.7rem;font-weight:800}.itemx-codex-hero{position:relative;isolation:isolate;display:grid;place-items:center;min-height:218px;padding:24px 18px 20px;overflow:hidden;border:1px solid #33435d;border-radius:17px;background:radial-gradient(circle at 50% 45%,rgba(91,150,255,.19),transparent 31%),linear-gradient(145deg,#121b2b,#080d16 70%);box-shadow:inset 0 0 45px rgba(63,116,205,.1),0 12px 34px rgba(0,0,0,.32)}.itemx-codex-hero::before,.itemx-codex-hero::after{content:'';position:absolute;left:50%;top:44%;z-index:-1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.itemx-codex-hero::before{width:158px;height:158px;border:1px solid rgba(113,181,255,.34);background:repeating-conic-gradient(from 0deg,rgba(128,195,255,.28) 0 2deg,transparent 2deg 28deg);mask:radial-gradient(circle,transparent 53%,#000 54% 58%,transparent 59%);animation:itemx-codex-orbit 8s linear infinite}.itemx-codex-hero::after{width:112px;height:112px;border:1px solid rgba(173,139,255,.32);box-shadow:0 0 42px rgba(76,142,255,.2),inset 0 0 26px rgba(151,105,255,.12);animation:itemx-codex-orbit-reverse 5.5s linear infinite}.itemx-codex-hero-glyph{position:relative;z-index:2;display:grid;place-items:center;width:82px;height:82px;border:1px solid rgba(177,210,255,.55);border-radius:24px;background:radial-gradient(circle at 45% 38%,#263e62,#101827 68%);box-shadow:0 0 25px rgba(94,164,255,.28),inset 0 0 22px rgba(132,184,255,.16);color:#eff7ff;font-size:2.6rem;text-shadow:0 0 14px rgba(142,202,255,.8)}.itemx-codex-hero-copy{position:relative;z-index:2;display:grid;gap:5px;margin-top:18px;text-align:center}.itemx-codex-hero-copy small{color:#8fa4c4;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.itemx-codex-hero-copy strong{color:#f3f7ff;font-size:1.08rem}.itemx-codex-hero-copy span{color:#9eb0ca;font-size:.68rem}.itemx-codex-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.itemx-codex-stat{display:grid;gap:4px;min-height:60px;padding:10px;border:1px solid #26344a;border-radius:11px;background:linear-gradient(145deg,#111a28,#0b111b)}.itemx-codex-stat small{color:#70819b;font-size:.59rem;font-weight:800}.itemx-codex-stat strong{color:#e8effa;font-size:.72rem;overflow-wrap:anywhere}.itemx-codex-section{display:grid;gap:7px;padding:12px;border:1px solid #243147;border-radius:12px;background:#0c131e;color:#becadd;font-size:.7rem;line-height:1.58}.itemx-codex-section h4{margin:0;color:#d9e6f8;font-size:.67rem;letter-spacing:.08em}.itemx-codex-section p{margin:0;white-space:pre-wrap}.itemx-codex-chip-row{display:flex;flex-wrap:wrap;gap:5px}.itemx-codex-chip-row i{padding:4px 7px;border:1px solid #34445e;border-radius:999px;background:#111a28;color:#b8c7dd;font-size:.61rem;font-style:normal}.itemx-codex-mastery{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.itemx-codex-mastery i{height:7px;border-radius:999px;background:#202b3c}.itemx-codex-mastery i.on{background:linear-gradient(90deg,#5cbcff,#a978ff);box-shadow:0 0 9px rgba(92,188,255,.42)}.itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{left:50%;top:18%;width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);transform:translate3d(-50%,0,0);will-change:transform,opacity;animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{position:relative;z-index:2;width:112px;height:112px;border:1px solid rgba(255,124,143,.58);border-radius:18px;object-fit:cover;box-shadow:0 0 0 5px rgba(93,24,35,.35),0 0 32px rgba(255,65,94,.3);filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}.itemx-threat-banner{position:absolute;left:10px;top:10px;z-index:3;padding:5px 8px;border:1px solid rgba(255,109,130,.48);border-radius:999px;background:rgba(41,10,17,.82);color:#ff9aab;font-size:.58rem;font-weight:900;letter-spacing:.12em}@keyframes itemx-codex-page-in{from{opacity:0;transform:translate3d(12px,0,0)}to{opacity:1;transform:none}}@keyframes itemx-codex-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes itemx-codex-orbit-reverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}@keyframes itemx-codex-scan{0%,100%{opacity:.2;transform:translate3d(-50%,0,0)}50%{opacity:1;transform:translate3d(-50%,132px,0)}}.itemx2-effects-off .itemx-fx,.itemx2-effects-off .itemx-cond,.itemx2-effects-off .itemx-codex-hero::before,.itemx2-effects-off .itemx-codex-hero::after,.itemx2-effects-off .itemx2-skill-card::after{display:none!important;animation:none!important}@media(prefers-reduced-motion:reduce){.itemx-codex-page,.itemx-codex-hero::before,.itemx-codex-hero::after{animation:none!important}}
 `;
 
   const rootDrawerStyle = () => `
@@ -334,7 +365,8 @@ ${codexPageStyle()}
     return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) => name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`);
   }
   const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *{animation-play-state:paused!important}`;
-  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${badgeStyle()}`;
+  const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-skill-card::after{display:none!important;animation:none!important}`;
+  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
 
   function enqueue(key, work) {
     const prev = queues.get(key) || Promise.resolve();
@@ -541,12 +573,13 @@ ${codexPageStyle()}
       const lookup = buildMessageEventLookup(latestChat);
       const snapshot = rebuildWithManual(latestChat, lookup);
       const codexSnapshot = rebuildCodexWithLedger(latestChat, lookup);
+      const settings = await outputSettings(ctx.character);
       refreshLatest(latestChat, lookup);
       // Normal rebuilds are deliberately read-only. Writing an entire chat
       // snapshot here can race another module's output hook and restore an
       // older assistant message over its freshly appended display markers.
       runtime.status = `정상 · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
-      const loaded = { ...ctx, chat: latestChat, snapshot, codexSnapshot };
+      const loaded = { ...ctx, chat: latestChat, snapshot, codexSnapshot, ...settings };
       runtime.cachedLoaded = loaded;
       runtime.cachedGeneration = runtime.generation;
       return loaded;
@@ -1183,11 +1216,12 @@ ${codexPageStyle()}
       while (runtime.markerHtmlCache.size > 64) runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
       return html;
     };
+    const itemMotion = runtime.visualEffectsEnabled ? 'full' : 'off';
     const rendered = source.replace(ITEMXCore.MARKER_RE, (_, code) => {
       found = true;
       const payload = ITEMXCore.decodePayload(code);
       if (!payload || payload.error) return '';
-      const html = renderPayload(`item:${code}`, payload, 'full');
+      const html = renderPayload(`item:${code}`, payload, itemMotion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
       return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
@@ -1195,13 +1229,13 @@ ${codexPageStyle()}
       found = true;
       const payload = ITEMXCodex.decodePayload(code), entity = payload?.view || payload?.event?.entity;
       if (!entity || payload.error) return '';
-      const kind = payload.event?.domain === 'skill' ? '스킬' : '조우 도감';
-      return `<span class="itemx-event-chip">${ITEMXCore.esc(entity.glyph || '✦')} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
+      const skill = payload.event?.domain === 'skill', kind = skill ? '스킬' : '조우 도감';
+      return `<span class="itemx-event-chip">${ITEMXCore.esc(skill ? skillEmoji(entity) : encounterEmoji(entity))} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
     }).replace(ITEMX_REF_RE, (_, ref, inline) => {
       found = true;
       const payload = inlineViewPayload(inline, 'item') || runtime.eventPayloads.get(`item:${ref}`);
       if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX · 기록 복원 중</span>`;
-      const html = renderPayload(`item-ref:${ref}`, payload, 'full');
+      const html = renderPayload(`item-ref:${ref}`, payload, itemMotion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.view || payload.event?.item;
       return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX · ${ITEMXCore.esc(ref)}</span>`;
@@ -1209,8 +1243,8 @@ ${codexPageStyle()}
       found = true;
       const payload = inlineViewPayload(inline, 'codex') || runtime.eventPayloads.get(`codex:${ref}`), entity = payload?.view || payload?.event?.entity;
       if (!entity || payload.error) return `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>`;
-      const kind = payload.event?.domain === 'skill' ? '스킬' : '조우 도감';
-      return `<span class="itemx-event-chip">${ITEMXCore.esc(entity.glyph || '✦')} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
+      const skill = payload.event?.domain === 'skill', kind = skill ? '스킬' : '조우 도감';
+      return `<span class="itemx-event-chip">${ITEMXCore.esc(skill ? skillEmoji(entity) : encounterEmoji(entity))} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
     });
     if (!found) return content;
     if (runtime.mainStyle) return rendered;
@@ -1275,6 +1309,16 @@ ${codexPageStyle()}
     } catch (error) { debugRecord('body effect governor install', error?.message || String(error)); }
   }
 
+  async function syncMainEffectsState() {
+    if (!runtime.mainDoc) return;
+    try {
+      const body = await runtime.mainDoc.querySelector('body');
+      if (!body) return;
+      if (runtime.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
+      else await body.addClass('x-risu-itemx2-effects-off');
+    } catch (error) { debugRecord('effect setting sync', error?.message || String(error)); }
+  }
+
   async function installMainStyle() {
     try {
       if (runtime.mainStyle && runtime.mainStylePosition === runtime.badgePosition) {
@@ -1283,6 +1327,7 @@ ${codexPageStyle()}
           runtime.permissions.mainDom = true;
           runtime.lastDomError = '';
           await installBodyEffectGovernor();
+          await syncMainEffectsState();
           await installHostObserver();
           return true;
         } catch {
@@ -1300,7 +1345,7 @@ ${codexPageStyle()}
       runtime.mainDoc = doc;
       runtime.permissions.mainDom = true;
       const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
-      if (existing) { runtime.mainStyle = existing; await existing.setTextContent(mainStyleText()); runtime.mainStylePosition = runtime.badgePosition; await installBodyEffectGovernor(); await installHostObserver(); return true; }
+      if (existing) { runtime.mainStyle = existing; await existing.setTextContent(mainStyleText()); runtime.mainStylePosition = runtime.badgePosition; await installBodyEffectGovernor(); await syncMainEffectsState(); await installHostObserver(); return true; }
       const style = await doc.createElement('style');
       await style.setAttribute('x-itemx2-style', 'owner');
       await style.setTextContent(mainStyleText());
@@ -1310,6 +1355,7 @@ ${codexPageStyle()}
       runtime.mainStylePosition = runtime.badgePosition;
       runtime.lastDomError = '';
       await installBodyEffectGovernor();
+      await syncMainEffectsState();
       await installHostObserver();
       return true;
     } catch (error) {
@@ -1337,12 +1383,26 @@ ${codexPageStyle()}
   }
 
   function itemDetailHtml(item) {
-    const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify(item))}`;
+    const motion = runtime.visualEffectsEnabled ? 'full' : 'off';
+    const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify(item))}:${motion}`;
     if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
-    const html = ITEMXRenderer.renderCard(item, { motion: 'full' });
+    const html = ITEMXRenderer.renderCard(item, { motion });
     runtime.detailHtmlCache.set(key, html);
     while (runtime.detailHtmlCache.size > 60) runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
     return html;
+  }
+
+  async function hydrateCheckedItemDetail(loaded) {
+    if (!runtime.mainDoc || !loaded) return false;
+    const detailItems = rootPageItems(loaded);
+    for (let index = 0; index < detailItems.length; index += 1) {
+      const selected = await runtime.mainDoc.querySelector(`#itemx2-detail-${index}:checked`);
+      if (!selected) continue;
+      const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
+      if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
+      return Boolean(detail);
+    }
+    return false;
   }
 
   async function queryMainClass(className) {
@@ -1644,26 +1704,29 @@ ${codexPageStyle()}
     return result;
   }
 
+  const skillEmoji = (skill) => !skill?.glyph || skill.glyph === '✦' ? '✨' : skill.glyph;
+  const encounterEmoji = (monster) => !monster?.glyph || monster.glyph === '◈' ? '⚔️' : monster.glyph;
+
   function skillSummaryHtml(skill) {
     const filled = Math.max(0, Math.min(5, Math.ceil((Number(skill.mastery) || 0) / 20)));
-    return `<span class="itemx2-codex-glyph">${ITEMXCore.esc(skill.glyph || '✦')}</span><span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(skill.name)}</strong><small>${ITEMXCore.esc(skill.rank)} · Lv.${Number(skill.level) || 1} · 숙련 ${Number(skill.mastery) || 0}%</small><span class="itemx2-codex-tags"><i>${ITEMXCore.esc(skill.type)}</i><i>${ITEMXCore.esc(skill.status)}</i>${skill.affinity ? `<i>${ITEMXCore.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>소모</small><b>${ITEMXCore.esc(skill.cost || '없음')}</b><small>재사용</small><b>${ITEMXCore.esc(skill.cooldown || '없음')}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
+    return `<span class="itemx2-codex-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(skill.name)}</strong><small>${ITEMXCore.esc(skill.rank)} · Lv.${Number(skill.level) || 1} · 숙련 ${Number(skill.mastery) || 0}%</small><span class="itemx2-codex-tags"><i>✨ ${ITEMXCore.esc(skill.type)}</i><i>${ITEMXCore.esc(skill.status)}</i>${skill.affinity ? `<i>${ITEMXCore.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>소모</small><b>${ITEMXCore.esc(skill.cost || '없음')}</b><small>재사용</small><b>${ITEMXCore.esc(skill.cooldown || '없음')}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
   }
 
   function skillPageHtml(skill, back) {
     const mastery = Math.max(0, Math.min(10, Math.ceil((Number(skill.mastery) || 0) / 10)));
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
-    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero"><span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skill.glyph || '✦')}</span><span class="itemx-codex-hero-copy"><small>ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>Lv.${Number(skill.level) || 1}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>숙련도 · ${Number(skill.mastery) || 0}%</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section></div>`;
+    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero"><span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>Lv.${Number(skill.level) || 1}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${Number(skill.mastery) || 0}%</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section></div>`;
   }
 
   function monsterSummaryHtml(monster, portrait = '') {
-    const visual = portrait ? `<img src="${ITEMXCore.esc(portrait)}" alt="">` : `<span class="itemx2-codex-glyph">${ITEMXCore.esc(monster.glyph || '◈')}</span>`;
-    return `${visual}<span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(monster.name)}</strong><small>${ITEMXCore.esc(monster.kind)} · 위협 ${ITEMXCore.esc(monster.threat)} · ${ITEMXCore.esc(monster.status)}</small><span class="itemx2-codex-tags"><i>${ITEMXCore.esc(monster.relation)}</i>${(monster.weaknesses || []).slice(0, 2).map((one) => `<i>약점 ${ITEMXCore.esc(one)}</i>`).join('')}</span></span><span class="itemx2-codex-glyph">${monster.active ? '교전' : '기록'}</span>`;
+    const visual = portrait ? `<img src="${ITEMXCore.esc(portrait)}" alt="">` : `<span class="itemx2-codex-glyph">${ITEMXCore.esc(encounterEmoji(monster))}</span>`;
+    return `${visual}<span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(monster.name)}</strong><small>${ITEMXCore.esc(monster.kind)} · 위협 ${ITEMXCore.esc(monster.threat)} · ${ITEMXCore.esc(monster.status)}</small><span class="itemx2-codex-tags"><i>⚔️ ${ITEMXCore.esc(monster.relation)}</i>${(monster.weaknesses || []).slice(0, 2).map((one) => `<i>🎯 약점 ${ITEMXCore.esc(one)}</i>`).join('')}</span></span><span class="itemx2-codex-glyph">${monster.active ? '⚔️' : '📖'}</span>`;
   }
 
   function monsterPageHtml(monster, portrait, back) {
-    const visual = portrait ? `<img class="itemx-monster-portrait" src="${ITEMXCore.esc(portrait)}" alt="">` : `<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(monster.glyph || '◈')}</span>`;
+    const visual = portrait ? `<img class="itemx-monster-portrait" src="${ITEMXCore.esc(portrait)}" alt="">` : `<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(encounterEmoji(monster))}</span>`;
     const chips = (label, values, fallback) => `<section class="itemx-codex-section"><h4>${label}</h4><span class="itemx-codex-chip-row">${(values || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || `<i>${fallback}</i>`}</span></section>`;
-    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero"><b class="itemx-threat-banner">THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '현재 교전 기록' : '보관 기록'}</strong></span></div>${monster.description ? `<section class="itemx-codex-section"><h4>관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('별칭', monster.aliases, '없음')}${chips('확인된 약점', monster.weaknesses, '미상')}${chips('확인된 내성', monster.resistances, '미상')}${chips('관측 행동', monster.moves, '미상')}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
+    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero"><b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
   }
 
   function rootBadgeHtml() {
@@ -1710,14 +1773,14 @@ ${codexPageStyle()}
     const domainControls = [['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'], ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'], ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']].map(([key, label, value, note]) => `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label} · ${value ? 'ON' : 'OFF'}</strong><small>${note}</small></button>`).join('');
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
-    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 자동 검사합니다. 수동 재감정은 아이템 기능을 사용합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
     const pager = pageCount > 1 ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>` : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
-    const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">✦ 속성 효과</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
+    const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
     const skillsContent = `<div class="itemx2-root-skills itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-skill-none" name="itemx2-skill-detail" type="radio" checked><div class="itemx2-codex-note">장착·봉인·본문에서 다시 언급된 스킬만 모델 문맥에 제한적으로 전달됩니다.</div>${skillList}</div>`;
     const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>${monsterList}</div>`;
     const activeContent = tab === 'skills' ? skillsContent : tab === 'bestiary' ? bestiaryContent : tab === 'settings' ? settings : inventoryContent;
-    const tabs = [['inventory', '인벤'], ['skills', '스킬'], ['bestiary', '조우 도감'], ['settings', '설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
+    const tabs = [['inventory', '📦 인벤'], ['skills', '✨ 스킬'], ['bestiary', '⚔️ 조우'], ['settings', '⚙️ 설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
     const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
     return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
@@ -1827,6 +1890,13 @@ ${codexPageStyle()}
           const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
           if (loaded && loaded.key === runtime.activeContextKey) {
+            // SafeElement listeners are document-level. While this async
+            // callback awaits, the label's native radio action can already
+            // hide the clicked tile, making its rectangle zero-sized. Yield
+            // once, then use the settled :checked state as the authoritative
+            // target before retaining coordinate hit-testing as a fallback.
+            await delay(0);
+            if (await hydrateCheckedItemDetail(loaded)) return;
             const detailItems = rootPageItems(loaded);
             for (let index = 0; index < detailItems.length; index += 1) {
               const tile = await queryMainClass(`itemx2-root-tile-${index}`);
@@ -2060,6 +2130,22 @@ ${codexPageStyle()}
             return;
           }
         }
+        const effects = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-effects');
+        if (effects) {
+          const rect = await effects.getBoundingClientRect();
+          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+            await applyRootSetting(async () => {
+              const loaded = await cachedOrRebuildCurrent();
+              if (!loaded) return;
+              const value = !(cachedSettings(loaded.character) || await outputSettings(loaded.character)).effectsEnabled;
+              await setEffectsEnabled(loaded.character, value);
+              loaded.effectsEnabled = value;
+              runtime.status = `시각 이펙트 · ${value ? 'ON' : 'OFF'}`;
+              await openRootInventory({ open: true, tab: 'settings', loaded });
+            });
+            return;
+          }
+        }
         const rebuild = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rebuild');
         if (rebuild) {
           const rect = await rebuild.getBoundingClientRect();
@@ -2115,7 +2201,7 @@ ${codexPageStyle()}
         root = await runtime.mainDoc.createElement('div');
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
-      await root.setClassName(`x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition}${open ? ' x-risu-itemx2-is-open' : ''}`);
+      await root.setClassName(`x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}`);
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && runtime.rootContentReady && await updateRootRegions(html);
       if (!regionUpdated) await root.setInnerHTML(html);
@@ -2172,7 +2258,7 @@ ${codexPageStyle()}
     const domainControls = [['items', '무기·아이템', loaded.itemsEnabled], ['skills', '스킬', loaded.skillsEnabled], ['encounters', '전투 도감', loaded.encountersEnabled]].map(([key, label, value]) => `<button class="itemx-tool ${value ? 'itemx-setting-on' : ''}" data-action="domain-${key}">${label} ${value ? 'ON' : 'OFF'}</button>`).join('');
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
-    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 누락 복구합니다.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
+    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>활성화된 기능만 누락 복구합니다.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.missing}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>세계관 등급명은 보존하고 ITEMX 내부 효과 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
     const iframeSkills = ui.tab === 'skills' ? (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean) : [];
     const iframeMonsters = ui.tab === 'bestiary' ? (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean) : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
@@ -2182,7 +2268,7 @@ ${codexPageStyle()}
     const skillsContent = `<div class="itemx-settings">${selectedSkill ? skillPageHtml(selectedSkill, '<button class="itemx-codex-back" data-action="back-skill">‹ 스킬 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${skillRows || '<div class="itemx-empty">아직 확정된 스킬이 없답니다.</div>'}</div>`}</div>`;
     const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.portrait] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
     const content = ui.tab === 'settings' ? settingsContent : ui.tab === 'skills' ? skillsContent : ui.tab === 'bestiary' ? bestiaryContent : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel" aria-label="ITEMX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">조우 도감</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">설정</button></nav>${content}</section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${content}</section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => { void closeInventory(); });
     root.querySelector('[data-action="back"]')?.addEventListener('click', () => { ui.selected = null; drawInventory(loaded); });
     root.querySelector('[data-action="back-skill"]')?.addEventListener('click', () => { ui.selectedSkill = null; drawInventory(loaded); });
@@ -2197,6 +2283,7 @@ ${codexPageStyle()}
     root.querySelector('[data-action="main-output"]')?.addEventListener('click', async () => { loaded.mainOutput = !loaded.mainOutput; await setMainOutput(loaded.character, loaded.mainOutput); runtime.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`; drawInventory(loaded); });
     root.querySelector('[data-action="aux-output"]')?.addEventListener('click', async () => { loaded.auxOutput = loaded.auxOutput === 'missing' ? 'always' : loaded.auxOutput === 'always' ? 'off' : 'missing'; await setAuxOutput(loaded.character, loaded.auxOutput); runtime.status = `보조 출력 · ${AUX_LABELS[loaded.auxOutput]}`; drawInventory(loaded); });
     root.querySelector('[data-action="rarity-mode"]')?.addEventListener('click', async () => { loaded.rarityMode = loaded.rarityMode === 'itemx' ? 'world' : 'itemx'; await setRarityMode(loaded.character, loaded.rarityMode); runtime.status = `등급 기준 · ${RARITY_MODE_LABELS[loaded.rarityMode]}`; drawInventory(loaded); });
+    root.querySelector('[data-action="effects"]')?.addEventListener('click', async () => { loaded.effectsEnabled = !loaded.effectsEnabled; await setEffectsEnabled(loaded.character, loaded.effectsEnabled); runtime.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`; drawInventory(loaded); });
     root.querySelector('[data-action="rebuild"]')?.addEventListener('click', async () => { const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); } });
     root.querySelector('[data-action="permissions"]')?.addEventListener('click', async () => {
       runtime.status = '모델 처리 권한 확인 중'; drawInventory(loaded);
@@ -2424,6 +2511,7 @@ ${codexPageStyle()}
     if (initial) {
       runtime.activeContextKey = initial.key;
       runtime.status = '초기 화면 연결 중';
+      await outputSettings(initial.character);
       styled = await installMainStyle();
       const loadingStarted = styled ? Date.now() : 0;
       if (styled) await mountRootLoading('ITEMX 초기화 중…');

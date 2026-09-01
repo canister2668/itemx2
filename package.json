@@ -1,7 +1,7 @@
 {
   "name": "itemx2",
   "private": true,
-  "version": "1.9.0-beta.6",
+  "version": "1.9.0-beta.8",
   "itemxUpdateUrl": "https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js",
   "type": "module",
   "scripts": {

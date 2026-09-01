@@ -10,10 +10,10 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.6$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.8$/m);
   assert.match(source, /^\/\/@display-name ITEMX 2$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 6'/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 8'/);
   assert.match(source, /ITEMX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -56,6 +56,13 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /itemx2-setting-rarity/);
   assert.match(source, /data-action="rarity-mode"/);
   assert.match(source, /rarityMode:\$\{id\}/);
+  assert.match(source, /effectsEnabled:\$\{id\}/);
+  assert.match(source, /itemx2-setting-effects/);
+  assert.match(source, /data-action="effects"/);
+  assert.match(source, /시각 이펙트/);
+  assert.match(source, /settingsCache: new Map\(\)/);
+  assert.match(source, /settingsLoadPromises: new Map\(\)/);
+  assert.match(source, /await outputSettings\(initial\.character\)/);
   assert.match(source, /ITEMX Rarity Policy: FORCED/);
   assert.match(source, /rarity=empyrean even if the setting calls that grade Epic/);
   assert.match(source, /const settings = await outputSettings\(loaded\.character\)/);
@@ -101,6 +108,9 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /itemx2-root-detail-body-\$\{index\}/);
   assert.equal(source.includes('installRootItemDetailClicks'), false);
   assert.match(source, /detail\.setInnerHTML\(itemDetailHtml\(detailItems\[index\]\)\)/);
+  assert.match(source, /async function hydrateCheckedItemDetail\(loaded\)/);
+  assert.match(source, /querySelector\(`#itemx2-detail-\$\{index\}:checked`\)/);
+  assert.match(source, /await delay\(0\);\s*if \(await hydrateCheckedItemDetail\(loaded\)\) return/);
   assert.match(source, /querySelector\(`\.x-risu-\$\{className\}`\)[\s\S]*querySelector\(`\.\$\{className\}`\)/);
   assert.equal(source.includes('renderCard(detailItems[index]'), false);
   assert.match(source, /hasFullCard \? ITEMX_CHAT_STYLE : ITEMX_CHIP_STYLE/);
@@ -108,8 +118,9 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.equal(/renderCard\(item, \{ motion: index < 2/.test(source), false);
   const displayHandler = source.slice(source.indexOf('const displayHandler ='), source.indexOf('async function installMainStyle'));
   assert.equal(displayHandler.includes("motion = cards < 2 ? 'full' : 'off'"), false);
-  assert.equal(displayHandler.includes("renderPayload(`item:${code}`, payload, 'full')"), true);
-  assert.equal(displayHandler.includes("renderPayload(`item-ref:${ref}`, payload, 'full')"), true);
+  assert.match(displayHandler, /const itemMotion = runtime\.visualEffectsEnabled \? 'full' : 'off'/);
+  assert.match(displayHandler, /renderPayload\(`item:\$\{code\}`, payload, itemMotion\)/);
+  assert.match(displayHandler, /renderPayload\(`item-ref:\$\{ref\}`, payload, itemMotion\)/);
   assert.match(source, /cachedOrRebuildCurrent\(\)/);
   assert.match(source, /portraitCache: new Map\(\)/);
   assert.match(source, /mainStylePosition === runtime\.badgePosition/);
@@ -118,6 +129,11 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.equal(source.includes('getBoundingClientRect();\n        const active = rect.bottom'), false);
   assert.match(source, /chattext\.x-risu-itemx-body-scrolling/);
   assert.match(source, /animation-play-state:paused!important/);
+  assert.match(source, /itemx2-effects-off/);
+  assert.match(source, /itemx-codex-scan\{0%,100%\{opacity:\.2;transform:translate3d/);
+  assert.equal(/itemx-codex-scan\{0%,100%\{top:/.test(source), false);
+  assert.match(source, /✨ ARCANE SKILL RECORD/);
+  assert.match(source, /⚔️ ENCOUNTER ARCHIVE/);
   assert.match(source, /touch-action:pan-y;-webkit-overflow-scrolling:touch/);
   assert.equal(source.includes('registerButton('), false);
   assert.match(source, /registerSetting\('ITEMX 2 · 권한 및 설정', openSettingsFromRisuMenu/);
@@ -197,7 +213,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.match(source, /ITEMX CODEX · ACTIVE CONTEXT/);
   assert.match(source, /AVAILABLE PORTRAIT ASSET NAMES/);
   assert.match(source, /Risuai\.readImage\(asset\.id\)/);
-  assert.ok(source.length < 370000, 'plugin bundle must stay compact after codex pages and body effect governor');
+  assert.ok(source.length < 375000, 'plugin bundle must stay compact after cached settings and global effect controls');
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
   assert.match(source, /\}, 1200\)/);
@@ -247,7 +263,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.equal(positionHandler.includes('installMainStyle'), true);
   assert.equal(positionHandler.includes('openRootInventory'), false);
   assert.match(source, /data-tab="settings"/);
-  assert.match(source, /value !== '0'/);
+  assert.match(source, /enabled: enabled !== '0'/);
   const bootstrap = source.slice(source.lastIndexOf('await loadBadgePosition()'), source.indexOf('await Risuai.onUnload'));
   assert.ok(bootstrap.indexOf('registerSetting(') < bootstrap.indexOf('const initial = await context()'));
   assert.ok(bootstrap.indexOf('const initial = await context()') < bootstrap.indexOf('connected = await installPipelineHooks()'));

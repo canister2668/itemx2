@@ -87,6 +87,15 @@ test('skill protocol uses real time cooldowns and world-native costs', () => {
   assert.equal(legacy.snapshot.skills.entries.legacy.cooldown, '상황 조건 충족 후');
 });
 
+test('skill and encounter records use emoji defaults and request emoji glyphs', () => {
+  const result = codex.extractResponse('<skillExam><id>flash</id><name>섬광</name><type>active</type></skillExam><monsterExam><id>wolf</id><name>늑대</name><relation>hostile</relation><status>active</status></monsterExam>', codex.snapshot());
+  assert.equal(result.snapshot.skills.entries.flash.glyph, '✨');
+  assert.equal(result.snapshot.monsters.entries.wolf.glyph, '⚔️');
+  const protocol = codex.protocol([]);
+  assert.match(protocol, /one fitting emoji such as ✨/);
+  assert.match(protocol, /one fitting encounter emoji such as ⚔️/);
+});
+
 test('domain switches omit disabled protocol, context and events without leaking tags', () => {
   const raw = '<skillExam><id>flash</id><name>섬광</name><type>active</type></skillExam><monsterExam><id>wolf</id><name>늑대</name><relation>hostile</relation><status>active</status></monsterExam>';
   const result = codex.extractResponse(raw, codex.snapshot(), { enabledDomains: ['skill'] });
