@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.19$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.19$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.20$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.20$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 19'/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 20'/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -254,6 +254,9 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /ITEMX CODEX · ACTIVE CONTEXT/);
   assert.match(source, /AVAILABLE PORTRAIT ASSET NAMES/);
   assert.match(source, /Risuai\.readImage\(asset\.id\)/);
+  assert.match(source, /image\/avif/);
+  assert.match(source, /ITEMXCodex\.assetForEntity\(catalog, monster, narrative\)/);
+  assert.match(source, /loaded\.portraits\?\.\[monster\.id\]/);
   assert.match(source, /const ITEMXQuality =/);
   assert.match(source, /state: unresolvedPartials\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /아이템 상세정보 보완 중/);

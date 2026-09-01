@@ -72,6 +72,20 @@ test('portrait assets resolve exact names first and use only unambiguous normali
   assert.equal(codex.assetLookup(assets, 'Duplicate.PNG'), null, 'ambiguous normalized fallback is rejected');
 });
 
+test('encounter portrait prefers standing defaults, then recent matching module assets when transport says NONE', () => {
+  const assets = codex.assetCatalog({ additionalAssets: [
+    ['Amber_serious', 'assets/amber-serious.avif', 'avif'],
+    ['Amber_determined', 'assets/amber-determined.avif', 'avif'],
+    ['Amber_standing', 'assets/amber-standing.avif', 'avif'],
+    ['Aria_serious', 'assets/aria-serious.avif', 'avif']
+  ] });
+  const amber = { id: 'amber', name: '엠버', aliases: [], portrait: 'NONE' };
+  assert.equal(codex.assetForEntity(assets, amber, '<eomg="Amber_serious">old</eomg>\n<eomg="Amber_determined">now</eomg>')?.id, 'assets/amber-standing.avif');
+  assert.equal(codex.assetForEntity(assets.filter((row) => !['Amber_standing', 'Amber_serious'].includes(row.name)), amber, '<eomg="Amber_serious">old</eomg>\n<eomg="Amber_determined">now</eomg>')?.id, 'assets/amber-determined.avif');
+  assert.equal(codex.assetForEntity(assets, { ...amber, portrait: 'Amber_serious' }, '<eomg="Amber_determined">now</eomg>')?.id, 'assets/amber-serious.avif', 'explicit transport remains authoritative');
+  assert.equal(codex.assetForEntity(assets, { id: 'unknown', name: '미상', aliases: [], portrait: 'NONE' }, '') ?? null, null);
+});
+
 test('module portrait catalog includes active scopes only and supports namespace and bound persona assets', () => {
   const database = {
     enabledModules: ['global'], moduleIntergration: 'integrated-ns', selectedPersona: 'persona-1',

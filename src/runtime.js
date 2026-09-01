@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.19';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 19';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.20';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 20';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -1924,7 +1924,7 @@ ${codexPageStyle()}
     const result = {}, catalog = combinedPortraitAssets(character, await modulePortraitAssets(settings, character, chat), 600);
     if (typeof Risuai.readImage !== 'function') return result;
     const asDataUrl = (value, ext = '') => {
-      if (typeof value === 'string') return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif);base64,)/i.test(value) ? value : '';
+      if (typeof value === 'string') return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
       let bytes = null;
       if (value instanceof Uint8Array) bytes = value;
       else if (value instanceof ArrayBuffer) bytes = new Uint8Array(value);
@@ -1936,20 +1936,22 @@ ${codexPageStyle()}
         : bytes[0] === 0xff && bytes[1] === 0xd8 ? 'image/jpeg'
           : bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50 ? 'image/webp'
             : bytes[0] === 0x47 && bytes[1] === 0x49 ? 'image/gif'
-              : ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' }[lower] || '');
+              : bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70 && bytes[8] === 0x61 && bytes[9] === 0x76 && bytes[10] === 0x69 && [0x66, 0x73].includes(bytes[11]) ? 'image/avif'
+                : ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' }[lower] || '');
       if (!mime) return '';
       let binary = ''; for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
       return `data:${mime};base64,${btoa(binary)}`;
     };
-    const names = (codexSnapshot?.monsters?.order || []).map((id) => codexSnapshot.monsters.entries[id]?.portrait).filter((name) => name && name !== 'NONE').slice(0, 20);
-    await Promise.all([...new Set(names)].map(async (name) => {
-      const asset = ITEMXCodex.assetLookup(catalog, name); if (!asset) return;
+    const monsters = (codexSnapshot?.monsters?.order || []).map((id) => codexSnapshot.monsters.entries[id]).filter(Boolean).slice(0, 20);
+    const narrative = (chat?.message || []).slice(-8).map((message) => ITEMXCore.messageText(message)).join('\n');
+    await Promise.all(monsters.map(async (monster) => {
+      const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative); if (!asset) return;
       const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
-      if (runtime.portraitCache.has(cacheKey)) { result[name] = runtime.portraitCache.get(cacheKey); return; }
+      if (runtime.portraitCache.has(cacheKey)) { result[monster.id] = runtime.portraitCache.get(cacheKey); return; }
       try {
         const image = asDataUrl(await Risuai.readImage(asset.id), asset.ext);
         if (image) {
-          result[name] = image;
+          result[monster.id] = image;
           if (image.length <= 4 * 1024 * 1024) {
             runtime.portraitCache.set(cacheKey, image);
             runtime.portraitCacheBytes += image.length;
@@ -2087,7 +2089,7 @@ ${codexPageStyle()}
     const controls = filters.map(([key]) => `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`).join('');
     const skillList = tab === 'skills' ? (skills.map((skill, index) => `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice" id="itemx2-skill-${index}" name="itemx2-skill-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-skill-card" for="itemx2-skill-${index}">${skillSummaryHtml(skill, loaded.rarityMode)}</label>${skillPageHtml(skill, '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>', loaded.rarityMode)}</div>`).join('') || '<div class="itemx2-codex-empty">아직 확정된 스킬이 없답니다.</div>') : '';
     const monsterList = tab === 'bestiary' ? (monsters.map((monster, index) => {
-      const portrait = loaded.portraits?.[monster.portrait] || '';
+      const portrait = loaded.portraits?.[monster.id] || '';
       return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label>${monsterPageHtml(monster, portrait, '<label class="itemx-codex-back" for="itemx2-monster-none">‹ 조우 목록</label>')}</div>`;
     }).join('') || '<div class="itemx2-codex-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>') : '';
     const list = tab === 'inventory' ? (inventoryPage.map((item, index) => {
@@ -2669,9 +2671,9 @@ ${codexPageStyle()}
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
     const selectedMonster = ui.selectedMonster && iframeMonsters.find((one) => one.id === ui.selectedMonster);
     const skillRows = iframeSkills.map((one) => `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary" data-skill-id="${ITEMXCore.esc(one.id)}">${skillSummaryHtml(one, loaded.rarityMode)}</button>`).join('');
-    const monsterRows = iframeMonsters.map((one) => `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${one.active ? 'active' : ''}" data-monster-id="${ITEMXCore.esc(one.id)}">${monsterSummaryHtml(one, loaded.portraits?.[one.portrait] || '')}</button>`).join('');
+    const monsterRows = iframeMonsters.map((one) => `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${one.active ? 'active' : ''}" data-monster-id="${ITEMXCore.esc(one.id)}">${monsterSummaryHtml(one, loaded.portraits?.[one.id] || '')}</button>`).join('');
     const skillsContent = `<div class="itemx-settings">${selectedSkill ? skillPageHtml(selectedSkill, '<button class="itemx-codex-back" data-action="back-skill">‹ 스킬 목록</button>', loaded.rarityMode).replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${skillRows || '<div class="itemx-empty">아직 확정된 스킬이 없답니다.</div>'}</div>`}</div>`;
-    const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.portrait] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
+    const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.id] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
     const content = ui.tab === 'settings' ? settingsContent : ui.tab === 'skills' ? skillsContent : ui.tab === 'bestiary' ? bestiaryContent : inventoryContent;
     root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${content}</section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => { void closeInventory(); });

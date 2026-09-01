@@ -275,6 +275,36 @@ const ITEMXCodex = (() => {
     const stemMatches = (rows || []).filter((row) => normalizeAssetName(row.name, true) === stem);
     return stemMatches.length === 1 ? stemMatches[0] : null;
   }
+  function assetForEntity(rows, entity, narrative = '') {
+    const explicit = clean(entity?.portrait, 240);
+    if (explicit && explicit.toUpperCase() !== 'NONE') {
+      const matched = assetLookup(rows, explicit);
+      if (matched) return matched;
+    }
+    const identities = [entity?.id, entity?.name, ...(entity?.aliases || [])]
+      .map((value) => normalizeAssetName(value, true))
+      .filter((value) => value.length >= 2);
+    if (!identities.length) return null;
+    const candidates = (rows || []).filter((row) => {
+      const stem = normalizeAssetName(row?.name, true);
+      return identities.some((identity) => stem === identity || stem.startsWith(`${identity}_`) || stem.startsWith(`${identity}-`) || stem.startsWith(`${identity} `));
+    });
+    if (!candidates.length) return null;
+    const representativeKinds = ['standing', 'default', 'neutral', 'normal', 'idle', 'indifferent', 'serious'];
+    for (const kind of representativeKinds) {
+      const direct = candidates.find((row) => identities.some((identity) => normalizeAssetName(row.name, true) === `${identity}_${kind}`));
+      if (direct) return direct;
+      const variant = candidates.find((row) => new RegExp(`(?:^|[_ -])${kind}$`, 'i').test(normalizeAssetName(row.name, true)));
+      if (variant) return variant;
+    }
+    const context = String(narrative || '').toLowerCase();
+    let recent = null, recentAt = -1;
+    for (const row of candidates) {
+      const at = context.lastIndexOf(String(row.name || '').toLowerCase());
+      if (at > recentAt) { recent = row; recentAt = at; }
+    }
+    return recentAt >= 0 ? recent : candidates[0];
+  }
   function assetCatalog(character, max = 100, includeEmotion = false) {
     const limit = Math.max(0, Math.min(1000, Number(max) || 0)), seen = new Set();
     const collectAssets = (source, emotion = false) => {
@@ -327,6 +357,6 @@ const ITEMXCodex = (() => {
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');
   }
-  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, assetLookup, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
+  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, assetLookup, assetForEntity, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
 })();
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCodex = ITEMXCodex;
