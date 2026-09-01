@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.14\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.15\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,7 +43,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.14');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.15');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
