@@ -10,6 +10,7 @@ const ITEMXCodex = (() => {
   const RELATIONS = new Set(['hostile', 'sparring', 'neutral', 'allied', 'unknown']);
   const ENCOUNTER_STATUS = new Set(['active', 'ended', 'escaped', 'defeated', 'dead', 'unknown']);
   const SKILL_ACTIONS = new Set(['learn', 'equip', 'unequip', 'mastery', 'seal', 'unseal', 'forget']);
+  const ITEMX_SKILL_RANKS = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
   const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
   const OPS = new Set(['merge', 'remove', 'restore']);
   const clean = (value, max = 800) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -39,7 +40,13 @@ const ITEMXCodex = (() => {
   }
   function scalar(body, a, key) { return clean(a[key] || field(body, key)); }
   function normalizeId(value, prefix, seed) { return ID_RE.test(value || '') ? value : `${prefix}_${fnv(seed)}`; }
-  function mastery(value) { const n = Number(value); return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 0; }
+  function boundedNumber(value, min, max) {
+    if (value == null || String(value).trim() === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : null;
+  }
+  const mastery = (value) => boundedNumber(value, 0, 100);
+  const skillLevel = (value) => boundedNumber(value, 1, 999);
 
   function normalizeSkillExam(raw, seed) {
     const name = clean(raw.name, 160); if (!name) return { error: 'skill_no_name' };
@@ -47,7 +54,7 @@ const ITEMXCodex = (() => {
     const status = SKILL_STATUS.has(raw.status) ? raw.status : (type === 'sealed' ? 'sealed' : 'learned');
     return { event: { domain: 'skill', kind: 'exam', entity: {
       id: normalizeId(raw.id, 'skill', seed), name, glyph: ITEMXCore.resolveSkillGlyph({ ...raw, name, type }), rank: clean(raw.rank, 80) || '미분류', school: clean(raw.school, 120), type, status,
-      level: Math.max(1, Math.min(999, Number(raw.level) || 1)), mastery: mastery(raw.mastery), cost: clean(raw.cost, 120), cooldown: cooldownValue(raw.cooldown), target: clean(raw.target, 120), affinity: clean(raw.affinity, 80),
+      level: skillLevel(raw.level), mastery: mastery(raw.mastery), cost: clean(raw.cost, 120), cooldown: cooldownValue(raw.cooldown), target: clean(raw.target, 120), affinity: clean(raw.affinity, 80),
       description: clean(raw.description, 1200), effects: list(raw.effects), growth: clean(raw.growth, 800),
       _provided: Object.keys(raw).filter((key) => raw[key] !== '')
     } } };
@@ -73,8 +80,8 @@ const ITEMXCodex = (() => {
       : ['name','glyph','aliases','type','threat','relation','status','portrait','weaknesses','resistances','moves','description','outcome'];
     const fields = {};
     for (const key of allowed) if (raw[key] !== '') fields[key === 'type' && domain === 'monster' ? 'kind' : key] = ['effects','aliases','weaknesses','resistances','moves'].includes(key) ? list(raw[key]) : clean(raw[key], key === 'description' ? 1200 : key === 'outcome' ? 600 : 800);
-    if ('mastery' in fields) fields.mastery = mastery(fields.mastery);
-    if ('level' in fields) fields.level = Math.max(1, Math.min(999, Number(fields.level) || 1));
+    if ('mastery' in fields) { fields.mastery = mastery(fields.mastery); if (fields.mastery == null) delete fields.mastery; }
+    if ('level' in fields) { fields.level = skillLevel(fields.level); if (fields.level == null) delete fields.level; }
     if ('cooldown' in fields) fields.cooldown = cooldownValue(fields.cooldown);
     return { event: { domain, kind: 'patch', patch: { id, action, op, fields } } };
   }
@@ -158,6 +165,58 @@ const ITEMXCodex = (() => {
     }
     return out.replace(/<\/?(?:skillExam|skillPatch|monsterExam|monsterPatch)\b[^>]*>?/gi, '').replace(/^\s*```(?:xml)?\s*$/gim, '').replace(/\n{3,}/g, '\n\n').trim();
   }
+  function skillEvidenceSegments(text, entity) {
+    const name = clean(entity?.name, 160).toLowerCase();
+    const school = clean(entity?.school, 120).toLowerCase();
+    const schoolTokens = school.split(/[\s·/|:_-]+/).filter((one) => one.length >= 2);
+    const lines = String(text || '').split(/\r?\n|(?<=[.!?。！？])\s+/);
+    const matches = lines.map((line, index) => {
+      const lower = line.toLowerCase();
+      let score = name && lower.includes(name) ? 4 : 0;
+      if (school && lower.includes(school)) score = Math.max(score, 3);
+      else if (schoolTokens.some((token) => lower.includes(token)) && /숙련|기술|스킬|skill|proficiency|grade|\blv\b|level/i.test(line)) score = Math.max(score, 2);
+      return { line, index, score };
+    }).filter((one) => one.score > 0);
+    const near = new Set();
+    for (const match of matches) for (let index = Math.max(0, match.index - 1); index <= Math.min(lines.length - 1, match.index + 1); index += 1) near.add(index);
+    return { matches, context: [...near].sort((a, b) => a - b).map((index) => lines[index]).join('\n') };
+  }
+  function explicitSkillNumber(segments, pattern, min, max) {
+    let best = null;
+    for (const segment of segments) {
+      pattern.lastIndex = 0; let hit;
+      while ((hit = pattern.exec(segment.line))) {
+        const value = boundedNumber(hit[1], min, max);
+        if (value == null) continue;
+        const candidate = { value, score: segment.score, index: segment.index, offset: hit.index };
+        if (!best || candidate.score > best.score || (candidate.score === best.score && (candidate.index > best.index || (candidate.index === best.index && candidate.offset > best.offset)))) best = candidate;
+      }
+    }
+    return best?.value ?? null;
+  }
+  function reconcileSkillEvent(event, evidenceText = '', options = {}) {
+    const next = clone(event);
+    if (next?.domain !== 'skill') return next;
+    const entity = next.kind === 'exam' ? next.entity : null;
+    if (entity) {
+      const evidence = skillEvidenceSegments(evidenceText, entity);
+      const level = explicitSkillNumber(evidence.matches, /(?:\bLv\.?|레벨|level)\s*[:：.]?\s*(\d{1,3})/ig, 1, 999);
+      const masteryValue = explicitSkillNumber(evidence.matches, /(?:숙련도|mastery)\s*[:：]?\s*(\d{1,3})\s*%/ig, 0, 100);
+      const source = evidence.context;
+      const veteran = /고인물|베테랑|노련|달인|고수|마스터|숙련|수백\s*번|수천\s*번|veteran|expert|mastered/i.test(source);
+      const newlyLearned = /새로|처음|방금[\s\S]{0,30}(?:배우|습득|익히)|배웠|습득했|newly\s+learned|just\s+learned|just\s+acquired/i.test(source);
+      const provided = new Set(entity._provided || []);
+      if (level != null) { entity.level = level; provided.add('level'); }
+      else if (veteran && !newlyLearned && entity.level === 1) { entity.level = null; provided.delete('level'); }
+      if (masteryValue != null) { entity.mastery = masteryValue; provided.add('mastery'); }
+      else if (veteran && !newlyLearned && entity.mastery === 0) { entity.mastery = null; provided.delete('mastery'); }
+      if (options.rarityMode === 'itemx' && !ITEMX_SKILL_RANKS.has(String(entity.rank || '').toLowerCase())) {
+        entity.rank = 'normal'; provided.delete('rank');
+      }
+      entity._provided = [...provided];
+    }
+    return next;
+  }
   function extractResponse(content, base = snapshot(), options = {}) {
     const text = String(content || ''), state = clone(base), parts = collect(text), output = [], events = [], errors = [], enabled = new Set(options.enabledDomains || ['skill', 'monster']); let cursor = 0;
     if (!parts.length && !/<\/?(?:skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(text)) return { content: text, snapshot: state, events, errors };
@@ -166,6 +225,7 @@ const ITEMXCodex = (() => {
       const domain = part.tag.toLowerCase().startsWith('skill') ? 'skill' : 'monster';
       if (!enabled.has(domain)) { cursor = part.end; return; }
       const parsed = parseTransport(part.tag, part.attrs, part.body, `${part.raw}:${index}`);
+      if (parsed.event?.domain === 'skill') parsed.event = reconcileSkillEvent(parsed.event, options.skillEvidenceText ?? text, options);
       if (parsed.event) { const view = clone(applyEvent(state, parsed.event)); events.push(parsed.event); output.push(marker({ v: VERSION, event: parsed.event, view })); }
       else { errors.push(parsed.error || 'codex_invalid_transport'); output.push(marker({ v: VERSION, error: parsed.error || 'codex_invalid_transport' })); }
       cursor = part.end;
@@ -184,7 +244,7 @@ const ITEMXCodex = (() => {
   function anchor(state, narrative = '', max = 9000, options = {}) {
     const lines = ['[ITEMX CODEX · ACTIVE CONTEXT · authoritative]'];
     const skills = state?.skills || registry(), monsters = state?.monsters || registry(), text = String(narrative).toLowerCase(), enabled = new Set(options.enabledDomains || ['skill', 'monster']);
-    if (enabled.has('skill')) for (const one of skills.order.map((id) => skills.entries[id]).filter(Boolean).filter((x) => ['equipped','sealed'].includes(x.status) || text.includes(x.name.toLowerCase())).slice(0, 8)) lines.push(`- SKILL id=${one.id} | name=${one.name} | type=${one.type} | status=${one.status} | mastery=${one.mastery} | effect=${one.effects.slice(0, 3).join(' ;; ')}`);
+    if (enabled.has('skill')) for (const one of skills.order.map((id) => skills.entries[id]).filter(Boolean).filter((x) => ['equipped','sealed'].includes(x.status) || text.includes(x.name.toLowerCase())).slice(0, 8)) lines.push(`- SKILL id=${one.id} | name=${one.name} | type=${one.type} | status=${one.status} | level=${one.level ?? 'unknown'} | mastery=${one.mastery ?? 'unknown'} | effect=${one.effects.slice(0, 3).join(' ;; ')}`);
     if (enabled.has('monster')) for (const one of monsters.order.map((id) => monsters.entries[id]).filter(Boolean).filter((x) => x.active || [x.name, ...(x.aliases || [])].some((n) => n && text.includes(n.toLowerCase()))).slice(0, 4)) lines.push(`- ENCOUNTER id=${one.id} | name=${one.name} | relation=${one.relation} | status=${one.status} | threat=${one.threat} | weakness=${one.weaknesses.slice(0, 3).join(',')}${one.outcome ? ` | latest_outcome=${clean(one.outcome, 220)}` : ''}`);
     return lines.join('\n').slice(0, max);
   }
@@ -194,11 +254,11 @@ const ITEMXCodex = (() => {
     const skillRankRule = options.rarityMode === 'itemx'
       ? 'Use only ITEMX rank values normal|magic|rare|unique|epic|legendary|mythical|empyrean, based on explicit narrative power and prestige; do not inflate an unsupported rank.'
       : "Preserve the setting's own native rank, realm, discipline grade or proficiency wording exactly; do not replace it with ITEMX rarity names.";
-    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>1</level><mastery>0..100</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
+    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>omit unless supported</level><mastery>omit unless supported</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If no reliable numeric scale is established, omit level and mastery instead of inventing them. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
     if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');
   }
-  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, extractResponse, eventsFromText, rebuild, requestView, assetCatalog, anchor, protocol };
+  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, assetCatalog, anchor, protocol };
 })();
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCodex = ITEMXCodex;

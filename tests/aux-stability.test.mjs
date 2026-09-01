@@ -175,6 +175,45 @@ test('auxiliary regeneration receives the triggering turn and recent visible nar
   assert.match(prompt, /weapon_state = 오른손에 차가운 검을 들었다/);
 });
 
+test('auxiliary evidence excludes standard Lightboard LBDATA while preserving visible narrative', async () => {
+  const result = await bootWithOutput([
+    '지훈은 폐허에서 오래된 검을 발견했다.',
+    '---',
+    '[LBDATA START]',
+    'NEWS: 가상 상점에서 전설검을 획득했다.',
+    'PENDING: simulated acquisition',
+    '[LBDATA END]',
+    '---',
+    '그 검은 아직 손에 넣지 않았다.'
+  ].join('\n'));
+  assert.equal(result.modelCalls, 1);
+  assert.match(result.prompts[0], /지훈은 폐허에서 오래된 검을 발견했다/);
+  assert.match(result.prompts[0], /그 검은 아직 손에 넣지 않았다/);
+  assert.doesNotMatch(result.prompts[0], /LBDATA START|가상 상점|simulated acquisition/);
+});
+
+test('Lightboard-only data rewrites do not trigger another auxiliary model request', async () => {
+  const narrative = '지훈은 창밖을 바라보며 하루를 마쳤다.';
+  const result = await bootWithOutput(narrative);
+  assert.equal(result.modelCalls, 1);
+  result.setLatestData(`${narrative}\n---\n[LBDATA START]\nNEWS: 갱신됨\n[LBDATA END]\n---`);
+  const timer = result.intervals.find(({ ms }) => ms === 4500);
+  result.advance(2000); await timer.fn();
+  result.advance(2000); await timer.fn();
+  await new Promise((resolveWait) => setTimeout(resolveWait, 500));
+  assert.equal(result.modelCalls, 1);
+});
+
+test('auxiliary corrects a veteran skill from associated proficiency evidence', async () => {
+  const narrative = '존 팔루스티프 경은 수백 번의 실전을 거친 둔기 고수다.\n[한손둔기 숙련도] (Grade 1 / Lv.39)\n한손둔기 숙련도가 Lv.40에 도달했다.';
+  const modelOutput = '<skillExam><id>vibration_strike</id><name>진동타격</name><rank>rare</rank><school>한손둔기</school><type>active</type><status>learned</status><level>1</level><mastery>0</mastery></skillExam>';
+  const result = await bootWithOutput(narrative, { modelOutput });
+  const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
+  const row = ledger.find((one) => one.domain === 'codex' && one.payload?.event?.entity?.id === 'vibration_strike');
+  assert.equal(row.payload.event.entity.level, 40);
+  assert.equal(row.payload.event.entity.mastery, null);
+});
+
 test('auxiliary treats the first confirmed already-owned player skill as a discovery event', async () => {
   const result = await bootWithOutput(
     '동료는 챗붕이 [보법]을 실전에서 오랫동안 사용해 온 고수라고 확인했다.',

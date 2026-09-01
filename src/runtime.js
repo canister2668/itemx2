@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.17';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 17';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.18';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 18';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -577,10 +577,14 @@ ${codexPageStyle()}
     return found.sort((a, b) => a.index - b.index).map((row) => row.event);
   }
 
-  function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat)) {
+  function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
     const state = ITEMXCodex.snapshot(); let transport = '';
-    for (const message of chat?.message || []) for (const event of messageEvents(messageData(message), 'codex', lookup)) {
-      ITEMXCodex.applyEvent(state, event); transport += JSON.stringify(event);
+    for (const message of chat?.message || []) {
+      const narrative = messageData(message);
+      for (const event of messageEvents(narrative, 'codex', lookup)) {
+        const reconciled = ITEMXCodex.reconcileSkillEvent(event, narrative, options);
+        ITEMXCodex.applyEvent(state, reconciled); transport += JSON.stringify(reconciled);
+      }
     }
     state.fingerprint = ITEMXCore.fnv1a(transport); state.updatedAt = Date.now();
     return state;
@@ -943,8 +947,13 @@ ${codexPageStyle()}
     return rows.length ? rows.join('\n').slice(0, 4000) : '(no item-like state variables)';
   }
 
+  const LIGHTBOARD_DATA_RE = /(?:^|\n)[ \t]*---[ \t]*\r?\n[ \t]*\[LBDATA START\][\s\S]*?\[LBDATA END\][ \t]*\r?\n[ \t]*---[ \t]*(?=\r?\n|$)/gi;
+  function stripAuxiliaryDataBlocks(value) {
+    return String(value || '').replace(LIGHTBOARD_DATA_RE, '\n');
+  }
+
   function auxiliaryVisibleText(value, { itemRefs = true } = {}) {
-    let text = String(value || '');
+    let text = stripAuxiliaryDataBlocks(value);
     text = text.replace(/<(thoughts|analysis)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
     text = itemRefs ? ITEMXCodex.requestView(ITEMXCore.requestView(text)) : text.replace(ITEMXCore.MARKER_RE, '').replace(ITEMXCodex.MARKER_RE, '');
     text = text.replace(ITEMX_REF_RE, '').replace(ITEMX_CODEX_REF_RE, '');
@@ -1040,7 +1049,7 @@ ${codexPageStyle()}
       if (auxiliaryHistory(current)[guardKey] && !force) return null;
       const lookup = buildMessageEventLookup(current);
       const snapshot = rebuildWithManual(current, lookup);
-      const codexSnapshot = rebuildCodexWithLedger(current, lookup);
+      const codexSnapshot = rebuildCodexWithLedger(current, lookup, { rarityMode: settings.rarityMode });
       const committedNarrative = clipAuxiliaryText(auxiliaryVisibleText(messageData(current.message[index]), { itemRefs: false }), 14000);
       if (!committedNarrative && !force) return null;
       const conversation = auxiliaryConversationContext(current, index);
@@ -1089,7 +1098,8 @@ ${codexPageStyle()}
         } catch (error) { fail('auxiliary partial repair', error); }
         unresolvedPartials = partials.filter((one) => one.missing.some((key) => !repaired.get(one.event.item.id)?.has(key)));
       }
-      const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, { enabledDomains: domains });
+      const skillEvidenceText = [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n\n');
+      const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, { enabledDomains: domains, rarityMode: settings.rarityMode, skillEvidenceText });
       const validationCodex = ITEMXCodex.clone(codexSnapshot);
       const validCodex = codexParsed.events.filter((event) => ITEMXCodex.applyEvent(validationCodex, event) != null);
       const valid = [...validItems, ...validCodex];
@@ -1260,8 +1270,8 @@ ${codexPageStyle()}
     const lookup = buildMessageEventLookup(ctx.chat);
     const base = rebuildWithManual(ctx.chat, lookup).registry;
     const parsed = settings.itemsEnabled ? ITEMXCore.extractResponse(source, base) : { content: stripItemTransport(source), events: [], errors: [] };
-    const codexBase = rebuildCodexWithLedger(ctx.chat, lookup);
-    const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexBase, { enabledDomains: enabledCodexDomains(settings) });
+    const codexBase = rebuildCodexWithLedger(ctx.chat, lookup, { rarityMode: settings.rarityMode });
+    const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexBase, { enabledDomains: enabledCodexDomains(settings), rarityMode: settings.rarityMode, skillEvidenceText: source });
     const positioned = positionMarkersByNarrative(codexParsed.content);
     const needsCompaction = ITEMXCore.MARKER_RE.test(positioned) || ITEMXCodex.MARKER_RE.test(positioned);
     ITEMXCore.MARKER_RE.lastIndex = 0; ITEMXCodex.MARKER_RE.lastIndex = 0;
@@ -1354,7 +1364,7 @@ ${codexPageStyle()}
       const lookup = buildMessageEventLookup(ctx.chat);
       const base = rebuildWithManual(ctx.chat, lookup).registry;
       const result = settings.itemsEnabled ? ITEMXCore.extractResponse(content, base) : { content: stripItemTransport(content), events: [], errors: [] };
-      const codexResult = ITEMXCodex.extractResponse(result.content, rebuildCodexWithLedger(ctx.chat, lookup), { enabledDomains: enabledCodexDomains(settings) });
+      const codexResult = ITEMXCodex.extractResponse(result.content, rebuildCodexWithLedger(ctx.chat, lookup, { rarityMode: settings.rarityMode }), { enabledDomains: enabledCodexDomains(settings), rarityMode: settings.rarityMode, skillEvidenceText: content });
       const positioned = positionMarkersByNarrative(codexResult.content);
       if (result.events.length || result.errors.length || codexResult.events.length || codexResult.errors.length || codexResult.content !== content) {
         runtime.latestOutput = positioned;
@@ -1956,17 +1966,23 @@ ${codexPageStyle()}
   const codexHeroFx = (domain) => `<span class="itemx2-codex-fx itemx2-codex-hero-fx itemx2-${domain}-hero-fx" aria-hidden="true"><i></i><b></b><em></em></span>`;
 
   function skillSummaryHtml(skill, rarityMode = 'world') {
-    const filled = Math.max(0, Math.min(5, Math.ceil((Number(skill.mastery) || 0) / 20)));
-    return `${codexListFx('skill', skillFxClasses(skill, rarityMode))}<span class="itemx2-codex-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(skill.name)}</strong><small>${ITEMXCore.esc(skill.rank)} · Lv.${Number(skill.level) || 1} · 숙련 ${Number(skill.mastery) || 0}%</small><span class="itemx2-codex-tags"><i>✨ ${ITEMXCore.esc(skill.type)}</i><i>${ITEMXCore.esc(skill.status)}</i>${skill.affinity ? `<i>${ITEMXCore.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>소모</small><b>${ITEMXCore.esc(skill.cost || '없음')}</b><small>재사용</small><b>${ITEMXCore.esc(skill.cooldown || '없음')}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
+    const knownMastery = skill.mastery != null && Number.isFinite(Number(skill.mastery));
+    const filled = knownMastery ? Math.max(0, Math.min(5, Math.ceil(Number(skill.mastery) / 20))) : 0;
+    const levelLabel = skill.level == null ? 'Lv.미상' : `Lv.${Number(skill.level)}`;
+    const masteryLabel = knownMastery ? `숙련 ${Number(skill.mastery)}%` : '숙련 미상';
+    return `${codexListFx('skill', skillFxClasses(skill, rarityMode))}<span class="itemx2-codex-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(skill.name)}</strong><small>${ITEMXCore.esc(skill.rank)} · ${levelLabel} · ${masteryLabel}</small><span class="itemx2-codex-tags"><i>✨ ${ITEMXCore.esc(skill.type)}</i><i>${ITEMXCore.esc(skill.status)}</i>${skill.affinity ? `<i>${ITEMXCore.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>소모</small><b>${ITEMXCore.esc(skill.cost || '없음')}</b><small>재사용</small><b>${ITEMXCore.esc(skill.cooldown || '없음')}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
   }
 
   function skillPageHtml(skill, back, rarityMode = 'world') {
-    const mastery = Math.max(0, Math.min(10, Math.ceil((Number(skill.mastery) || 0) / 10)));
+    const knownMastery = skill.mastery != null && Number.isFinite(Number(skill.mastery));
+    const mastery = knownMastery ? Math.max(0, Math.min(10, Math.ceil(Number(skill.mastery) / 10))) : 0;
+    const levelLabel = skill.level == null ? '미상' : `Lv.${Number(skill.level)}`;
+    const masteryLabel = knownMastery ? `${Number(skill.mastery)}%` : '미상';
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
     const affinity = skillTheme(skill), tier = skillRankTier(skill.rank, rarityMode);
     const fx = ITEMXRenderer.renderSkillFx({ id: skill.id, name: skill.name, affinity }, tier, 'full');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
-    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>Lv.${Number(skill.level) || 1}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${Number(skill.mastery) || 0}%</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section></div>`;
+    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section></div>`;
   }
 
   function monsterSummaryHtml(monster, portrait = '') {

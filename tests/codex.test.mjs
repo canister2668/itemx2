@@ -106,6 +106,32 @@ test('skill protocol uses real time cooldowns and world-native costs', () => {
   assert.match(protocol, /Preserve the setting's own native rank/);
   const forced = codex.protocol([], { rarityMode: 'itemx' });
   assert.match(forced, /normal\|magic\|rare\|unique\|epic\|legendary\|mythical\|empyrean/);
+  assert.doesNotMatch(protocol, /<level>1<\/level>/);
+  assert.match(protocol, /Registry discovery is not the moment of learning/);
+  assert.match(protocol, /omit level and mastery instead of inventing them/);
+});
+
+test('veteran skill evidence corrects false novice defaults without inventing mastery', () => {
+  const narrative = [
+    '존 팔루스티프 경은 수백 번의 실전과 수천 번의 둔기 스윙을 거친 고인물이다.',
+    '[한손둔기 숙련도] (Grade 1 / Lv.39)',
+    '전투가 끝나며 한손둔기 숙련도가 Lv.40에 도달했다.',
+    '<skillExam><id>vibration_strike</id><name>진동타격</name><rank>액티브</rank><school>한손둔기</school><type>active</type><status>learned</status><level>1</level><mastery>0</mastery></skillExam>'
+  ].join('\n');
+  const result = codex.extractResponse(narrative, codex.snapshot(), { rarityMode: 'itemx' });
+  const skill = result.snapshot.skills.entries.vibration_strike;
+  assert.equal(skill.level, 40);
+  assert.equal(skill.mastery, null);
+  assert.equal(skill.rank, 'normal');
+});
+
+test('unknown veteran skill scale stays unknown while explicit newly learned novice values survive', () => {
+  const veteran = codex.extractResponse('오랫동안 숙련한 고수의 비전이다.\n<skillExam><id>old_art</id><name>고법</name><type>passive</type><level>1</level><mastery>0</mastery></skillExam>', codex.snapshot());
+  assert.equal(veteran.snapshot.skills.entries.old_art.level, null);
+  assert.equal(veteran.snapshot.skills.entries.old_art.mastery, null);
+  const novice = codex.extractResponse('방금 처음 배운 초보 검술이다.\n<skillExam><id>new_art</id><name>초보 검술</name><type>active</type><level>1</level><mastery>0</mastery></skillExam>', codex.snapshot());
+  assert.equal(novice.snapshot.skills.entries.new_art.level, 1);
+  assert.equal(novice.snapshot.skills.entries.new_art.mastery, 0);
 });
 
 test('skill and encounter records derive safe emoji fallbacks and request free model-selected glyphs', () => {
