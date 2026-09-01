@@ -83,7 +83,8 @@
     .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }
     .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
     .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }
-    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; background:linear-gradient(to bottom,transparent,var(--pg),transparent); filter:blur(15px); animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }
+    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }
+    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }
     .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }
     .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }
     .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }
@@ -95,7 +96,8 @@
     .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }
     .craft-mote.shape-gear::before { content:"⚙";position:absolute;inset:0; }
     .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}
-    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px);animation:existing-fog 17s ease-in-out infinite alternate; }
+    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }
+    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }
     .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }
 
     /* Proposed affinity layer. No circular pulse or generic coloured wash. */
@@ -116,18 +118,27 @@
     /* A second, broad signature per affinity. Particles provide detail; these
        edge traces make the affinity readable before the viewer studies them. */
     .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }
+    .affinity-signature-visual { position:absolute;inset:0;display:block; }
     .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }
-    .sig-fire { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px); filter:blur(2px) drop-shadow(0 0 7px var(--ac)); animation:sig-fire 5.2s linear infinite; }
+    .sig-fire { animation:sig-fire 5.2s linear infinite; }
+    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }
     .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }
     .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }
     .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }
-    .sig-wind { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px); transform:translateX(-26%); filter:drop-shadow(5px 0 7px var(--ac)); animation:sig-wind 6.4s linear infinite; }
-    .sig-earth { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%); filter:drop-shadow(0 0 5px var(--ac)); animation:sig-earth 6s ease-in-out infinite alternate; }
-    .sig-light { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px); filter:blur(3px) drop-shadow(0 0 9px var(--ac)); animation:sig-light 7s ease-in-out infinite alternate; }
-    .sig-dark { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px); filter:blur(9px) drop-shadow(0 0 10px var(--ac)); animation:sig-dark 7.5s ease-in-out infinite alternate; }
-    .sig-poison { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px); clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%); filter:blur(2px) drop-shadow(0 0 7px var(--ac)); animation:sig-poison 8s ease-in-out infinite alternate; }
-    .sig-blood { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px); clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%); filter:drop-shadow(0 5px 8px var(--ac)); animation:sig-blood 5.8s ease-in-out infinite alternate; }
-    .sig-void { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px); clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%); filter:drop-shadow(0 0 11px var(--ac)); animation:sig-void 4.9s step-end infinite; }
+    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }
+    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }
+    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }
+    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }
+    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }
+    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }
+    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }
+    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }
+    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }
+    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }
+    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }
+    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }
+    .sig-void { animation:sig-void 4.9s step-end infinite; }
+    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }
     .itemx-content { position:relative; z-index:4; padding:1.35em; }
     .itemx-head { display:flex; align-items:flex-start; gap:.85em; }
     .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }
@@ -663,9 +674,9 @@ const ITEMXRenderer = (() => {
       const n = seed + i * 43, z = 2 + (n % 5) * .75, shape = craft.shapes[n % craft.shapes.length], path = craft.paths[(n * 3 + 1) % craft.paths.length], pair = craft.colors[n % craft.colors.length];
       motes += `<i class="craft-mote shape-${shape} path-${path} ${shape === 'diamond' ? 'diamond' : ''}" style="--x:${n % 101}%;--z:${z}px;--mh:${z * 2.8}px;--ca:${pair[0]};--cb:${pair[1]};--o:${.22 + (n % 4) * .1};--d:${7 + (n % 8)}s;--delay:-${(n % 9) * .75}s;--drift:${-34 + (n % 69)}px;--drift2:${(34 - (n % 69)) * .7}px"></i>`;
     }
-    const fog = craft.ambient.fog && level >= craft.ambient.fog ? '<div class="current-fog"></div>' : '';
+    const fog = craft.ambient.fog && level >= craft.ambient.fog ? '<div class="current-fog"><span class="current-fog-visual"></span></div>' : '';
     const scan = craft.ambient.scan && level >= craft.ambient.scan ? '<div class="current-scan"></div>' : '';
-    const veil = craft.ambient.veil && level >= craft.ambient.veil ? '<div class="current-veil"></div>' : '';
+    const veil = craft.ambient.veil && level >= craft.ambient.veil ? '<div class="current-veil"><span class="current-veil-visual"></span></div>' : '';
     return `<div class="current-fx">${rays ? `<div class="current-rays">${rays}</div>` : ''}${fog}${scan}${veil}${motes}</div>`;
   }
 
@@ -681,7 +692,8 @@ const ITEMXRenderer = (() => {
     }
     const secondary = role === 'secondary' ? ' secondary' : '';
     const extra = kind === 'lightning' ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div>` : (kind === 'ice' ? `<div class="ice-cracks${secondary}" style="--ac:${a.c}"></div>` : '');
-    const signature = kind === 'ice' ? '' : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}"></div>`;
+    const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
+    const signature = kind === 'ice' ? '' : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}">${movingSignature ? '<span class="affinity-signature-visual"></span>' : ''}</div>`;
     return `${signature}${extra}<div class="afx afx-${kind}${role === 'secondary' ? ' afx-secondary' : ''}" style="--ac:${a.c}">${bits}</div>`;
   }
 

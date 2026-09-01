@@ -50,9 +50,9 @@ const ITEMXRenderer = (() => {
       const n = seed + i * 43, z = 2 + (n % 5) * .75, shape = craft.shapes[n % craft.shapes.length], path = craft.paths[(n * 3 + 1) % craft.paths.length], pair = craft.colors[n % craft.colors.length];
       motes += `<i class="craft-mote shape-${shape} path-${path} ${shape === 'diamond' ? 'diamond' : ''}" style="--x:${n % 101}%;--z:${z}px;--mh:${z * 2.8}px;--ca:${pair[0]};--cb:${pair[1]};--o:${.22 + (n % 4) * .1};--d:${7 + (n % 8)}s;--delay:-${(n % 9) * .75}s;--drift:${-34 + (n % 69)}px;--drift2:${(34 - (n % 69)) * .7}px"></i>`;
     }
-    const fog = craft.ambient.fog && level >= craft.ambient.fog ? '<div class="current-fog"></div>' : '';
+    const fog = craft.ambient.fog && level >= craft.ambient.fog ? '<div class="current-fog"><span class="current-fog-visual"></span></div>' : '';
     const scan = craft.ambient.scan && level >= craft.ambient.scan ? '<div class="current-scan"></div>' : '';
-    const veil = craft.ambient.veil && level >= craft.ambient.veil ? '<div class="current-veil"></div>' : '';
+    const veil = craft.ambient.veil && level >= craft.ambient.veil ? '<div class="current-veil"><span class="current-veil-visual"></span></div>' : '';
     return `<div class="current-fx">${rays ? `<div class="current-rays">${rays}</div>` : ''}${fog}${scan}${veil}${motes}</div>`;
   }
 
@@ -68,7 +68,8 @@ const ITEMXRenderer = (() => {
     }
     const secondary = role === 'secondary' ? ' secondary' : '';
     const extra = kind === 'lightning' ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div>` : (kind === 'ice' ? `<div class="ice-cracks${secondary}" style="--ac:${a.c}"></div>` : '');
-    const signature = kind === 'ice' ? '' : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}"></div>`;
+    const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
+    const signature = kind === 'ice' ? '' : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}">${movingSignature ? '<span class="affinity-signature-visual"></span>' : ''}</div>`;
     return `${signature}${extra}<div class="afx afx-${kind}${role === 'secondary' ? ' afx-secondary' : ''}" style="--ac:${a.c}">${bits}</div>`;
   }
 

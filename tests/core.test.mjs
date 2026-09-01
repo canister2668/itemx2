@@ -102,3 +102,11 @@ test('renderer escapes model content and uses one shared card renderer', () => {
 test('rarity particle budgets keep rare and below restrained', () => {
   assert.deepEqual({ ...renderer.particleBudget }, { normal: 4, magic: 6, rare: 8, unique: 16, epic: 16, legendary: 16, mythical: 16, empyrean: 16 });
 });
+
+test('filtered ambient and moving affinity visuals use static child layers without reducing effects', () => {
+  const item = core.normalizeItem({ id: 'layered', name: '층 분리 검', type: '검', emoji: '⚔️', internalrarity: 'legendary', theme: 'oriental', affinity: 'fire', affinity2: 'wind' }).item;
+  const html = renderer.renderCard(item, { motion: 'full' });
+  assert.match(html, /current-fog"><span class="current-fog-visual"/);
+  assert.equal((html.match(/affinity-signature-visual/g) || []).length, 2);
+  assert.equal((html.match(/craft-mote /g) || []).length, 16);
+});

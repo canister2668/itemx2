@@ -24,7 +24,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const queues = new Map();
   const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, badgeEventOwner: null, badgeEventId: null, bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
+    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', hooks: { output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null }, badgePosition: 'lb', compactContainer: true,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
@@ -342,13 +342,13 @@ ${codexPageStyle()}
     queues.set(key, next); return next;
   }
 
-  function refreshLatest(chat) {
-    loadMessageEventLedger(chat);
+  function refreshLatest(chat, lookup = buildMessageEventLookup(chat)) {
+    loadMessageEventLedger(chat, lookup);
     const messages = Array.isArray(chat?.message) ? chat.message : [];
     let latest = '';
     for (let i = messages.length - 1; i >= 0; i--) {
       const text = messageData(messages[i]);
-      if (messageEvents(chat, text, 'item').length || messageEvents(chat, text, 'codex').length) { latest = text; break; }
+      if (messageEvents(text, 'item', lookup).length || messageEvents(text, 'codex', lookup).length) { latest = text; break; }
     }
     runtime.latestOutput = latest;
     const persisted = markerCodes(latest);
@@ -377,8 +377,18 @@ ${codexPageStyle()}
     } catch { return []; }
   }
 
-  function loadMessageEventLedger(chat) {
-    runtime.eventPayloads = new Map(messageEventLedger(chat).map((row) => [`${row.domain}:${row.ref}`, row.payload]));
+  function buildMessageEventLookup(chat) {
+    const rows = messageEventLedger(chat), itemByRef = new Map(), codexByRef = new Map(), payloads = new Map();
+    for (const row of rows) {
+      if (row.domain === 'item') itemByRef.set(row.ref, row.payload);
+      else if (row.domain === 'codex') codexByRef.set(row.ref, row.payload);
+      payloads.set(`${row.domain}:${row.ref}`, row.payload);
+    }
+    return { rows, itemByRef, codexByRef, payloads };
+  }
+
+  function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
+    runtime.eventPayloads = new Map(lookup.payloads);
   }
 
   function embeddedViewCode(payload, domain) {
@@ -436,8 +446,8 @@ ${codexPageStyle()}
     return { chat: next || chat, changed };
   }
 
-  function messageEvents(chat, text, domain) {
-    const rows = messageEventLedger(chat), byRef = new Map(rows.filter((row) => row.domain === domain).map((row) => [row.ref, row.payload]));
+  function messageEvents(text, domain, lookup) {
+    const byRef = domain === 'item' ? lookup.itemByRef : lookup.codexByRef;
     const found = [];
     const fullRe = domain === 'item' ? ITEMXCore.MARKER_RE : ITEMXCodex.MARKER_RE;
     const refRe = domain === 'item' ? ITEMX_REF_RE : ITEMX_CODEX_REF_RE;
@@ -454,9 +464,9 @@ ${codexPageStyle()}
     return found.sort((a, b) => a.index - b.index).map((row) => row.event);
   }
 
-  function rebuildCodexWithLedger(chat) {
+  function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat)) {
     const state = ITEMXCodex.snapshot(); let transport = '';
-    for (const message of chat?.message || []) for (const event of messageEvents(chat, messageData(message), 'codex')) {
+    for (const message of chat?.message || []) for (const event of messageEvents(messageData(message), 'codex', lookup)) {
       ITEMXCodex.applyEvent(state, event); transport += JSON.stringify(event);
     }
     state.fingerprint = ITEMXCore.fnv1a(transport); state.updatedAt = Date.now();
@@ -494,16 +504,23 @@ ${codexPageStyle()}
     return { chat: next, changed: true };
   }
 
-  function rebuildWithManual(chat) {
+  function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat)) {
     const messages = Array.isArray(chat?.message) ? chat.message : [];
-    const ledger = manualLedger(chat), reg = ITEMXCore.newRegistry();
+    const ledger = manualLedger(chat), manualByIndex = new Map(), manualTail = [], reg = ITEMXCore.newRegistry();
+    for (const row of ledger) {
+      if (row.afterIndex < 0 || row.afterIndex >= messages.length) manualTail.push(row);
+      else {
+        const rows = manualByIndex.get(row.afterIndex) || [];
+        rows.push(row); manualByIndex.set(row.afterIndex, rows);
+      }
+    }
     let transport = '';
     const apply = (event) => { ITEMXCore.applyEvent(reg, event); transport += ITEMXCore.marker({ v: ITEMXCore.VERSION, event }); };
     for (let index = 0; index < messages.length; index += 1) {
-      for (const event of messageEvents(chat, messageData(messages[index]), 'item')) apply(event);
-      for (const row of ledger) if (row.afterIndex === index) apply(row.event);
+      for (const event of messageEvents(messageData(messages[index]), 'item', lookup)) apply(event);
+      for (const row of manualByIndex.get(index) || []) apply(row.event);
     }
-    for (const row of ledger) if (row.afterIndex < 0 || row.afterIndex >= messages.length) apply(row.event);
+    for (const row of manualTail) apply(row.event);
     return { schema: ITEMXCore.VERSION, rev: 2, fingerprint: ITEMXCore.fnv1a(transport), updatedAt: Date.now(), registry: reg };
   }
 
@@ -521,9 +538,10 @@ ${codexPageStyle()}
           debugRecord('display refs', 'embedded self-contained views');
         }
       }
-      const snapshot = rebuildWithManual(latestChat);
-      const codexSnapshot = rebuildCodexWithLedger(latestChat);
-      refreshLatest(latestChat);
+      const lookup = buildMessageEventLookup(latestChat);
+      const snapshot = rebuildWithManual(latestChat, lookup);
+      const codexSnapshot = rebuildCodexWithLedger(latestChat, lookup);
+      refreshLatest(latestChat, lookup);
       // Normal rebuilds are deliberately read-only. Writing an entire chat
       // snapshot here can race another module's output hook and restore an
       // older assistant message over its freshly appended display markers.
@@ -845,8 +863,9 @@ ${codexPageStyle()}
       if (!current || ITEMXCore.fnv1a(messageData(current.message?.[index])) !== sourceHash) return null;
       if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return null;
       if (auxiliaryHistory(current)[guardKey] && !force) return null;
-      const snapshot = rebuildWithManual(current);
-      const codexSnapshot = rebuildCodexWithLedger(current);
+      const lookup = buildMessageEventLookup(current);
+      const snapshot = rebuildWithManual(current, lookup);
+      const codexSnapshot = rebuildCodexWithLedger(current, lookup);
       const committedNarrative = clipAuxiliaryText(auxiliaryVisibleText(messageData(current.message[index]), { itemRefs: false }), 14000);
       if (!committedNarrative && !force) return null;
       const conversation = auxiliaryConversationContext(current, index);
@@ -901,10 +920,11 @@ ${codexPageStyle()}
       history[guardKey] = record;
       next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64))) };
       const compacted = compactMessageTransports(next, index).chat;
-      const rebuilt = rebuildWithManual(compacted);
+      const compactedLookup = buildMessageEventLookup(compacted);
+      const rebuilt = rebuildWithManual(compacted, compactedLookup);
       const stillActive = runtime.activeContextKey === ctx.key;
       if (stillActive) {
-        refreshLatest(compacted);
+        refreshLatest(compacted, compactedLookup);
         runtime.uiRemountAfter = Date.now() + 1200;
       }
       await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt));
@@ -1029,9 +1049,10 @@ ${codexPageStyle()}
 
   async function repairCommittedTransport(ctx, index, source) {
     const settings = await outputSettings(ctx.character);
-    const base = rebuildWithManual(ctx.chat).registry;
+    const lookup = buildMessageEventLookup(ctx.chat);
+    const base = rebuildWithManual(ctx.chat, lookup).registry;
     const parsed = settings.itemsEnabled ? ITEMXCore.extractResponse(source, base) : { content: stripItemTransport(source), events: [], errors: [] };
-    const codexBase = rebuildCodexWithLedger(ctx.chat);
+    const codexBase = rebuildCodexWithLedger(ctx.chat, lookup);
     const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexBase, { enabledDomains: enabledCodexDomains(settings) });
     const positioned = positionMarkersByNarrative(codexParsed.content);
     const needsCompaction = ITEMXCore.MARKER_RE.test(positioned) || ITEMXCodex.MARKER_RE.test(positioned);
@@ -1046,10 +1067,11 @@ ${codexPageStyle()}
     else return null;
     const compacted = compactMessageTransports(next, index).chat;
     const compactedSource = messageData(compacted.message?.[index]);
-    const snapshot = rebuildWithManual(compacted);
+    const compactedLookup = buildMessageEventLookup(compacted);
+    const snapshot = rebuildWithManual(compacted, compactedLookup);
     const stillActive = runtime.activeContextKey === ctx.key;
     if (stillActive) {
-      refreshLatest(compacted);
+      refreshLatest(compacted, compactedLookup);
       runtime.rootFingerprint = '';
       runtime.cachedLoaded = null;
       runtime.generation += 1;
@@ -1119,9 +1141,10 @@ ${codexPageStyle()}
       const settings = await outputSettings(ctx.character);
       runtime.debugEnabled = settings.debugEnabled;
       if (!enabled || !settings.mainOutput) return stripAllTransport(content);
-      const base = rebuildWithManual(ctx.chat).registry;
+      const lookup = buildMessageEventLookup(ctx.chat);
+      const base = rebuildWithManual(ctx.chat, lookup).registry;
       const result = settings.itemsEnabled ? ITEMXCore.extractResponse(content, base) : { content: stripItemTransport(content), events: [], errors: [] };
-      const codexResult = ITEMXCodex.extractResponse(result.content, rebuildCodexWithLedger(ctx.chat), { enabledDomains: enabledCodexDomains(settings) });
+      const codexResult = ITEMXCodex.extractResponse(result.content, rebuildCodexWithLedger(ctx.chat, lookup), { enabledDomains: enabledCodexDomains(settings) });
       const positioned = positionMarkersByNarrative(codexResult.content);
       if (result.events.length || result.errors.length || codexResult.events.length || codexResult.errors.length || codexResult.content !== content) {
         runtime.latestOutput = positioned;
@@ -1148,7 +1171,9 @@ ${codexPageStyle()}
   };
 
   const displayHandler = (content) => {
-    const source = positionMarkersByNarrative(String(content || ''));
+    const raw = String(content || '');
+    if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return content;
+    const source = raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
     let found = false, hasFullCard = false;
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;
@@ -1215,11 +1240,25 @@ ${codexPageStyle()}
     }, delayMs);
   }
 
+  async function removeBodyEffectGovernor() {
+    const owner = runtime.bodyFxEventOwner;
+    if (owner) for (const binding of runtime.bodyFxEventIds) {
+      try { await owner.removeEventListener(binding.type, binding.id, true); }
+      catch (error) { debugRecord('body effect listener remove', error?.message || String(error)); }
+    }
+    runtime.bodyFxEventIds = [];
+    runtime.bodyFxEventOwner = null;
+  }
+
   async function installBodyEffectGovernor() {
     if (!runtime.mainDoc) return;
     try {
       runtime.bodyFxClassOwner = await runtime.mainDoc.querySelector('.chattext') || runtime.bodyFxClassOwner;
-      if (runtime.bodyFxEventOwner) return;
+      if (runtime.bodyFxEventOwner) {
+        try { if (await runtime.bodyFxEventOwner.getParent()) return; }
+        catch {}
+        await removeBodyEffectGovernor();
+      }
       const body = await runtime.mainDoc.querySelector('body');
       if (!body) return;
       runtime.bodyFxEventOwner = body;
@@ -1312,23 +1351,22 @@ ${codexPageStyle()}
       || await runtime.mainDoc.querySelector(`.${className}`);
   }
 
-  async function installRootItemDetailClicks(loaded) {
-    const detailItems = rootPageItems(loaded);
-    await Promise.all(detailItems.map(async (item, index) => {
-      const tile = await queryMainClass(`itemx2-root-tile-${index}`);
-      if (!tile) return;
-      await tile.addEventListener('click', async () => {
-        try {
-          const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
-          if (detail) await detail.setInnerHTML(itemDetailHtml(item));
-        } catch (error) { fail('item detail click', error); }
-      });
-    }));
+  async function removeRootClickRouter() {
+    const owner = runtime.rootClickOwner;
+    const bindings = runtime.rootClickBindings.slice();
+    if (owner) for (const binding of bindings) {
+      try { await owner.removeEventListener(binding.type, binding.id, binding.capture); }
+      catch (error) { debugRecord('root click remove', error?.message || String(error)); }
+    }
+    runtime.rootClickBindings = [];
+    runtime.rootClickOwner = null;
+    runtime.rootClickBusy = false;
   }
 
   async function removeRootDrawer() {
     if (runtime.feedbackTimer) globalThis.clearTimeout(runtime.feedbackTimer);
     runtime.feedbackTimer = null;
+    await removeRootClickRouter();
     try { if (runtime.rootDrawer) await runtime.rootDrawer.remove(); } catch {}
     if (runtime.mainDoc) {
       try {
@@ -1340,8 +1378,6 @@ ${codexPageStyle()}
     runtime.rootDrawer = null;
     runtime.rootFingerprint = '';
     runtime.rootContentReady = false;
-    runtime.badgeEventOwner = null;
-    runtime.badgeEventId = null;
   }
 
   async function mountRootLoading(label = 'ITEMX 초기화 중…') {
@@ -1412,7 +1448,24 @@ ${codexPageStyle()}
     try {
       const body = await runtime.mainDoc.querySelector('body');
       if (!body) return;
-      runtime.hostObserver = await Risuai.createMutationObserver(() => scheduleHostDomSync());
+      runtime.hostObserver = await Risuai.createMutationObserver((recordsSafe) => {
+        void (async () => {
+          try {
+            const records = await Risuai.unwarpSafeArray(recordsSafe);
+            if (!records.length) { scheduleHostDomSync(); return; }
+            for (const record of records) {
+              const target = await record.getTarget();
+              if (!target || !(await target.matches('[x-itemx2-drawer="owner"], [x-itemx2-drawer="owner"] *'))) {
+                scheduleHostDomSync();
+                return;
+              }
+            }
+          } catch (error) {
+            debugRecord('host observer classify', error?.message || String(error));
+            scheduleHostDomSync();
+          }
+        })();
+      });
       if (runtime.hostObserver?.observe) await runtime.hostObserver.observe(body, { childList: true, subtree: true });
     } catch (error) {
       runtime.hostObserver = null;
@@ -1525,11 +1578,10 @@ ${codexPageStyle()}
         const mounted = await Risuai.unwarpSafeArray(safeMounted);
         if (mounted.length === 1) {
           runtime.rootDrawer = mounted[0];
-          await installNativeBadgeClick(runtime.rootDrawer);
+          await installRootClickRouter(runtime.rootDrawer);
         } else {
+          await removeRootClickRouter();
           runtime.rootDrawer = null;
-          runtime.badgeEventOwner = null;
-          runtime.badgeEventId = null;
           await openRootInventory({ open: false });
           return;
         }
@@ -1637,7 +1689,7 @@ ${codexPageStyle()}
       removed: all.filter((item) => item.possession === 'removed').length
     };
     const filters = [['all', '전체'], ['owned', '보유'], ['equipped', '장착'], ['observed', '관찰'], ['removed', '소실']];
-    const controls = tab === 'inventory' ? filters.map(([key]) => `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`).join('') : '';
+    const controls = filters.map(([key]) => `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`).join('');
     const skillList = tab === 'skills' ? (skills.map((skill, index) => `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice" id="itemx2-skill-${index}" name="itemx2-skill-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-skill-card" for="itemx2-skill-${index}">${skillSummaryHtml(skill)}</label>${skillPageHtml(skill, '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>')}</div>`).join('') || '<div class="itemx2-codex-empty">아직 확정된 스킬이 없답니다.</div>') : '';
     const monsterList = tab === 'bestiary' ? (monsters.map((monster, index) => {
       const portrait = loaded.portraits?.[monster.portrait] || '';
@@ -1666,30 +1718,64 @@ ${codexPageStyle()}
     const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>${monsterList}</div>`;
     const activeContent = tab === 'skills' ? skillsContent : tab === 'bestiary' ? bestiaryContent : tab === 'settings' ? settings : inventoryContent;
     const tabs = [['inventory', '인벤'], ['skills', '스킬'], ['bestiary', '조우 도감'], ['settings', '설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
-    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${activeContent}</div></section></div>`;
+    const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+  }
+
+  function rootInventoryRegions(html) {
+    const source = String(html || '');
+    const between = (start, end) => {
+      const from = source.indexOf(start), to = source.indexOf(end, from + start.length);
+      return from >= 0 && to >= 0 ? source.slice(from + start.length, to) : null;
+    };
+    return {
+      header: between('<!--ITEMX2-HEADER-START-->', '<!--ITEMX2-HEADER-END-->'),
+      nav: between('<!--ITEMX2-NAV-START-->', '<!--ITEMX2-NAV-END-->'),
+      body: between('<!--ITEMX2-BODY-START-->', '<!--ITEMX2-BODY-END-->')
+    };
+  }
+
+  async function updateRootRegions(html) {
+    if (!runtime.mainDoc || !runtime.rootDrawer) return false;
+    const regions = rootInventoryRegions(html);
+    if (regions.header == null || regions.nav == null || regions.body == null) return false;
+    const header = await runtime.mainDoc.querySelector('.x-risu-itemx-ph-sub');
+    const nav = await runtime.mainDoc.querySelector('.x-risu-itemx-main-tabs');
+    const body = await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
+    if (!header || !nav || !body) return false;
+    try {
+      await header.setInnerHTML(regions.header);
+      await nav.setInnerHTML(regions.nav);
+      await body.setInnerHTML(regions.body);
+      return true;
+    } catch (error) {
+      debugRecord('root region fallback', error?.message || String(error));
+      return false;
+    }
   }
 
   const rootStateFingerprint = (loaded) => [loaded.snapshot?.fingerprint, loaded.codexSnapshot?.fingerprint, Number(loaded.enabled), Number(loaded.itemsEnabled), Number(loaded.skillsEnabled), Number(loaded.encountersEnabled), Number(loaded.mainOutput), loaded.auxOutput, loaded.rarityMode, Number(loaded.debugEnabled)].join(':');
 
-  async function installNativeBadgeClick(owner) {
-    if (runtime.badgeEventOwner || !owner) return;
-    runtime.badgeEventOwner = owner;
-    runtime.badgeEventId = await owner.addEventListener('click', async (event) => {
+  async function installRootClickRouter(owner) {
+    if (!owner || (runtime.rootClickOwner === owner && runtime.rootClickBindings.length)) return;
+    await removeRootClickRouter();
+    const routeBadge = async (event) => {
       try {
         const badge = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge');
-        if (!badge) return;
+        if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
-        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return;
+        if (rect.width <= 0 || rect.height <= 0 || event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return false;
         const cached = runtime.cachedLoaded;
         const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
-        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(cached) && await setRootOpen(true)) return;
+        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(cached) && await setRootOpen(true)) return true;
         await setRootOpen(true);
         const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
-        if (!loaded) return;
+        if (!loaded) return true;
         await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
-      } catch (error) { fail('native badge click', error); }
-    });
-    await owner.addEventListener('click', async (event) => {
+        return true;
+      } catch (error) { fail('native badge click', error); return true; }
+    };
+    const routeControls = async (event) => {
       try {
         const close = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-root-close');
         if (close) {
@@ -1736,12 +1822,30 @@ ${codexPageStyle()}
           } finally { runtime.rootTabBusy = false; }
           return;
         }
+        if (runtime.activeRootTab === 'inventory') {
+          const cached = runtime.cachedLoaded;
+          const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+          const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
+          if (loaded && loaded.key === runtime.activeContextKey) {
+            const detailItems = rootPageItems(loaded);
+            for (let index = 0; index < detailItems.length; index += 1) {
+              const tile = await queryMainClass(`itemx2-root-tile-${index}`);
+              if (!tile) continue;
+              const rect = await tile.getBoundingClientRect();
+              if (rect.width <= 0 || rect.height <= 0 || event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+              const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
+              if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
+              return;
+            }
+          }
+        }
+        if (runtime.activeRootTab !== 'settings') return;
         const managerFold = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-fold');
         if (managerFold) {
           const foldRect = await managerFold.getBoundingClientRect();
           const insideManager = event.clientX >= foldRect.left && event.clientX <= foldRect.right && event.clientY >= foldRect.top && event.clientY <= foldRect.bottom;
           if (insideManager) {
-            const loaded = await rebuildCurrent();
+            const loaded = await cachedOrRebuildCurrent();
             if (loaded) {
               const managedItems = itemsOf(loaded.snapshot).slice(0, 60);
               const noteElement = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-note');
@@ -1959,10 +2063,25 @@ ${codexPageStyle()}
         const rebuild = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rebuild');
         if (rebuild) {
           const rect = await rebuild.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) await openRootInventory({ open: true, tab: 'settings' });
+          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+            runtime.cachedLoaded = null;
+            const loaded = await rebuildCurrent();
+            if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
+          }
         }
       } catch (error) { fail('native setting click', error); }
-    });
+    };
+    const id = await owner.addEventListener('click', async (event) => {
+      if (runtime.rootClickBusy) return;
+      runtime.rootClickBusy = true;
+      try {
+        if (await routeBadge(event)) return;
+        await routeControls(event);
+      } catch (error) { fail('root click router', error); }
+      finally { runtime.rootClickBusy = false; }
+    }, true);
+    runtime.rootClickOwner = owner;
+    runtime.rootClickBindings = [{ type: 'click', id, capture: true }];
   }
 
   async function openRootInventory(options = {}) {
@@ -1997,7 +2116,9 @@ ${codexPageStyle()}
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(`x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition}${open ? ' x-risu-itemx2-is-open' : ''}`);
-      await root.setInnerHTML(rootInventoryHtml(loaded, open, tab));
+      const html = rootInventoryHtml(loaded, open, tab);
+      const regionUpdated = attached && open && runtime.rootContentReady && await updateRootRegions(html);
+      if (!regionUpdated) await root.setInnerHTML(html);
       if (!attached) {
         const body = await runtime.mainDoc.querySelector('body');
         if (!body) throw new Error('Main document body unavailable');
@@ -2009,8 +2130,7 @@ ${codexPageStyle()}
       runtime.rootFingerprint = rootStateFingerprint(loaded);
       runtime.rootContentReady = open;
       runtime.activeRootTab = tab;
-      await installNativeBadgeClick(root);
-      if (open && tab === 'inventory') await installRootItemDetailClicks(loaded);
+      await installRootClickRouter(root);
     } catch (error) {
       runtime.status = '인벤토리 열기 오류';
       await removeRootDrawer();
@@ -2360,9 +2480,7 @@ ${codexPageStyle()}
     runtime.bodyFxScrollActive = false;
     try { await Risuai.hideContainer(); } catch {}
     await removeRootDrawer();
-    try { if (runtime.badgeEventOwner && runtime.badgeEventId) await runtime.badgeEventOwner.removeEventListener('click', runtime.badgeEventId); } catch {}
-    for (const binding of runtime.bodyFxEventIds) { try { if (runtime.bodyFxEventOwner) await runtime.bodyFxEventOwner.removeEventListener(binding.type, binding.id, true); } catch {} }
-    runtime.bodyFxEventIds = [];
+    await removeBodyEffectGovernor();
     try { if (runtime.hostObserver?.disconnect) await runtime.hostObserver.disconnect(); } catch {}
     runtime.hostObserver = null;
     try { await Risuai.removeRisuScriptHandler('output', outputFallback); } catch {}
