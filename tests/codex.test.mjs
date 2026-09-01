@@ -59,6 +59,36 @@ test('bounded context excludes inactive unmentioned encounters and assets stay r
   assert.deepEqual(JSON.parse(JSON.stringify(assets)), [{ name: 'enemy.webp', id: 'asset-id-1', ext: 'webp' }]);
 });
 
+test('portrait assets resolve exact names first and use only unambiguous normalized fallbacks', () => {
+  const assets = codex.assetCatalog({
+    additionalAssets: [['Wolf King.webp', 'asset-wolf', 'webp'], ['duplicate.png', 'asset-a', 'png'], ['DUPLICATE.PNG', 'asset-b', 'png']],
+    emotionImages: [['angry', 'asset-angry'], ['smile', 'asset-smile']]
+  }, 4, true);
+  assert.equal(assets.length, 4);
+  assert.equal(assets.some((row) => row.name === 'angry'), true, 'emotion assets retain reserved catalog capacity');
+  assert.equal(codex.assetLookup(assets, 'wolf king.webp')?.id, 'asset-wolf');
+  assert.equal(codex.assetLookup(assets, 'Wolf King')?.id, 'asset-wolf');
+  assert.equal(codex.assetLookup(assets, 'duplicate.png')?.id, 'asset-a', 'exact match wins');
+  assert.equal(codex.assetLookup(assets, 'Duplicate.PNG'), null, 'ambiguous normalized fallback is rejected');
+});
+
+test('module portrait catalog includes active scopes only and supports namespace and bound persona assets', () => {
+  const database = {
+    enabledModules: ['global'], moduleIntergration: 'integrated-ns', selectedPersona: 'persona-1',
+    modules: [
+      { id: 'global', assets: [['global.webp', 'asset-global', 'webp']] },
+      { id: 'chat-only', assets: [['chat.webp', 'asset-chat', 'webp']] },
+      { id: 'character-only', assets: [['character.webp', 'asset-character', 'webp']] },
+      { id: 'integrated', namespace: 'integrated-ns', assets: [['integrated.webp', 'asset-integrated', 'webp']] },
+      { id: 'disabled', assets: [['disabled.webp', 'asset-disabled', 'webp']] }
+    ],
+    personas: [{ id: 'persona-1', embeddedModule: { assets: [['persona.webp', 'asset-persona', 'webp']] } }]
+  };
+  const rows = codex.activeModuleAssetCatalog(database, { modules: ['character-only'] }, { modules: ['chat-only'], bindedPersona: 'persona-1' });
+  assert.deepEqual(JSON.parse(JSON.stringify(rows.map((row) => row.name).sort())), ['character.webp', 'chat.webp', 'global.webp', 'integrated.webp', 'persona.webp']);
+  assert.equal(rows.some((row) => row.name === 'disabled.webp'), false);
+});
+
 test('incomplete codex transport never leaks raw tags', () => {
   const result = codex.extractResponse('본문은 유지.<monsterExam><id>broken</id><name>미완성', codex.snapshot());
   assert.equal(result.content, '본문은 유지.');
@@ -108,10 +138,10 @@ test('skill protocol uses real time cooldowns and world-native costs', () => {
   assert.match(forced, /normal\|magic\|rare\|unique\|epic\|legendary\|mythical\|empyrean/);
   assert.doesNotMatch(protocol, /<level>1<\/level>/);
   assert.match(protocol, /Registry discovery is not the moment of learning/);
-  assert.match(protocol, /omit level and mastery instead of inventing them/);
+  assert.match(protocol, /infer a conservative normalized level from 1 to 10/);
 });
 
-test('veteran skill evidence corrects false novice defaults without inventing mastery', () => {
+test('veteran skill evidence corrects false novice defaults with conservative inferred mastery', () => {
   const narrative = [
     '존 팔루스티프 경은 수백 번의 실전과 수천 번의 둔기 스윙을 거친 고인물이다.',
     '[한손둔기 숙련도] (Grade 1 / Lv.39)',
@@ -121,17 +151,29 @@ test('veteran skill evidence corrects false novice defaults without inventing ma
   const result = codex.extractResponse(narrative, codex.snapshot(), { rarityMode: 'itemx' });
   const skill = result.snapshot.skills.entries.vibration_strike;
   assert.equal(skill.level, 40);
-  assert.equal(skill.mastery, null);
+  assert.equal(skill.mastery, 75);
+  assert.deepEqual([...skill._inferred], ['mastery']);
   assert.equal(skill.rank, 'normal');
 });
 
-test('unknown veteran skill scale stays unknown while explicit newly learned novice values survive', () => {
+test('qualitative skill evidence produces bounded progress while explicit novice values survive', () => {
   const veteran = codex.extractResponse('오랫동안 숙련한 고수의 비전이다.\n<skillExam><id>old_art</id><name>고법</name><type>passive</type><level>1</level><mastery>0</mastery></skillExam>', codex.snapshot());
-  assert.equal(veteran.snapshot.skills.entries.old_art.level, null);
-  assert.equal(veteran.snapshot.skills.entries.old_art.mastery, null);
+  assert.equal(veteran.snapshot.skills.entries.old_art.level, 7);
+  assert.equal(veteran.snapshot.skills.entries.old_art.mastery, 75);
+  const baseline = codex.extractResponse('<skillExam><id>quiet_art</id><name>고요한 호흡</name><type>passive</type></skillExam>', codex.snapshot(), { skillEvidenceText: '고요한 호흡을 사용할 수 있다.' });
+  assert.equal(baseline.snapshot.skills.entries.quiet_art.level, 4);
+  assert.equal(baseline.snapshot.skills.entries.quiet_art.mastery, 35);
   const novice = codex.extractResponse('방금 처음 배운 초보 검술이다.\n<skillExam><id>new_art</id><name>초보 검술</name><type>active</type><level>1</level><mastery>0</mastery></skillExam>', codex.snapshot());
   assert.equal(novice.snapshot.skills.entries.new_art.level, 1);
   assert.equal(novice.snapshot.skills.entries.new_art.mastery, 0);
+});
+
+test('explicit progress patches replace inferred provenance without disturbing sibling fields', () => {
+  const first = codex.extractResponse('<skillExam><id>form</id><name>유운보</name><type>active</type></skillExam>', codex.snapshot(), { skillEvidenceText: '유운보를 구사할 수 있다.' });
+  assert.deepEqual([...first.snapshot.skills.entries.form._inferred].sort(), ['level', 'mastery']);
+  const patched = codex.extractResponse('<skillPatch><id>form</id><op>merge</op><mastery>82</mastery></skillPatch>', first.snapshot);
+  assert.equal(patched.snapshot.skills.entries.form.mastery, 82);
+  assert.deepEqual([...patched.snapshot.skills.entries.form._inferred], ['level']);
 });
 
 test('skill and encounter records derive safe emoji fallbacks and request free model-selected glyphs', () => {

@@ -211,7 +211,8 @@ test('auxiliary corrects a veteran skill from associated proficiency evidence', 
   const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
   const row = ledger.find((one) => one.domain === 'codex' && one.payload?.event?.entity?.id === 'vibration_strike');
   assert.equal(row.payload.event.entity.level, 40);
-  assert.equal(row.payload.event.entity.mastery, null);
+  assert.equal(row.payload.event.entity.mastery, 75);
+  assert.deepEqual(row.payload.event.entity._inferred, ['mastery']);
 });
 
 test('auxiliary treats the first confirmed already-owned player skill as a discovery event', async () => {

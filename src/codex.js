@@ -130,6 +130,10 @@ const ITEMXCodex = (() => {
     if (event.domain === 'skill') {
       entity.cooldown = cooldownValue(entity.cooldown);
       entity.glyph = ITEMXCore.resolveSkillGlyph(entity);
+      if (entity._inferred && fields && ('level' in fields || 'mastery' in fields)) {
+        const explicitProgress = new Set(Object.keys(fields).filter((key) => key === 'level' || key === 'mastery'));
+        entity._inferred = entity._inferred.filter((key) => !explicitProgress.has(key));
+      }
       if (action === 'equip') entity.status = 'equipped'; if (action === 'unequip' || action === 'learn' || action === 'unseal') entity.status = 'learned';
       if (action === 'seal') entity.status = 'sealed'; if (action === 'forget') entity.status = 'lost'; if (action === 'mastery' && 'mastery' in fields) entity.mastery = mastery(fields.mastery);
     } else {
@@ -178,7 +182,7 @@ const ITEMXCodex = (() => {
       return { line, index, score };
     }).filter((one) => one.score > 0);
     const near = new Set();
-    for (const match of matches) for (let index = Math.max(0, match.index - 1); index <= Math.min(lines.length - 1, match.index + 1); index += 1) near.add(index);
+    for (const match of matches) for (let index = Math.max(0, match.index - 2); index <= Math.min(lines.length - 1, match.index + 2); index += 1) near.add(index);
     return { matches, context: [...near].sort((a, b) => a - b).map((index) => lines[index]).join('\n') };
   }
   function explicitSkillNumber(segments, pattern, min, max) {
@@ -194,6 +198,21 @@ const ITEMXCodex = (() => {
     }
     return best?.value ?? null;
   }
+  function inferredSkillProgress(source, entity, hasPrior = false) {
+    const text = clean(source, 2400);
+    const newlyLearned = /새로|처음|초보|입문|방금[\s\S]{0,30}(?:배우|습득|익히)|배웠|습득했|newly\s+learned|just\s+learned|just\s+acquired|novice|beginner/i.test(text);
+    if (newlyLearned) return { level: 1, mastery: 0, tier: 'novice' };
+    const tiers = [
+      { re: /초월|신화적|절대자|대종사|극의|극성|화경|transcenden|grandmaster|apotheosis/i, level: 10, mastery: 97, tier: 'transcendent' },
+      { re: /달인|대가|완성(?:했|된|한)|마스터(?:했|급|리)|mastered|\bmaster\b/i, level: 9, mastery: 90, tier: 'master' },
+      { re: /고인물|베테랑|노련|고수|수백\s*번|수천\s*번|수년|평생|오랫동안|주력기|비전|veteran|expert/i, level: 7, mastery: 75, tier: 'veteran' },
+      { re: /능숙|익숙|숙련|반복|실전|자주|여러\s*번|trained|practiced|proficient|experienced/i, level: 5, mastery: 55, tier: 'practiced' },
+      { re: /사용해\s*온|보유|장착|구사|사용한다|이미\s*(?:알|익|배)|already|owns|uses|equipped/i, level: 4, mastery: 40, tier: 'established' }
+    ];
+    for (const tier of tiers) if (tier.re.test(text)) return { level: tier.level, mastery: tier.mastery, tier: tier.tier };
+    if (hasPrior) return null;
+    return { level: entity?.type === 'passive' ? 4 : 3, mastery: entity?.type === 'passive' ? 35 : 25, tier: 'baseline' };
+  }
   function reconcileSkillEvent(event, evidenceText = '', options = {}) {
     const next = clone(event);
     if (next?.domain !== 'skill') return next;
@@ -203,17 +222,22 @@ const ITEMXCodex = (() => {
       const level = explicitSkillNumber(evidence.matches, /(?:\bLv\.?|레벨|level)\s*[:：.]?\s*(\d{1,3})/ig, 1, 999);
       const masteryValue = explicitSkillNumber(evidence.matches, /(?:숙련도|mastery)\s*[:：]?\s*(\d{1,3})\s*%/ig, 0, 100);
       const source = evidence.context;
-      const veteran = /고인물|베테랑|노련|달인|고수|마스터|숙련|수백\s*번|수천\s*번|veteran|expert|mastered/i.test(source);
-      const newlyLearned = /새로|처음|방금[\s\S]{0,30}(?:배우|습득|익히)|배웠|습득했|newly\s+learned|just\s+learned|just\s+acquired/i.test(source);
       const provided = new Set(entity._provided || []);
-      if (level != null) { entity.level = level; provided.add('level'); }
-      else if (veteran && !newlyLearned && entity.level === 1) { entity.level = null; provided.delete('level'); }
-      if (masteryValue != null) { entity.mastery = masteryValue; provided.add('mastery'); }
-      else if (veteran && !newlyLearned && entity.mastery === 0) { entity.mastery = null; provided.delete('mastery'); }
+      const inferred = new Set(entity._inferred || []);
+      const estimate = inferredSkillProgress(source, entity, Boolean(options.priorSkill));
+      if (level != null) { entity.level = level; provided.add('level'); inferred.delete('level'); }
+      else if (estimate && (entity.level == null || (estimate.tier !== 'novice' && entity.level <= 1))) {
+        entity.level = estimate.level; provided.add('level'); inferred.add('level');
+      } else if (entity.level != null) inferred.add('level');
+      if (masteryValue != null) { entity.mastery = masteryValue; provided.add('mastery'); inferred.delete('mastery'); }
+      else if (estimate && (entity.mastery == null || (estimate.tier !== 'novice' && entity.mastery <= 0))) {
+        entity.mastery = estimate.mastery; provided.add('mastery'); inferred.add('mastery');
+      } else if (entity.mastery != null) inferred.add('mastery');
       if (options.rarityMode === 'itemx' && !ITEMX_SKILL_RANKS.has(String(entity.rank || '').toLowerCase())) {
         entity.rank = 'normal'; provided.delete('rank');
       }
       entity._provided = [...provided];
+      entity._inferred = [...inferred];
     }
     return next;
   }
@@ -225,7 +249,7 @@ const ITEMXCodex = (() => {
       const domain = part.tag.toLowerCase().startsWith('skill') ? 'skill' : 'monster';
       if (!enabled.has(domain)) { cursor = part.end; return; }
       const parsed = parseTransport(part.tag, part.attrs, part.body, `${part.raw}:${index}`);
-      if (parsed.event?.domain === 'skill') parsed.event = reconcileSkillEvent(parsed.event, options.skillEvidenceText ?? text, options);
+      if (parsed.event?.domain === 'skill') parsed.event = reconcileSkillEvent(parsed.event, options.skillEvidenceText ?? text, { ...options, priorSkill: state.skills.entries[parsed.event.entity?.id] });
       if (parsed.event) { const view = clone(applyEvent(state, parsed.event)); events.push(parsed.event); output.push(marker({ v: VERSION, event: parsed.event, view })); }
       else { errors.push(parsed.error || 'codex_invalid_transport'); output.push(marker({ v: VERSION, error: parsed.error || 'codex_invalid_transport' })); }
       cursor = part.end;
@@ -235,11 +259,55 @@ const ITEMXCodex = (() => {
   function eventsFromText(text) { const out = []; String(text || '').replace(MARKER_RE, (_, code) => { const payload = decodePayload(code); if (payload?.v === VERSION && payload.event) out.push(payload.event); return ''; }); return out; }
   function rebuild(messages) { const state = snapshot(); let transport = ''; for (const msg of messages || []) for (const event of eventsFromText(ITEMXCore.messageText(msg))) { applyEvent(state, event); transport += marker({ v: VERSION, event }); } state.fingerprint = fnv(transport); state.updatedAt = Date.now(); return state; }
   function requestView(text) { return String(text || '').replace(MARKER_RE, (_, code) => { const p = decodePayload(code), e = p?.view || p?.event?.entity; return e ? `[${p.event?.domain === 'skill' ? 'SKILL' : 'ENCOUNTER'} ${e.name} | id=${e.id}]` : ''; }); }
+  function normalizeAssetName(value, stem = false) {
+    let result = clean(value, 240);
+    try { result = result.normalize('NFKC'); } catch {}
+    result = result.replace(/\\/g, '/').replace(/\s+/g, ' ').trim().toLowerCase();
+    return stem ? result.replace(/\.(?:png|jpe?g|webp|gif|avif)$/i, '') : result;
+  }
+  function assetLookup(rows, requestedName) {
+    const requested = clean(requestedName, 240); if (!requested) return null;
+    const exact = (rows || []).find((row) => row.name === requested); if (exact) return exact;
+    const normalized = normalizeAssetName(requested);
+    const normalizedMatches = (rows || []).filter((row) => normalizeAssetName(row.name) === normalized);
+    if (normalizedMatches.length === 1) return normalizedMatches[0];
+    const stem = normalizeAssetName(requested, true);
+    const stemMatches = (rows || []).filter((row) => normalizeAssetName(row.name, true) === stem);
+    return stemMatches.length === 1 ? stemMatches[0] : null;
+  }
   function assetCatalog(character, max = 100, includeEmotion = false) {
-    const rows = [], seen = new Set();
-    for (const [name, id, ext] of character?.additionalAssets || []) { const n = clean(name, 160); if (n && id && !seen.has(n)) { seen.add(n); rows.push({ name: n, id: clean(id, 240), ext: clean(ext, 20) }); } if (rows.length >= max) break; }
-    if (includeEmotion) for (const [name, id] of character?.emotionImages || []) { const n = clean(name, 160); if (n && id && !seen.has(n)) { seen.add(n); rows.push({ name: n, id: clean(id, 240), ext: '' }); } if (rows.length >= max) break; }
-    return rows;
+    const limit = Math.max(0, Math.min(1000, Number(max) || 0)), seen = new Set();
+    const collectAssets = (source, emotion = false) => {
+      const rows = [];
+      for (const tuple of source || []) {
+        if (!Array.isArray(tuple)) continue;
+        const [name, id, ext] = tuple, n = clean(name, 160);
+        if (!n || !id || seen.has(n)) continue;
+        seen.add(n); rows.push({ name: n, id: clean(id, 240), ext: emotion ? '' : clean(ext, 20) });
+      }
+      return rows;
+    };
+    const additional = collectAssets(character?.additionalAssets), emotions = includeEmotion ? collectAssets(character?.emotionImages, true) : [];
+    if (!includeEmotion || additional.length + emotions.length <= limit) return additional.concat(emotions).slice(0, limit);
+    const emotionSlots = Math.min(emotions.length, Math.max(1, Math.floor(limit / 4)));
+    return additional.slice(0, Math.max(0, limit - emotionSlots)).concat(emotions.slice(0, emotionSlots));
+  }
+  function activeModuleAssetCatalog(database, character, chat, max = 400) {
+    const activeIds = new Set();
+    const addIds = (values) => { for (const value of values || []) { const id = clean(value, 160); if (id) activeIds.add(id); } };
+    addIds(database?.enabledModules); addIds(character?.modules); addIds(chat?.modules);
+    addIds(String(database?.moduleIntergration || '').split(',').map((value) => value.trim()).filter(Boolean));
+    const tuples = [], seenModules = new Set();
+    for (const module of database?.modules || []) {
+      if (!module || (!activeIds.has(module.id) && !activeIds.has(module.namespace))) continue;
+      const moduleKey = clean(module.id || module.namespace, 160); if (moduleKey && seenModules.has(moduleKey)) continue;
+      if (moduleKey) seenModules.add(moduleKey);
+      tuples.push(...(module.assets || []));
+    }
+    const personaId = clean(chat?.bindedPersona || database?.selectedPersona, 160);
+    const persona = (database?.personas || []).find((one) => [one?.id, one?.chaId].some((value) => clean(value, 160) === personaId));
+    if (persona?.embeddedModule?.assets) tuples.push(...persona.embeddedModule.assets);
+    return assetCatalog({ additionalAssets: tuples }, max, false);
   }
   function anchor(state, narrative = '', max = 9000, options = {}) {
     const lines = ['[ITEMX CODEX · ACTIVE CONTEXT · authoritative]'];
@@ -249,16 +317,16 @@ const ITEMXCodex = (() => {
     return lines.join('\n').slice(0, max);
   }
   function protocol(assetNames = [], options = {}) {
-    const assets = assetNames.slice(0, 100).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ') || 'NONE';
+    const assets = assetNames.slice(0, 180).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ').slice(0, 12000) || 'NONE';
     const enabled = new Set(options.enabledDomains || ['skill', 'monster']), sections = ['## ITEMX CODEX TRANSPORT', 'Emit these hidden transports only when the narrative settles a change. Never expose the tags as prose.'];
     const skillRankRule = options.rarityMode === 'itemx'
       ? 'Use only ITEMX rank values normal|magic|rare|unique|epic|legendary|mythical|empyrean, based on explicit narrative power and prestige; do not inflate an unsupported rank.'
       : "Preserve the setting's own native rank, realm, discipline grade or proficiency wording exactly; do not replace it with ITEMX rarity names.";
-    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>omit unless supported</level><mastery>omit unless supported</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If no reliable numeric scale is established, omit level and mastery instead of inventing them. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
+    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>...</level><mastery>...</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If the setting has no explicit numeric scale, infer a conservative normalized level from 1 to 10 and mastery from 0 to 100 using the character's demonstrated experience with that skill: novice 1/0, established 4/40, practiced 5/55, veteran 7/75, master 9/90, transcendent 10/97. Treat these as estimates and never exaggerate beyond the narrative. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
     if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');
   }
-  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, assetCatalog, anchor, protocol };
+  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, assetLookup, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
 })();
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCodex = ITEMXCodex;
