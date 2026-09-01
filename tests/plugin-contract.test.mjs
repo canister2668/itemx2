@@ -10,10 +10,10 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.5$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.6$/m);
   assert.match(source, /^\/\/@display-name ITEMX 2$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 5'/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = '1\.9 · BETA 6'/);
   assert.match(source, /ITEMX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -38,7 +38,7 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.equal(source.includes("addEventListener('scroll',"), false);
   assert.match(source, /bodyFxScrollTimer = globalThis\.setTimeout/);
   assert.match(source, /const ITEMX_ROOT_PAGE_SIZE = 16/);
-  assert.match(source, /if \(!open\) return rootBadgeHtml\(\)/);
+  assert.match(source, /if \(!open\) return `\$\{rootBadgeHtml\(\)\}.*itemx2-open-loading/);
   assert.match(source, /const ITEMX_UPDATE_CHECK_MS = 30 \* 60 \* 1000/);
   assert.match(source, /headers: \{ Range: 'bytes=0-2047' \}/);
   assert.match(source, /itemx2-update-indicator/);
@@ -227,7 +227,11 @@ test('built ITEMX 2 plugin is API v3 and owns both UI and pipeline hooks', async
   assert.equal(source.includes('const positionControls ='), false);
   assert.equal(source.includes('itemx2-root-open"'), false);
   assert.match(source, /async function setRootOpen\(open\)/);
-  assert.match(source, /runtime\.rootFingerprint !== fingerprint/);
+  const badgeClick = source.slice(source.indexOf('runtime.badgeEventId = await owner.addEventListener'), source.indexOf("await owner.addEventListener('click', async (event) =>", source.indexOf('runtime.badgeEventId = await owner.addEventListener') + 80));
+  assert.ok(badgeClick.indexOf('await setRootOpen(true)') < badgeClick.indexOf('cachedOrRebuildCurrent()'));
+  assert.match(badgeClick, /runtime\.rootContentReady && cacheReady/);
+  assert.match(source, /attached = Boolean\(await root\.getParent\(\)\)/);
+  assert.match(source, /if \(!attached\) \{\s*await removeRootDrawer\(\)/);
   assert.match(source, /await setRootOpen\(false\)/);
   assert.match(source, /itemx2-root-drawer\.itemx2-is-open \.itemx2-root-panel/);
   const positionHandler = source.slice(source.indexOf('for (const [key, label] of BADGE_POSITIONS)'), source.indexOf("const toggle = runtime.mainDoc"));

@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.5';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 5';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.6';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 6';
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -1622,7 +1622,7 @@ ${codexPageStyle()}
   const updateLabelHtml = () => runtime.update.available ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>` : '';
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
-    if (!open) return rootBadgeHtml();
+    if (!open) return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
     const all = itemsOf(loaded.snapshot).slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
@@ -1680,11 +1680,13 @@ ${codexPageStyle()}
         if (!badge) return;
         const rect = await badge.getBoundingClientRect();
         if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return;
-        const loaded = await cachedOrRebuildCurrent();
+        const cached = runtime.cachedLoaded;
+        const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(cached) && await setRootOpen(true)) return;
+        await setRootOpen(true);
+        const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
         if (!loaded) return;
-        loaded.enabled = await isEnabled(loaded.character); Object.assign(loaded, await outputSettings(loaded.character));
-        const fingerprint = rootStateFingerprint(loaded);
-        if (!runtime.rootContentReady || runtime.rootFingerprint !== fingerprint || !(await setRootOpen(true))) await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
+        await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
       } catch (error) { fail('native badge click', error); }
     });
     await owner.addEventListener('click', async (event) => {
@@ -1984,16 +1986,25 @@ ${codexPageStyle()}
         if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX 인벤토리를 열려면 메인 화면 권한이 필요합니다.');
         return;
       }
-      await removeRootDrawer();
-      const root = await runtime.mainDoc.createElement('div');
+      let root = runtime.rootDrawer, attached = false;
+      if (root) {
+        try { attached = Boolean(await root.getParent()); }
+        catch { root = null; }
+      }
+      if (!attached) {
+        await removeRootDrawer();
+        root = await runtime.mainDoc.createElement('div');
+      }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(`x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition}${open ? ' x-risu-itemx2-is-open' : ''}`);
       await root.setInnerHTML(rootInventoryHtml(loaded, open, tab));
-      const body = await runtime.mainDoc.querySelector('body');
-      if (!body) throw new Error('Main document body unavailable');
-      if (runtime.activeContextKey !== loaded.key) return;
-      await body.appendChild(root);
-      if (runtime.activeContextKey !== loaded.key) { await root.remove(); return; }
+      if (!attached) {
+        const body = await runtime.mainDoc.querySelector('body');
+        if (!body) throw new Error('Main document body unavailable');
+        if (runtime.activeContextKey !== loaded.key) return;
+        await body.appendChild(root);
+        if (runtime.activeContextKey !== loaded.key) { await root.remove(); return; }
+      }
       runtime.rootDrawer = root;
       runtime.rootFingerprint = rootStateFingerprint(loaded);
       runtime.rootContentReady = open;
