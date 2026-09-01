@@ -59,6 +59,7 @@ const ITEMXCodex = (() => {
     return { event: { domain: 'monster', kind: 'exam', entity: {
       id: normalizeId(raw.id, 'encounter', seed), name, glyph: ITEMXCore.resolveMonsterGlyph({ ...raw, name, kind: raw.type }), aliases: list(raw.aliases, 8), kind: clean(raw.type, 100) || '미분류', threat: clean(raw.threat, 80) || '미상', relation, status,
       active: status === 'active' && ['hostile', 'sparring'].includes(relation), portrait: clean(raw.portrait, 160), weaknesses: list(raw.weaknesses), resistances: list(raw.resistances), moves: list(raw.moves), description: clean(raw.description, 1200), encounterCount: 1,
+      outcome: clean(raw.outcome, 600), outcomeStatus: raw.outcome ? status : '', outcomeEncounter: raw.outcome ? 1 : 0,
       _provided: Object.keys(raw).filter((key) => raw[key] !== '')
     } } };
   }
@@ -69,9 +70,9 @@ const ITEMXCodex = (() => {
     if (!action && !op) return { error: `${domain}_patch_missing_operation` };
     const allowed = domain === 'skill'
       ? ['name','glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth']
-      : ['name','glyph','aliases','type','threat','relation','status','portrait','weaknesses','resistances','moves','description'];
+      : ['name','glyph','aliases','type','threat','relation','status','portrait','weaknesses','resistances','moves','description','outcome'];
     const fields = {};
-    for (const key of allowed) if (raw[key] !== '') fields[key === 'type' && domain === 'monster' ? 'kind' : key] = ['effects','aliases','weaknesses','resistances','moves'].includes(key) ? list(raw[key]) : clean(raw[key], key === 'description' ? 1200 : 800);
+    for (const key of allowed) if (raw[key] !== '') fields[key === 'type' && domain === 'monster' ? 'kind' : key] = ['effects','aliases','weaknesses','resistances','moves'].includes(key) ? list(raw[key]) : clean(raw[key], key === 'description' ? 1200 : key === 'outcome' ? 600 : 800);
     if ('mastery' in fields) fields.mastery = mastery(fields.mastery);
     if ('level' in fields) fields.level = Math.max(1, Math.min(999, Number(fields.level) || 1));
     if ('cooldown' in fields) fields.cooldown = cooldownValue(fields.cooldown);
@@ -79,7 +80,7 @@ const ITEMXCodex = (() => {
   }
   function parseTransport(tag, attrText, body, seed) {
     const a = attrs(attrText), raw = {};
-    for (const key of ['id','name','glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth','aliases','threat','relation','portrait','weaknesses','resistances','moves','action','op']) raw[key] = scalar(body, a, key).toLowerCase && ['type','status','relation','action','op'].includes(key) ? scalar(body, a, key).toLowerCase() : scalar(body, a, key);
+    for (const key of ['id','name','glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth','aliases','threat','relation','portrait','weaknesses','resistances','moves','outcome','action','op']) raw[key] = scalar(body, a, key).toLowerCase && ['type','status','relation','action','op'].includes(key) ? scalar(body, a, key).toLowerCase() : scalar(body, a, key);
     const lower = tag.toLowerCase();
     if (lower === 'skillexam') return normalizeSkillExam(raw, seed);
     if (lower === 'monsterexam') return normalizeMonsterExam(raw, seed);
@@ -102,6 +103,14 @@ const ITEMXCodex = (() => {
       if (prior && event.domain === 'monster') {
         for (const key of ['status', 'active', 'relation', 'encounterCount']) if (!provided.has(key)) next[key] = prior[key];
         next.encounterCount = Number(prior.encounterCount) || 1;
+        if (!provided.has('outcome')) {
+          next.outcome = prior.outcome || '';
+          next.outcomeStatus = prior.outcomeStatus || '';
+          next.outcomeEncounter = Number(prior.outcomeEncounter) || 0;
+        } else {
+          next.outcomeStatus = next.status;
+          next.outcomeEncounter = next.encounterCount;
+        }
       }
       if (event.domain === 'monster') { next.active = next.status === 'active' && ['hostile', 'sparring'].includes(next.relation); next.glyph = ITEMXCore.resolveMonsterGlyph(next); }
       return put(reg, next);
@@ -120,7 +129,13 @@ const ITEMXCodex = (() => {
       entity.glyph = ITEMXCore.resolveMonsterGlyph(entity);
       if (action === 'encounter') { entity.status = 'active'; entity.active = true; entity.encounterCount = (Number(entity.encounterCount) || 1) + 1; }
       const endStatus = { end: 'ended', escape: 'escaped', defeat: 'defeated', kill: 'dead', ally: 'ended' }[action];
-      if (endStatus) { entity.status = endStatus; entity.active = false; if (action === 'ally') entity.relation = 'allied'; }
+      if (endStatus) {
+        entity.status = endStatus; entity.active = false; if (action === 'ally') entity.relation = 'allied';
+        if (fields.outcome) { entity.outcome = fields.outcome; entity.outcomeStatus = endStatus; entity.outcomeEncounter = Number(entity.encounterCount) || 1; }
+      } else if (fields.outcome) {
+        entity.outcomeStatus = ENCOUNTER_STATUS.has(entity.status) ? entity.status : 'unknown';
+        entity.outcomeEncounter = Number(entity.encounterCount) || 1;
+      }
       if (ENCOUNTER_STATUS.has(entity.status)) entity.active = entity.status === 'active';
     }
     return entity;
@@ -136,7 +151,7 @@ const ITEMXCodex = (() => {
       let boundary = out.indexOf('\n\n', hit.index);
       while (boundary >= 0) {
         const suffix = out.slice(boundary + 2).trimStart();
-        if (!/^<\/?(?:id|name|glyph|rank|school|type|status|level|mastery|cost|cooldown|target|affinity|description|effects|growth|aliases|threat|relation|portrait|weaknesses|resistances|moves|action|op)\b/i.test(suffix)) break;
+        if (!/^<\/?(?:id|name|glyph|rank|school|type|status|level|mastery|cost|cooldown|target|affinity|description|effects|growth|aliases|threat|relation|portrait|weaknesses|resistances|moves|outcome|action|op)\b/i.test(suffix)) break;
         boundary = out.indexOf('\n\n', boundary + 2);
       }
       out = boundary < 0 ? out.slice(0, hit.index) : out.slice(0, hit.index) + out.slice(boundary + 2);
@@ -170,14 +185,17 @@ const ITEMXCodex = (() => {
     const lines = ['[ITEMX CODEX · ACTIVE CONTEXT · authoritative]'];
     const skills = state?.skills || registry(), monsters = state?.monsters || registry(), text = String(narrative).toLowerCase(), enabled = new Set(options.enabledDomains || ['skill', 'monster']);
     if (enabled.has('skill')) for (const one of skills.order.map((id) => skills.entries[id]).filter(Boolean).filter((x) => ['equipped','sealed'].includes(x.status) || text.includes(x.name.toLowerCase())).slice(0, 8)) lines.push(`- SKILL id=${one.id} | name=${one.name} | type=${one.type} | status=${one.status} | mastery=${one.mastery} | effect=${one.effects.slice(0, 3).join(' ;; ')}`);
-    if (enabled.has('monster')) for (const one of monsters.order.map((id) => monsters.entries[id]).filter(Boolean).filter((x) => x.active || [x.name, ...(x.aliases || [])].some((n) => n && text.includes(n.toLowerCase()))).slice(0, 4)) lines.push(`- ENCOUNTER id=${one.id} | name=${one.name} | relation=${one.relation} | status=${one.status} | threat=${one.threat} | weakness=${one.weaknesses.slice(0, 3).join(',')}`);
+    if (enabled.has('monster')) for (const one of monsters.order.map((id) => monsters.entries[id]).filter(Boolean).filter((x) => x.active || [x.name, ...(x.aliases || [])].some((n) => n && text.includes(n.toLowerCase()))).slice(0, 4)) lines.push(`- ENCOUNTER id=${one.id} | name=${one.name} | relation=${one.relation} | status=${one.status} | threat=${one.threat} | weakness=${one.weaknesses.slice(0, 3).join(',')}${one.outcome ? ` | latest_outcome=${clean(one.outcome, 220)}` : ''}`);
     return lines.join('\n').slice(0, max);
   }
   function protocol(assetNames = [], options = {}) {
     const assets = assetNames.slice(0, 100).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ') || 'NONE';
     const enabled = new Set(options.enabledDomains || ['skill', 'monster']), sections = ['## ITEMX CODEX TRANSPORT', 'Emit these hidden transports only when the narrative settles a change. Never expose the tags as prose.'];
-    if (enabled.has('skill')) sections.push('Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>1</level><mastery>0..100</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch>', "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
-    if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch>', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
+    const skillRankRule = options.rarityMode === 'itemx'
+      ? 'Use only ITEMX rank values normal|magic|rare|unique|epic|legendary|mythical|empyrean, based on explicit narrative power and prestige; do not inflate an unsupported rank.'
+      : "Preserve the setting's own native rank, realm, discipline grade or proficiency wording exactly; do not replace it with ITEMX rarity names.";
+    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>1</level><mastery>0..100</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
+    if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');
   }

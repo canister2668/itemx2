@@ -30,6 +30,24 @@ test('encounter endings and skill mastery are deterministic patches', () => {
   assert.equal(next.snapshot.monsters.entries.wolf_king.active, false);
 });
 
+test('latest completed encounter outcome records the decisive resolution without accumulating history', () => {
+  const first = codex.extractResponse('<monsterExam><id>wolf_king</id><name>흑랑왕</name><relation>hostile</relation><status>active</status></monsterExam>', codex.snapshot());
+  const defeated = codex.extractResponse('<monsterPatch><id>wolf_king</id><action>defeat</action><outcome>연화검의 결정타가 앞발을 부러뜨리며 흑랑왕을 무릎 꿇렸다.</outcome></monsterPatch>', first.snapshot);
+  const entry = defeated.snapshot.monsters.entries.wolf_king;
+  assert.equal(entry.status, 'defeated');
+  assert.equal(entry.outcome, '연화검의 결정타가 앞발을 부러뜨리며 흑랑왕을 무릎 꿇렸다.');
+  assert.equal(entry.outcomeStatus, 'defeated');
+  assert.equal(entry.outcomeEncounter, 1);
+
+  const again = codex.extractResponse('<monsterPatch><id>wolf_king</id><action>encounter</action></monsterPatch>', defeated.snapshot);
+  assert.equal(again.snapshot.monsters.entries.wolf_king.outcome, entry.outcome);
+  assert.equal(again.snapshot.monsters.entries.wolf_king.outcomeStatus, 'defeated');
+  const killed = codex.extractResponse('<monsterPatch><id>wolf_king</id><action>kill</action><outcome>두 번째 교전에서 월영참이 심장을 관통했다.</outcome></monsterPatch>', again.snapshot);
+  assert.equal(killed.snapshot.monsters.entries.wolf_king.outcomeStatus, 'dead');
+  assert.equal(killed.snapshot.monsters.entries.wolf_king.outcomeEncounter, 2);
+  assert.equal(killed.snapshot.monsters.entries.wolf_king.outcome, '두 번째 교전에서 월영참이 심장을 관통했다.');
+});
+
 test('bounded context excludes inactive unmentioned encounters and assets stay references', () => {
   const state = codex.snapshot();
   codex.applyEvent(state, { domain: 'monster', kind: 'exam', entity: { id: 'old', name: '지난 적', aliases: [], active: false, status: 'ended', relation: 'hostile', threat: '하', weaknesses: [], encounterCount: 1 } });
@@ -85,6 +103,9 @@ test('skill protocol uses real time cooldowns and world-native costs', () => {
   assert.equal(result.snapshot.skills.entries.flash.cooldown, '30초');
   const legacy = codex.extractResponse('<skillExam><id>legacy</id><name>구식 기술</name><type>active</type><cooldown>3턴</cooldown></skillExam>', codex.snapshot());
   assert.equal(legacy.snapshot.skills.entries.legacy.cooldown, '상황 조건 충족 후');
+  assert.match(protocol, /Preserve the setting's own native rank/);
+  const forced = codex.protocol([], { rarityMode: 'itemx' });
+  assert.match(forced, /normal\|magic\|rare\|unique\|epic\|legendary\|mythical\|empyrean/);
 });
 
 test('skill and encounter records derive safe emoji fallbacks and request free model-selected glyphs', () => {

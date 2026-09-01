@@ -6,7 +6,7 @@ const ITEMXRenderer = (() => {
     fire: { name: '화염', icon: '🔥', c: '#ff7a3d', g: 'rgba(255,122,61,.42)' }, ice: { name: '냉기', icon: '❄️', c: '#58cbf5', g: 'rgba(88,203,245,.40)' },
     lightning: { name: '번개', icon: '⚡', c: '#f5d13c', g: 'rgba(245,209,60,.38)' }, wind: { name: '바람', icon: '🌪️', c: '#86e5c4', g: 'rgba(134,229,196,.34)' },
     earth: { name: '대지', icon: '🪨', c: '#c69a5c', g: 'rgba(198,154,92,.34)' }, light: { name: '광휘', icon: '☀️', c: '#ffe6a8', g: 'rgba(255,230,168,.40)' },
-    dark: { name: '암흑', icon: '🌑', c: '#9a6bff', g: 'rgba(154,107,255,.42)' }, poison: { name: '맹독', icon: '☠️', c: '#a6e34a', g: 'rgba(166,227,74,.36)' },
+    dark: { name: '암흑', icon: '🌑', c: '#9a6bff', g: 'rgba(154,107,255,.42)' }, arcane: { name: '비전', icon: '✦', c: '#7f9cff', g: 'rgba(127,156,255,.40)' }, poison: { name: '맹독', icon: '☠️', c: '#a6e34a', g: 'rgba(166,227,74,.36)' },
     blood: { name: '혈기', icon: '🩸', c: '#d1354f', g: 'rgba(209,53,79,.42)' }, void: { name: '공허', icon: '🕳️', c: '#ff5ec2', g: 'rgba(255,94,194,.42)' }
   };
   const crafts = {
@@ -84,6 +84,12 @@ const ITEMXRenderer = (() => {
     return `<div class="affinity-row">${out}</div>`;
   }
 
+  function renderSkillFx(skill, rarity = 'normal', motion = 'full') {
+    const affinity = affinities[skill?.affinity] ? skill.affinity : 'arcane';
+    const item = { id: skill?.id || skill?.name || 'skill', name: skill?.name || '스킬', theme: 'arcane', rarity: rarityLabels[rarity] ? rarity : 'normal', affinity };
+    return `<div class="itemx-fx itemx2-skill-weapon-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div></div>`;
+  }
+
   function stats(item) {
     const values = [['위력', item.power], ['요구', item.required], ['내구', item.durability], ['가치', item.cost]].filter(([, value]) => value);
     if (!values.length) return '';
@@ -123,7 +129,7 @@ const ITEMXRenderer = (() => {
     return id ? `<span class="itemx-event-chip">ITEMX CODEX · ${esc(id)} 변경</span>` : '';
   }
 
-  return { affinities, crafts, rarityLabels, reactions, particleBudget, renderCard, renderTile, renderMarkerPayload, itemVars };
+  return { affinities, crafts, rarityLabels, reactions, particleBudget, renderCard, renderTile, renderMarkerPayload, renderSkillFx, itemVars };
 })();
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
