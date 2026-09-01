@@ -85,7 +85,7 @@ test('catch-up sanitizes committed raw ITEMX transport before auxiliary review',
   const result = await bootWithOutput(raw);
   const latest = result.chat();
   assert.equal(latest.message[0].data.includes('<itemExam>'), false);
-  assert.match(latest.message[0].data, /<!--ITEMX2@i0_0_[a-f0-9]{8}-->/);
+  assert.match(latest.message[0].data, /<!--ITEMX2@i0_0_[a-f0-9]{8}:[A-Za-z0-9_-]+-->/);
   assert.match(latest.scriptstate.$__itemx2_message_events, /raw_blade/);
   assert.ok(JSON.parse(latest.scriptstate.$__itemx2_state).registry.items.raw_blade);
   assert.equal(result.modelCalls, 1);

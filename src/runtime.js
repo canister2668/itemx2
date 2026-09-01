@@ -4,13 +4,16 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.4';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 4';
+const ITEMX_PLUGIN_VERSION = '1.9.0-beta.5';
+const ITEMX_VERSION_LABEL = '1.9 · BETA 5';
+const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
+const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
+const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
 const ITEMX_MANUAL_KEY = '$__itemx2_manual_events';
 const ITEMX_MESSAGE_EVENT_KEY = '$__itemx2_message_events';
 const ITEMX_AUX_KEY = '$__itemx2_aux_processed';
-const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})-->/g;
-const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})-->/g;
+const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
+const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
 const ITEMX_AUX_SETTLE_MS = 1500;
 const ITEMX_ROOT_PAGE_SIZE = 16;
 const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX inventory"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="8.5" font-weight="900" letter-spacing="1.35">INVENTORY</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -21,11 +24,11 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const queues = new Map();
   const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, badgeEventOwner: null, badgeEventId: null, bodyFxEventOwner: null, bodyFxEventId: null, bodyFxTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxBusy: false, uiParts: [], generation: 0, remountTimer: null, catchUpTimer: null, hostSettingsTimer: null, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
+    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, badgeEventOwner: null, badgeEventId: null, bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', hooks: { output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null }, badgePosition: 'lb', compactContainer: true,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
-    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, debugEnabled: false, debugEntries: []
+    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, debugEntries: []
   };
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
@@ -47,6 +50,95 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       ]);
     } finally {
       if (timer) globalThis.clearTimeout(timer);
+    }
+  }
+  function compareVersions(left, right) {
+    const parse = (value) => {
+      const [main, prerelease = ''] = String(value || '').trim().replace(/^v/i, '').split('-', 2);
+      return { main: main.split('.').map((part) => Number.parseInt(part, 10) || 0), pre: prerelease ? prerelease.split('.') : [] };
+    };
+    const a = parse(left), b = parse(right);
+    for (let index = 0; index < Math.max(a.main.length, b.main.length); index += 1) {
+      const difference = (a.main[index] || 0) - (b.main[index] || 0);
+      if (difference) return difference > 0 ? 1 : -1;
+    }
+    if (!a.pre.length || !b.pre.length) return a.pre.length === b.pre.length ? 0 : a.pre.length ? -1 : 1;
+    for (let index = 0; index < Math.max(a.pre.length, b.pre.length); index += 1) {
+      if (a.pre[index] == null || b.pre[index] == null) return a.pre[index] == null ? -1 : 1;
+      if (a.pre[index] === b.pre[index]) continue;
+      const aNumber = /^\d+$/.test(a.pre[index]) ? Number(a.pre[index]) : null;
+      const bNumber = /^\d+$/.test(b.pre[index]) ? Number(b.pre[index]) : null;
+      if (aNumber != null && bNumber != null) return aNumber > bNumber ? 1 : -1;
+      if (aNumber != null || bNumber != null) return aNumber != null ? -1 : 1;
+      return a.pre[index] > b.pre[index] ? 1 : -1;
+    }
+    return 0;
+  }
+  async function syncUpdateIndicator() {
+    if (!runtime.mainDoc || !runtime.rootDrawer) return;
+    try {
+      const current = await runtime.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
+      const currentLabel = await runtime.mainDoc.querySelector('.x-risu-itemx2-update-label');
+      if (!runtime.update.available) {
+        if (current) await current.remove();
+        if (currentLabel) await currentLabel.remove();
+        return;
+      }
+      if (current) {
+        await current.setAttribute('x-itemx2-update', runtime.update.latest);
+      } else {
+        const badge = await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge');
+        if (badge) {
+          const indicator = await runtime.mainDoc.createElement('span');
+          await indicator.setClassName('x-risu-itemx2-update-indicator');
+          await indicator.setAttribute('x-itemx2-update', runtime.update.latest);
+          await indicator.setTextContent('↑');
+          await badge.appendChild(indicator);
+        }
+      }
+      if (!currentLabel) {
+        const eyebrow = await runtime.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
+        if (eyebrow) {
+          const label = await runtime.mainDoc.createElement('span');
+          await label.setClassName('x-risu-itemx2-update-label');
+          await label.setAttribute('x-itemx2-update', runtime.update.latest);
+          await label.setTextContent('UPDATE');
+          await eyebrow.appendChild(label);
+        }
+      }
+    } catch (error) { fail('update indicator', error); }
+  }
+  async function checkForUpdate() {
+    if (runtime.update.checking || !runtime.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
+    runtime.update.checking = true;
+    try {
+      let cached = null;
+      try { cached = JSON.parse(await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY) || 'null'); } catch {}
+      if (cached?.latest) {
+        runtime.update.checkedAt = Number(cached.checkedAt) || 0;
+        runtime.update.latest = String(cached.latest);
+        runtime.update.available = compareVersions(runtime.update.latest, ITEMX_PLUGIN_VERSION) > 0;
+        await syncUpdateIndicator();
+      }
+      if (Date.now() - runtime.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
+      const response = await withTimeout(Risuai.nativeFetch(ITEMX_UPDATE_URL, {
+        method: 'GET', headers: { Range: 'bytes=0-2047' }, cache: 'no-store'
+      }), 6000, '업데이트 확인 시간이 초과되었습니다');
+      if (!response?.ok) throw new Error(`업데이트 서버 응답 ${response?.status || '없음'}`);
+      const header = String(await response.text() || '');
+      const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
+      if (!latest) throw new Error('업데이트 버전 헤더를 찾지 못했습니다');
+      runtime.update.checkedAt = Date.now();
+      runtime.update.latest = latest;
+      runtime.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
+      try {
+        await Risuai.safeLocalStorage.setItem(ITEMX_UPDATE_CACHE_KEY, JSON.stringify({ checkedAt: runtime.update.checkedAt, latest }));
+      } catch {}
+      await syncUpdateIndicator();
+    } catch (error) {
+      debugRecord('update check', error?.message || String(error));
+    } finally {
+      runtime.update.checking = false;
     }
   }
   const messageData = (message) => ITEMXCore.messageText(message);
@@ -183,7 +275,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const codexPageStyle = () => `
 .itemx-codex-page-active{display:grid!important}
 .itemx2-codex-card{position:relative;display:block;min-height:70px;border:1px solid #263247;border-radius:12px;background:linear-gradient(145deg,#121a28,#0b111b);overflow:hidden}.itemx2-codex-summary{position:relative;z-index:1;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(72px,auto);gap:10px;align-items:center;min-height:70px;padding:10px;cursor:pointer}.itemx2-codex-glyph{display:grid;place-items:center;width:48px;height:48px;border:1px solid #40506b;border-radius:11px;background:#0b111c;color:#dbe8ff;font-size:1.2rem}.itemx2-codex-copy{display:grid;gap:3px;min-width:0}.itemx2-codex-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#edf2fb;font-size:.82rem}.itemx2-codex-copy small{color:#8494ad;font-size:.66rem}.itemx2-codex-tags{display:flex;flex-wrap:wrap;gap:4px}.itemx2-codex-tags i{padding:2px 5px;border:1px solid #344259;border-radius:999px;color:#aebbd0;font-size:.58rem;font-style:normal}.itemx2-skill-meta{display:grid;grid-template-columns:auto auto;gap:2px 5px;align-items:center;padding:6px 7px;border:1px solid #2e3a50;border-radius:9px;background:rgba(9,14,23,.82);font-size:.58rem}.itemx2-skill-meta small{color:#6f809a}.itemx2-skill-meta b{color:#dce6f5;font-size:.62rem;text-align:right}.itemx2-mastery{grid-column:2/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.itemx2-mastery i{height:5px;border-radius:6px;background:#202a3a}.itemx2-mastery i.on{background:linear-gradient(90deg,#66b8ff,#a985ff);box-shadow:0 0 8px rgba(102,184,255,.35)}.itemx2-bestiary-card.active{border-color:#70404a;box-shadow:inset 3px 0 #b55b68}.itemx2-bestiary-card img{width:48px;height:48px;border-radius:11px;object-fit:cover}
-.itemx-codex-list{display:grid;gap:9px}.itemx-codex-list-button{width:100%;padding:0;border:0;color:inherit;text-align:left;font:inherit}.itemx2-codex-summary::after{content:'›';position:absolute;right:9px;bottom:5px;color:#71839f;font-size:.85rem;font-weight:900}.itemx-codex-page{position:relative;display:grid;gap:11px;min-height:100%;padding:2px 0 14px;animation:itemx-codex-page-in .22s cubic-bezier(.2,.78,.2,1) both}.itemx2-codex-page{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-summary{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-page{display:grid}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note,.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note{display:none}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)),.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)){display:none}.itemx-codex-back{justify-self:start;display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border:1px solid #2d3a50;border-radius:9px;background:#101824;color:#c8d4e7;cursor:pointer;font:inherit;font-size:.7rem;font-weight:800}.itemx-codex-hero{position:relative;isolation:isolate;display:grid;place-items:center;min-height:218px;padding:24px 18px 20px;overflow:hidden;border:1px solid #33435d;border-radius:17px;background:radial-gradient(circle at 50% 45%,rgba(91,150,255,.19),transparent 31%),linear-gradient(145deg,#121b2b,#080d16 70%);box-shadow:inset 0 0 45px rgba(63,116,205,.1),0 12px 34px rgba(0,0,0,.32)}.itemx-codex-hero::before,.itemx-codex-hero::after{content:'';position:absolute;left:50%;top:44%;z-index:-1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.itemx-codex-hero::before{width:158px;height:158px;border:1px solid rgba(113,181,255,.34);background:repeating-conic-gradient(from 0deg,rgba(128,195,255,.28) 0 2deg,transparent 2deg 28deg);mask:radial-gradient(circle,transparent 53%,#000 54% 58%,transparent 59%);animation:itemx-codex-orbit 8s linear infinite}.itemx-codex-hero::after{width:112px;height:112px;border:1px solid rgba(173,139,255,.32);box-shadow:0 0 42px rgba(76,142,255,.2),inset 0 0 26px rgba(151,105,255,.12);animation:itemx-codex-orbit-reverse 5.5s linear infinite}.itemx-codex-hero-glyph{position:relative;z-index:2;display:grid;place-items:center;width:82px;height:82px;border:1px solid rgba(177,210,255,.55);border-radius:24px;background:radial-gradient(circle at 45% 38%,#263e62,#101827 68%);box-shadow:0 0 25px rgba(94,164,255,.28),inset 0 0 22px rgba(132,184,255,.16);color:#eff7ff;font-size:2.6rem;text-shadow:0 0 14px rgba(142,202,255,.8)}.itemx-codex-hero-copy{position:relative;z-index:2;display:grid;gap:5px;margin-top:18px;text-align:center}.itemx-codex-hero-copy small{color:#8fa4c4;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.itemx-codex-hero-copy strong{color:#f3f7ff;font-size:1.08rem}.itemx-codex-hero-copy span{color:#9eb0ca;font-size:.68rem}.itemx-codex-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.itemx-codex-stat{display:grid;gap:4px;min-height:60px;padding:10px;border:1px solid #26344a;border-radius:11px;background:linear-gradient(145deg,#111a28,#0b111b)}.itemx-codex-stat small{color:#70819b;font-size:.59rem;font-weight:800}.itemx-codex-stat strong{color:#e8effa;font-size:.72rem;overflow-wrap:anywhere}.itemx-codex-section{display:grid;gap:7px;padding:12px;border:1px solid #243147;border-radius:12px;background:#0c131e;color:#becadd;font-size:.7rem;line-height:1.58}.itemx-codex-section h4{margin:0;color:#d9e6f8;font-size:.67rem;letter-spacing:.08em}.itemx-codex-section p{margin:0;white-space:pre-wrap}.itemx-codex-chip-row{display:flex;flex-wrap:wrap;gap:5px}.itemx-codex-chip-row i{padding:4px 7px;border:1px solid #34445e;border-radius:999px;background:#111a28;color:#b8c7dd;font-size:.61rem;font-style:normal}.itemx-codex-mastery{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.itemx-codex-mastery i{height:7px;border-radius:999px;background:#202b3c}.itemx-codex-mastery i.on{background:linear-gradient(90deg,#5cbcff,#a978ff);box-shadow:0 0 9px rgba(92,188,255,.42)}.itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{position:relative;z-index:2;width:112px;height:112px;border:1px solid rgba(255,124,143,.58);border-radius:18px;object-fit:cover;box-shadow:0 0 0 5px rgba(93,24,35,.35),0 0 32px rgba(255,65,94,.3);filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}.itemx-threat-banner{position:absolute;left:10px;top:10px;z-index:3;padding:5px 8px;border:1px solid rgba(255,109,130,.48);border-radius:999px;background:rgba(41,10,17,.82);color:#ff9aab;font-size:.58rem;font-weight:900;letter-spacing:.12em}.itemx-fx-paused .itemx-fx *,.itemx-fx-paused .itemx-cond *{animation-play-state:paused!important}@keyframes itemx-codex-page-in{from{opacity:0;transform:translate3d(12px,0,0)}to{opacity:1;transform:none}}@keyframes itemx-codex-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes itemx-codex-orbit-reverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}@keyframes itemx-codex-scan{0%,100%{top:18%;opacity:.2}50%{top:78%;opacity:1}}@media(prefers-reduced-motion:reduce){.itemx-codex-page,.itemx-codex-hero::before,.itemx-codex-hero::after{animation:none!important}}
+.itemx-codex-list{display:grid;gap:9px}.itemx-codex-list-button{width:100%;padding:0;border:0;color:inherit;text-align:left;font:inherit}.itemx2-codex-summary::after{content:'›';position:absolute;right:9px;bottom:5px;color:#71839f;font-size:.85rem;font-weight:900}.itemx-codex-page{position:relative;display:grid;gap:11px;min-height:100%;padding:2px 0 14px;animation:itemx-codex-page-in .22s cubic-bezier(.2,.78,.2,1) both}.itemx2-codex-page{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-summary{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-page{display:grid}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note,.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note{display:none}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)),.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)){display:none}.itemx-codex-back{justify-self:start;display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border:1px solid #2d3a50;border-radius:9px;background:#101824;color:#c8d4e7;cursor:pointer;font:inherit;font-size:.7rem;font-weight:800}.itemx-codex-hero{position:relative;isolation:isolate;display:grid;place-items:center;min-height:218px;padding:24px 18px 20px;overflow:hidden;border:1px solid #33435d;border-radius:17px;background:radial-gradient(circle at 50% 45%,rgba(91,150,255,.19),transparent 31%),linear-gradient(145deg,#121b2b,#080d16 70%);box-shadow:inset 0 0 45px rgba(63,116,205,.1),0 12px 34px rgba(0,0,0,.32)}.itemx-codex-hero::before,.itemx-codex-hero::after{content:'';position:absolute;left:50%;top:44%;z-index:-1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.itemx-codex-hero::before{width:158px;height:158px;border:1px solid rgba(113,181,255,.34);background:repeating-conic-gradient(from 0deg,rgba(128,195,255,.28) 0 2deg,transparent 2deg 28deg);mask:radial-gradient(circle,transparent 53%,#000 54% 58%,transparent 59%);animation:itemx-codex-orbit 8s linear infinite}.itemx-codex-hero::after{width:112px;height:112px;border:1px solid rgba(173,139,255,.32);box-shadow:0 0 42px rgba(76,142,255,.2),inset 0 0 26px rgba(151,105,255,.12);animation:itemx-codex-orbit-reverse 5.5s linear infinite}.itemx-codex-hero-glyph{position:relative;z-index:2;display:grid;place-items:center;width:82px;height:82px;border:1px solid rgba(177,210,255,.55);border-radius:24px;background:radial-gradient(circle at 45% 38%,#263e62,#101827 68%);box-shadow:0 0 25px rgba(94,164,255,.28),inset 0 0 22px rgba(132,184,255,.16);color:#eff7ff;font-size:2.6rem;text-shadow:0 0 14px rgba(142,202,255,.8)}.itemx-codex-hero-copy{position:relative;z-index:2;display:grid;gap:5px;margin-top:18px;text-align:center}.itemx-codex-hero-copy small{color:#8fa4c4;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.itemx-codex-hero-copy strong{color:#f3f7ff;font-size:1.08rem}.itemx-codex-hero-copy span{color:#9eb0ca;font-size:.68rem}.itemx-codex-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.itemx-codex-stat{display:grid;gap:4px;min-height:60px;padding:10px;border:1px solid #26344a;border-radius:11px;background:linear-gradient(145deg,#111a28,#0b111b)}.itemx-codex-stat small{color:#70819b;font-size:.59rem;font-weight:800}.itemx-codex-stat strong{color:#e8effa;font-size:.72rem;overflow-wrap:anywhere}.itemx-codex-section{display:grid;gap:7px;padding:12px;border:1px solid #243147;border-radius:12px;background:#0c131e;color:#becadd;font-size:.7rem;line-height:1.58}.itemx-codex-section h4{margin:0;color:#d9e6f8;font-size:.67rem;letter-spacing:.08em}.itemx-codex-section p{margin:0;white-space:pre-wrap}.itemx-codex-chip-row{display:flex;flex-wrap:wrap;gap:5px}.itemx-codex-chip-row i{padding:4px 7px;border:1px solid #34445e;border-radius:999px;background:#111a28;color:#b8c7dd;font-size:.61rem;font-style:normal}.itemx-codex-mastery{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.itemx-codex-mastery i{height:7px;border-radius:999px;background:#202b3c}.itemx-codex-mastery i.on{background:linear-gradient(90deg,#5cbcff,#a978ff);box-shadow:0 0 9px rgba(92,188,255,.42)}.itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{position:relative;z-index:2;width:112px;height:112px;border:1px solid rgba(255,124,143,.58);border-radius:18px;object-fit:cover;box-shadow:0 0 0 5px rgba(93,24,35,.35),0 0 32px rgba(255,65,94,.3);filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}.itemx-threat-banner{position:absolute;left:10px;top:10px;z-index:3;padding:5px 8px;border:1px solid rgba(255,109,130,.48);border-radius:999px;background:rgba(41,10,17,.82);color:#ff9aab;font-size:.58rem;font-weight:900;letter-spacing:.12em}@keyframes itemx-codex-page-in{from{opacity:0;transform:translate3d(12px,0,0)}to{opacity:1;transform:none}}@keyframes itemx-codex-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes itemx-codex-orbit-reverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}@keyframes itemx-codex-scan{0%,100%{top:18%;opacity:.2}50%{top:78%;opacity:1}}@media(prefers-reduced-motion:reduce){.itemx-codex-page,.itemx-codex-hero::before,.itemx-codex-hero::after{animation:none!important}}
 `;
 
   const rootDrawerStyle = () => `
@@ -192,6 +284,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-root-control{position:fixed!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
 .itemx2-native-badge{position:fixed;z-index:50;display:block;width:48px;height:176px;padding:0;overflow:visible;pointer-events:auto;cursor:pointer;touch-action:manipulation;background:transparent;border:0;box-shadow:none}
 .itemx2-native-badge img{display:block;width:48px;height:176px;max-width:none;border:0;border-radius:0;pointer-events:none}
+.itemx2-update-indicator{position:absolute;right:-2px;top:5px;z-index:2;display:grid;place-items:center;width:17px;height:17px;border:1px solid rgba(174,255,204,.8);border-radius:999px;background:#16834b;box-shadow:0 0 0 2px rgba(7,12,19,.88),0 3px 10px rgba(25,196,105,.38);color:#effff5;font-size:11px;font-weight:950;line-height:1;pointer-events:none}
+.itemx2-update-label{display:inline-flex;margin-left:6px;padding:2px 5px;border:1px solid rgba(112,225,155,.46);border-radius:999px;background:rgba(20,107,61,.34);color:#94e9b3;font-size:8px;font-weight:950;letter-spacing:.08em;vertical-align:1px}
 .itemx2-aux-status{position:fixed;z-index:52;display:none;align-items:center;gap:7px;min-height:34px;padding:0 11px;border:1px solid rgba(212,175,110,.48);border-radius:999px;background:rgba(9,13,23,.94);box-shadow:0 8px 24px rgba(0,0,0,.48),0 0 14px rgba(212,175,110,.14);color:#f0dfb9;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none}.itemx2-aux-status-on{display:flex}.itemx2-aux-status i{width:12px;height:12px;border:2px solid rgba(240,223,185,.24);border-top-color:#f0c979;border-radius:50%;animation:itemx2-aux-spin .8s linear infinite}
 .itemx2-root-drawer.itemx2-pos-lb .itemx2-aux-status{left:58px;right:auto;top:auto;bottom:calc(5.2rem + 70px + env(safe-area-inset-bottom,0px));transform:none}.itemx2-root-drawer.itemx2-pos-lm .itemx2-aux-status{left:58px;right:auto;top:50%;bottom:auto;transform:translateY(-50%)}.itemx2-root-drawer.itemx2-pos-lt .itemx2-aux-status{left:58px;right:auto;top:calc(4.5rem + 70px + env(safe-area-inset-top,0px));bottom:auto;transform:none}
 .itemx2-root-drawer.itemx2-pos-rb .itemx2-aux-status{right:58px;left:auto;top:auto;bottom:calc(5.2rem + 70px + env(safe-area-inset-bottom,0px));transform:none}.itemx2-root-drawer.itemx2-pos-rm .itemx2-aux-status{right:58px;left:auto;top:50%;bottom:auto;transform:translateY(-50%)}.itemx2-root-drawer.itemx2-pos-rt .itemx2-aux-status{right:58px;left:auto;top:calc(4.5rem + 70px + env(safe-area-inset-top,0px));bottom:auto;transform:none}
@@ -239,7 +333,7 @@ ${codexPageStyle()}
   function prefixRisuClasses(css) {
     return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) => name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`);
   }
-  const bodyScrollStyle = `.x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-fx, .x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-fx *, .x-risu-itemx-body-scrolling .chattext .x-risu-itemx-inline-card .x-risu-itemx-cond *{animation-play-state:paused!important}`;
+  const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *{animation-play-state:paused!important}`;
   const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${badgeStyle()}`;
 
   function enqueue(key, work) {
@@ -287,6 +381,61 @@ ${codexPageStyle()}
     runtime.eventPayloads = new Map(messageEventLedger(chat).map((row) => [`${row.domain}:${row.ref}`, row.payload]));
   }
 
+  function embeddedViewCode(payload, domain) {
+    const view = payload?.view;
+    if (!view) return '';
+    const envelope = domain === 'codex'
+      ? { v: ITEMXCodex.VERSION, d: payload.event?.domain || '', e: { i: view.id, n: view.name, g: view.glyph } }
+      : { v: ITEMXCore.VERSION, i: {
+        i: view.id, n: view.name, t: view.itemType, e: view.emoji, r: view.rarity, d: view.displayRarity,
+        p: view.power, q: view.required, u: view.durability, c: view.cost, o: view.possession, l: view.location,
+        k: view.count, s: view.slot, h: view.theme, a: view.affinity, b: view.affinity2, x: view.condition,
+        f: (view.effects || []).map((row) => [row.name, row.desc]), g: (view.augments || []).map((row) => [row.name, row.desc]), z: view.trivia
+      } };
+    const marker = ITEMXCore.marker(envelope);
+    return marker.startsWith('<!--ITEMX2:') && marker.endsWith('-->') ? marker.slice('<!--ITEMX2:'.length, -3) : '';
+  }
+
+  function compactRefMarker(prefix, ref, payload, domain) {
+    const code = embeddedViewCode(payload, domain);
+    return `<!--${prefix}@${ref}${code ? `:${code}` : ''}-->`;
+  }
+
+  function inlineViewPayload(code, domain) {
+    if (!code) return null;
+    const payload = ITEMXCore.decodePayload(code);
+    if (payload?.view) return domain === 'codex' ? { v: payload.v, event: { domain: payload.domain || '' }, view: payload.view } : { v: payload.v, view: payload.view };
+    if (domain === 'codex' && payload?.e) return { v: payload.v, event: { domain: payload.d || '' }, view: { id: payload.e.i, name: payload.e.n, glyph: payload.e.g } };
+    if (domain !== 'item' || !payload?.i) return null;
+    const item = payload.i;
+    return { v: payload.v, view: {
+      id: item.i, name: item.n, itemType: item.t, emoji: item.e, rarity: item.r, displayRarity: item.d,
+      power: item.p, required: item.q, durability: item.u, cost: item.c, possession: item.o, location: item.l,
+      count: item.k, slot: item.s, theme: item.h, affinity: item.a, affinity2: item.b, condition: item.x,
+      effects: (item.f || []).map((row) => ({ name: row[0], desc: row[1] })), augments: (item.g || []).map((row) => ({ name: row[0], desc: row[1] })), trivia: item.z
+    } };
+  }
+
+  function embedStoredRefViews(chat) {
+    const rows = messageEventLedger(chat);
+    if (!rows.length) return { chat, changed: false };
+    const byKey = new Map(rows.map((row) => [`${row.domain}:${row.ref}`, row.payload]));
+    let next = null, changed = false;
+    const messages = Array.isArray(chat?.message) ? chat.message : [];
+    for (let index = 0; index < messages.length; index += 1) {
+      const original = messageData(messages[index]);
+      let source = original.replace(ITEMX_REF_RE, (raw, ref, inline) => inline ? raw : compactRefMarker('ITEMX2', ref, byKey.get(`item:${ref}`), 'item'));
+      source = source.replace(ITEMX_CODEX_REF_RE, (raw, ref, inline) => inline ? raw : compactRefMarker('CODEX2', ref, byKey.get(`codex:${ref}`), 'codex'));
+      if (source === original) continue;
+      if (!next) next = ITEMXCore.clone(chat);
+      const message = next.message[index];
+      if (typeof message.data === 'string') message.data = source;
+      else if (typeof message.content === 'string') message.content = source;
+      changed = true;
+    }
+    return { chat: next || chat, changed };
+  }
+
   function messageEvents(chat, text, domain) {
     const rows = messageEventLedger(chat), byRef = new Map(rows.filter((row) => row.domain === domain).map((row) => [row.ref, row.payload]));
     const found = [];
@@ -297,7 +446,7 @@ ${codexPageStyle()}
       if (payload?.event) found.push({ index, event: payload.event });
       return raw;
     });
-    String(text || '').replace(refRe, (raw, ref, index) => {
+    String(text || '').replace(refRe, (raw, ref, inline, index) => {
       const payload = byRef.get(ref);
       if (payload?.event) found.push({ index, event: payload.event });
       return raw;
@@ -326,7 +475,7 @@ ${codexPageStyle()}
         const ref = `${domain[0]}${index.toString(36)}_${(ordinal++).toString(36)}_${ITEMXCore.fnv1a(code)}`;
         byKey.set(`${domain}:${ref}`, { ref, domain, payload: ITEMXCore.clone(payload) });
         changed = true;
-        return `<!--${prefix}@${ref}-->`;
+        return compactRefMarker(prefix, ref, payload, domain);
       });
     };
     replace('item', ITEMXCore.MARKER_RE, ITEMXCore.decodePayload, 'ITEMX2');
@@ -358,12 +507,20 @@ ${codexPageStyle()}
     return { schema: ITEMXCore.VERSION, rev: 2, fingerprint: ITEMXCore.fnv1a(transport), updatedAt: Date.now(), registry: reg };
   }
 
-  async function rebuildCurrent({ persist = false } = {}) {
+  async function rebuildCurrent({ upgradeDisplayRefs = false } = {}) {
     const ctx = await context();
     if (!ctx) return null;
     return enqueue(ctx.key, async () => {
-      const latestChat = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      let latestChat = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
       if (!latestChat) return null;
+      if (upgradeDisplayRefs && !latestChat.isStreaming && !(latestChat.message || []).some((message) => message?.isStreaming)) {
+        const embedded = embedStoredRefViews(latestChat);
+        if (embedded.changed && runtime.activeContextKey === ctx.key) {
+          await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, embedded.chat);
+          latestChat = embedded.chat;
+          debugRecord('display refs', 'embedded self-contained views');
+        }
+      }
       const snapshot = rebuildWithManual(latestChat);
       const codexSnapshot = rebuildCodexWithLedger(latestChat);
       refreshLatest(latestChat);
@@ -905,7 +1062,7 @@ ${codexPageStyle()}
   }
 
   async function catchUpLatestOutput() {
-    if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.auxRecoveryPromise) return;
+    if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.auxRecoveryPromise || runtime.bodyFxScrollActive) return;
     let ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return;
     const index = assistantMessageIndex(ctx.chat);
@@ -1005,90 +1162,77 @@ ${codexPageStyle()}
       found = true;
       const payload = ITEMXCore.decodePayload(code);
       if (!payload || payload.error) return '';
-      if (!runtime.latestMarkers.has(`ITEMX2:${code}`)) {
-        const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
-        return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
-      }
       const html = renderPayload(`item:${code}`, payload, 'full');
-      hasFullCard = true;
-      return html;
+      if (html) { hasFullCard = true; return html; }
+      const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
+      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
     }).replace(ITEMXCodex.MARKER_RE, (_, code) => {
       found = true;
       const payload = ITEMXCodex.decodePayload(code), entity = payload?.view || payload?.event?.entity;
       if (!entity || payload.error) return '';
       const kind = payload.event?.domain === 'skill' ? '스킬' : '조우 도감';
       return `<span class="itemx-event-chip">${ITEMXCore.esc(entity.glyph || '✦')} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
-    }).replace(ITEMX_REF_RE, (_, ref) => {
+    }).replace(ITEMX_REF_RE, (_, ref, inline) => {
       found = true;
-      const payload = runtime.eventPayloads.get(`item:${ref}`);
-      if (!payload || payload.error) return '';
-      if (!runtime.latestMarkers.has(`ITEMX2@${ref}`)) {
-        const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
-        return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
-      }
+      const payload = inlineViewPayload(inline, 'item') || runtime.eventPayloads.get(`item:${ref}`);
+      if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX · 기록 복원 중</span>`;
       const html = renderPayload(`item-ref:${ref}`, payload, 'full');
-      hasFullCard = true;
-      return html;
-    }).replace(ITEMX_CODEX_REF_RE, (_, ref) => {
+      if (html) { hasFullCard = true; return html; }
+      const item = payload.view || payload.event?.item;
+      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(item.emoji || '❔')} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX · ${ITEMXCore.esc(ref)}</span>`;
+    }).replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
       found = true;
-      const payload = runtime.eventPayloads.get(`codex:${ref}`), entity = payload?.view || payload?.event?.entity;
-      if (!entity || payload.error) return '';
+      const payload = inlineViewPayload(inline, 'codex') || runtime.eventPayloads.get(`codex:${ref}`), entity = payload?.view || payload?.event?.entity;
+      if (!entity || payload.error) return `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>`;
       const kind = payload.event?.domain === 'skill' ? '스킬' : '조우 도감';
       return `<span class="itemx-event-chip">${ITEMXCore.esc(entity.glyph || '✦')} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
     });
     if (!found) return content;
-    if (hasFullCard) scheduleBodyEffectVisibility();
     if (runtime.mainStyle) return rendered;
     return `<style>${hasFullCard ? ITEMX_CHAT_STYLE : ITEMX_CHIP_STYLE}</style>${rendered}`;
   };
 
-  function scheduleBodyEffectVisibility() {
-    if (runtime.bodyFxTimer) return;
-    runtime.bodyFxTimer = globalThis.setTimeout(() => {
-      runtime.bodyFxTimer = null;
-      void updateBodyEffectVisibility();
-    }, 90);
+  function beginBodyScrollEffects() {
+    if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
+    runtime.bodyFxStartTimer = globalThis.setTimeout(() => {
+      runtime.bodyFxStartTimer = null;
+      if (runtime.bodyFxScrollActive || !runtime.bodyFxClassOwner) return;
+      runtime.bodyFxScrollActive = true;
+      void runtime.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
+    }, 70);
   }
 
-  function scheduleBodyScrollEffects() {
-    if (!runtime.bodyFxEventOwner) return;
+  function endBodyScrollEffects(delayMs = 0) {
+    if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
+    runtime.bodyFxStartTimer = null;
     if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
-    if (!runtime.bodyFxScrollActive) {
-      runtime.bodyFxScrollActive = true;
-      void runtime.bodyFxEventOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
-    }
     runtime.bodyFxScrollTimer = globalThis.setTimeout(() => {
       runtime.bodyFxScrollTimer = null;
+      if (!runtime.bodyFxScrollActive) return;
       runtime.bodyFxScrollActive = false;
-      void runtime.bodyFxEventOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
-      scheduleBodyEffectVisibility();
-    }, 180);
-  }
-
-  async function updateBodyEffectVisibility() {
-    if (!runtime.mainDoc || runtime.bodyFxBusy) return;
-    runtime.bodyFxBusy = true;
-    try {
-      const safeCards = await runtime.mainDoc.querySelectorAll('.chattext .x-risu-itemx-inline-card');
-      const cards = await Risuai.unwarpSafeArray(safeCards);
-      for (const card of cards.slice(-32)) {
-        const rect = await card.getBoundingClientRect();
-        const active = rect.bottom >= -120 && rect.top <= 1000;
-        if (active) await card.removeClass('x-risu-itemx-fx-paused');
-        else await card.addClass('x-risu-itemx-fx-paused');
-      }
-    } catch (error) { debugRecord('body effect governor', error?.message || String(error)); }
-    finally { runtime.bodyFxBusy = false; }
+      if (runtime.bodyFxClassOwner) void runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+      scheduleHostDomSync(180);
+    }, delayMs);
   }
 
   async function installBodyEffectGovernor() {
-    if (!runtime.mainDoc || runtime.bodyFxEventOwner) { scheduleBodyEffectVisibility(); return; }
+    if (!runtime.mainDoc) return;
     try {
+      runtime.bodyFxClassOwner = await runtime.mainDoc.querySelector('.chattext') || runtime.bodyFxClassOwner;
+      if (runtime.bodyFxEventOwner) return;
       const body = await runtime.mainDoc.querySelector('body');
       if (!body) return;
       runtime.bodyFxEventOwner = body;
-      runtime.bodyFxEventId = await body.addEventListener('scroll', scheduleBodyScrollEffects, true);
-      scheduleBodyEffectVisibility();
+      const bindings = [
+        ['pointerdown', beginBodyScrollEffects],
+        ['pointerup', () => endBodyScrollEffects(900)],
+        ['pointercancel', () => endBodyScrollEffects(120)],
+        ['scrollend', () => endBodyScrollEffects(40)]
+      ];
+      for (const [type, handler] of bindings) {
+        const id = await body.addEventListener(type, handler, true);
+        runtime.bodyFxEventIds.push({ type, id });
+      }
     } catch (error) { debugRecord('body effect governor install', error?.message || String(error)); }
   }
 
@@ -1100,12 +1244,12 @@ ${codexPageStyle()}
           runtime.permissions.mainDom = true;
           runtime.lastDomError = '';
           await installBodyEffectGovernor();
+          await installHostObserver();
           return true;
         } catch {
           runtime.mainStyle = null;
           runtime.mainDoc = null;
-          runtime.bodyFxEventOwner = null;
-          runtime.bodyFxEventId = null;
+          runtime.bodyFxClassOwner = null;
         }
       }
       const doc = await Risuai.getRootDocument();
@@ -1117,7 +1261,7 @@ ${codexPageStyle()}
       runtime.mainDoc = doc;
       runtime.permissions.mainDom = true;
       const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
-      if (existing) { runtime.mainStyle = existing; await existing.setTextContent(mainStyleText()); runtime.mainStylePosition = runtime.badgePosition; await installBodyEffectGovernor(); return true; }
+      if (existing) { runtime.mainStyle = existing; await existing.setTextContent(mainStyleText()); runtime.mainStylePosition = runtime.badgePosition; await installBodyEffectGovernor(); await installHostObserver(); return true; }
       const style = await doc.createElement('style');
       await style.setAttribute('x-itemx2-style', 'owner');
       await style.setTextContent(mainStyleText());
@@ -1127,6 +1271,7 @@ ${codexPageStyle()}
       runtime.mainStylePosition = runtime.badgePosition;
       runtime.lastDomError = '';
       await installBodyEffectGovernor();
+      await installHostObserver();
       return true;
     } catch (error) {
       runtime.permissions.mainDom = false;
@@ -1246,12 +1391,41 @@ ${codexPageStyle()}
     }
   }
 
+  function scheduleHostDomSync(delayMs = 320) {
+    if (runtime.hostSyncTimer) globalThis.clearTimeout(runtime.hostSyncTimer);
+    runtime.hostSyncTimer = globalThis.setTimeout(async () => {
+      runtime.hostSyncTimer = null;
+      if (runtime.bodyFxScrollActive) { scheduleHostDomSync(420); return; }
+      if (runtime.hostSyncBusy) return;
+      runtime.hostSyncBusy = true;
+      try {
+        await installBodyEffectGovernor();
+        await ensureRootInventory();
+        await syncHostSettingsVisibility();
+      } catch (error) { debugRecord('host DOM sync', error?.message || String(error)); }
+      finally { runtime.hostSyncBusy = false; }
+    }, delayMs);
+  }
+
+  async function installHostObserver() {
+    if (!runtime.mainDoc || runtime.hostObserver || typeof Risuai.createMutationObserver !== 'function') return;
+    try {
+      const body = await runtime.mainDoc.querySelector('body');
+      if (!body) return;
+      runtime.hostObserver = await Risuai.createMutationObserver(() => scheduleHostDomSync());
+      if (runtime.hostObserver?.observe) await runtime.hostObserver.observe(body, { childList: true, subtree: true });
+    } catch (error) {
+      runtime.hostObserver = null;
+      debugRecord('host observer install', error?.message || String(error));
+    }
+  }
+
   async function hostPluginSettingsVisible() {
     if (!runtime.mainDoc || runtime.allowDrawerOverSettings) return false;
     try {
-      const safeTargets = await runtime.mainDoc.querySelectorAll('button,[role="button"],a');
+      const safeTargets = await runtime.mainDoc.querySelectorAll('button,[role="button"]');
       const targets = await Risuai.unwarpSafeArray(safeTargets);
-      for (const target of targets.slice(0, 160)) {
+      for (const target of targets.slice(0, 96)) {
         const text = String(await target.textContent() || '').replace(/\s+/g, ' ').trim();
         if (!text.includes('ITEMX 2 · 권한 및 설정')) continue;
         const rect = await target.getBoundingClientRect();
@@ -1293,11 +1467,8 @@ ${codexPageStyle()}
     runtime.rootItemPage = 0;
     runtime.cachedLoaded = null;
     runtime.cachedGeneration = -1;
-    runtime.latestMarkers = new Set();
-    runtime.latestOutput = '';
     runtime.pendingMarkers.clear();
     runtime.pendingMarkersAt = 0;
-    runtime.eventPayloads = new Map();
     runtime.markerHtmlCache.clear();
     runtime.detailHtmlCache.clear();
     runtime.catchUpFingerprint = '';
@@ -1308,19 +1479,23 @@ ${codexPageStyle()}
     runtime.uiRemountAfter = 0;
     if (runtime.legacyCommitTimer) globalThis.clearTimeout(runtime.legacyCommitTimer);
     runtime.legacyCommitTimer = null;
-    if (runtime.bodyFxTimer) globalThis.clearTimeout(runtime.bodyFxTimer);
-    runtime.bodyFxTimer = null;
+    if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
+    runtime.bodyFxStartTimer = null;
     if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
     runtime.bodyFxScrollTimer = null;
-    if (runtime.bodyFxScrollActive && runtime.bodyFxEventOwner) {
-      try { await runtime.bodyFxEventOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
+    if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
+      try { await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
     }
     runtime.bodyFxScrollActive = false;
+    runtime.bodyFxClassOwner = null;
+    refreshLatest(active?.chat || { message: [], scriptstate: {} });
     await removeRootDrawer();
     return true;
   }
 
   async function ensureRootInventory() {
+    if (runtime.bodyFxScrollActive) return;
+    runtime.remountFallbackAt = Date.now();
     const active = await context();
     const contextChanged = await resetRuntimeForContext(active);
     if (!active) {
@@ -1334,8 +1509,9 @@ ${codexPageStyle()}
       if (!runtime.hooks.output || !runtime.hooks.display || !runtime.hooks.before || !runtime.hooks.after) await installPipelineHooks();
       if (contextChanged) {
         if (!runtime.mainDoc && !(await installMainStyle())) return;
-        const loaded = await rebuildCurrent();
+        const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
         if (loaded) await openRootInventory({ open: false, loaded });
+        void checkForUpdate();
         return;
       }
       if (!runtime.mainDoc && !(await installMainStyle())) return;
@@ -1439,8 +1615,11 @@ ${codexPageStyle()}
   }
 
   function rootBadgeHtml() {
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX"></div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    const update = runtime.update.available ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX 업데이트 가능">↑</span>` : '';
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
+
+  const updateLabelHtml = () => runtime.update.available ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>` : '';
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open) return rootBadgeHtml();
@@ -1487,7 +1666,7 @@ ${codexPageStyle()}
     const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>${monsterList}</div>`;
     const activeContent = tab === 'skills' ? skillsContent : tab === 'bestiary' ? bestiaryContent : tab === 'settings' ? settings : inventoryContent;
     const tabs = [['inventory', '인벤'], ['skills', '스킬'], ['bestiary', '조우 도감'], ['settings', '설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
-    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${activeContent}</div></section></div>`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX 인벤토리"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${activeContent}</div></section></div>`;
   }
 
   const rootStateFingerprint = (loaded) => [loaded.snapshot?.fingerprint, loaded.codexSnapshot?.fingerprint, Number(loaded.enabled), Number(loaded.itemsEnabled), Number(loaded.skillsEnabled), Number(loaded.encountersEnabled), Number(loaded.mainOutput), loaded.auxOutput, loaded.rarityMode, Number(loaded.debugEnabled)].join(':');
@@ -1872,7 +2051,7 @@ ${codexPageStyle()}
     const skillsContent = `<div class="itemx-settings">${selectedSkill ? skillPageHtml(selectedSkill, '<button class="itemx-codex-back" data-action="back-skill">‹ 스킬 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${skillRows || '<div class="itemx-empty">아직 확정된 스킬이 없답니다.</div>'}</div>`}</div>`;
     const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.portrait] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
     const content = ui.tab === 'settings' ? settingsContent : ui.tab === 'skills' ? skillsContent : ui.tab === 'bestiary' ? bestiaryContent : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel" aria-label="ITEMX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">조우 도감</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">설정</button></nav>${content}</section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel" aria-label="ITEMX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">조우 도감</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">설정</button></nav>${content}</section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => { void closeInventory(); });
     root.querySelector('[data-action="back"]')?.addEventListener('click', () => { ui.selected = null; drawInventory(loaded); });
     root.querySelector('[data-action="back-skill"]')?.addEventListener('click', () => { ui.selectedSkill = null; drawInventory(loaded); });
@@ -2047,10 +2226,14 @@ ${codexPageStyle()}
     return pending;
   }
 
+  async function installDisplayHooks() {
+    if (!runtime.hooks.output) { await Risuai.addRisuScriptHandler('output', outputFallback); runtime.hooks.output = true; }
+    if (!runtime.hooks.display) { await Risuai.addRisuScriptHandler('display', displayHandler); runtime.hooks.display = true; }
+  }
+
   async function installPipelineHooksNow({ prompt = false } = {}) {
     try {
-      if (!runtime.hooks.output) { await Risuai.addRisuScriptHandler('output', outputFallback); runtime.hooks.output = true; }
-      if (!runtime.hooks.display) { await Risuai.addRisuScriptHandler('display', displayHandler); runtime.hooks.display = true; }
+      await installDisplayHooks();
       const permission = typeof Risuai.requestPluginPermission === 'function'
         ? await Risuai.requestPluginPermission('replacer')
         : true;
@@ -2104,6 +2287,7 @@ ${codexPageStyle()}
     await loadBadgePosition();
     const setting = await Risuai.registerSetting('ITEMX 2 · 권한 및 설정', openSettingsFromRisuMenu, '💎', 'html', 'itemx2-current-bot');
     if (setting?.id) runtime.uiParts.push(setting.id);
+    await installDisplayHooks();
     const initial = await context();
     let connected = false, styled = false;
     if (initial) {
@@ -2115,15 +2299,19 @@ ${codexPageStyle()}
       await updateRootLoading('모델 처리 연결 중…');
       connected = await installPipelineHooks();
       await updateRootLoading('채팅 인벤토리 복원 중…');
-      await rebuildCurrent();
+      await rebuildCurrent({ upgradeDisplayRefs: true });
       if (loadingStarted) await delay(Math.max(0, 320 - (Date.now() - loadingStarted)));
       if (styled) await openRootInventory({ open: false });
+      void checkForUpdate();
     } else {
       runtime.status = '채팅 진입 대기';
     }
-    runtime.remountTimer = globalThis.setInterval(() => { void ensureRootInventory(); }, 1500);
-    runtime.hostSettingsTimer = globalThis.setInterval(() => { void syncHostSettingsVisibility(); }, 700);
+    runtime.remountTimer = globalThis.setInterval(() => {
+      if (runtime.bodyFxScrollActive) return;
+      if (!runtime.activeContextKey || !runtime.hostObserver || Date.now() - runtime.remountFallbackAt >= 10000) void ensureRootInventory();
+    }, 1200);
     runtime.catchUpTimer = globalThis.setInterval(() => { void catchUpLatestOutput().catch((error) => fail('latest output catch-up', error)); }, 4500);
+    runtime.updateTimer = globalThis.setInterval(() => { void checkForUpdate(); }, ITEMX_UPDATE_CHECK_MS);
     if (initial) void catchUpLatestOutput().catch((error) => fail('initial output catch-up', error));
     if (connected && styled) runtime.status = '정상';
     log(`v${ITEMX_PLUGIN_VERSION} ready`);
@@ -2141,26 +2329,31 @@ ${codexPageStyle()}
     runtime.remountTimer = null;
     if (runtime.catchUpTimer) globalThis.clearInterval(runtime.catchUpTimer);
     runtime.catchUpTimer = null;
-    if (runtime.hostSettingsTimer) globalThis.clearInterval(runtime.hostSettingsTimer);
-    runtime.hostSettingsTimer = null;
+    if (runtime.updateTimer) globalThis.clearInterval(runtime.updateTimer);
+    runtime.updateTimer = null;
+    if (runtime.hostSyncTimer) globalThis.clearTimeout(runtime.hostSyncTimer);
+    runtime.hostSyncTimer = null;
     if (runtime.feedbackTimer) globalThis.clearTimeout(runtime.feedbackTimer);
     runtime.feedbackTimer = null;
     if (runtime.auxToastTimer) globalThis.clearTimeout(runtime.auxToastTimer);
     runtime.auxToastTimer = null;
     if (runtime.legacyCommitTimer) globalThis.clearTimeout(runtime.legacyCommitTimer);
     runtime.legacyCommitTimer = null;
-    if (runtime.bodyFxTimer) globalThis.clearTimeout(runtime.bodyFxTimer);
-    runtime.bodyFxTimer = null;
+    if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
+    runtime.bodyFxStartTimer = null;
     if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
     runtime.bodyFxScrollTimer = null;
-    if (runtime.bodyFxScrollActive && runtime.bodyFxEventOwner) {
-      try { await runtime.bodyFxEventOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
+    if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
+      try { await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
     }
     runtime.bodyFxScrollActive = false;
     try { await Risuai.hideContainer(); } catch {}
     await removeRootDrawer();
     try { if (runtime.badgeEventOwner && runtime.badgeEventId) await runtime.badgeEventOwner.removeEventListener('click', runtime.badgeEventId); } catch {}
-    try { if (runtime.bodyFxEventOwner && runtime.bodyFxEventId) await runtime.bodyFxEventOwner.removeEventListener('scroll', runtime.bodyFxEventId); } catch {}
+    for (const binding of runtime.bodyFxEventIds) { try { if (runtime.bodyFxEventOwner) await runtime.bodyFxEventOwner.removeEventListener(binding.type, binding.id, true); } catch {} }
+    runtime.bodyFxEventIds = [];
+    try { if (runtime.hostObserver?.disconnect) await runtime.hostObserver.disconnect(); } catch {}
+    runtime.hostObserver = null;
     try { await Risuai.removeRisuScriptHandler('output', outputFallback); } catch {}
     try { await Risuai.removeRisuScriptHandler('display', displayHandler); } catch {}
     try { await Risuai.removeRisuReplacer('beforeRequest', beforeRequest); } catch {}

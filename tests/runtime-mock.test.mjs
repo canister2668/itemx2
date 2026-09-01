@@ -10,6 +10,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('API v3 runtime processes, commits, injects and renders one real turn', async () => {
   let chat = { id: 'chat-a', message: [], scriptstate: {} };
+  let updateRequest = null;
   const handlers = {}, replacers = {}, storage = new Map(), localStorage = new Map(), bootOrder = [];
   const Risuai = {
     pluginStorage: { getItem: async (key) => storage.get(key) ?? null, setItem: async (key, value) => storage.set(key, value) },
@@ -28,13 +29,20 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     registerSetting: async () => { bootOrder.push('setting'); return { id: 'setting' }; },
     unregisterUIPart: async () => {},
     getRootDocument: async () => null,
+    nativeFetch: async (url, options) => {
+      updateRequest = { url, options };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.6\n' };
+    },
     onUnload: async () => {},
     showContainer: async () => {},
     hideContainer: async () => {}
   };
   const sandbox = vm.createContext({ console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout, setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} } });
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
+  await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
+  assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.6');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -117,6 +125,70 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
     Risuai, document: { head: {}, body: {} }
   });
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
-  assert.deepEqual(bootOrder, ['setting']);
-  assert.deepEqual(intervals.map((row) => row.ms), [1500, 700, 4500]);
+  assert.deepEqual(bootOrder, ['setting', 'script-handler', 'script-handler']);
+  assert.deepEqual(intervals.map((row) => row.ms), [1200, 4500, 30 * 60 * 1000]);
+});
+
+test('self-contained compact refs render on first display without hydrated chat state', async () => {
+  const handlers = {};
+  const Risuai = {
+    pluginStorage: { getItem: async () => null, setItem: async () => {} },
+    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
+    getCurrentCharacterIndex: async () => { throw new TypeError("Cannot read properties of undefined (reading 'chatPage')"); },
+    getCurrentChatIndex: async () => { throw new TypeError("Cannot read properties of undefined (reading 'chatPage')"); },
+    getCharacter: async () => null,
+    registerSetting: async () => ({ id: 'setting' }),
+    addRisuScriptHandler: async (mode, fn) => { handlers[mode] = fn; },
+    removeRisuScriptHandler: async () => {}, unregisterUIPart: async () => {}, onUnload: async () => {}, hideContainer: async () => {}
+  };
+  const sandbox = vm.createContext({
+    console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
+    setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} }
+  });
+  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
+  const view = { id: 'first_entry_blade', name: '첫 진입 검', itemType: '장검', emoji: '⚔️', rarity: 'epic', displayRarity: '에픽', possession: 'owned', location: 'inventory', count: 1, theme: 'oriental', affinity: 'lightning', effects: [], augments: [] };
+  const code = Buffer.from(JSON.stringify({ v: 2, view })).toString('base64url');
+  const rendered = handlers.display(`검을 확인했다.\n<!--ITEMX2@i0_0_deadbeef:${code}-->`);
+  assert.match(rendered, /itemx-card/);
+  assert.match(rendered, /첫 진입 검/);
+  assert.doesNotMatch(rendered, /기록 복원 중/);
+  const legacyFallback = handlers.display('<!--ITEMX2@i0_0_deadbeef-->');
+  assert.match(legacyFallback, /기록 복원 중/);
+});
+
+test('legacy bare refs are upgraded once from the per-chat event ledger', async () => {
+  const handlers = {}, replacers = {};
+  const view = { id: 'legacy_blade', name: '복원된 옛 검', itemType: '장검', emoji: '⚔️', rarity: 'rare', displayRarity: '레어', possession: 'owned', location: 'inventory', count: 1, theme: 'oriental', affinity: 'lightning', effects: [], augments: [] };
+  const item = { ...view, required: '', power: '', durability: '', cost: '', slot: '', affinity2: '', condition: '', trivia: '' };
+  const ref = 'i0_0_deadbeef';
+  const ledger = [{ ref, domain: 'item', payload: { v: 2, event: { kind: 'exam', item }, view } }];
+  let chat = { id: 'legacy-chat', message: [{ role: 'char', data: `옛 검을 확인했다.\n<!--ITEMX2@${ref}-->` }], scriptstate: { $__itemx2_message_events: JSON.stringify(ledger) } };
+  let writes = 0;
+  const Risuai = {
+    pluginStorage: { getItem: async () => null, setItem: async () => {} },
+    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
+    getCurrentCharacterIndex: async () => 0,
+    getCurrentChatIndex: async () => 0,
+    getCharacter: async () => ({ chaId: 'legacy-char', name: '옛 봇' }),
+    getChatFromIndex: async () => structuredClone(chat),
+    setChatToIndex: async (_ci, _hi, value) => { writes += 1; chat = structuredClone(value); },
+    registerSetting: async () => ({ id: 'setting' }),
+    addRisuScriptHandler: async (mode, fn) => { handlers[mode] = fn; },
+    removeRisuScriptHandler: async () => {},
+    requestPluginPermission: async () => true,
+    addRisuReplacer: async (mode, fn) => { replacers[mode] = fn; },
+    removeRisuReplacer: async () => {},
+    getRootDocument: async () => null,
+    unregisterUIPart: async () => {}, onUnload: async () => {}, hideContainer: async () => {}
+  };
+  const sandbox = vm.createContext({
+    console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
+    setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} }
+  });
+  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
+  assert.equal(writes, 1);
+  assert.match(chat.message[0].data, /<!--ITEMX2@i0_0_deadbeef:[A-Za-z0-9_-]+-->/);
+  const rendered = handlers.display(chat.message[0].data);
+  assert.match(rendered, /itemx-card/);
+  assert.match(rendered, /복원된 옛 검/);
 });
