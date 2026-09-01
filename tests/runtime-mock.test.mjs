@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.13\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.14\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,16 +43,27 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.13');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.14');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
+  assert.equal(typeof handlers.process, 'function');
+  const hypaInput = await handlers.process('서사 유지<sys>keep</sys><state>alive</state>\n<!--ITEMX2@c1:YWJj-->\n<skillExam><id>hidden</id><name>숨은 기술</name></skillExam>\n[itemx: stale]');
+  assert.match(hypaInput, /서사 유지/);
+  assert.match(hypaInput, /<sys>keep<\/sys>/);
+  assert.match(hypaInput, /<state>alive<\/state>/);
+  assert.equal(/ITEMX2@|skillExam|\[itemx:/i.test(hypaInput), false, 'Hypa pre-token process output must contain no owned transport');
+  const auxiliaryRequest = await replacers.beforeRequest([{ role: 'assistant', content: '보조 서사<!--CODEX2@c2:YWJj--><sys>keep</sys>' }], 'translate');
+  assert.equal(auxiliaryRequest[0].content, '보조 서사<sys>keep</sys>', 'non-main requests are sanitized without protocol injection');
   const preloadedSettingReads = settingReads;
 
   const raw = '런타임 검을 얻었다.\n\n전투가 끝난 뒤 일행은 다음 장소로 떠났다.\n\n<itemExam><id>runtime_blade</id><name>런타임 검</name><type>장검</type><emoji>⚔️</emoji><internalrarity>epic</internalrarity><displayrarity>에픽</displayrarity><power>2200-3100</power><durability>100/100</durability><possession>owned</possession><location>inventory</location><visual><theme>oriental</theme><affinity>lightning</affinity></visual><trivia>실제 훅 검증.</trivia></itemExam>';
   const cleaned = await replacers.afterRequest(raw, 'main');
   assert.equal(cleaned.includes('<itemExam>'), false);
   assert.match(cleaned, /<!--ITEMX2:/);
+  const tokenizedStoredMessage = await handlers.process(cleaned);
+  assert.match(tokenizedStoredMessage, /런타임 검을 얻었다/);
+  assert.equal(tokenizedStoredMessage.includes('<!--ITEMX2:'), false, 'stored display marker is removed before Hypa tokenization');
   // The inventory poll can still see the pre-commit chat between the final
   // response hook and the host's first display pass. That stale rebuild must
   // not clear the just-produced marker or the card appears only after editing.
@@ -67,6 +78,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(request[0].role, 'system');
   assert.match(request[0].content, /runtime_blade/);
   assert.equal(request[1].content.includes('<!--ITEMX2:'), false);
+  assert.equal(/<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(request.slice(1).map((one) => one.content).join('\n')), false);
   const display = await handlers.display(cleaned);
   assert.match(display, /itemx-card/);
   assert.ok(display.indexOf('itemx-card') < display.indexOf('전투가 끝난 뒤'));
@@ -115,7 +127,7 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
     Risuai, document: { head: {}, body: {} }
   });
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
-  assert.deepEqual(bootOrder, ['setting', 'script-handler', 'script-handler']);
+  assert.deepEqual(bootOrder, ['setting', 'script-handler', 'script-handler', 'script-handler']);
   assert.deepEqual(intervals.map((row) => row.ms), [1200, 4500, 30 * 60 * 1000]);
 });
 
