@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>ITEMX 다중 속성 동작 시안</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, Pretendard, "Noto Sans KR", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #080a10; color: #e6ebf4; }
+    button, select { font: inherit; }
+    button { color: inherit; }
+
+    .risu-shell { min-height: 100vh; background: radial-gradient(900px 560px at 50% 20%, #171b27 0, #0b0e15 55%, #07090e 100%); }
+    .risu-topbar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #202532; background: rgba(12,15,23,.94); color: #aeb7c9; font-size: 13px; }
+    .risu-topbar strong { color: #f2f4f8; font-size: 14px; }
+    .stage { width: min(920px, 100%); margin: 0 auto; padding: 22px 18px 64px; }
+    .demo-note { display: flex; align-items: center; gap: 9px; margin: 0 auto 14px; width: min(760px,100%); padding: 9px 12px; border: 1px solid #30394a; border-radius: 10px; background: #111622; color: #919db2; font-size: 12px; line-height: 1.45; }
+    .demo-note b { color: #d8b25c; white-space: nowrap; }
+
+    .lab { width: min(760px, 100%); margin: 0 auto 14px; padding: 12px; border: 1px solid #252c3a; border-radius: 13px; background: rgba(13,17,26,.96); }
+    .lab-title { margin-bottom: 9px; color: #8e9ab0; font-size: 10px; font-weight: 800; letter-spacing: .22em; }
+    .lab-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }
+    .lab label { display: grid; gap: 5px; color: #79869d; font-size: 11px; }
+    .lab select, .lab button { min-height: 34px; border: 1px solid #31394a; border-radius: 8px; background: #171c28; color: #d9dfeb; padding: 0 9px; }
+    .lab button { cursor: pointer; }
+    .lab button[aria-pressed="true"] { border-color: #806a3d; background: #2a2418; color: #f0d79d; }
+
+    /* Current ITEMX inventory shell, reproduced from the module's rendered screen. */
+    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }
+    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }
+    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }
+    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }
+    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }
+    .itemx-ph-sub { color: #77839c; font-size: .72rem; }
+    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }
+    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }
+    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }
+    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }
+    .itemx-seg-n { opacity: .65; font-size: .92em; }
+    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }
+    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }
+    .itemx-search { flex: 1; color: #64718c; }
+    .itemx-body { padding: .75em 1.05em .95em; }
+    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }
+    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }
+    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }
+    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }
+    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }
+    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }
+    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }
+    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }
+    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }
+    .itemx-tile-lc { color: #67748c; font-size: .7rem; }
+    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }
+    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }
+
+    /* Off-screen cards keep their effects and DOM, while the browser may skip
+       their layout and paint work until they approach the viewport. */
+    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }
+    .itemx-fx-paused .itemx-fx *, .itemx-fx-paused .itemx-cond * { animation-play-state:paused!important; }
+
+    /* Detail card keeps ITEMX's real visual contract. Current theme effects and
+       the proposed affinity effects are deliberately separate layers. */
+    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }
+    .itemx-detail { display: flex; justify-content: center; }
+    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: "Nanum Myeongjo","Noto Serif KR",Georgia,serif; font-size: .92rem; line-height: 1.62; box-shadow: inset 0 0 60px rgba(0,0,0,.55),0 0 calc(30px*var(--int)) var(--pg); }
+    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }
+    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);box-shadow:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48),0 0 calc(24px*var(--int)) var(--pg); }
+    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }
+    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }
+    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }
+    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }
+    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}
+    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}
+    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}
+    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}
+    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}
+    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}
+    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}
+    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:"";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}
+    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}
+    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}
+    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}
+    .itemx-card::before { content:""; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }
+    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+    .itemx-fx { z-index:1; }
+    .itemx-cond { z-index:2; }
+    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}
+    /* Existing ITEMX effects: arcane gold rays and deterministic gold shards. */
+    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }
+    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
+    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }
+    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; background:linear-gradient(to bottom,transparent,var(--pg),transparent); filter:blur(15px); animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }
+    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }
+    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }
+    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }
+    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }
+    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }
+    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }
+    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }
+    .craft-mote.shape-cross::after { content:"";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }
+    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }
+    .craft-mote.shape-gear::before { content:"⚙";position:absolute;inset:0; }
+    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}
+    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px);animation:existing-fog 17s ease-in-out infinite alternate; }
+    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }
+
+    /* Proposed affinity layer. No circular pulse or generic coloured wash. */
+    .affinity-fx { z-index:2; }
+    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }
+    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }
+    .afx i { position:absolute; display:block; color:var(--ac); }
+    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }
+    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }
+    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }
+    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }
+    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }
+    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }
+    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }
+    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }
+    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }
+    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }
+    /* A second, broad signature per affinity. Particles provide detail; these
+       edge traces make the affinity readable before the viewer studies them. */
+    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }
+    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }
+    .sig-fire { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px); filter:blur(2px) drop-shadow(0 0 7px var(--ac)); animation:sig-fire 5.2s linear infinite; }
+    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }
+    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }
+    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }
+    .sig-wind { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px); transform:translateX(-26%); filter:drop-shadow(5px 0 7px var(--ac)); animation:sig-wind 6.4s linear infinite; }
+    .sig-earth { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%); filter:drop-shadow(0 0 5px var(--ac)); animation:sig-earth 6s ease-in-out infinite alternate; }
+    .sig-light { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px); filter:blur(3px) drop-shadow(0 0 9px var(--ac)); animation:sig-light 7s ease-in-out infinite alternate; }
+    .sig-dark { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px); filter:blur(9px) drop-shadow(0 0 10px var(--ac)); animation:sig-dark 7.5s ease-in-out infinite alternate; }
+    .sig-poison { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px); clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%); filter:blur(2px) drop-shadow(0 0 7px var(--ac)); animation:sig-poison 8s ease-in-out infinite alternate; }
+    .sig-blood { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px); clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%); filter:drop-shadow(0 5px 8px var(--ac)); animation:sig-blood 5.8s ease-in-out infinite alternate; }
+    .sig-void { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px); clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%); filter:drop-shadow(0 0 11px var(--ac)); animation:sig-void 4.9s step-end infinite; }
+    .itemx-content { position:relative; z-index:4; padding:1.35em; }
+    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }
+    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }
+    .itemx-emoji { font-size:1.6em; }
+    .itemx-titles { flex:1; min-width:0; }
+    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }
+    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }
+    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }
+    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }
+    .itemx-subline span+span::before { content:"·"; margin:0 .55em; color:var(--line); }
+    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }
+    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }
+    .affinity-chip small { opacity:.62; font-size:9px; }
+    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }
+    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }
+    .itemx-stats { display:flex; gap:.45em; }
+    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }
+    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }
+    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }
+    .itemx-gap { height:1.1em; }
+    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }
+    .itemx-effects { display:grid; gap:.7em; }
+    .itemx-effect { position:relative; padding-left:1.1em; }
+    .itemx-effect::before { content:"❧"; position:absolute; left:0; color:var(--s); }
+    .itemx-efname { color:var(--p); font-weight:700; }
+    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }
+    .motion-off * { animation:none!important; }
+
+    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}
+    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }
+    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }
+    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }
+    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }
+    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}
+    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }
+    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }
+    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }
+
+    @keyframes existing-spin { to { transform:rotate(360deg); } }
+    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }
+    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }
+    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }
+    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }
+    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }
+    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }
+    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }
+    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }
+    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }
+    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }
+    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }
+    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }
+    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }
+    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }
+    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }
+    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }
+    @keyframes aff-poison { 0%,100%{transform:translate(0,4px) rotate(-8deg);opacity:.2}50%{transform:translate(8px,-10px) rotate(12deg);opacity:.8} }
+    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }
+    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }
+    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }
+    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }
+    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }
+    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }
+    @keyframes sig-wind { to{transform:translateX(28%)} }
+    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }
+    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }
+    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }
+    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }
+    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }
+    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }
+    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion) * { animation:none!important; } }
+    @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }
+  </style>
+</head>
+<body>
+  <div class="risu-shell">
+    <header class="risu-topbar"><strong>ITEMX · 대화</strong><span>다중 속성 시안</span></header>
+    <main class="stage">
+      <div class="demo-note"><b>PROTOTYPE v4</b><span>일곱 테마의 실제 기본 파티클을 에픽급 16개로 비교합니다. 테마 표면과 파티클은 함께 바뀌고, 속성 효과는 그 위에 별도 레이어로 추가됩니다.</span></div>
+      <section class="lab" aria-label="시안 제어">
+        <div class="lab-title">MULTI-AFFINITY CONTROLS</div>
+        <div class="lab-grid">
+          <label>테마<select id="craft"></select></label>
+          <label>주속성<select id="primary"></select></label>
+          <label>부속성<select id="secondary"></select></label>
+          <label>등급<select id="rarity"></select></label>
+          <label>연출<button id="motion" type="button" aria-pressed="false">모션 켜짐</button></label>
+        </div>
+      </section>
+
+      <section class="itemx-panel" aria-label="ITEMX 인벤토리">
+        <header class="itemx-ph">
+          <span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · CODEX · 1.2</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 21 · 장착 4 · 관찰 0 · 48,200 G</span></span>
+          <span class="itemx-ph-btn">✕</span>
+        </header>
+        <div id="listView">
+          <nav class="itemx-seg"><button class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">21</span></button><button class="itemx-seg-i">보유 <span class="itemx-seg-n">21</span></button><button class="itemx-seg-i">장착 <span class="itemx-seg-n">4</span></button><button class="itemx-seg-i">테마 <span class="itemx-seg-n">7</span></button><button class="itemx-seg-i">속성 <span class="itemx-seg-n">14</span></button></nav>
+          <div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div>
+          <div class="itemx-body"><div class="itemx-grid" id="grid"></div></div>
+          <footer class="itemx-pf">21점 표시 · 테마와 속성 비교</footer>
+        </div>
+        <div id="detailView" hidden>
+          <div class="itemx-body"><button class="itemx-back" id="back">‹ 목록으로</button><div class="itemx-detail" id="detail"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const affinities={
+      fire:{name:'화염',icon:'🔥',c:'#ff7a3d',g:'rgba(255,122,61,.42)'},ice:{name:'냉기',icon:'❄️',c:'#58cbf5',g:'rgba(88,203,245,.40)'},lightning:{name:'번개',icon:'⚡',c:'#f5d13c',g:'rgba(245,209,60,.38)'},wind:{name:'바람',icon:'🌪️',c:'#86e5c4',g:'rgba(134,229,196,.34)'},earth:{name:'대지',icon:'🪨',c:'#c69a5c',g:'rgba(198,154,92,.34)'},light:{name:'광휘',icon:'☀️',c:'#ffe6a8',g:'rgba(255,230,168,.40)'},dark:{name:'암흑',icon:'🌑',c:'#9a6bff',g:'rgba(154,107,255,.42)'},poison:{name:'맹독',icon:'☠️',c:'#a6e34a',g:'rgba(166,227,74,.36)'},blood:{name:'혈기',icon:'🩸',c:'#d1354f',g:'rgba(209,53,79,.42)'},void:{name:'공허',icon:'🕳️',c:'#ff5ec2',g:'rgba(255,94,194,.42)'}
+    };
+    const crafts={
+      arcane:{name:'마도',eyebrow:'CODEX · APPRAISAL',shapes:['shard','shard','shard','diamond'],paths:['rise','drift','pulse'],colors:[['#d8b25c','#f6e6bd'],['#b8873a','#ffe9b5']],accent:'#d8b25c',glow:'rgba(216,178,92,.30)',ambient:{rays:4,veil:5}},
+      forged:{name:'대장간',eyebrow:'FORGE · ASSAY',shapes:['ash','ash','ash','shard'],paths:['rise','drift'],colors:[['#e07a3a','#ffd0a0'],['#8a6440','#e8b184']],accent:'#e07a3a',glow:'rgba(224,122,58,.30)',ambient:{fog:3,rays:4,veil:5}},
+      oriental:{name:'무림',eyebrow:'兵器鑑定',shapes:['ash','ash','ash','petal'],paths:['sway','sway','drift'],colors:[['#3a332a','#6d6353'],['#4a4238','#7a7060'],['#8f2d33','#a8474d']],accent:'#a8232a',glow:'rgba(168,35,42,.20)',ambient:{fog:3,rays:4,veil:5}},
+      clockwork:{name:'시계공학',eyebrow:'ATELIER · No.',shapes:['gear','gear','gear','block'],paths:['turn','rise'],colors:[['#c98a2e','#f3dfae'],['#a9803c','#ffe4b0']],accent:'#c98a2e',glow:'rgba(201,138,46,.32)',ambient:{scan:4,veil:5}},
+      synthetic:{name:'합성체',eyebrow:'GEAR SCAN',shapes:['block','block','block','streak'],paths:['jitter','rise'],colors:[['#4ef2ff','#0a3a44'],['#ff3d6e','#3a0d1c']],accent:'#4ef2ff',glow:'rgba(78,242,255,.35)',ambient:{scan:1,veil:3}},
+      celestial:{name:'천체',eyebrow:'ASTRA · AUGURY',shapes:['cross','cross','cross','diamond'],paths:['pulse','rise','drift'],colors:[['#ffd98a','#fff6e0'],['#9fb4ff','#e6ecff']],accent:'#ffd98a',glow:'rgba(255,217,138,.30)',ambient:{rays:2,veil:3}},
+      organic:{name:'유기체',eyebrow:'SYLVAN · READING',shapes:['petal','petal','petal','ash'],paths:['sway','drift'],colors:[['#7fe0a1','#eafbe6'],['#4a9c62','#bff0cd']],accent:'#7fe0a1',glow:'rgba(127,224,161,.28)',ambient:{fog:2,rays:4,veil:5}}
+    };
+    const reactions={
+      'fire+wind':['화염폭풍','불티가 바람의 궤도를 타고 휘몰아친다.'],'fire+ice':['열충격','상반된 온도가 충돌하여 방어를 파쇄한다.'],'ice+lightning':['극뢰','빙결된 대상 사이로 번개가 연쇄 전도된다.'],'fire+light':['성화','정화의 불꽃이 타락한 존재에게 추가 피해를 준다.'],'dark+void':['심연붕괴','공간을 잠식해 대상의 저항을 안쪽으로 붕괴시킨다.'],'blood+poison':['혈독','상처에 스며든 독성이 맥박마다 증폭된다.'],'earth+wind':['사암폭풍','연마된 모래가 넓은 범위를 지속 절삭한다.']
+    };
+    const items=[
+      {id:'theme_arcane',emoji:'📖',name:'황금각인의 마도서',rarity:'epic',display:'에픽',craft:'arcane',p:null,s:null,type:'마도서',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'마도 테마'},
+      {id:'theme_forged',emoji:'🔨',name:'용광로의 전투망치',rarity:'epic',display:'에픽',craft:'forged',p:null,s:null,type:'전투망치',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'대장간 테마'},
+      {id:'theme_oriental',emoji:'🗡️',name:'먹빛을 머금은 도',rarity:'epic',display:'에픽',craft:'oriental',p:null,s:null,type:'도',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'무림 테마'},
+      {id:'theme_clockwork',emoji:'⚙️',name:'황동 태엽검',rarity:'epic',display:'에픽',craft:'clockwork',p:null,s:null,type:'기계검',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'시계공학 테마'},
+      {id:'theme_synthetic',emoji:'🔷',name:'NX-09 절단기',rarity:'epic',display:'에픽',craft:'synthetic',p:null,s:null,type:'에너지검',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'합성체 테마'},
+      {id:'theme_celestial',emoji:'🌠',name:'성좌의 관측봉',rarity:'epic',display:'에픽',craft:'celestial',p:null,s:null,type:'관측봉',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'천체 테마'},
+      {id:'theme_organic',emoji:'🌿',name:'녹심의 생장지팡이',rarity:'epic',display:'에픽',craft:'organic',p:null,s:null,type:'지팡이',loc:'소지품',power:'2600-3480',dur:'92 / 100',kind:'유기체 테마'},
+      {id:'single_fire',emoji:'🔥',name:'홍련의 심장대검',rarity:'epic',display:'에픽',p:'fire',s:null,type:'대검',loc:'장착',power:'2600-3480',dur:'83 / 100',kind:'화염 · 단일'},
+      {id:'single_ice',emoji:'❄️',name:'설랑의 은월도',rarity:'epic',display:'에픽',p:'ice',s:null,type:'월도',loc:'소지품',power:'2600-3480',dur:'100 / 100',kind:'냉기 · 단일'},
+      {id:'single_lightning',emoji:'⚡',name:'천뢰를 품은 왕창',rarity:'epic',display:'에픽',p:'lightning',s:null,type:'왕창',loc:'장착',power:'2600-3480',dur:'91 / 100',kind:'번개 · 단일'},
+      {id:'single_wind',emoji:'🌪️',name:'청람의 유영쌍검',rarity:'epic',display:'에픽',p:'wind',s:null,type:'쌍검',loc:'소지품',power:'2600-3480',dur:'88 / 100',kind:'바람 · 단일'},
+      {id:'single_earth',emoji:'🪨',name:'대맥을 울리는 철추',rarity:'epic',display:'에픽',p:'earth',s:null,type:'철추',loc:'소지품',power:'2600-3480',dur:'96 / 100',kind:'대지 · 단일'},
+      {id:'single_light',emoji:'☀️',name:'여명을 긋는 성검',rarity:'epic',display:'에픽',p:'light',s:null,type:'성검',loc:'장착',power:'2600-3480',dur:'94 / 100',kind:'광휘 · 단일'},
+      {id:'single_dark',emoji:'🌑',name:'월식을 머금은 흑도',rarity:'epic',display:'에픽',p:'dark',s:null,type:'흑도',loc:'소지품',power:'2600-3480',dur:'79 / 100',kind:'암흑 · 단일'},
+      {id:'single_poison',emoji:'☠️',name:'녹왕의 부식단검',rarity:'epic',display:'에픽',p:'poison',s:null,type:'단검',loc:'소지품',power:'2600-3480',dur:'74 / 100',kind:'맹독 · 단일'},
+      {id:'single_blood',emoji:'🩸',name:'적맥을 가르는 혈도',rarity:'epic',display:'에픽',p:'blood',s:null,type:'혈도',loc:'소지품',power:'2600-3480',dur:'86 / 100',kind:'혈기 · 단일'},
+      {id:'single_void',emoji:'🕳️',name:'공백을 베는 무명검',rarity:'epic',display:'에픽',p:'void',s:null,type:'장검',loc:'소지품',power:'2600-3480',dur:'82 / 100',kind:'공허 · 단일'},
+      {id:'firestorm',emoji:'⚔️',name:'홍련을 두른 폭풍검',rarity:'legendary',display:'전설',p:'fire',s:'wind',type:'장검',loc:'장착',power:'7600-9400',dur:'77 / 100',kind:'다중 속성'},
+      {id:'frostbolt',emoji:'🔱',name:'빙뢰의 청람창',rarity:'mythical',display:'신화',p:'ice',s:'lightning',type:'장창',loc:'소지품',power:'17600-24400',dur:'95 / 100',kind:'다중 속성'},
+      {id:'abyss',emoji:'🪄',name:'밤의 틈을 여는 지팡이',rarity:'empyrean',display:'창천',p:'dark',s:'void',type:'장궤 지팡이',loc:'소지품',power:'42000-76800',dur:'61 / 100',condition:'cursed',kind:'다중 속성'},
+      {id:'venom',emoji:'🗡️',name:'적맥을 마시는 독니',rarity:'unique',display:'유니크',p:'poison',s:'blood',type:'단검',loc:'소지품',power:'880-1320',dur:'47 / 100',condition:'corrupted',kind:'다중 속성'}
+    ];
+    const rarityLabels={normal:'일반',magic:'매직',rare:'레어',unique:'유니크',epic:'에픽',legendary:'전설',mythical:'신화',empyrean:'창천'};
+    const $=s=>document.querySelector(s);
+    const keyFor=(a,b)=>[a,b].sort().join('+');
+    const reactionFor=(a,b)=>reactions[keyFor(a,b)]||['이중 공명',`${affinities[a].name}과 ${affinities[b].name}의 성질이 번갈아 발현된다.`];
+    const rarityVars=r=>`rarity-${r}`;
+    function applyVars(el,p,s,craft='arcane'){const base=crafts[craft]||crafts.arcane,a=affinities[p]||{c:base.accent,g:base.glow},b=affinities[s]||a;el.style.setProperty('--p',a.c);el.style.setProperty('--pg',a.g);el.style.setProperty('--s',b.c);el.style.setProperty('--sg',b.g)}
+    function tile(it){const icons=[it.p&&affinities[it.p].icon,it.s&&affinities[it.s].icon].filter(Boolean).join('');return `<button class="itemx-tile ${rarityVars(it.rarity)}" data-id="${it.id}"><span class="itemx-tile-bar"></span>${it.loc==='장착'?'<span class="itemx-tile-eq"></span>':''}${icons?`<span class="itemx-tile-aff">${icons}</span>`:''}<span class="itemx-tile-em">${it.emoji}</span><span class="itemx-tile-nm">${it.name}</span><span class="itemx-tile-meta"><span class="itemx-tile-rk">${it.display}</span><span class="itemx-tile-lc">${it.kind}</span></span></button>`}
+    function renderGrid(){ $('#grid').innerHTML=items.map(tile).join('');document.querySelectorAll('.itemx-tile').forEach((el,i)=>{applyVars(el,items[i].p,items[i].s,items[i].craft||'arcane');el.onclick=()=>openItem(items[i])}) }
+    function currentEffects(craft,rarity){const spec=crafts[craft]||crafts.arcane,ambientLevel={normal:1,magic:2,rare:3,unique:3,epic:4,legendary:4,mythical:5,empyrean:5},level=ambientLevel[rarity]||1,particleCount=16;let rays='';if(spec.ambient.rays&&level>=spec.ambient.rays)[4,44,77,119,158,196,233,271,306,339].forEach((r,i)=>rays+=`<i style="--r:${r}deg;--w:${[5.1,2.8,7.4,3.3,6,4.2,8.1,3,5.6,2.5][i]}%"></i>`);let motes='';for(let i=0;i<particleCount;i++){const z=2+(i%5)*.75,shape=spec.shapes[i%spec.shapes.length],path=spec.paths[(i*3+1)%spec.paths.length],pair=spec.colors[i%spec.colors.length];motes+=`<i class="craft-mote shape-${shape} path-${path} ${shape==='diamond'?'diamond':''}" style="--x:${(i*43)%103}%;--z:${z}px;--mh:${z*2.8}px;--ca:${pair[0]};--cb:${pair[1]};--o:${.22+(i%4)*.1};--d:${7+(i%8)}s;--delay:-${(i%9)*.75}s;--drift:${-34+(i*19)%69}px;--drift2:${(34-(i*19)%69)*.7}px"></i>`}const fog=spec.ambient.fog&&level>=spec.ambient.fog?'<div class="current-fog"></div>':'',scan=spec.ambient.scan&&level>=spec.ambient.scan?'<div class="current-scan"></div>':'',veil=spec.ambient.veil&&level>=spec.ambient.veil?'<div class="current-veil"></div>':'';return `<div class="current-fx">${rays?`<div class="current-rays">${rays}</div>`:''}${fog}${scan}${veil}${motes}</div>`}
+    function affinityEffects(k,role){if(!k)return'';const a=affinities[k],tag=k==='lightning'?'b':'i';let bits='';let n=k==='lightning'?14:(k==='ice'?24:(k==='wind'?11:19));if(role==='secondary')n=Math.ceil(n*.68);for(let i=0;i<n;i++){const style=`--x:${(i*37+11)%98}%;--y:${(i*29+7)%91}%;--z:${4+(i%5)*2.3}px;--h:${24+(i%6)*9}px;--iw:${2.5+(i%5)*1.4}px;--ih:${10+(i%5)*3.5}px;--ph:${7+(i%5)*2.4}px;--d:${2.5+(i%7)*.76}s;--delay:-${(i%8)*.63}s;--drift:${-42+(i*23)%85}px;--sk:${-18+(i*11)%37}deg;--r:${-38+(i*31)%77}deg;--ac:${a.c}`;bits+=`<${tag} style="${style}"></${tag}>`}let extra='';if(k==='lightning')extra=`<div class="lightning-field ${role==='secondary'?'secondary':''}" style="--ac:${a.c}"></div>`;if(k==='ice')extra=`<div class="ice-cracks ${role==='secondary'?'secondary':''}" style="--ac:${a.c}"></div>`;const signature=k==='ice'?'':`<div class="affinity-signature sig-${k} ${role==='secondary'?'secondary':''}" style="--ac:${a.c}"></div>`;return `${signature}${extra}<div class="afx afx-${k} ${role==='secondary'?'afx-secondary':''}" style="--ac:${a.c}">${bits}</div>`}
+    function affinityUi(it){if(!it.p)return '<span class="affinity-chip" style="--chip:#a89372">◇ 무속성 <small>기존 연출만</small></span>';const a=affinities[it.p];let out=`<span class="affinity-chip" style="--chip:${a.c}">${a.icon} ${a.name}<small>${it.s?'주속성':'단일 속성'}</small></span>`;if(it.s){const b=affinities[it.s],rx=reactionFor(it.p,it.s);out+=`<span class="affinity-chip" style="--chip:${b.c}">${b.icon} ${b.name}<small>부속성</small></span><span class="affinity-chip reaction-chip">✦ ${rx[0]}</span>`}return out}
+    function effectText(it){if(!it.p)return ['장인의 균형','속성 효과 없이 현행 ITEMX 테마 입자와 등급 연출만 표시된다.'];if(!it.s)return [`${affinities[it.p].name} 각인`,`${affinities[it.p].name} 고유 효과가 기존 금빛 테마 입자 위에 한 층 추가된다.`];return reactionFor(it.p,it.s)}
+    function card(it){const craft=it.craft||'arcane',fx=effectText(it),extra=it.s?'<div class="itemx-effect"><span class="itemx-efname">쌍성 공명</span> <span>주속성과 부속성 효과가 서로 다른 영역과 주기로 나타난다.</span></div>':'';return `<article class="itemx-card craft-${craft} ${rarityVars(it.rarity)} ${it.condition?'condition-'+it.condition:''} ${$('#motion').getAttribute('aria-pressed')==='true'?'motion-off force-motion':''}" id="activeCard"><div class="itemx-fx">${currentEffects(craft,it.rarity)}<div class="affinity-fx">${affinityEffects(it.p,'primary')}${affinityEffects(it.s,'secondary')}</div></div><div class="itemx-cond"></div><div class="itemx-content"><div class="itemx-head"><div class="itemx-medallion"><span class="itemx-emoji">${it.emoji}</span></div><div class="itemx-titles"><div class="itemx-eyebrow">${crafts[craft].eyebrow}</div><span class="itemx-name">${it.name}</span><span class="itemx-tier">${it.display}</span><span class="itemx-subline"><span>보유 · ${it.loc}</span><span>${it.type}</span></span></div></div><div class="affinity-row">${affinityUi(it)}</div><div class="itemx-rule"></div><div class="itemx-stats"><div class="itemx-stat"><span class="itemx-statk">위력</span><span class="itemx-statv">${it.power}</span></div><div class="itemx-stat"><span class="itemx-statk">내구</span><span class="itemx-statv">${it.dur}</span></div></div><div class="itemx-gap"></div><div class="itemx-section-label">특수 효과</div><div class="itemx-effects"><div class="itemx-effect"><span class="itemx-efname">${fx[0]}</span> <span>${fx[1]}</span></div>${extra}</div><div class="itemx-flavor">${crafts[craft].name} 테마 기본 파티클 16개 위에 속성 효과가 별도 레이어로 추가된다.</div></div></article>`}
+    let active={...items[0]};
+    function openItem(it){active={...it};active.craft=active.craft||'arcane';$('#craft').value=active.craft;$('#primary').value=active.p||'none';$('#secondary').value=active.s||'none';$('#secondary').disabled=!active.p;$('#rarity').value=active.rarity;$('#listView').hidden=true;$('#detailView').hidden=false;renderDetail()}
+    function renderDetail(){if(!active.p)active.s=null;if(active.s===active.p)active.s=null;$('#secondary').value=active.s||'none';$('#secondary').disabled=!active.p;$('#detail').innerHTML=card(active);applyVars($('#activeCard'),active.p,active.s,active.craft||'arcane')}
+    Object.entries(crafts).forEach(([k,v])=>$('#craft').add(new Option(v.name,k)));
+    $('#primary').add(new Option('◇ 없음 · 기존 효과만','none'));$('#secondary').add(new Option('— 없음 · 단일 속성','none'));
+    Object.entries(affinities).forEach(([k,v])=>{$('#primary').add(new Option(`${v.icon} ${v.name}`,k));$('#secondary').add(new Option(`${v.icon} ${v.name}`,k))});
+    Object.entries(rarityLabels).forEach(([k,v])=>$('#rarity').add(new Option(v,k)));
+    $('#craft').onchange=e=>{active.craft=e.target.value;renderDetail()};$('#primary').onchange=e=>{active.p=e.target.value==='none'?null:e.target.value;if(!active.p)active.s=null;renderDetail()};$('#secondary').onchange=e=>{active.s=e.target.value==='none'?null:e.target.value;renderDetail()};$('#rarity').onchange=e=>{active.rarity=e.target.value;active.display=rarityLabels[e.target.value];renderDetail()};
+    $('#motion').onclick=e=>{const off=e.currentTarget.getAttribute('aria-pressed')!=='true';e.currentTarget.setAttribute('aria-pressed',String(off));e.currentTarget.textContent=off?'모션 꺼짐':'모션 켜짐';if(!$('#detailView').hidden)renderDetail()};
+    $('#back').onclick=()=>{$('#detailView').hidden=true;$('#listView').hidden=false};
+    renderGrid();openItem(items[8]);
+  </script>
+</body>
+</html>

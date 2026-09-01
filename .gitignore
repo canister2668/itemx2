@@ -1,0 +1,9 @@
+node_modules/
+*.log
+.DS_Store
+.env
+.env.*
+coverage/
+__pycache__/
+*.pyc
+dist/risu-pipeline-mobile-preview*.png

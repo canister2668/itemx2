@@ -1,0 +1,14 @@
+{
+  "name": "itemx2",
+  "private": true,
+  "version": "1.9.0-beta.3",
+  "itemxUpdateUrl": "https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "preview:screenshot": "node scripts/screenshot.mjs",
+    "verify:risu-browser": "node scripts/verify-risu-browser.mjs",
+    "verify:plugin-ui": "node scripts/verify-plugin-ui-browser.mjs"
+  }
+}

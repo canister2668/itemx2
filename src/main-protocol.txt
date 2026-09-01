@@ -1,0 +1,32 @@
+## ITEMX Compact Item Event Protocol
+
+ITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.
+
+Emit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.
+
+Use the one-line form by default:
+[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]
+
+For a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count, power, required, durability, cost, and trivia. Equipment also needs the rarity-appropriate real gameplay effects. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.
+
+Existing ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:
+[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]
+[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]
+[itemx: id=sword | action=equip | slot=main_hand]
+[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]
+[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]
+[itemx: id=sword | op=merge | durability=61/100]
+
+Actions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.
+
+Enums:
+- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean
+- possession: observed, owned, removed
+- location: inventory, equipped, storage, unknown
+- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic
+- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void
+- condition: blessed, cursed, corrupted, glitched, sealed
+
+Power is a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.
+
+Do not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.
