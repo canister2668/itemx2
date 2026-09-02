@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.0.0
+//@version 2.0.1
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js
-//@display-name ITEMX CODEX · v2.0.0
+//@display-name ITEMX CODEX · v2.0.1
 //@description World Inventory & Encounter Archive
 
 /* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
@@ -1152,8 +1152,8 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 @media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
 `;
 const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.0.0";
-const ITEMX_VERSION_LABEL = "2.0.0";
+const ITEMX_PLUGIN_VERSION = "2.0.1";
+const ITEMX_VERSION_LABEL = "2.0.1";
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -1964,9 +1964,14 @@ ${codexPageStyle()}
   }
 
   async function cachedOrRebuildCurrent() {
-    const [characterIndex, chatIndex] = await Promise.all([Risuai.getCurrentCharacterIndex(), Risuai.getCurrentChatIndex()]);
+    const active = await context();
+    if (!active) return null;
     const cached = runtime.cachedLoaded;
-    if (cached && cached.characterIndex === characterIndex && cached.chatIndex === chatIndex && runtime.cachedGeneration === runtime.generation) return cached;
+    if (
+      cached?.key === active.key
+      && runtime.cachedGeneration === runtime.generation
+      && cached.replayFingerprint === replaySourceFingerprint(active.chat)
+    ) return cached;
     return rebuildCurrent();
   }
 
@@ -3271,6 +3276,9 @@ ${codexPageStyle()}
       runtime.status = '채팅 진입 대기';
       return;
     }
+    const cached = runtime.cachedLoaded;
+    const replayChanged = !contextChanged && cached?.key === active.key
+      && cached.replayFingerprint !== replaySourceFingerprint(active.chat);
     if (runtime.remounting) return;
     if (!contextChanged && (runtime.auxActive > 0 || runtime.auxRecoveryPromise || Date.now() < runtime.uiRemountAfter)) return;
     runtime.remounting = true;
@@ -3311,6 +3319,14 @@ ${codexPageStyle()}
         const style = await runtime.mainDoc.querySelector('style[x-itemx2-style="owner"]');
         if (style) runtime.mainStyle = style;
         else { runtime.mainStyle = null; await installMainStyle(); }
+      }
+      if (replayChanged) {
+        const loaded = await rebuildCurrent();
+        if (loaded) {
+          let open = false;
+          try { open = Boolean(await runtime.rootDrawer?.matches('.x-risu-itemx2-is-open')); } catch {}
+          await openRootInventory({ open, loaded, tab: runtime.activeRootTab });
+        }
       }
     } catch (error) { fail('root remount', error); }
     finally { runtime.remounting = false; }
@@ -3614,12 +3630,11 @@ ${codexPageStyle()}
         if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0 || event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return false;
-        const cached = runtime.cachedLoaded;
-        const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
-        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(cached) && await setRootOpen(true)) return true;
         await setRootOpen(true);
-        const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
+        const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return true;
+        const cacheReady = loaded.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(loaded)) return true;
         await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
         return true;
       } catch (error) { fail('native badge click', error); return true; }

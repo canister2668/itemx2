@@ -247,6 +247,52 @@ test('legacy bare refs are upgraded once from the per-chat event ledger', async 
   assert.match(rendered, /복원된 옛 검/);
 });
 
+test('a persisted command authority remains in the skill registry after later untagged outputs', async () => {
+  const handlers = {}, replacers = {};
+  const ref = 'c1_0_command';
+  const entity = {
+    id: 'command_spells', name: '령주', glyph: '⚜️', rank: '3획', school: '마술',
+    type: 'active', status: 'learned', level: 5, mastery: 55,
+    cost: '령주 1획 소모', cooldown: '별도 충전 필요', target: '계약 서번트',
+    affinity: 'void', description: '서번트에 대한 절대 명령권', effects: ['절대 명령'], growth: ''
+  };
+  const payload = { v: 1, event: { domain: 'skill', kind: 'exam', entity }, view: entity };
+  let chat = {
+    id: 'command-chat',
+    message: [
+      { role: 'char', data: `령주의 권능을 확인했다.\n<!--CODEX2@${ref}-->` },
+      { role: 'char', data: '이후 주변을 계속 지켜보았다.' }
+    ],
+    scriptstate: { $__itemx2_message_events: JSON.stringify([{ ref, domain: 'codex', payload }]) }
+  };
+  const Risuai = {
+    pluginStorage: { getItem: async () => null, setItem: async () => {} },
+    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
+    getCurrentCharacterIndex: async () => 0,
+    getCurrentChatIndex: async () => 0,
+    getCharacter: async () => ({ chaId: 'fgo-char', name: 'Fate grand order-No Asset' }),
+    getChatFromIndex: async () => structuredClone(chat),
+    setChatToIndex: async (_ci, _hi, value) => { chat = structuredClone(value); },
+    registerSetting: async () => ({ id: 'setting' }),
+    addRisuScriptHandler: async (mode, fn) => { handlers[mode] = fn; },
+    removeRisuScriptHandler: async () => {},
+    requestPluginPermission: async () => true,
+    addRisuReplacer: async (mode, fn) => { replacers[mode] = fn; },
+    removeRisuReplacer: async () => {},
+    getRootDocument: async () => null,
+    unregisterUIPart: async () => {}, onUnload: async () => {}, hideContainer: async () => {}
+  };
+  const sandbox = vm.createContext({
+    console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
+    setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} }
+  });
+  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
+  const request = await replacers.beforeRequest(chat.message.map((message) => ({ role: 'assistant', content: message.data })), 'main');
+  const requestText = request.map((message) => message.content || '').join('\n');
+  assert.match(requestText, /command_spells/);
+  assert.match(requestText, /령주/);
+});
+
 test('only the newest event message keeps an inline display view', async () => {
   const handlers = {}, replacers = {};
   const makePayload = (id, name) => {

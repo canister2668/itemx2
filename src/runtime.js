@@ -855,9 +855,14 @@ ${codexPageStyle()}
   }
 
   async function cachedOrRebuildCurrent() {
-    const [characterIndex, chatIndex] = await Promise.all([Risuai.getCurrentCharacterIndex(), Risuai.getCurrentChatIndex()]);
+    const active = await context();
+    if (!active) return null;
     const cached = runtime.cachedLoaded;
-    if (cached && cached.characterIndex === characterIndex && cached.chatIndex === chatIndex && runtime.cachedGeneration === runtime.generation) return cached;
+    if (
+      cached?.key === active.key
+      && runtime.cachedGeneration === runtime.generation
+      && cached.replayFingerprint === replaySourceFingerprint(active.chat)
+    ) return cached;
     return rebuildCurrent();
   }
 
@@ -2169,6 +2174,9 @@ ${codexPageStyle()}
       runtime.status = '채팅 진입 대기';
       return;
     }
+    const cached = runtime.cachedLoaded;
+    const replayChanged = !contextChanged && cached?.key === active.key
+      && cached.replayFingerprint !== replaySourceFingerprint(active.chat);
     if (runtime.remounting) return;
     if (!contextChanged && (runtime.auxActive > 0 || runtime.auxRecoveryPromise || Date.now() < runtime.uiRemountAfter)) return;
     runtime.remounting = true;
@@ -2209,6 +2217,14 @@ ${codexPageStyle()}
         const style = await runtime.mainDoc.querySelector('style[x-itemx2-style="owner"]');
         if (style) runtime.mainStyle = style;
         else { runtime.mainStyle = null; await installMainStyle(); }
+      }
+      if (replayChanged) {
+        const loaded = await rebuildCurrent();
+        if (loaded) {
+          let open = false;
+          try { open = Boolean(await runtime.rootDrawer?.matches('.x-risu-itemx2-is-open')); } catch {}
+          await openRootInventory({ open, loaded, tab: runtime.activeRootTab });
+        }
       }
     } catch (error) { fail('root remount', error); }
     finally { runtime.remounting = false; }
@@ -2512,12 +2528,11 @@ ${codexPageStyle()}
         if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0 || event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return false;
-        const cached = runtime.cachedLoaded;
-        const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
-        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(cached) && await setRootOpen(true)) return true;
         await setRootOpen(true);
-        const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
+        const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return true;
+        const cacheReady = loaded.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(loaded)) return true;
         await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
         return true;
       } catch (error) { fail('native badge click', error); return true; }

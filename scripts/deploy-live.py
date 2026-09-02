@@ -16,11 +16,11 @@ BACKUPS = pathlib.Path(os.environ['ITEMX_BACKUP_DIR'])
 ALLOW_DOWNGRADE = os.environ.get('ITEMX_ALLOW_DOWNGRADE') == '1'
 
 def version_key(value):
-    match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)-(preview|beta)\.(\d+)', value or '')
+    match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)(?:-(preview|beta)\.(\d+))?', value or '')
     if not match:
         return None
     major, minor, patch, channel, number = match.groups()
-    return int(major), int(minor), int(patch), {'preview': 0, 'beta': 1}[channel], int(number)
+    return int(major), int(minor), int(patch), {'preview': 0, 'beta': 1, None: 2}[channel], int(number or 0)
 
 bundle = BUNDLE.read_text(encoding='utf-8')
 new_version = re.search(r'^//@version\s+(\S+)', bundle, re.MULTILINE)
@@ -29,6 +29,8 @@ if not new_version:
 new_version_value = new_version.group(1)
 new_update_url_match = re.search(r'^//@update-url\s+(\S+)', bundle, re.MULTILINE)
 new_update_url = new_update_url_match.group(1) if new_update_url_match else ''
+new_display_name_match = re.search(r'^//@display-name\s+(.+)$', bundle, re.MULTILINE)
+new_display_name = new_display_name_match.group(1).strip() if new_display_name_match else 'ITEMX CODEX'
 
 con = sqlite3.connect(DB)
 try:
@@ -50,6 +52,7 @@ try:
     old_version = old_match.group(1) if old_match else 'unknown'
     metadata_matches = (
         plugin.get('name') == 'itemx2'
+        and plugin.get('displayName') == new_display_name
         and plugin.get('versionOfPlugin') == new_version_value
         and (plugin.get('updateURL') or '') == new_update_url
     )
@@ -74,6 +77,7 @@ try:
     settings['plugins'][index] = {
         **plugin,
         'name': 'itemx2',
+        'displayName': new_display_name,
         'script': bundle,
         'versionOfPlugin': new_version_value,
         'updateURL': new_update_url,
