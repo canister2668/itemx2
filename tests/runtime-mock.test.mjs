@@ -108,6 +108,10 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(mixedCleaned.includes('<skillExam>'), false);
   assert.match(mixedCleaned, /<!--CODEX2:/);
   assert.ok(mixedCleaned.indexOf('<!--CODEX2:') < mixedCleaned.indexOf('[Status: 정상]'));
+  const mixedDisplay = await handlers.display(mixedCleaned);
+  assert.match(mixedDisplay, /itemx2-inline-skill/);
+  assert.match(mixedDisplay, /NEW SKILL ARCHIVED/);
+  assert.match(mixedDisplay, /월영참/);
   const trailerNameHit = await replacers.afterRequest('새 기술을 익혔다.\n<skillExam><id>trailer_form</id><name>월영참</name><type>active</type><status>learned</status></skillExam>\n\n[Status: 월영참 CD 18초]', 'main');
   assert.ok(trailerNameHit.indexOf('<!--CODEX2:') < trailerNameHit.indexOf('[Status: 월영참'));
 

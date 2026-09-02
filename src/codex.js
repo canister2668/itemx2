@@ -281,7 +281,13 @@ const ITEMXCodex = (() => {
       if (!enabled.has(domain)) { cursor = part.end; return; }
       const parsed = parseTransport(part.tag, part.attrs, part.body, `${part.raw}:${index}`);
       if (parsed.event?.domain === 'skill') parsed.event = reconcileSkillEvent(parsed.event, options.skillEvidenceText ?? text, { ...options, priorSkill: state.skills.entries[parsed.event.entity?.id] });
-      if (parsed.event) { const view = clone(applyEvent(state, parsed.event)); events.push(parsed.event); output.push(marker({ v: VERSION, event: parsed.event, view })); }
+      if (parsed.event) {
+        const reg = parsed.event.domain === 'skill' ? state.skills : state.monsters;
+        const id = parsed.event.kind === 'exam' ? parsed.event.entity?.id : parsed.event.patch?.id;
+        const previous = id && reg.entries[id] ? clone(reg.entries[id]) : null;
+        const view = clone(applyEvent(state, parsed.event));
+        events.push(parsed.event); output.push(marker({ v: VERSION, event: parsed.event, view, previous }));
+      }
       else { errors.push(parsed.error || 'codex_invalid_transport'); output.push(marker({ v: VERSION, error: parsed.error || 'codex_invalid_transport' })); }
       cursor = part.end;
     });

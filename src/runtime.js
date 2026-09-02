@@ -3,6 +3,7 @@ const ITEMX_STYLE = __ITEMX_STYLE_JSON__;
 const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
+const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);contain:layout paint style;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
 const ITEMX_PLUGIN_VERSION = __ITEMX_PLUGIN_VERSION_JSON__;
 const ITEMX_VERSION_LABEL = __ITEMX_VERSION_LABEL_JSON__;
@@ -459,9 +460,9 @@ ${codexPageStyle()}
   function prefixRisuClasses(css) {
     return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) => name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`);
   }
-  const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *{animation-play-state:paused!important}`;
-  const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-codex-fx{display:none!important;animation:none!important}`;
-  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
+  const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{animation-play-state:paused!important}`;
+  const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-codex-fx,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-event::before,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-event::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-icon::before,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-warning{display:none!important;animation:none!important}`;
+  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
 
   function enqueue(key, work) {
     const prev = queues.get(key) || Promise.resolve();
@@ -521,8 +522,13 @@ ${codexPageStyle()}
   function embeddedViewCode(payload, domain) {
     const view = payload?.view;
     if (!view) return '';
+    const codexEvent = payload?.event || {};
+    const codexView = codexEvent.domain === 'skill'
+      ? { i: view.id, n: view.name, g: view.glyph, r: view.rank, h: view.school, t: view.type, s: view.status, l: view.level, m: view.mastery, c: view.cost, o: view.cooldown, a: view.affinity, f: (view.effects || []).slice(0, 2) }
+      : { i: view.id, n: view.name, g: view.glyph, k: view.kind, t: view.threat, r: view.relation, s: view.status, a: view.active, o: view.outcome, c: view.encounterCount, f: (view.moves || []).slice(0, 3) };
+    const previous = payload?.previous ? { m: payload.previous.mastery, s: payload.previous.status } : undefined;
     const envelope = domain === 'codex'
-      ? { v: ITEMXCodex.VERSION, d: payload.event?.domain || '', e: { i: view.id, n: view.name, g: view.glyph } }
+      ? { v: ITEMXCodex.VERSION, d: codexEvent.domain || '', k: codexEvent.kind, a: codexEvent.patch?.action, o: codexEvent.patch?.op, q: Object.keys(codexEvent.patch?.fields || {}), e: codexView, p: previous }
       : { v: ITEMXCore.VERSION, i: {
         i: view.id, n: view.name, t: view.itemType, e: view.emoji, r: view.rarity, d: view.displayRarity,
         p: view.power, q: view.required, u: view.durability, c: view.cost, o: view.possession, l: view.location,
@@ -542,7 +548,15 @@ ${codexPageStyle()}
     if (!code) return null;
     const payload = ITEMXCore.decodePayload(code);
     if (payload?.view) return domain === 'codex' ? { v: payload.v, event: { domain: payload.domain || '' }, view: payload.view } : { v: payload.v, view: payload.view };
-    if (domain === 'codex' && payload?.e) return { v: payload.v, event: { domain: payload.d || '' }, view: { id: payload.e.i, name: payload.e.n, glyph: payload.e.g } };
+    if (domain === 'codex' && payload?.e) {
+      const item = payload.e, skill = payload.d === 'skill';
+      const view = skill
+        ? { id: item.i, name: item.n, glyph: item.g, rank: item.r, school: item.h, type: item.t, status: item.s, level: item.l, mastery: item.m, cost: item.c, cooldown: item.o, affinity: item.a, effects: item.f || [] }
+        : { id: item.i, name: item.n, glyph: item.g, kind: item.k, threat: item.t, relation: item.r, status: item.s, active: item.a, outcome: item.o, encounterCount: item.c, moves: item.f || [] };
+      const event = { domain: payload.d || '', kind: payload.k || 'exam' };
+      if (event.kind === 'patch') event.patch = { id: item.i, action: payload.a || null, op: payload.o || null, fields: Object.fromEntries((payload.q || []).map((key) => [key, true])) };
+      return { v: payload.v, event, view, previous: payload.p ? { mastery: payload.p.m, status: payload.p.s } : null };
+    }
     if (domain !== 'item' || !payload?.i) return null;
     const item = payload.i;
     return { v: payload.v, view: {
@@ -1528,12 +1542,55 @@ ${codexPageStyle()}
     return processed;
   };
 
+  function codexInlineEventSignificant(payload) {
+    const event = payload?.event;
+    if (!event || !['skill', 'monster'].includes(event.domain)) return false;
+    if (event.kind === 'exam') return true;
+    if (event.kind !== 'patch') return false;
+    if (event.patch?.action || ['remove', 'restore'].includes(event.patch?.op)) return true;
+    const keys = new Set(Object.keys(event.patch?.fields || {}));
+    const important = event.domain === 'skill'
+      ? ['name', 'rank', 'school', 'type', 'status', 'level', 'mastery', 'cost', 'cooldown', 'affinity', 'effects', 'growth']
+      : ['name', 'kind', 'threat', 'relation', 'status', 'outcome', 'moves', 'weaknesses', 'resistances'];
+    return important.some((key) => keys.has(key));
+  }
+
+  function codexInlineEventHtml(payload, motion = 'full') {
+    if (!codexInlineEventSignificant(payload)) return '';
+    const event = payload.event, entity = payload.view || event.entity;
+    if (!entity) return '';
+    const previous = payload.previous || {}, action = event.patch?.action || '', op = event.patch?.op || '';
+    const ended = event.domain === 'monster' && /ended|escaped|defeated|dead/i.test(String(entity.status || ''));
+    if (event.domain === 'skill') {
+      const labels = {
+        learn: ['SKILL LEARNED', '습득'], equip: ['SKILL EQUIPPED', '장착'], unequip: ['SKILL UPDATED', '장착 해제'], mastery: ['SKILL MASTERY UPDATED', '숙련 상승'],
+        seal: ['SKILL SEALED', '봉인'], unseal: ['SKILL UNSEALED', '봉인 해제'], forget: ['SKILL LOST', '상실']
+      };
+      const [kicker, state] = event.kind === 'exam' ? ['NEW SKILL ARCHIVED', '최초 등록'] : (labels[action] || (op === 'remove' ? ['SKILL LOST', '상실'] : op === 'restore' ? ['SKILL RESTORED', '복원'] : ['SKILL RECORD UPDATED', '큰 변화']));
+      const mastery = Number.isFinite(Number(entity.mastery)) ? Number(entity.mastery) : null;
+      const priorMastery = Number.isFinite(Number(previous.mastery)) ? Number(previous.mastery) : null;
+      const delta = mastery != null && priorMastery != null && mastery !== priorMastery
+        ? `<span class="itemx2-inline-delta"><i>숙련 ${priorMastery}%</i><b>→</b><i>숙련 ${mastery}%</i></span>` : '';
+      const effect = entity.effects?.[0] || entity.growth || entity.cost || '스킬 정보가 CODEX에 기록되었습니다.';
+      const classes = `itemx2-inline-event itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} ${motion === 'off' ? 'motion-off' : ''}`;
+      return `<section class="${classes}"><div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc(entity.rank || '미분류')} · ${ITEMXCore.esc(entity.type || 'active')} · ${ITEMXCore.esc(entity.status || 'learned')}</span>${delta}</span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? '성장' : '발현'}</b><span>${ITEMXCore.esc(effect)}</span></footer></section>`;
+    }
+    const labels = {
+      encounter: ['ENCOUNTER RESUMED', '교전 개시'], end: ['ENCOUNTER RESOLVED', '종료'], escape: ['ENCOUNTER RESOLVED', '도주'], defeat: ['ENCOUNTER RESOLVED', '격파'], kill: ['ENCOUNTER RESOLVED', '사망'], ally: ['ENCOUNTER UPDATED', '아군화']
+    };
+    const [kicker, state] = event.kind === 'exam' ? ['ENCOUNTER REGISTERED', entity.status === 'active' ? '교전 중' : '최초 등록'] : (labels[action] || (op === 'remove' ? ['ENCOUNTER LOST', '기록 소실'] : op === 'restore' ? ['ENCOUNTER RESTORED', '복원'] : ['ENCOUNTER UPDATED', '큰 변화']));
+    const detail = entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || '조우 정보가 전투 도감에 기록되었습니다.';
+    const warning = entity.active && ['hostile', 'sparring'].includes(String(entity.relation || '')) ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>' : '';
+    const classes = `itemx2-inline-event itemx2-inline-encounter ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : ''}`;
+    return `<section class="${classes}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(encounterEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc(entity.kind || '미분류')} · ${ITEMXCore.esc(entity.relation || 'unknown')} · 위협 ${ITEMXCore.esc(entity.threat || '미상')}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${ended ? '최근 결과' : '관측'}</b><span>${ITEMXCore.esc(detail)}</span></footer></section>`;
+  }
+
   const displayHandler = (content) => {
     const raw = String(content || '');
     if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return content;
     const positioned = raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
     const source = coalesceAdjacentItemMarkers(positioned);
-    let found = false, hasFullCard = false;
+    let found = false, hasFullCard = false, hasCodexCard = false;
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;
       if (runtime.markerHtmlCache.has(key)) return runtime.markerHtmlCache.get(key);
@@ -1553,10 +1610,11 @@ ${codexPageStyle()}
       return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
     }).replace(ITEMXCodex.MARKER_RE, (_, code) => {
       found = true;
-      const payload = ITEMXCodex.decodePayload(code), entity = payload?.view || payload?.event?.entity;
-      if (!entity || payload.error) return '';
-      const skill = payload.event?.domain === 'skill', kind = skill ? '스킬' : '조우 도감';
-      return `<span class="itemx-event-chip">${ITEMXCore.esc(skill ? skillEmoji(entity) : encounterEmoji(entity))} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
+      const payload = ITEMXCodex.decodePayload(code);
+      if (!payload || payload.error) return '';
+      const html = codexInlineEventHtml(payload, itemMotion);
+      if (html) { hasCodexCard = true; return html; }
+      return '';
     }).replace(ITEMX_REF_RE, (_, ref, inline) => {
       found = true;
       const payload = inlineViewPayload(inline, 'item') || runtime.eventPayloads.get(`item:${ref}`);
@@ -1567,14 +1625,16 @@ ${codexPageStyle()}
       return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX CODEX · ${ITEMXCore.esc(ref)}</span>`;
     }).replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
       found = true;
-      const payload = inlineViewPayload(inline, 'codex') || runtime.eventPayloads.get(`codex:${ref}`), entity = payload?.view || payload?.event?.entity;
-      if (!entity || payload.error) return `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>`;
-      const skill = payload.event?.domain === 'skill', kind = skill ? '스킬' : '조우 도감';
-      return `<span class="itemx-event-chip">${ITEMXCore.esc(skill ? skillEmoji(entity) : encounterEmoji(entity))} ${ITEMXCore.esc(kind)} · ${ITEMXCore.esc(entity.name || entity.id)}</span>`;
+      if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
+      const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
+      if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
+      const html = codexInlineEventHtml(payload, itemMotion);
+      if (html) { hasCodexCard = true; return html; }
+      return '';
     });
     if (!found) return content;
     if (runtime.mainStyle) return rendered;
-    return `<style>${hasFullCard ? ITEMX_CHAT_STYLE : ITEMX_CHIP_STYLE}</style>${rendered}`;
+    return `<style>${ITEMX_CHIP_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? ITEMX_CODEX_INLINE_STYLE : ''}</style>${rendered}`;
   };
 
   function beginBodyScrollEffects() {

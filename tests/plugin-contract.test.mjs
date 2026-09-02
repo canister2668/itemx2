@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.30$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.30$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.31$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.31$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/refs\/heads\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 30"/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 31"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -177,7 +177,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /\.itemx-monster-hero\.itemx2-encounter-ended::after,\.itemx2-encounter-ended \.itemx2-encounter-hero-fx::after\{background:linear-gradient\(90deg,transparent,#8b94a3,transparent\);[^}]*animation-play-state:paused!important\}/);
   assert.match(source, /querySelector\(`\.x-risu-\$\{className\}`\)[\s\S]*querySelector\(`\.\$\{className\}`\)/);
   assert.equal(source.includes('renderCard(detailItems[index]'), false);
-  assert.match(source, /hasFullCard \? ITEMX_CHAT_STYLE : ITEMX_CHIP_STYLE/);
+  assert.match(source, /const ITEMX_CODEX_INLINE_STYLE =/);
+  assert.match(source, /function codexInlineEventHtml\(payload, motion = 'full'\)/);
+  assert.match(source, /NEW SKILL ARCHIVED/);
+  assert.match(source, /ENCOUNTER RESOLVED/);
+  assert.match(source, /!inline && !runtime\.latestMarkers\.has\(`CODEX2@\$\{ref\}`\)/);
   assert.match(source, /markerHtmlCache: new Map\(\)/);
   assert.equal(/renderCard\(item, \{ motion: index < 2/.test(source), false);
   const displayHandler = source.slice(source.indexOf('const displayHandler ='), source.indexOf('async function installMainStyle'));
@@ -290,7 +294,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const ITEMXQuality =/);
   assert.match(source, /state: unresolvedPartials\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /아이템 상세정보 보완 중/);
-  assert.ok(source.length < 455000, 'plugin bundle must stay compact with lazy CODEX detail hydration, fixed-layer FX, font controls and opt-in module portraits');
+  assert.ok(source.length < 468000, 'plugin bundle must stay compact with lazy detail hydration and fixed-layer inline event cards');
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
   assert.match(source, /\}, 1200\)/);

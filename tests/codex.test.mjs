@@ -28,6 +28,9 @@ test('encounter endings and skill mastery are deterministic patches', () => {
   assert.equal(next.snapshot.skills.entries.moon_slash.mastery, 88);
   assert.equal(next.snapshot.monsters.entries.wolf_king.status, 'defeated');
   assert.equal(next.snapshot.monsters.entries.wolf_king.active, false);
+  const payloads = [...next.content.matchAll(/<!--CODEX2:([A-Za-z0-9_-]+)-->/g)].map((match) => codex.decodePayload(match[1]));
+  assert.equal(payloads[0].previous.mastery, first.snapshot.skills.entries.moon_slash.mastery);
+  assert.equal(payloads[1].previous.status, 'active');
 });
 
 test('latest completed encounter outcome records the decisive resolution without accumulating history', () => {
