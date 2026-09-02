@@ -102,7 +102,10 @@ const ITEMXCodex = (() => {
   }
   function parseTransport(tag, attrText, body, seed) {
     const a = attrs(attrText), raw = {};
-    for (const key of ['id','name','glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth','aliases','threat','relation','portrait','weaknesses','resistances','moves','outcome','action','op']) raw[key] = scalar(body, a, key).toLowerCase && ['type','status','relation','action','op'].includes(key) ? scalar(body, a, key).toLowerCase() : scalar(body, a, key);
+    for (const key of ['id','name','glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth','aliases','threat','relation','portrait','weaknesses','resistances','moves','outcome','action','op']) {
+      const value = scalar(body, a, key);
+      raw[key] = ['type','status','relation','action','op'].includes(key) ? value.toLowerCase() : value;
+    }
     const lower = tag.toLowerCase();
     if (lower === 'skillexam') return normalizeSkillExam(raw, seed);
     if (lower === 'monsterexam') return normalizeMonsterExam(raw, seed);

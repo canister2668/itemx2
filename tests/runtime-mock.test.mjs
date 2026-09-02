@@ -12,14 +12,14 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   let chat = { id: 'chat-a', message: [], scriptstate: {} };
   let updateRequest = null;
   const handlers = {}, replacers = {}, storage = new Map(), localStorage = new Map(), bootOrder = [];
-  let settingReads = 0;
+  let settingReads = 0, chatReads = 0;
   const Risuai = {
     pluginStorage: { getItem: async (key) => { settingReads += 1; return storage.get(key) ?? null; }, setItem: async (key, value) => storage.set(key, value) },
     safeLocalStorage: { getItem: async (key) => localStorage.get(key) ?? null, setItem: async (key, value) => localStorage.set(key, value) },
     getCurrentCharacterIndex: async () => 0,
     getCurrentChatIndex: async () => 0,
     getCharacter: async () => ({ chaId: 'char-a', name: '시험 봇' }),
-    getChatFromIndex: async () => structuredClone(chat),
+    getChatFromIndex: async () => { chatReads += 1; return structuredClone(chat); },
     setChatToIndex: async (_ci, _hi, value) => { chat = structuredClone(value); },
     addRisuScriptHandler: async (mode, fn) => { handlers[mode] = fn; },
     removeRisuScriptHandler: async () => {},
@@ -78,7 +78,9 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(request[0].role, 'system');
   assert.match(request[0].content, /runtime_blade/);
   assert.equal(request[1].content.includes('<!--ITEMX2:'), false);
+  const readsBeforeCachedRequest = chatReads;
   const continuationRequest = await replacers.beforeRequest([{ role: 'system', content: '원래 지침' }, { role: 'assistant', content: '이어 쓸 문장' }], 'main');
+  assert.equal(chatReads - readsBeforeCachedRequest, 1, 'unchanged marker ledgers reuse the authoritative replay snapshot after one context read');
   assert.equal(continuationRequest.at(-1).role, 'system', 'a trailing protocol turn lets Risu Google formatting finish on user instead of model');
   assert.equal(continuationRequest.at(-2).role, 'assistant');
   assert.match(continuationRequest.at(-1).content, /ITEMX/);
@@ -103,7 +105,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.ok(display.indexOf('itemx-card') < display.indexOf('전투가 끝난 뒤'));
   assert.equal(display.includes('<itemExam>'), false);
 
-  const mixed = '새로운 검결을 깨우쳤다.\n<skillExam><id>hidden_form</id><name>월영참</name><type>active</type><status>equipped</status><mastery>30</mastery></skillExam>\n\n[Status: 정상]';
+  const mixed = '새로운 검결을 깨우쳤다.\n<skillExam><id>hidden_form</id><name>월영참</name><rank>절정</rank><school>음월검법</school><type>active</type><status>equipped</status><level>7</level><mastery>30</mastery><cost>진기 24</cost><cooldown>18초</cooldown><target>단일</target><effects>달빛 검기 ;; 빙결 대상 추가 피해</effects></skillExam>\n\n[Status: 정상]';
   const mixedCleaned = await replacers.afterRequest(mixed, 'main');
   assert.equal(mixedCleaned.includes('<skillExam>'), false);
   assert.match(mixedCleaned, /<!--CODEX2:/);
@@ -112,6 +114,10 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.match(mixedDisplay, /itemx2-inline-skill/);
   assert.match(mixedDisplay, /NEW SKILL ARCHIVED/);
   assert.match(mixedDisplay, /월영참/);
+  assert.match(mixedDisplay, /itemx2-inline-quick/);
+  assert.match(mixedDisplay, /진기 24/);
+  assert.match(mixedDisplay, /18초/);
+  assert.match(mixedDisplay, /달빛 검기 · 빙결 대상 추가 피해/);
   const trailerNameHit = await replacers.afterRequest('새 기술을 익혔다.\n<skillExam><id>trailer_form</id><name>월영참</name><type>active</type><status>learned</status></skillExam>\n\n[Status: 월영참 CD 18초]', 'main');
   assert.ok(trailerNameHit.indexOf('<!--CODEX2:') < trailerNameHit.indexOf('[Status: 월영참'));
 

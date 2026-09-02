@@ -55,19 +55,20 @@ function scopeBlock(source) {
   return out;
 }
 const mainCss = scopeBlock(chatCss.replace(/\/\*[\s\S]*?\*\//g, ''));
+const productionSource = (source) => source.replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, '');
 
 const metadata = `//@name itemx2\n//@api 3.0\n//@version ${packageVersion}\n${updateUrl ? `//@update-url ${updateUrl}\n` : ''}//@display-name ITEMX CODEX · v${packageVersion}\n//@description World Inventory & Encounter Archive\n\n`;
-const builtRuntime = runtime
+const builtRuntime = productionSource(runtime
   .replace('__ITEMX_PLUGIN_VERSION_JSON__', JSON.stringify(packageVersion))
   .replace('__ITEMX_VERSION_LABEL_JSON__', JSON.stringify(displayVersion))
   .replace('__ITEMX_STYLE_JSON__', JSON.stringify(css))
   .replace('__ITEMX_CHAT_STYLE_JSON__', JSON.stringify(chatCss))
   .replace('__ITEMX_MAIN_STYLE_JSON__', JSON.stringify(mainCss))
-  .replace('__ITEMX_PROTOCOL_JSON__', JSON.stringify(protocol));
+  .replace('__ITEMX_PROTOCOL_JSON__', JSON.stringify(protocol)));
 if (/__ITEMX_[A-Z_]+__/.test(builtRuntime)) throw new Error('unreplaced build placeholder');
 
 await mkdir(resolve(root, 'dist'), { recursive: true });
-const plugin = `${metadata}${core.trimEnd()}\n${quality.trimEnd()}\n${codex.trimEnd()}\n${renderer.trimEnd()}\n${builtRuntime.trimEnd()}\n`;
+const plugin = `${metadata}${productionSource(core).trimEnd()}\n${productionSource(quality).trimEnd()}\n${productionSource(codex).trimEnd()}\n${productionSource(renderer).trimEnd()}\n${builtRuntime.trimEnd()}\n`;
 await writeFile(resolve(root, 'dist/itemx2.plugin.js'), plugin);
 await writeFile(resolve(root, 'dist/itemx2-ui.css'), `${css}\n`);
 await writeFile(resolve(root, 'dist/itemx2-main-scoped.css'), `${mainCss.trimEnd()}\n`);

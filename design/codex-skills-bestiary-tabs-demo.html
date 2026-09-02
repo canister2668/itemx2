@@ -74,10 +74,11 @@
 
       <section class="view" id="view-settings">
         <div class="scroll"><div class="settings">
+          <section class="setting"><span><strong>연결 및 권한</strong><small>요청 규약 주입과 원시 태그 정리에 필요한 모델 처리 권한입니다.</small></span><button class="switch">정상</button></section>
           <section class="setting"><span><strong>스킬 추적</strong><small>습득·숙련·강화·봉인 사건을 기록합니다.</small></span><button class="switch">ON</button></section>
           <section class="setting"><span><strong>조우 도감</strong><small>실제 적대·대련이 성립한 대상만 등록합니다.</small></span><button class="switch">ON</button></section>
           <section class="setting"><span><strong>도감 컨텍스트 제한</strong><small>활성·재등장 대상만 최대 4명까지 주입합니다.</small></span><button class="switch">강제</button></section>
-          <section class="setting"><span><strong>봇 에셋 초상화</strong><small>본문 태그 → 정확한 이름 → 수동 매핑 순으로 연결합니다.</small></span><button class="switch">ON</button></section>
+          <section class="setting"><span><strong>모듈 에셋 초상화</strong><small>켜는 순간 DB 권한을 요청합니다. 활성 모듈에서 standing·default·neutral 에셋을 우선하며 실패하면 이모지로 표시합니다.</small></span><button class="switch">ON</button></section>
           <section class="setting"><span><strong>이름 없는 잡졸</strong><small>개별 등록하지 않고 전투 집단 하나로 묶습니다.</small></span><button class="switch">그룹</button></section>
         </div></div><footer class="footer">ITEMX CODEX 2.0 · 확장 UI 시안</footer>
       </section>
@@ -85,7 +86,7 @@
   </main>
   <script>
     const skills=[
-      {id:'moon_cut',icon:'☾',fx:'moon',name:'월영참',rank:'epic',display:'에픽',school:'음월검법',type:'active',typeLabel:'장착',level:'7성',mastery:78,cost:'진기 24',cool:'18초',target:'단일',effect:'달빛을 머금은 검기를 일직선으로 방출합니다. 빙결된 대상에게 피해가 증가합니다.',growth:'숙련도 80%에서 검기 잔상이 한 차례 추가됩니다.'},
+      {id:'moon_cut',icon:'🌙',fx:'moon',name:'월영참',rank:'epic',display:'에픽',school:'음월검법',type:'active',typeLabel:'장착',level:'7성',mastery:78,cost:'진기 24',cool:'18초',target:'단일',effect:'달빛을 머금은 검기를 일직선으로 방출합니다. 빙결된 대상에게 피해가 증가합니다.',growth:'숙련도 80%에서 검기 잔상이 한 차례 추가됩니다.'},
       {id:'cloud_step',icon:'〽',fx:'wind',name:'유운보',rank:'unique',display:'유니크',school:'청운신법',type:'active',typeLabel:'장착',level:'5성',mastery:61,cost:'진기 12',cool:'12초',target:'자신',effect:'흐르는 구름처럼 보법을 바꾸어 다음 공격을 회피하고 측면을 점합니다.',growth:'연속 회피 성공 시 이동 거리가 증가합니다.'},
       {id:'ice_heart',icon:'❄',fx:'ice',name:'빙심결',rank:'rare',display:'레어',school:'내공심법',type:'passive',typeLabel:'지속',level:'4성',mastery:44,cost:'지속',cool:'없음',target:'자신',effect:'호흡을 고르게 하여 냉기 저항과 정신 저항을 높입니다.',growth:'숙련도에 따라 냉기 계열 스킬의 소모가 감소합니다.'},
       {id:'thunder_finger',icon:'ϟ',fx:'thunder',name:'벽력지',rank:'legendary',display:'전설',school:'천뢰문 비전',type:'active',typeLabel:'장착',level:'2성',mastery:19,cost:'진기 38',cool:'45초',target:'단일',effect:'손끝에 응축한 뇌기를 경맥의 한 점으로 쏘아 보냅니다.',growth:'현재는 불완전합니다. 대련을 통해 경맥 조준 숙련을 얻을 수 있습니다.'},

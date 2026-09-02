@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ITEMX CODEX 2.0.0 Beta · 아카라이브 가이드</title>
+</head>
+<body style="margin:0;background:#090c12;color:#e9eef6;font-family:Pretendard,'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;word-break:keep-all;">
+<div style="max-width:900px;margin:0 auto;overflow:hidden;background:linear-gradient(155deg,#0d1420,#090d14 46%,#111722);border:1px solid #29354a;box-shadow:0 28px 80px rgba(0,0,0,.42);">
+  <div style="padding:54px 22px 46px;text-align:center;background:radial-gradient(70% 90% at 50% 0,rgba(214,174,103,.18),transparent 67%),radial-gradient(50% 70% at 88% 30%,rgba(111,98,205,.13),transparent 72%),linear-gradient(180deg,#172131,#0b1019);border-bottom:1px solid rgba(214,174,103,.28);">
+    <div style="font-size:11px;letter-spacing:5px;color:#d8b46e;font-weight:900;">WORLD INVENTORY &amp; ENCOUNTER ARCHIVE</div>
+    <h1 style="margin:15px 0 0;color:#fff8e9;font-size:40px;line-height:1.18;font-weight:950;">ITEMX CODEX<br><span style="color:#d8b46e;">2.0.0 BETA</span></h1>
+    <p style="max-width:660px;margin:18px auto 0;color:#b8c3d3;font-size:15px;line-height:1.9;">채팅에서 얻은 아이템, 익힌 스킬, 실제로 맞선 상대를 한곳에 기록합니다.<br>중요한 사건은 본문에 나타나고, 평소 기록은 화면 옆 CODEX에서 조용히 꺼내 봅니다.</p>
+    <div style="margin-top:22px;">
+      <span style="display:inline-block;margin:3px;padding:6px 10px;border:1px solid #59667b;border-radius:999px;color:#e8edf5;font-size:11px;">📦 아이템 인벤토리</span>
+      <span style="display:inline-block;margin:3px;padding:6px 10px;border:1px solid #59667b;border-radius:999px;color:#e8edf5;font-size:11px;">✨ 스킬 기록</span>
+      <span style="display:inline-block;margin:3px;padding:6px 10px;border:1px solid #59667b;border-radius:999px;color:#e8edf5;font-size:11px;">⚔️ 조우 도감</span>
+      <span style="display:inline-block;margin:3px;padding:6px 10px;border:1px solid #59667b;border-radius:999px;color:#e8edf5;font-size:11px;">🖼️ 모듈 초상화</span>
+    </div>
+  </div>
+
+  <div style="padding:24px 20px;background:#0b111a;border-bottom:1px solid #253147;">
+    <img src="assets/guide/01-inline-events.png" alt="본문에 표시되는 ITEMX CODEX 스킬 및 조우 사건 카드" style="display:block;width:100%;height:auto;border:1px solid #334158;border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,.36);">
+    <p style="margin:13px 4px 0;color:#8290a6;font-size:11px;line-height:1.7;text-align:center;">최초 등록과 큰 변화가 일어난 문단 바로 뒤에만 나타납니다. 단순 재등장이나 변화 없는 기록은 다시 띄우지 않습니다.</p>
+  </div>
+
+  <div style="padding:38px 22px 28px;background:linear-gradient(180deg,#111927,#0b111a);">
+    <div style="color:#73d1d9;font-size:10px;font-weight:900;letter-spacing:4px;">WHAT IT DOES</div>
+    <h2 style="margin:8px 0 0;color:#f5f8fc;font-size:26px;line-height:1.4;">대화가 길어져도 기록은 채팅별로</h2>
+    <p style="margin:12px 0 0;color:#b8c4d4;font-size:14px;line-height:1.9;">각 채팅이 독립된 저장소를 가집니다. 아이템을 사용하거나 장착하고, 스킬이 성장하고, 전투가 끝나는 변화를 사건으로 이어 붙여 현재 상태를 복원합니다. 다른 봇이나 다른 채팅의 기록이 섞이지 않습니다.</p>
+    <table style="width:100%;margin-top:18px;border-collapse:collapse;table-layout:fixed;">
+      <tbody>
+        <tr><th style="width:26%;padding:12px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">본문 표시</th><td style="padding:12px;border:1px solid #304057;color:#d9e1ed;font-size:13px;line-height:1.65;">최초 발견·습득·조우와 강화·숙련·격파 같은 큰 변화만 표시</td></tr>
+        <tr><th style="padding:12px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">보조 복구</th><td style="padding:12px;border:1px solid #304057;color:#d9e1ed;font-size:13px;line-height:1.65;">모델이 놓친 기록만 문맥을 읽고 한 번에 보완하며 스트리밍 중에는 실행하지 않음</td></tr>
+        <tr><th style="padding:12px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">컨텍스트</th><td style="padding:12px;border:1px solid #304057;color:#d9e1ed;font-size:13px;line-height:1.65;">현재 인벤토리와 활성 기록만 압축해 전달하고 본문의 내부 마커는 모델 요청에서 제거</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="padding:38px 22px;background:#0a1018;border-top:1px solid #263248;">
+    <div style="color:#d8b46e;font-size:10px;font-weight:900;letter-spacing:4px;">01 · INVENTORY</div>
+    <h2 style="margin:8px 0 0;color:#f7f2e8;font-size:25px;">아이템은 얻은 뒤에도 계속 살아 있습니다</h2>
+    <p style="margin:11px 0 18px;color:#aebbcf;font-size:14px;line-height:1.85;">획득·장착·보관·소비·손상·변형·소멸을 같은 ID로 이어서 기록합니다. 본문 카드와 인벤토리 상세는 같은 렌더러를 사용하므로 디자인이 달라지지 않습니다.</p>
+    <img src="assets/guide/02-inventory.png" alt="ITEMX CODEX 인벤토리" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid #334158;border-radius:14px;">
+    <div style="height:14px;"></div>
+    <img src="assets/guide/03-item-affinity.png" alt="등급과 다중 속성 아이템 상세 카드" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid #5b4c35;border-radius:14px;">
+  </div>
+
+  <div style="padding:38px 22px;background:linear-gradient(180deg,#111725,#0b1019);border-top:1px solid #263248;">
+    <div style="color:#b79bec;font-size:10px;font-weight:900;letter-spacing:4px;">02 · SKILL CODEX</div>
+    <h2 style="margin:8px 0 0;color:#f3effc;font-size:25px;">스킬도 등급·숙련·발현을 기록합니다</h2>
+    <p style="margin:11px 0 18px;color:#aebbcf;font-size:14px;line-height:1.85;">처음 기록된 고인물의 기술을 무조건 1레벨로 만들지 않습니다. 세계관의 계급과 사용 묘사를 바탕으로 보수적으로 숙련을 잡고, 소모 자원과 재사용 조건도 해당 세계관의 표현으로 남깁니다.</p>
+    <img src="assets/guide/04-skill-detail.png" alt="스킬 상세 기록과 속성 이펙트" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid #4a3d68;border-radius:14px;">
+    <p style="margin:12px 2px 0;padding:12px 14px;border-left:3px solid #9f7edc;background:rgba(119,88,170,.09);color:#c9bddc;font-size:12px;line-height:1.75;">스킬 목록은 가벼운 시그니처만 표시하고, 화려한 전체 이펙트는 선택한 상세 한 장에만 생성합니다.</p>
+  </div>
+
+  <div style="padding:38px 22px;background:#0a1018;border-top:1px solid #263248;">
+    <div style="color:#e17d83;font-size:10px;font-weight:900;letter-spacing:4px;">03 · ENCOUNTER ARCHIVE</div>
+    <h2 style="margin:8px 0 0;color:#f7eeee;font-size:25px;">싸운 상대와 결말까지 남깁니다</h2>
+    <p style="margin:11px 0 18px;color:#aebbcf;font-size:14px;line-height:1.85;">소문이나 스쳐 지나간 NPC는 등록하지 않습니다. 실제 적대·전투 또는 합의된 대련이 성립했을 때만 기록하며, 전투가 끝나면 누가 어떤 방식으로 결말을 냈는지 최근 결과에 남깁니다.</p>
+    <table style="width:100%;border-collapse:separate;border-spacing:8px 0;table-layout:fixed;"><tbody><tr>
+      <td style="width:50%;padding:0;vertical-align:top;"><img src="assets/guide/05-encounter-active.png" alt="토끼 공주 교전 중 효과" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid #6d3943;border-radius:12px;"><div style="padding:9px 4px;color:#ef969f;font-size:11px;font-weight:850;text-align:center;">교전 중 · 경고 효과</div></td>
+      <td style="width:50%;padding:0;vertical-align:top;"><img src="assets/guide/06-encounter-defeated.png" alt="토끼 공주 격파 후 정지 효과" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid #49515e;border-radius:12px;"><div style="padding:9px 4px;color:#aeb7c3;font-size:11px;font-weight:850;text-align:center;">격파 후 · 회색 기록·모션 정지</div></td>
+    </tr></tbody></table>
+    <p style="margin:12px 2px 0;color:#8997ab;font-size:12px;line-height:1.75;">활성 경고선과 배경 효과까지 함께 회색으로 바뀌고 정지합니다. 종료된 상대는 다음 요청에 계속 누적하지 않으며, 다시 등장했을 때만 필요한 기록을 불러옵니다.</p>
+  </div>
+
+  <div style="padding:38px 22px;background:linear-gradient(180deg,#111927,#0b111a);border-top:1px solid #263248;">
+    <div style="color:#71cad8;font-size:10px;font-weight:900;letter-spacing:4px;">SETUP &amp; PERMISSIONS</div>
+    <h2 style="margin:8px 0 0;color:#eef8fa;font-size:25px;">설치는 짧고, 권한은 두 종류입니다</h2>
+    <ol style="margin:16px 0 19px;padding-left:22px;color:#c1cbd9;font-size:13px;line-height:1.9;">
+      <li>아래 설치 파일을 받아 Risu의 플러그인 메뉴에서 가져옵니다.</li>
+      <li>채팅봇에 들어가면 화면 오른쪽 가운데에 세로 CODEX 배지가 나타납니다.</li>
+      <li><b style="color:#e5c681;">연결 및 권한</b>을 눌러 모델 처리 권한을 허용합니다.</li>
+      <li>활성 모듈의 캐릭터 에셋을 초상화로 쓰려면 <b style="color:#e5c681;">모듈 에셋 초상화</b>를 켜고 DB 권한을 허용합니다.</li>
+    </ol>
+    <img src="assets/guide/07-settings-permissions.png" alt="ITEMX CODEX 설정과 모듈 초상화 권한" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid #334158;border-radius:14px;">
+    <div style="margin-top:16px;padding:15px 16px;border:1px solid #3b5262;border-radius:11px;background:linear-gradient(135deg,rgba(49,95,107,.17),rgba(25,35,49,.3));">
+      <strong style="display:block;color:#99e0e7;font-size:13px;">모듈 초상화가 없어도 멈추지 않습니다</strong>
+      <span style="display:block;margin-top:6px;color:#aab8ca;font-size:12px;line-height:1.75;">현재 활성화된 모듈에서 이름과 별칭을 맞추고 standing → default → neutral 계열을 우선합니다. 권한 거부, 탐색 실패, 이미지 로드 실패 시에는 대상 종류에 맞는 이모지로 자동 대체합니다.</span>
+    </div>
+  </div>
+
+  <div style="padding:38px 22px;background:#0a1018;border-top:1px solid #263248;">
+    <div style="color:#d8b46e;font-size:10px;font-weight:900;letter-spacing:4px;">SETTINGS</div>
+    <h2 style="margin:8px 0 0;color:#f7f2e8;font-size:25px;">필요한 기능만 켤 수 있습니다</h2>
+    <table style="width:100%;margin-top:17px;border-collapse:collapse;table-layout:fixed;">
+      <tbody>
+        <tr><th style="width:30%;padding:11px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">아이템 / 스킬 / 조우</th><td style="padding:11px;border:1px solid #304057;color:#d7dfeb;font-size:12px;line-height:1.65;">도메인별 수집 ON/OFF</td></tr>
+        <tr><th style="padding:11px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">메인 출력</th><td style="padding:11px;border:1px solid #304057;color:#d7dfeb;font-size:12px;line-height:1.65;">주 모델에 활성화된 규약 주입</td></tr>
+        <tr><th style="padding:11px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">보조 출력</th><td style="padding:11px;border:1px solid #304057;color:#d7dfeb;font-size:12px;line-height:1.65;">OFF / 누락 복구 / 항상 검사. 새 설치 기본값은 OFF</td></tr>
+        <tr><th style="padding:11px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">시각 이펙트</th><td style="padding:11px;border:1px solid #304057;color:#d7dfeb;font-size:12px;line-height:1.65;">본문·인벤·스킬·조우 효과 일괄 ON/OFF</td></tr>
+        <tr><th style="padding:11px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">글자 / 배지 위치</th><td style="padding:11px;border:1px solid #304057;color:#d7dfeb;font-size:12px;line-height:1.65;">글자 소·중·대, 배지 여섯 방향 즉시 적용</td></tr>
+        <tr><th style="padding:11px;border:1px solid #304057;text-align:left;color:#d8b46e;font-size:12px;">현재 채팅 정리</th><td style="padding:11px;border:1px solid #304057;color:#d7dfeb;font-size:12px;line-height:1.65;">플러그인을 쓰지 않을 때 본문 마커와 저장 원장 제거</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="padding:38px 22px;background:linear-gradient(180deg,#111927,#0b111a);border-top:1px solid #263248;">
+    <div style="color:#73d1d9;font-size:10px;font-weight:900;letter-spacing:4px;">COMPATIBILITY</div>
+    <h2 style="margin:8px 0 0;color:#eef8fa;font-size:25px;">해적리스와 순정 RisuAI</h2>
+    <p style="margin:12px 0 0;color:#adbacb;font-size:13px;line-height:1.85;">API v3 플러그인으로 동작하며, 지원되지 않는 선택 API는 기능별 폴백으로 처리합니다. 기존 ITEMX 모듈 상태를 자동 이전하지는 않으므로 구형 ITEMX 모듈과 동시에 켜지 않는 편이 안전합니다.</p>
+    <div style="margin-top:16px;padding:14px 16px;border-left:3px solid #d7a958;background:rgba(107,77,31,.13);color:#d8c7aa;font-size:12px;line-height:1.75;"><b>보조 모델을 쓸 때</b><br>Risu 설정의 기타 보조모델을 실제 사용 가능한 모델로 지정한 뒤 ITEMX 설정에서 누락 복구를 켭니다. 모델 플러그인이 필요한 항목을 선택하면 해당 제공자 플러그인도 활성화해야 합니다.</div>
+  </div>
+
+  <div style="padding:44px 22px 48px;text-align:center;background:radial-gradient(70% 110% at 50% 100%,rgba(214,174,103,.15),transparent 68%),#090e16;border-top:1px solid rgba(214,174,103,.3);">
+    <div style="color:#d8b46e;font-size:10px;font-weight:900;letter-spacing:4px;">DOWNLOAD</div>
+    <h2 style="margin:9px 0 0;color:#fff8ea;font-size:29px;">ITEMX CODEX 2.0.0 Beta</h2>
+    <p style="margin:10px 0 22px;color:#96a4b8;font-size:13px;line-height:1.75;">GitHub 공개 저장소에서 설치 파일과 업데이트를 함께 제공합니다.</p>
+    <a href="https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin:4px;padding:13px 25px;border:1px solid #e1bd78;border-radius:10px;background:linear-gradient(135deg,#e3bd75,#ad742f);color:#171107;text-decoration:none;font-size:14px;font-weight:950;">플러그인 다운로드</a>
+    <a href="https://github.com/canister2668/itemx2" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin:4px;padding:13px 25px;border:1px solid #46556d;border-radius:10px;background:#151d2a;color:#dce5f2;text-decoration:none;font-size:14px;font-weight:900;">GitHub 저장소</a>
+    <p style="margin:21px auto 0;max-width:660px;color:#66748a;font-size:10px;line-height:1.7;">자동 업데이트는 플러그인 파일의 버전과 공개 업데이트 주소를 사용합니다. 유료 GitHub 기능은 필요하지 않습니다.</p>
+  </div>
+</div>
+</body>
+</html>
