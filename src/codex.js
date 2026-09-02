@@ -14,8 +14,21 @@ const ITEMXCodex = (() => {
   const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
   const OPS = new Set(['merge', 'remove', 'restore']);
   const clean = (value, max = 800) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
-  const cooldownValue = (value) => {
+  const emptySkillValue = (value) => /^(?:|none|null|unknown|n\/a|없음|해당\s*없음|미상)$/i.test(clean(value, 120));
+  const costValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
+    if (!emptySkillValue(result)) return result;
+    if (type === 'passive') return '상시 효과 · 별도 소모 없음';
+    if (type === 'sealed' || status === 'sealed') return '봉인 상태 · 발동 불가';
+    return result ? '별도 소모 없음' : '발동 자원 · 서사 기준';
+  };
+  const cooldownValue = (value, type = 'active', status = '') => {
+    const result = clean(value, 120);
+    if (emptySkillValue(result)) {
+      if (type === 'passive') return '상시 적용';
+      if (type === 'sealed' || status === 'sealed') return '봉인 해제 후 사용 가능';
+      return result ? '재사용 제한 없음' : '사용 후 회복 필요';
+    }
     return /(?:\d+\s*)?(?:턴|라운드|turns?|rounds?|actions?|initiative)/i.test(result) ? '상황 조건 충족 후' : result;
   };
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -54,7 +67,7 @@ const ITEMXCodex = (() => {
     const status = SKILL_STATUS.has(raw.status) ? raw.status : (type === 'sealed' ? 'sealed' : 'learned');
     return { event: { domain: 'skill', kind: 'exam', entity: {
       id: normalizeId(raw.id, 'skill', seed), name, glyph: ITEMXCore.resolveSkillGlyph({ ...raw, name, type }), rank: clean(raw.rank, 80) || '미분류', school: clean(raw.school, 120), type, status,
-      level: skillLevel(raw.level), mastery: mastery(raw.mastery), cost: clean(raw.cost, 120), cooldown: cooldownValue(raw.cooldown), target: clean(raw.target, 120), affinity: clean(raw.affinity, 80),
+      level: skillLevel(raw.level), mastery: mastery(raw.mastery), cost: costValue(raw.cost, type, status), cooldown: cooldownValue(raw.cooldown, type, status), target: clean(raw.target, 120), affinity: clean(raw.affinity, 80),
       description: clean(raw.description, 1200), effects: list(raw.effects), growth: clean(raw.growth, 800),
       _provided: Object.keys(raw).filter((key) => raw[key] !== '')
     } } };
@@ -82,7 +95,8 @@ const ITEMXCodex = (() => {
     for (const key of allowed) if (raw[key] !== '') fields[key === 'type' && domain === 'monster' ? 'kind' : key] = ['effects','aliases','weaknesses','resistances','moves'].includes(key) ? list(raw[key]) : clean(raw[key], key === 'description' ? 1200 : key === 'outcome' ? 600 : 800);
     if ('mastery' in fields) { fields.mastery = mastery(fields.mastery); if (fields.mastery == null) delete fields.mastery; }
     if ('level' in fields) { fields.level = skillLevel(fields.level); if (fields.level == null) delete fields.level; }
-    if ('cooldown' in fields) fields.cooldown = cooldownValue(fields.cooldown);
+    if ('cost' in fields) fields.cost = costValue(fields.cost, fields.type, fields.status);
+    if ('cooldown' in fields) fields.cooldown = cooldownValue(fields.cooldown, fields.type, fields.status);
     return { event: { domain, kind: 'patch', patch: { id, action, op, fields } } };
   }
   function parseTransport(tag, attrText, body, seed) {
@@ -104,9 +118,9 @@ const ITEMXCodex = (() => {
       const prior = reg.entries[event.entity.id], next = clone(event.entity), provided = new Set(next._provided || []);
       delete next._provided;
       if (prior && event.domain === 'skill') {
-        for (const key of ['status', 'mastery', 'level']) if (!provided.has(key)) next[key] = prior[key];
+        for (const key of ['status', 'mastery', 'level', 'cost', 'cooldown']) if (!provided.has(key)) next[key] = prior[key];
       }
-      if (event.domain === 'skill') { next.cooldown = cooldownValue(next.cooldown); next.glyph = ITEMXCore.resolveSkillGlyph(next); }
+      if (event.domain === 'skill') { next.cost = costValue(next.cost, next.type, next.status); next.cooldown = cooldownValue(next.cooldown, next.type, next.status); next.glyph = ITEMXCore.resolveSkillGlyph(next); }
       if (prior && event.domain === 'monster') {
         for (const key of ['status', 'active', 'relation', 'encounterCount']) if (!provided.has(key)) next[key] = prior[key];
         next.encounterCount = Number(prior.encounterCount) || 1;
@@ -128,7 +142,8 @@ const ITEMXCodex = (() => {
     else if (op === 'restore') Object.assign(entity, clone(fields), { status: event.domain === 'skill' ? 'learned' : 'active', active: event.domain === 'monster' });
     else if (op === 'merge') Object.assign(entity, clone(fields));
     if (event.domain === 'skill') {
-      entity.cooldown = cooldownValue(entity.cooldown);
+      entity.cost = costValue(entity.cost, entity.type, entity.status);
+      entity.cooldown = cooldownValue(entity.cooldown, entity.type, entity.status);
       entity.glyph = ITEMXCore.resolveSkillGlyph(entity);
       if (entity._inferred && fields && ('level' in fields || 'mastery' in fields)) {
         const explicitProgress = new Set(Object.keys(fields).filter((key) => key === 'level' || key === 'mastery'));
@@ -352,7 +367,7 @@ const ITEMXCodex = (() => {
     const skillRankRule = options.rarityMode === 'itemx'
       ? 'Use only ITEMX rank values normal|magic|rare|unique|epic|legendary|mythical|empyrean, based on explicit narrative power and prestige; do not inflate an unsupported rank.'
       : "Preserve the setting's own native rank, realm, discipline grade or proficiency wording exactly; do not replace it with ITEMX rarity names.";
-    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>...</level><mastery>...</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If the setting has no explicit numeric scale, infer a conservative normalized level from 1 to 10 and mastery from 0 to 100 using the character's demonstrated experience with that skill: novice 1/0, established 4/40, practiced 5/55, veteran 7/75, master 9/90, transcendent 10/97. Treat these as estimates and never exaggerate beyond the narrative. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Skill cost preserves the setting's actual resource and scale, for example mana 20, stamina 5%, one bullet, sustained focus, or none. Skill cooldown must never use turns, rounds, actions, or initiative. Express it as real elapsed time (seconds, minutes, hours, days), a frequency such as once per day, a sustained duration, a charge/recovery time, a narrative condition, or none. Do not invent a numeric cost or time when the narrative does not establish one.");
+    if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>...</level><mastery>...</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If the setting has no explicit numeric scale, infer a conservative normalized level from 1 to 10 and mastery from 0 to 100 using the character's demonstrated experience with that skill: novice 1/0, established 4/40, practiced 5/55, veteran 7/75, master 9/90, transcendent 10/97. Treat these as estimates and never exaggerate beyond the narrative. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Always write informative cost and cooldown fields instead of bare NONE. Preserve explicit world-native resources, quantities and timing first. When exact numbers are absent, infer a conservative qualitative description from the demonstrated mechanism and intensity, such as slight mana drain, stamina exertion, sustained concentration, one ammunition, continuous use, brief recovery, magical stabilization, or a named narrative condition. Passive skills should say they are continuously applied and whether they require upkeep; sealed skills should state their unlock condition when known. Use '별도 소모 없음' or '재사용 제한 없음' only when the narrative actually supports cost-free or continuous use. Never invent precise numbers, a daily limit or a resource foreign to the setting. Cooldowns must never use turns, rounds, actions or initiative.");
     if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');

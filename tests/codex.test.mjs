@@ -119,12 +119,14 @@ test('incomplete codex transport preserves later status trailers and item marker
 });
 
 test('re-exam preserves live skill and encounter state unless explicitly supplied', () => {
-  const first = codex.extractResponse('<skillExam><id>moon</id><name>월영참</name><type>active</type><status>equipped</status><level>9</level><mastery>73</mastery></skillExam><monsterExam><id>wolf</id><name>흑랑왕</name><relation>hostile</relation><status>active</status></monsterExam>', codex.snapshot());
+  const first = codex.extractResponse('<skillExam><id>moon</id><name>월영참</name><type>active</type><status>equipped</status><level>9</level><mastery>73</mastery><cost>월광 집중</cost><cooldown>호흡 안정 후</cooldown></skillExam><monsterExam><id>wolf</id><name>흑랑왕</name><relation>hostile</relation><status>active</status></monsterExam>', codex.snapshot());
   const defeated = codex.extractResponse('<monsterPatch><id>wolf</id><action>defeat</action></monsterPatch>', first.snapshot);
   const reexam = codex.extractResponse('<skillExam><id>moon</id><name>월영참 개</name><description>새 설명</description></skillExam><monsterExam><id>wolf</id><name>흑랑왕 개</name><description>새 설명</description></monsterExam>', defeated.snapshot);
   assert.equal(reexam.snapshot.skills.entries.moon.status, 'equipped');
   assert.equal(reexam.snapshot.skills.entries.moon.level, 9);
   assert.equal(reexam.snapshot.skills.entries.moon.mastery, 73);
+  assert.equal(reexam.snapshot.skills.entries.moon.cost, '월광 집중');
+  assert.equal(reexam.snapshot.skills.entries.moon.cooldown, '호흡 안정 후');
   assert.equal(reexam.snapshot.monsters.entries.wolf.status, 'defeated');
   assert.equal(reexam.snapshot.monsters.entries.wolf.active, false);
   assert.equal(reexam.snapshot.monsters.entries.wolf.encounterCount, 1);
@@ -139,14 +141,21 @@ test('malformed marker events are isolated instead of aborting replay', () => {
 
 test('skill protocol uses real time cooldowns and world-native costs', () => {
   const protocol = codex.protocol([]);
-  assert.match(protocol, /cost preserves the setting's actual resource/);
-  assert.match(protocol, /cooldown must never use turns, rounds, actions, or initiative/);
-  assert.match(protocol, /seconds, minutes, hours, days/);
+  assert.match(protocol, /Always write informative cost and cooldown fields instead of bare NONE/);
+  assert.match(protocol, /infer a conservative qualitative description/);
+  assert.match(protocol, /Cooldowns must never use turns, rounds, actions or initiative/);
   const result = codex.extractResponse('<skillExam><id>flash</id><name>섬광</name><type>active</type><cost>기력 5%</cost><cooldown>30초</cooldown></skillExam>', codex.snapshot());
   assert.equal(result.snapshot.skills.entries.flash.cost, '기력 5%');
   assert.equal(result.snapshot.skills.entries.flash.cooldown, '30초');
   const legacy = codex.extractResponse('<skillExam><id>legacy</id><name>구식 기술</name><type>active</type><cooldown>3턴</cooldown></skillExam>', codex.snapshot());
   assert.equal(legacy.snapshot.skills.entries.legacy.cooldown, '상황 조건 충족 후');
+  assert.equal(legacy.snapshot.skills.entries.legacy.cost, '발동 자원 · 서사 기준');
+  const explicitNone = codex.extractResponse('<skillExam><id>free_cast</id><name>무영창</name><type>active</type><cost>NONE</cost><cooldown>none</cooldown></skillExam>', codex.snapshot());
+  assert.equal(explicitNone.snapshot.skills.entries.free_cast.cost, '별도 소모 없음');
+  assert.equal(explicitNone.snapshot.skills.entries.free_cast.cooldown, '재사용 제한 없음');
+  const passive = codex.extractResponse('<skillExam><id>sense</id><name>기척 감지</name><type>passive</type></skillExam>', codex.snapshot());
+  assert.equal(passive.snapshot.skills.entries.sense.cost, '상시 효과 · 별도 소모 없음');
+  assert.equal(passive.snapshot.skills.entries.sense.cooldown, '상시 적용');
   assert.match(protocol, /Preserve the setting's own native rank/);
   const forced = codex.protocol([], { rarityMode: 'itemx' });
   assert.match(forced, /normal\|magic\|rare\|unique\|epic\|legendary\|mythical\|empyrean/);
