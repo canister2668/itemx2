@@ -56,13 +56,13 @@ node --check dist/itemx2.plugin.js
 이 디렉터리가 ITEMX CODEX 소스 저장소다. 내부 플러그인 ID와 저장 키, 전송 규약은 호환성을 위해 `itemx2`와 `ITEMX2`를 유지한다. 다른 제품 저장소의 파일을 빌드 입력으로 사용하지 않는다.
 
 공개 저장소는 [`canister2668/itemx2`](https://github.com/canister2668/itemx2)다. 설치 파일은
-[`dist/itemx2.plugin.js`](https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js)에서 직접 받을 수 있다.
+[`dist/itemx2.plugin.js`](https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js)에서 직접 받을 수 있다.
 
 RisuAI 표준 업데이트는 빌드 파일 상단의 `//@version`과 `//@update-url`을 사용한다. 현재 업데이트 주소는
 다음 공개 파일로 고정하며 비공개 토큰이나 인증 URL을 플러그인에 넣지 않는다.
 
 ```text
-https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
+https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js
 ```
 
 `1.9.0-beta.*`는 공개 저장소와 자동 업데이트 검증 계보다. 관리자가 아카라이브 게시글 공개를 명시한 시점부터만
