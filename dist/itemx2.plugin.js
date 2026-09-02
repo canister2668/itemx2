@@ -1,7 +1,7 @@
 //@name itemx2
 //@api 3.0
 //@version 2.0.1
-//@update-url https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js
+//@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
 //@display-name ITEMX CODEX · v2.0.1
 //@description World Inventory & Encounter Archive
 

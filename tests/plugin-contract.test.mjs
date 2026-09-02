@@ -13,7 +13,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /^\/\/@version 2\.0\.1$/m);
   assert.match(source, /^\/\/@display-name ITEMX CODEX · v2\.0\.1$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
-  assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
+  assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/refs\/heads\/main\/dist\/itemx2\.plugin\.js$/m);
   assert.match(source, /const ITEMX_VERSION_LABEL = "2\.0\.1"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
