@@ -132,6 +132,21 @@ test('re-exam preserves live skill and encounter state unless explicitly supplie
   assert.equal(reexam.snapshot.monsters.entries.wolf.encounterCount, 1);
 });
 
+test('repeat skill scans cannot downgrade progress or erase detailed cost and cooldown', () => {
+  const first = codex.extractResponse('<skillExam><id>moon</id><name>월영참</name><type>active</type><level>40</level><mastery>88</mastery><cost>월광 30%</cost><cooldown>호흡이 완전히 안정된 뒤</cooldown></skillExam>', codex.snapshot());
+  const repeated = codex.extractResponse('오랫동안 사용한 고수의 비전이다.\n<skillExam><id>moon</id><name>월영참</name><type>active</type><level>1</level><mastery>0</mastery><cost>NONE</cost><cooldown>none</cooldown></skillExam>', first.snapshot);
+  const skill = repeated.snapshot.skills.entries.moon;
+  assert.equal(skill.level, 40);
+  assert.equal(skill.mastery, 88);
+  assert.equal(skill.cost, '월광 30%');
+  assert.equal(skill.cooldown, '호흡이 완전히 안정된 뒤');
+  const replayed = codex.rebuild([{ role: 'char', data: first.content }, { role: 'char', data: repeated.content }]);
+  assert.equal(replayed.skills.entries.moon.level, 40);
+  assert.equal(replayed.skills.entries.moon.mastery, 88);
+  assert.equal(replayed.skills.entries.moon.cost, '월광 30%');
+  assert.equal(replayed.skills.entries.moon.cooldown, '호흡이 완전히 안정된 뒤');
+});
+
 test('malformed marker events are isolated instead of aborting replay', () => {
   const malformed = codex.marker({ v: codex.VERSION, event: { domain: 'skill', kind: 'exam' } });
   const state = codex.rebuild([{ role: 'char', data: malformed }]);

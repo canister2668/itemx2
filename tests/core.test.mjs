@@ -80,6 +80,18 @@ test('reappraising an existing id preserves stack, ownership, equipment and pin 
   assert.equal(item.pin, true);
 });
 
+test('a partial reappraisal preserves omitted authoritative item details', () => {
+  const first = core.extractResponse(exam('abyss_book', '심연의 묵시록', '<effects><effect><name>심연 개방</name><desc>봉인을 해제한다.</desc></effect></effects><augments><augment><name>+12</name><desc>극한 강화</desc></augment></augments>'), core.newRegistry());
+  const partial = core.extractResponse('<itemExam><id>abyss_book</id><name>심연의 묵시록 · 진본</name><type>마도서</type><possession>owned</possession><location>inventory</location></itemExam>', first.registry);
+  const item = partial.registry.items.abyss_book;
+  assert.equal(item.name, '심연의 묵시록 · 진본');
+  assert.equal(item.itemType, '마도서');
+  assert.equal(item.power, '7600-9400');
+  assert.equal(item.cost, '48000 G');
+  assert.equal(item.effects[0].name, '심연 개방');
+  assert.equal(item.augments[0].name, '+12');
+});
+
 test('unfinished ITEMX transport is quarantined without eating later trailers or generic item HTML', () => {
   const result = core.extractResponse('서술 본문.\n<itemPatch><id>blade_a</id><op>merge</op><durability>30/100\n\n[Status: 정상]\n<state>keep</state>', core.newRegistry());
   assert.equal(result.content, '서술 본문.\n[Status: 정상]\n<state>keep</state>');

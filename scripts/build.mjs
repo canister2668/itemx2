@@ -58,6 +58,8 @@ const mainCss = scopeBlock(chatCss.replace(/\/\*[\s\S]*?\*\//g, ''));
 
 const metadata = `//@name itemx2\n//@api 3.0\n//@version ${packageVersion}\n${updateUrl ? `//@update-url ${updateUrl}\n` : ''}//@display-name ITEMX CODEX · v${packageVersion}\n//@description World Inventory & Encounter Archive\n\n`;
 const builtRuntime = runtime
+  .replace('__ITEMX_PLUGIN_VERSION_JSON__', JSON.stringify(packageVersion))
+  .replace('__ITEMX_VERSION_LABEL_JSON__', JSON.stringify(displayVersion))
   .replace('__ITEMX_STYLE_JSON__', JSON.stringify(css))
   .replace('__ITEMX_CHAT_STYLE_JSON__', JSON.stringify(chatCss))
   .replace('__ITEMX_MAIN_STYLE_JSON__', JSON.stringify(mainCss))

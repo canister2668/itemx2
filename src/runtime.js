@@ -4,8 +4,8 @@ const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_PROTOCOL_TEXT = __ITEMX_PROTOCOL_JSON__;
-const ITEMX_PLUGIN_VERSION = '1.9.0-beta.21';
-const ITEMX_VERSION_LABEL = '1.9 · BETA 21';
+const ITEMX_PLUGIN_VERSION = __ITEMX_PLUGIN_VERSION_JSON__;
+const ITEMX_VERSION_LABEL = __ITEMX_VERSION_LABEL_JSON__;
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -642,8 +642,9 @@ ${codexPageStyle()}
     for (const message of chat?.message || []) {
       const narrative = messageData(message);
       for (const event of messageEvents(narrative, 'codex', lookup)) {
-        const reconciled = ITEMXCodex.reconcileSkillEvent(event, narrative, options);
-        ITEMXCodex.applyEvent(state, reconciled); transport += JSON.stringify(reconciled);
+        // Events are reconciled exactly once when committed. Replay is a pure
+        // fold over stored facts, never a second interpretation of prose.
+        ITEMXCodex.applyEvent(state, event); transport += JSON.stringify(event);
       }
     }
     state.fingerprint = ITEMXCore.fnv1a(transport); state.updatedAt = Date.now();
@@ -677,7 +678,12 @@ ${codexPageStyle()}
       text.replace(ITEMX_CODEX_REF_RE, (_, ref) => { used.add(`codex:${ref}`); return ''; });
     }
     const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row).slice(-512);
-    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(kept) };
+    let encodedLedger = JSON.stringify(kept);
+    while (kept.length > 1 && encodedLedger.length > 393216) {
+      kept.shift();
+      encodedLedger = JSON.stringify(kept);
+    }
+    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: encodedLedger };
     return { chat: reconcileStoredRefViews(next, index).chat, changed: true };
   }
 
@@ -1932,11 +1938,13 @@ ${codexPageStyle()}
       else if (value?.data instanceof Uint8Array) bytes = value.data;
       if (!bytes?.length || bytes.length > 12 * 1024 * 1024) return '';
       const lower = String(ext || '').toLowerCase();
+      const isoBrand = bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+        ? String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]) : '';
       const mime = bytes[0] === 0x89 && bytes[1] === 0x50 ? 'image/png'
         : bytes[0] === 0xff && bytes[1] === 0xd8 ? 'image/jpeg'
           : bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50 ? 'image/webp'
             : bytes[0] === 0x47 && bytes[1] === 0x49 ? 'image/gif'
-              : bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70 && bytes[8] === 0x61 && bytes[9] === 0x76 && bytes[10] === 0x69 && [0x66, 0x73].includes(bytes[11]) ? 'image/avif'
+              : ['avif', 'avis', 'mif1', 'miaf'].includes(isoBrand) ? 'image/avif'
                 : ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' }[lower] || '');
       if (!mime) return '';
       let binary = ''; for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));

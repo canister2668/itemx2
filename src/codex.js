@@ -69,7 +69,8 @@ const ITEMXCodex = (() => {
       id: normalizeId(raw.id, 'skill', seed), name, glyph: ITEMXCore.resolveSkillGlyph({ ...raw, name, type }), rank: clean(raw.rank, 80) || '미분류', school: clean(raw.school, 120), type, status,
       level: skillLevel(raw.level), mastery: mastery(raw.mastery), cost: costValue(raw.cost, type, status), cooldown: cooldownValue(raw.cooldown, type, status), target: clean(raw.target, 120), affinity: clean(raw.affinity, 80),
       description: clean(raw.description, 1200), effects: list(raw.effects), growth: clean(raw.growth, 800),
-      _provided: Object.keys(raw).filter((key) => raw[key] !== '')
+      _provided: Object.keys(raw).filter((key) => raw[key] !== ''),
+      _placeholder: ['cost', 'cooldown'].filter((key) => raw[key] !== '' && emptySkillValue(raw[key]))
     } } };
   }
   function normalizeMonsterExam(raw, seed) {
@@ -115,10 +116,16 @@ const ITEMXCodex = (() => {
     const reg = event.domain === 'skill' ? state.skills : state.monsters;
     if (event.kind === 'exam') {
       if (!event.entity?.id || !ID_RE.test(event.entity.id)) { reg.diagnostics.push({ code: 'exam_invalid' }); return null; }
-      const prior = reg.entries[event.entity.id], next = clone(event.entity), provided = new Set(next._provided || []);
+      const prior = reg.entries[event.entity.id], next = clone(event.entity), provided = new Set(next._provided || []), placeholders = new Set(next._placeholder || []);
       delete next._provided;
+      delete next._placeholder;
       if (prior && event.domain === 'skill') {
+        for (const key of placeholders) provided.delete(key);
         for (const key of ['status', 'mastery', 'level', 'cost', 'cooldown']) if (!provided.has(key)) next[key] = prior[key];
+        const inferred = new Set(next._inferred || []);
+        for (const key of prior._inferred || []) if (!provided.has(key)) inferred.add(key);
+        if (inferred.size) next._inferred = [...inferred];
+        else delete next._inferred;
       }
       if (event.domain === 'skill') { next.cost = costValue(next.cost, next.type, next.status); next.cooldown = cooldownValue(next.cooldown, next.type, next.status); next.glyph = ITEMXCore.resolveSkillGlyph(next); }
       if (prior && event.domain === 'monster') {
@@ -239,15 +246,24 @@ const ITEMXCodex = (() => {
       const source = evidence.context;
       const provided = new Set(entity._provided || []);
       const inferred = new Set(entity._inferred || []);
-      const estimate = inferredSkillProgress(source, entity, Boolean(options.priorSkill));
+      const prior = options.priorSkill;
+      const estimate = prior ? null : inferredSkillProgress(source, entity, false);
+      // Repeated scans often emit novice defaults for established skills.
+      // Without matching narrative evidence, preserve the authoritative value.
+      if (prior && level == null && provided.has('level') && entity.level <= 1 && Number(prior.level) > 1) {
+        entity.level = null; provided.delete('level'); inferred.delete('level');
+      }
+      if (prior && masteryValue == null && provided.has('mastery') && entity.mastery <= 0 && Number(prior.mastery) > 0) {
+        entity.mastery = null; provided.delete('mastery'); inferred.delete('mastery');
+      }
       if (level != null) { entity.level = level; provided.add('level'); inferred.delete('level'); }
       else if (estimate && (entity.level == null || (estimate.tier !== 'novice' && entity.level <= 1))) {
         entity.level = estimate.level; provided.add('level'); inferred.add('level');
-      } else if (entity.level != null) inferred.add('level');
+      } else if (entity.level != null && !provided.has('level')) inferred.add('level');
       if (masteryValue != null) { entity.mastery = masteryValue; provided.add('mastery'); inferred.delete('mastery'); }
       else if (estimate && (entity.mastery == null || (estimate.tier !== 'novice' && entity.mastery <= 0))) {
         entity.mastery = estimate.mastery; provided.add('mastery'); inferred.add('mastery');
-      } else if (entity.mastery != null) inferred.add('mastery');
+      } else if (entity.mastery != null && !provided.has('mastery')) inferred.add('mastery');
       if (options.rarityMode === 'itemx' && !ITEMX_SKILL_RANKS.has(String(entity.rank || '').toLowerCase())) {
         entity.rank = 'normal'; provided.delete('rank');
       }

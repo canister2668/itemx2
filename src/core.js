@@ -274,9 +274,20 @@ const ITEMXCore = (() => {
 
   function applyExam(reg, source) {
     const item = clone(source), prev = reg.items[item.id];
+    const provided = new Set(item._provided || []);
     delete item._provided;
-    item.emoji = resolveItemEmoji(item);
     if (prev) {
+      // Omitted appraisal fields are not evidence that established details
+      // became empty. Explicit patches remain the way to clear a field.
+      const descriptive = {
+        itemType: 'type', emoji: 'emoji', rarity: 'internalrarity', displayRarity: 'displayrarity',
+        power: 'power', required: 'required', durability: 'durability', cost: 'cost', trivia: 'trivia',
+        theme: 'theme', affinity: 'affinity', affinity2: 'affinity2', condition: 'condition',
+        effects: 'effects', augments: 'augments'
+      };
+      for (const [property, provenance] of Object.entries(descriptive)) {
+        if (!provided.has(provenance)) item[property] = clone(prev[property]);
+      }
       // An exam describes/appraises an identity. Ownership transitions belong
       // to explicit patches so a reappraisal can never unequip, resurrect or
       // collapse an existing stack merely because optional fields defaulted.
@@ -287,6 +298,7 @@ const ITEMXCore = (() => {
       item.pin = prev.pin === true;
       if (prev.removedReason) item.removedReason = prev.removedReason;
     }
+    item.emoji = resolveItemEmoji(item);
     if (item.location === 'equipped' && (item.possession !== 'owned' || (item.slot && slotConflict(reg, item.id, item.slot)))) {
       diagnostic(reg, 'exam_invalid_equipped', item.id); item.possession = 'owned'; item.location = 'inventory'; item.slot = null;
     }
