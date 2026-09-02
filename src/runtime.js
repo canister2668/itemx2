@@ -27,7 +27,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] },
-    panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
+    panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
     auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
   };
 
@@ -830,6 +830,14 @@ ${codexPageStyle()}
     return '';
   }
 
+  function auxiliaryProviderError(value) {
+    const text = value instanceof Error ? String(value.message || value) : modelText(value);
+    if (!/(?:Unknown Plugin detected\. Please change the model or enable the corresponding plugin\.|Plugin calls are blocked by the caller\.)/i.test(text)) return null;
+    const error = new Error('보조 모델 제공자를 사용할 수 없습니다. Risu 설정에서 보조 모델을 변경하거나 해당 제공자 플러그인을 켜세요.');
+    error.code = 'AUX_PROVIDER_UNAVAILABLE';
+    return error;
+  }
+
   function auxStatusText() {
     if (runtime.auxActive > 0) return runtime.auxLabel || '보조 모델 처리 중';
     const last = runtime.auxLast;
@@ -926,15 +934,24 @@ ${codexPageStyle()}
     await syncAuxIndicator();
     try {
       const result = await withTimeout(
-        Risuai.runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: false }),
+        Risuai.runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: true }),
         90000,
         '보조 모델이 90초 안에 응답하지 않았습니다.'
       );
+      const providerError = auxiliaryProviderError(result);
+      if (providerError) throw providerError;
+      runtime.auxProviderUnavailable = false;
+      runtime.auxProviderError = '';
       runtime.auxLast = { state: 'done', label: '보조 모델 응답 수신', at: Date.now(), events: null };
       return result;
     } catch (error) {
+      const providerError = auxiliaryProviderError(error) || error;
+      if (providerError?.code === 'AUX_PROVIDER_UNAVAILABLE') {
+        runtime.auxProviderUnavailable = true;
+        runtime.auxProviderError = providerError.message;
+      }
       runtime.auxLast = { state: 'failed', label: '보조 모델 호출 실패', at: Date.now(), events: null };
-      throw error;
+      throw providerError;
     } finally {
       runtime.auxActive = Math.max(0, runtime.auxActive - 1);
       await syncAuxIndicator();
@@ -1099,6 +1116,7 @@ ${codexPageStyle()}
     runtime.debugEnabled = settings.debugEnabled;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
     if (settings.auxOutput === 'off' && !force) return [];
+    if (runtime.auxProviderUnavailable && !force) return [];
     const index = assistantMessageIndex(ctx.chat, messageIndex);
     if (index < 0) return null;
     const source = messageData(ctx.chat.message[index]);
@@ -1229,7 +1247,7 @@ ${codexPageStyle()}
         runtime.status = '보조 출력 실패';
         await setAuxOutcome('failed', `보조 검사 실패 · ${String(error?.message || error).slice(0, 80)}`);
       }
-      return null;
+      return error?.code === 'AUX_PROVIDER_UNAVAILABLE' ? [] : null;
     });
   }
 

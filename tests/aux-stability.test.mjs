@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 async function bootWithOutput(data, options = {}) {
   let chat = { id: 'chat-guard', isStreaming: false, message: [...(options.prefixMessages || []), { role: 'char', data, metadata: { bgContinue: false } }], scriptstate: { ...(options.scriptstate || {}) } };
   let modelCalls = 0, chatWrites = 0;
-  const prompts = [];
+  const prompts = [], requests = [];
   const storage = new Map(), handlers = {}, replacers = {}, intervals = [];
   const Risuai = {
     pluginStorage: { getItem: async (key) => storage.get(key) ?? null, setItem: async (key, value) => storage.set(key, value) },
@@ -32,7 +32,7 @@ async function bootWithOutput(data, options = {}) {
     unregisterUIPart: async () => {},
     getRootDocument: async () => null,
     runLLMModel: async (request) => {
-      modelCalls += 1; prompts.push(request?.messages?.[0]?.content || '');
+      modelCalls += 1; requests.push(structuredClone(request)); prompts.push(request?.messages?.[0]?.content || '');
       if (options.failFirst && modelCalls === 1) throw new Error('temporary aux failure');
       if (Array.isArray(options.modelOutputs)) return options.modelOutputs[modelCalls - 1] ?? 'NONE';
       if (options.modelOutput != null) return options.modelOutput;
@@ -57,7 +57,7 @@ async function bootWithOutput(data, options = {}) {
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   }
   return {
-    get modelCalls() { return modelCalls; }, get chatWrites() { return chatWrites; }, storage, prompts,
+    get modelCalls() { return modelCalls; }, get chatWrites() { return chatWrites; }, storage, prompts, requests,
     chat: () => structuredClone(chat),
     setLatestData: (value) => { chat.message.at(-1).data = value; },
     advance: (ms) => { now += ms; }, intervals
@@ -145,6 +145,23 @@ test('failed catch-up is retried after bounded backoff instead of being stamped 
   await result.intervals.find(({ ms }) => ms === 4500).fn();
   await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   assert.equal(result.modelCalls, 2);
+});
+
+test('missing auxiliary plugin provider is quarantined without leaking or repeated automatic calls', async () => {
+  const providerFailure = {
+    type: 'fail',
+    result: 'Unknown Plugin detected. Please change the model or enable the corresponding plugin.'
+  };
+  const result = await bootWithOutput('보조 검사가 필요한 완결 서술.', { modelOutput: providerFailure });
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.requests[0].allowPlugins, true);
+  assert.equal(result.chatWrites, 0);
+  assert.doesNotMatch(result.chat().message[0].data, /Unknown Plugin detected/);
+  result.advance(120000);
+  await result.intervals.find(({ ms }) => ms === 4500).fn();
+  await new Promise((resolveWait) => setTimeout(resolveWait, 500));
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.chatWrites, 0);
 });
 
 test('zero-event automatic auxiliary remembers the guard without rewriting chat', async () => {
