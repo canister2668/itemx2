@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.27$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.27$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.28$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.28$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 27"/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 28"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -26,6 +26,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /function processTransportStripper\(content\)/);
   assert.match(source, /content: processTransportStripper\(message\.content\)/);
   assert.match(source, /function requestEndsWithModelTurn\(messages\)/);
+  assert.match(source, /Array\.isArray\(last\.multimodals\) && last\.multimodals\.length > 0/);
   assert.match(source, /return requestEndsWithModelTurn\(messages\) \? \[\.\.\.messages, protocol\] : \[protocol, \.\.\.messages\]/);
   assert.equal(source.includes('ITEMXCodex.requestView(ITEMXCore.requestView(message.content))'), false);
   assert.match(source, /API method addRisuChatListener not found/);
@@ -312,6 +313,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(rootInventory.includes("'fullscreen'"), false);
   assert.match(source, /button\[aria-label="ITEMX"\]/);
   assert.match(source, /badgePosition/);
+  assert.match(source, /badgePosition: 'rm'/);
+  assert.match(source, /positions\[runtime\.badgePosition\] \|\| positions\.rm/);
   assert.match(source, /좌하/);
   assert.match(source, /우상/);
   assert.match(source, /await runtime\.rootDrawer\.addClass\(`x-risu-itemx2-pos-\$\{key\}`\)/);

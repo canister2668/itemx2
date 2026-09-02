@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.27\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.28\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,7 +43,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.27');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.28');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -91,6 +91,12 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     } else googleRoles.push(message.role === 'assistant' ? 'model' : 'user');
   }
   assert.equal(googleRoles.at(-1), 'user', 'upstream Risu Google conversion must not emit a request ending in model');
+  const multimodalTail = await replacers.beforeRequest([
+    { role: 'user', content: '이미지를 본다.' },
+    { role: 'system', content: '후행 이미지 문맥', multimodals: [{ type: 'image', base64: 'data:image/png;base64,AA==' }] }
+  ], 'main');
+  assert.equal(multimodalTail.at(-1).role, 'system');
+  assert.equal(multimodalTail.at(-1).multimodals, undefined, 'protocol guard itself must remain a plain text turn');
   assert.equal(/<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(request.slice(1).map((one) => one.content).join('\n')), false);
   const display = await handlers.display(cleaned);
   assert.match(display, /itemx-card/);
