@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+await import('./render-actual-settings.mjs');
 
 const moduleValue = process.env.ITEMX_PLAYWRIGHT_CJS
   ? createRequire(import.meta.url)(process.env.ITEMX_PLAYWRIGHT_CJS)
@@ -23,7 +24,7 @@ async function open(file, viewport = { width: 430, height: 920 }) {
   await page.goto(pathToFileURL(resolve(root, file)).href);
   if (process.env.ITEMX_EMOJI_FONT) {
     const fontUrl = pathToFileURL(resolve(process.env.ITEMX_EMOJI_FONT)).href;
-    await page.addStyleTag({ content: `@font-face{font-family:ItemxCaptureEmoji;src:url('${fontUrl}') format('truetype')} .avatar,.event-icon,.tile-icon,.main-tab span,.itemx-emoji,.itemx-tile-em,.itemx-codex-glyph,.detail-icon{font-family:ItemxCaptureEmoji,"Noto Color Emoji",sans-serif!important}` });
+    await page.addStyleTag({ content: `@font-face{font-family:ItemxCaptureEmoji;src:url('${fontUrl}') format('truetype')} .avatar,.event-icon,.tile-icon,.main-tab span,.itemx-emoji,.itemx-tile-em,.itemx-codex-glyph,.detail-icon,.x-risu-itemx2-inline-icon>span,.x-risu-itemx-main-tab,.x-risu-itemx-ph-btn{font-family:ItemxCaptureEmoji,"Noto Color Emoji",sans-serif!important}` });
   }
   await page.emulateMedia({ reducedMotion: 'no-preference', colorScheme: 'dark' });
   return page;
@@ -39,8 +40,8 @@ async function shot(page, selector, name) {
 }
 
 {
-  const page = await open('design/codex-inline-event-demo.html', { width: 760, height: 1320 });
-  await shot(page, '.chat', '01-inline-events.png');
+  const page = await open('design/itemx-inline-actual.html', { width: 520, height: 420 });
+  await shot(page, '.chattext', '01-inline-events.png');
 }
 
 {
@@ -82,10 +83,8 @@ async function shot(page, selector, name) {
 }
 
 {
-  const page = await open('design/codex-skills-bestiary-tabs-demo.html', { width: 520, height: 920 });
-  await page.click('[data-view="settings"]');
-  await page.waitForTimeout(80);
-  await shot(page, '.codex-panel', '07-settings-permissions.png');
+  const page = await open('design/itemx-settings-actual.html', { width: 520, height: 920 });
+  await shot(page, '.x-risu-itemx2-root-panel', '07-settings-permissions.png');
 }
 
 for (const preview of [
