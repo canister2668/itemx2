@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.26\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.27\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,7 +43,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.26');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.27');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -78,6 +78,19 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(request[0].role, 'system');
   assert.match(request[0].content, /runtime_blade/);
   assert.equal(request[1].content.includes('<!--ITEMX2:'), false);
+  const continuationRequest = await replacers.beforeRequest([{ role: 'system', content: '원래 지침' }, { role: 'assistant', content: '이어 쓸 문장' }], 'main');
+  assert.equal(continuationRequest.at(-1).role, 'system', 'a trailing protocol turn lets Risu Google formatting finish on user instead of model');
+  assert.equal(continuationRequest.at(-2).role, 'assistant');
+  assert.match(continuationRequest.at(-1).content, /ITEMX/);
+  const googleInput = structuredClone(continuationRequest);
+  if (googleInput[0]?.role === 'system') googleInput.shift();
+  const googleRoles = [];
+  for (const message of googleInput) {
+    if (message.role === 'system') {
+      if (googleRoles.at(-1) !== 'user') googleRoles.push('user');
+    } else googleRoles.push(message.role === 'assistant' ? 'model' : 'user');
+  }
+  assert.equal(googleRoles.at(-1), 'user', 'upstream Risu Google conversion must not emit a request ending in model');
   assert.equal(/<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(request.slice(1).map((one) => one.content).join('\n')), false);
   const display = await handlers.display(cleaned);
   assert.match(display, /itemx-card/);

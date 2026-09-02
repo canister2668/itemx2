@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.26$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.26$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.27$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.27$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 26"/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 27"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -25,6 +25,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /removeRisuScriptHandler\('process', processHandler\)/);
   assert.match(source, /function processTransportStripper\(content\)/);
   assert.match(source, /content: processTransportStripper\(message\.content\)/);
+  assert.match(source, /function requestEndsWithModelTurn\(messages\)/);
+  assert.match(source, /return requestEndsWithModelTurn\(messages\) \? \[\.\.\.messages, protocol\] : \[protocol, \.\.\.messages\]/);
   assert.equal(source.includes('ITEMXCodex.requestView(ITEMXCore.requestView(message.content))'), false);
   assert.match(source, /API method addRisuChatListener not found/);
   assert.match(source, /runtime\.hooks\.listener = 'unsupported'/);

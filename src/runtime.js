@@ -1259,6 +1259,20 @@ ${codexPageStyle()}
     return !/(translate|emotion|memory|otherax|aux|submodel|image|tts)/i.test(String(type || ''));
   }
 
+  function requestEndsWithModelTurn(messages) {
+    if (!Array.isArray(messages) || !messages.length) return false;
+    const role = String(messages[messages.length - 1]?.role || '').trim();
+    return /^(?:assistant|model|char)$/i.test(role);
+  }
+
+  function injectRequestProtocol(messages, instruction) {
+    const protocol = { role: 'system', content: instruction, name: 'ITEMX_2_PROTOCOL' };
+    // Risu's Google formatter converts a non-leading system turn following a
+    // model turn into a user turn. This preserves continuation semantics while
+    // satisfying Gemini's requirement that requests never end with model.
+    return requestEndsWithModelTurn(messages) ? [...messages, protocol] : [protocol, ...messages];
+  }
+
   function anchorText(value) {
     return String(value || '').toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
   }
@@ -1444,7 +1458,7 @@ ${codexPageStyle()}
       const moduleAssets = await modulePortraitAssets(settings, loaded.character, loaded.chat);
       const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets)}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
       debugRecord('beforeRequest', { items: settings.itemsEnabled, skills: settings.skillsEnabled, encounters: settings.encountersEnabled, messages: safeMessages.length });
-      return [{ role: 'system', content: instruction, name: 'ITEMX_2_PROTOCOL' }, ...safeMessages];
+      return injectRequestProtocol(safeMessages, instruction);
     } catch (error) { fail('beforeRequest', error); return safeMessages; }
   };
 
