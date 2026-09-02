@@ -395,6 +395,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{left:50%;top:18%;width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);transform:translate3d(-50%,0,0);animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}
 .itemx2-encounter-hero-fx{--fx:#bf687a;--fx2:#73849f;--fx-duration:6s}.itemx2-encounter-hero-fx i{inset:12% 18%;border:1px solid color-mix(in srgb,var(--fx) 48%,transparent);border-radius:50%;box-shadow:0 0 30px color-mix(in srgb,var(--fx) 25%,transparent);animation:itemx2-codex-spin var(--fx-duration) linear infinite}.itemx2-encounter-hero-fx b{inset:27% 8%;background:repeating-conic-gradient(from 20deg,color-mix(in srgb,var(--fx2) 32%,transparent) 0 2deg,transparent 2deg 31deg);mask:radial-gradient(circle,transparent 54%,#000 56% 58%,transparent 60%);animation:itemx2-codex-spin calc(var(--fx-duration) * 1.45) linear infinite reverse}.itemx2-encounter-hero-fx em{left:8%;right:8%;bottom:5%;height:34%;background:radial-gradient(ellipse at 50% 100%,color-mix(in srgb,var(--fx) 28%,transparent),transparent 68%);filter:blur(8px);animation:itemx2-codex-breathe calc(var(--fx-duration) * .75) ease-in-out infinite}
 .itemx2-encounter-theme-beast{--fx:#e7aa61;--fx2:#d85d4d}.itemx2-encounter-theme-undead{--fx:#8ed9c2;--fx2:#7c62a8}.itemx2-encounter-theme-construct{--fx:#75b9d6;--fx2:#b3ccd4}.itemx2-encounter-theme-dragon{--fx:#ff674b;--fx2:#efb74e}.itemx2-encounter-theme-aquatic{--fx:#49c9dc;--fx2:#557fe9}.itemx2-encounter-theme-insect{--fx:#9bc15e;--fx2:#d8b85a}.itemx2-encounter-theme-humanoid,.itemx2-encounter-theme-unknown{--fx:#bf687a;--fx2:#73849f}.itemx2-encounter-list-fx{opacity:.82;animation:itemx2-codex-breathe 6s ease-in-out infinite}.itemx2-encounter-theme-beast.itemx2-encounter-list-fx{background:linear-gradient(115deg,transparent 68%,color-mix(in srgb,var(--fx) 20%,transparent)),repeating-linear-gradient(70deg,transparent 0 13px,color-mix(in srgb,var(--fx2) 14%,transparent) 14px 15px)}.itemx2-encounter-theme-undead.itemx2-encounter-list-fx,.itemx2-encounter-theme-aquatic.itemx2-encounter-list-fx{background:radial-gradient(ellipse at 85% 80%,color-mix(in srgb,var(--fx) 30%,transparent),transparent 48%)}.itemx2-encounter-theme-construct.itemx2-encounter-list-fx{background:repeating-linear-gradient(90deg,transparent 0 20px,color-mix(in srgb,var(--fx) 11%,transparent) 21px),repeating-linear-gradient(0deg,transparent 0 15px,color-mix(in srgb,var(--fx2) 8%,transparent) 16px)}.itemx2-encounter-theme-dragon.itemx2-encounter-list-fx{background:radial-gradient(circle at 90% 50%,color-mix(in srgb,var(--fx) 32%,transparent),transparent 38%)}.itemx2-encounter-theme-insect.itemx2-encounter-list-fx{background:radial-gradient(circle at 82% 32%,color-mix(in srgb,var(--fx) 30%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 94% 61%,color-mix(in srgb,var(--fx2) 26%,transparent) 0 2px,transparent 3px)}.itemx2-threat-1.itemx2-encounter-list-fx{opacity:.88}.itemx2-threat-2.itemx2-encounter-list-fx,.itemx2-threat-2 .itemx2-encounter-hero-fx{filter:brightness(1.12)}.itemx2-threat-3.itemx2-encounter-list-fx,.itemx2-threat-3 .itemx2-encounter-hero-fx{filter:brightness(1.28) saturate(1.18)}.itemx2-encounter-warning .itemx2-encounter-hero-fx::after{content:'';position:absolute;left:0;right:0;top:12%;height:2px;background:linear-gradient(90deg,transparent,#ff637c,transparent);box-shadow:0 0 16px #ff3d60;animation:itemx2-codex-warning 3s ease-in-out infinite}.itemx2-encounter-sparring{--fx:#6eb8ee;--fx2:#d4b96a}.itemx-monster-hero.itemx2-encounter-ended{border-color:#3f4652;background:radial-gradient(circle at 50% 40%,rgba(118,126,139,.14),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(130,138,150,.025) 23px),linear-gradient(145deg,#171b22,#090d13 72%);box-shadow:inset 0 0 54px rgba(105,115,130,.09),0 12px 34px rgba(0,0,0,.38)}.itemx2-encounter-ended.itemx2-encounter-list-fx,.itemx2-encounter-ended .itemx2-encounter-hero-fx{opacity:.34;filter:grayscale(.65)}.itemx2-encounter-ended .itemx-monster-portrait{opacity:.72;filter:grayscale(.82) saturate(.28) contrast(1.04)}.itemx2-encounter-ended .itemx-codex-hero-copy{opacity:.72}.itemx2-encounter-ended,.itemx2-encounter-ended *{animation-play-state:paused!important}@keyframes itemx2-codex-spin{to{transform:rotate(360deg)}}@keyframes itemx2-codex-breathe{0%,100%{opacity:.42}50%{opacity:1}}@keyframes itemx2-codex-warning{0%,100%{opacity:.15;transform:translateY(0)}50%{opacity:.9;transform:translateY(130px)}}
+.itemx-monster-hero.itemx2-encounter-ended::before{border-color:rgba(139,147,160,.22);background:repeating-conic-gradient(from 0deg,rgba(151,159,171,.18) 0 1.5deg,transparent 1.5deg 22deg);animation-play-state:paused!important}.itemx-monster-hero.itemx2-encounter-ended::after,.itemx2-encounter-ended .itemx2-encounter-hero-fx::after{background:linear-gradient(90deg,transparent,#8b94a3,transparent);box-shadow:0 0 14px rgba(125,135,150,.42);animation-play-state:paused!important}
 .itemx2-encounter-outcome{position:relative;overflow:hidden;border-color:#453b31;background:radial-gradient(ellipse at 92% 14%,rgba(205,157,76,.11),transparent 42%),linear-gradient(145deg,#151711,#0d1118 72%)}.itemx2-encounter-outcome::after{content:'';position:absolute;right:-18px;bottom:-24px;width:98px;height:72px;border-radius:55% 45% 48% 52%;background:radial-gradient(ellipse,rgba(180,119,57,.13),transparent 68%);pointer-events:none}.itemx2-encounter-outcome-head{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px}.itemx2-encounter-outcome-head h4{color:#e8c98d}.itemx2-encounter-outcome-head i{padding:3px 7px;border:1px solid rgba(205,166,98,.28);border-radius:999px;background:rgba(55,43,23,.45);color:#d9bb82;font-size:.58rem;font-style:normal}.itemx2-encounter-outcome p{position:relative;z-index:1;color:#d3d8df}
 @keyframes itemx2-fire-breathe{from{opacity:.52;transform:translate3d(-2px,5px,0) scale(.96,1)}to{opacity:.88;transform:translate3d(3px,-4px,0) scale(1.04,1.06)}}@keyframes itemx2-fire-embers{from{opacity:.2;transform:translate3d(0,12px,0)}45%{opacity:.8}to{opacity:.08;transform:translate3d(5px,-20px,0)}}@keyframes itemx2-ice-float{from{opacity:.42;transform:translate3d(-3px,3px,0) rotate(-1.2deg)}to{opacity:.68;transform:translate3d(3px,-3px,0) rotate(1.4deg)}}@keyframes itemx2-lightning-quiet{0%,15%,19%,71%,75%,100%{opacity:.45}16%,18%,72%,74%{opacity:.9}}@keyframes itemx2-lightning-strike{0%,12%,17%,63%,68%,100%{opacity:.08}13%,16%,64%,67%{opacity:.84}}@keyframes itemx2-dark-draw{from{opacity:.35;transform:translate3d(-3px,1px,0) scale(1.04)}to{opacity:.66;transform:translate3d(4px,-2px,0) scale(.94)}}@keyframes itemx2-light-drift{from{opacity:.3;transform:translate3d(-2px,2px,0) scale(.98)}to{opacity:.64;transform:translate3d(3px,-2px,0) scale(1.03)}}@keyframes itemx2-arcane-parallax{from{opacity:.38;transform:translate3d(-3px,2px,0)}to{opacity:.68;transform:translate3d(4px,-3px,0)}}@keyframes itemx2-undead-haze{from{opacity:.32;transform:translate3d(-5px,2px,0)}to{opacity:.58;transform:translate3d(6px,-2px,0)}}@keyframes itemx2-construct-scan{0%,100%{opacity:.18;transform:translateY(-20px)}50%{opacity:.78;transform:translateY(116px)}}@keyframes itemx2-aquatic-caustic{from{opacity:.34;transform:translate3d(-3px,2px,0)}to{opacity:.6;transform:translate3d(4px,-3px,0)}}@keyframes itemx2-insect-drift{from{opacity:.35;transform:translate3d(-3px,2px,0)}to{opacity:.57;transform:translate3d(4px,-2px,0)}}@keyframes itemx2-combat-warning{0%,100%{opacity:.12;transform:translateY(0)}50%{opacity:.78;transform:translateY(132px)}}
 .itemx2-effects-off .itemx2-codex-fx{display:none!important;animation:none!important}.itemx2-effects-off .itemx2-codex-fx *{animation:none!important}@media(prefers-reduced-motion:reduce){.itemx2-codex-fx,.itemx2-codex-fx *,.itemx2-skill-weapon-fx,.itemx2-skill-weapon-fx *{animation:none!important}}
@@ -1803,6 +1804,48 @@ ${codexPageStyle()}
     }
   }
 
+  async function callOptionalRisuApi(name, ...args) {
+    try {
+      const method = Risuai[name];
+      if (typeof method !== 'function') return { available: false, value: undefined };
+      return { available: true, value: await method(...args) };
+    } catch (error) {
+      if (/API method\s+\S+\s+not found/i.test(String(error?.message || error || ''))) {
+        return { available: false, value: undefined };
+      }
+      throw error;
+    }
+  }
+
+  async function notifyUser(message, tone = 'error') {
+    if (await showRootFeedback(message, tone, tone === 'error' ? 4200 : 2600)) return true;
+    for (const name of tone === 'error' ? ['alertError', 'alertNormal', 'alert'] : ['alertNormal', 'alert', 'alertError']) {
+      try {
+        const result = await callOptionalRisuApi(name, message);
+        if (result.available) return true;
+      } catch (error) {
+        fail(`optional notification ${name}`, error);
+      }
+    }
+    log(message);
+    return false;
+  }
+
+  async function confirmUser(message) {
+    try {
+      const result = await callOptionalRisuApi('alertConfirm', message);
+      if (result.available) return result.value === true;
+    } catch (error) {
+      fail('optional confirmation', error);
+    }
+    try {
+      if (typeof globalThis.confirm === 'function') return globalThis.confirm(message) === true;
+    } catch (error) {
+      fail('browser confirmation', error);
+    }
+    return false;
+  }
+
   function scheduleHostDomSync(delayMs = 320) {
     if (runtime.hostSyncTimer) globalThis.clearTimeout(runtime.hostSyncTimer);
     runtime.hostSyncTimer = globalThis.setTimeout(async () => {
@@ -2380,7 +2423,7 @@ ${codexPageStyle()}
                       await commitManualEvents(loaded, [itemEvent], note ? '정보 수정' : '재감정');
                     } catch (error) {
                       runtime.status = '재감정 실패';
-                      if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`);
+                      await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                     }
                     await openRootInventory({ open: true, tab: 'settings' });
                     return;
@@ -2391,10 +2434,10 @@ ${codexPageStyle()}
                   const rect = await remove.getBoundingClientRect();
                   if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
                     if (target.possession === 'removed') return;
-                    if (typeof Risuai.alertConfirm === 'function' && !(await Risuai.alertConfirm(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
+                    if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
                     const itemEvent = { kind: 'patch', patch: { id: target.id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null } };
                     try { await commitManualEvents(loaded, [itemEvent], '수동 제거'); }
-                    catch (error) { runtime.status = '수동 제거 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); }
+                    catch (error) { runtime.status = '수동 제거 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); }
                     await openRootInventory({ open: true, tab: 'settings' });
                     return;
                   }
@@ -2406,14 +2449,14 @@ ${codexPageStyle()}
                 if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
                   const createNoteElement = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-note');
                   const createNote = (await createNoteElement?.textContent())?.trim() || '';
-                  if (!createNote) { if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.'); return; }
+                  if (!createNote) { await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error'); return; }
                   runtime.status = '신규 아이템 생성 중';
                   try {
                     const itemEvent = await runItemModel('create', loaded, null, createNote);
                     await commitManualEvents(loaded, [itemEvent], '신규 생성');
                   } catch (error) {
                     runtime.status = '아이템 생성 실패';
-                    if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`);
+                    await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
                   return;
@@ -2440,9 +2483,7 @@ ${codexPageStyle()}
               } else {
                 await showRootFeedback(`연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`, 'error', 3600);
               }
-              if ((!connected || !styled) && typeof Risuai.alertError === 'function') {
-                await Risuai.alertError(`ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`);
-              }
+              if (!connected || !styled) await notifyUser(`ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`, 'error');
             } finally {
               runtime.connectionBusy = false;
               await updateConnectionUi();
@@ -2608,7 +2649,7 @@ ${codexPageStyle()}
                 await setModuleAssetsEnabled(loaded.character, false);
               } else {
                 value = await enableModuleAssets(loaded.character, loaded.chat);
-                if (!value && typeof Risuai.alertError === 'function') await Risuai.alertError('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.');
+                if (!value) await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
               }
               loaded.moduleAssetsEnabled = value;
               runtime.status = value ? '모듈 에셋 초상화 · ON' : current.moduleAssetsEnabled ? '모듈 에셋 초상화 · OFF' : '모듈 에셋 권한 없음 · 이모지 폴백';
@@ -2659,7 +2700,7 @@ ${codexPageStyle()}
               runtime.cleanupArmedUntil = 0;
               runtime.status = '현재 채팅 정리 실패';
               await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
-              if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 정리 실패: ${error.message || error}`);
+              await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
             }
             return;
           }
@@ -2706,7 +2747,7 @@ ${codexPageStyle()}
       const styled = await installMainStyle({ prompt: true });
       if (!styled || !runtime.mainDoc) {
         runtime.status = '메인 화면 권한 필요';
-        if (typeof Risuai.alertError === 'function') await Risuai.alertError('ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.');
+        await notifyUser('ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.', 'error');
         return;
       }
       let root = runtime.rootDrawer, attached = false;
@@ -2813,7 +2854,7 @@ ${codexPageStyle()}
       const enabled = await enableModuleAssets(loaded.character, loaded.chat);
       loaded.moduleAssetsEnabled = enabled;
       runtime.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
-      if (!enabled && typeof Risuai.alertError === 'function') await Risuai.alertError('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.');
+      if (!enabled) await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
       drawInventory(loaded);
     });
     root.querySelector('[data-action="font-scale"]')?.addEventListener('change', async (event) => { const value = event.target.value; await setFontScale(loaded.character, value); loaded.fontScale = value; runtime.status = `글자 크기 · ${{small:'소',medium:'중',large:'대'}[value]}`; drawInventory(loaded); });
@@ -2830,22 +2871,22 @@ ${codexPageStyle()}
         if (result.loaded) drawInventory(result.loaded);
       } catch (error) {
         runtime.cleanupArmedUntil = 0; runtime.status = '현재 채팅 정리 실패';
-        if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 정리 실패: ${error.message || error}`);
+        await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
         drawInventory(loaded);
       }
     });
     root.querySelector('[data-action="permissions"]')?.addEventListener('click', async () => {
       runtime.status = '모델 처리 권한 확인 중'; drawInventory(loaded);
       const connected = await installPipelineHooks({ prompt: true });
-      if (connected && typeof Risuai.alert === 'function') await Risuai.alert('ITEMX CODEX 모델 처리 권한이 연결되었습니다.');
-      else if (!connected && typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`);
+      if (connected) await notifyUser('ITEMX CODEX 모델 처리 권한이 연결되었습니다.', 'success');
+      else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`, 'error');
       const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
     });
     root.querySelector('[data-action="style"]')?.addEventListener('click', async () => {
       runtime.status = '본문 화면 연결 중'; drawInventory(loaded);
       const styled = await installMainStyle({ prompt: true });
-      if (styled && typeof Risuai.alert === 'function') await Risuai.alert('ITEMX CODEX 본문 화면 연결이 완료되었습니다.');
-      else if (!styled && typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`);
+      if (styled) await notifyUser('ITEMX CODEX 본문 화면 연결이 완료되었습니다.', 'success');
+      else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`, 'error');
       drawInventory(loaded);
     });
     root.querySelector('[data-action="badge-position"]')?.addEventListener('change', async (event) => { const value = event.target.value; if (!BADGE_POSITIONS.some(([key]) => key === value)) return; runtime.badgePosition = value; await Risuai.pluginStorage.setItem('badgePosition', value); if (runtime.rootDrawer) { for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`); await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`); } await installMainStyle(); runtime.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`; drawInventory(loaded); });
@@ -2853,11 +2894,11 @@ ${codexPageStyle()}
     root.querySelector('[data-action="manage-remove"]')?.addEventListener('click', async () => {
       try {
         const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId); if (!target) throw new Error('대상 아이템이 없습니다.');
-        if (typeof Risuai.alertConfirm === 'function' && !(await Risuai.alertConfirm(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
+        if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
         runtime.status = '수동 제거 처리 중'; drawInventory(loaded);
         const event = { kind: 'patch', patch: { id: target.id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null } };
         const next = await commitManualEvents(loaded, [event], '수동 제거'); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '수동 제거 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); drawInventory(loaded); }
+      } catch (error) { runtime.status = '수동 제거 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); drawInventory(loaded); }
     });
     root.querySelector('[data-action="manage-reroll"]')?.addEventListener('click', async () => {
       try {
@@ -2866,7 +2907,7 @@ ${codexPageStyle()}
         runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중'; drawInventory(loaded);
         const event = await runItemModel('reroll', loaded, target, note);
         const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정'); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '재감정 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); drawInventory(loaded); }
+      } catch (error) { runtime.status = '재감정 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); drawInventory(loaded); }
     });
     root.querySelector('[data-action="manage-create"]')?.addEventListener('click', async () => {
       try {
@@ -2874,7 +2915,7 @@ ${codexPageStyle()}
         runtime.status = '신규 아이템 생성 중'; drawInventory(loaded);
         const event = await runItemModel('create', loaded, null, note);
         const next = await commitManualEvents(loaded, [event], '신규 생성'); ui.manageId = event.item.id; if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '아이템 생성 실패'; if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX: ${error.message || error}`); drawInventory(loaded); }
+      } catch (error) { runtime.status = '아이템 생성 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); drawInventory(loaded); }
     });
     root.querySelectorAll('[data-tab]').forEach((el) => el.addEventListener('click', () => {
       if (ui.tab === el.dataset.tab) return;
@@ -2963,8 +3004,7 @@ ${codexPageStyle()}
       invalidateHostSettingsVisibility();
       runtime.status = '채팅 진입 대기';
       const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
-      if (typeof Risuai.alertNormal === 'function') await Risuai.alertNormal(message);
-      else if (typeof Risuai.alertError === 'function') await Risuai.alertError(message);
+      await notifyUser(message, 'error');
       return;
     }
     runtime.activeContextKey = active.key;
@@ -3085,7 +3125,7 @@ ${codexPageStyle()}
   } catch (error) {
     runtime.status = '초기화 오류';
     await removeRootDrawer();
-    if (typeof Risuai.alertError === 'function') await Risuai.alertError(`ITEMX CODEX 초기화 실패: ${error.message || error}`);
+    await notifyUser(`ITEMX CODEX 초기화 실패: ${error.message || error}`, 'error');
     fail('bootstrap', error);
   }
 

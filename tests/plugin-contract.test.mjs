@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.25$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.25$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.26$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.26$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 25"/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 26"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -31,6 +31,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /scheduleLegacyCommitRecovery/);
   assert.match(source, /연결 및 권한/);
   assert.match(source, /ITEMX CODEX 연결 및 권한 확인 완료/);
+  assert.match(source, /async function callOptionalRisuApi\(name, \.\.\.args\)/);
+  assert.equal(/Risuai\.(?:alertNormal|alertError|alertConfirm|alert)\b/.test(source), false, 'undocumented host alert APIs must never be called directly');
   assert.match(source, /ITEMX CODEX 초기화 중…/);
   assert.match(source, /itemx2-boot-card/);
   assert.match(source, /itemx2-feedback-success/);
@@ -168,6 +170,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(/\.itemx2-threat-3\{filter:brightness/.test(source), false);
   assert.match(source, /\.itemx2-encounter-ended \.itemx-monster-portrait\{opacity:\.72;filter:grayscale\(\.82\) saturate\(\.28\) contrast\(1\.04\)\}/);
   assert.match(source, /\.itemx-monster-hero\.itemx2-encounter-ended\{border-color:#3f4652;background:radial-gradient/);
+  assert.match(source, /\.itemx-monster-hero\.itemx2-encounter-ended::before\{[^}]*animation-play-state:paused!important\}/);
+  assert.match(source, /\.itemx-monster-hero\.itemx2-encounter-ended::after,\.itemx2-encounter-ended \.itemx2-encounter-hero-fx::after\{background:linear-gradient\(90deg,transparent,#8b94a3,transparent\);[^}]*animation-play-state:paused!important\}/);
   assert.match(source, /querySelector\(`\.x-risu-\$\{className\}`\)[\s\S]*querySelector\(`\.\$\{className\}`\)/);
   assert.equal(source.includes('renderCard(detailItems[index]'), false);
   assert.match(source, /hasFullCard \? ITEMX_CHAT_STYLE : ITEMX_CHIP_STYLE/);

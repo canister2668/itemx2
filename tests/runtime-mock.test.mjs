@@ -32,7 +32,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     getRootDocument: async () => null,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
-      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.25\n' };
+      return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.26\n' };
     },
     onUnload: async () => {},
     showContainer: async () => {},
@@ -43,7 +43,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.25');
+  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.26');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -106,13 +106,14 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
 
 test('Home route stays idle until a chat exists instead of reading chatPage', async () => {
   const bootOrder = [], intervals = [];
-  const Risuai = {
+  let settingHandler = null;
+  const api = {
     pluginStorage: { getItem: async () => null, setItem: async () => {} },
     safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
     getCurrentCharacterIndex: async () => { throw new TypeError("Cannot read properties of undefined (reading 'chatPage')"); },
     getCurrentChatIndex: async () => { throw new TypeError("Cannot read properties of undefined (reading 'chatPage')"); },
     getCharacter: async () => null,
-    registerSetting: async () => { bootOrder.push('setting'); return { id: 'setting' }; },
+    registerSetting: async (_name, onClick) => { settingHandler = onClick; bootOrder.push('setting'); return { id: 'setting' }; },
     requestPluginPermission: async () => { bootOrder.push('permission'); return true; },
     getRootDocument: async () => { bootOrder.push('root-document'); return null; },
     addRisuScriptHandler: async () => { bootOrder.push('script-handler'); },
@@ -121,6 +122,12 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
     onUnload: async () => {},
     hideContainer: async () => {}
   };
+  const Risuai = new Proxy(api, {
+    get(target, property) {
+      if (property in target) return target[property];
+      return async () => { throw new Error(`API method ${String(property)} not found`); };
+    }
+  });
   const sandbox = vm.createContext({
     console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
     setInterval: (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; }, clearInterval: () => {},
@@ -129,6 +136,7 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
   assert.deepEqual(bootOrder, ['setting', 'script-handler', 'script-handler', 'script-handler']);
   assert.deepEqual(intervals.map((row) => row.ms), [1200, 4500, 30 * 60 * 1000]);
+  await assert.doesNotReject(() => settingHandler(), 'upstream web Risu must tolerate missing alertNormal/alertError APIs');
 });
 
 test('self-contained compact refs render on first display without hydrated chat state', async () => {
