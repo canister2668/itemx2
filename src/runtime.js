@@ -24,8 +24,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const queues = new Map();
   const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
-    status: 'UI 준비', lastDomError: '', lastHookError: '', hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
+    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
+    status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'lb', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] },
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
     auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
@@ -383,6 +383,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   const codexPageStyle = () => `
 .itemx-codex-page-active{display:grid!important}
+.itemx2-codex-detail-index{display:none!important}
 .itemx2-codex-card{position:relative;display:block;min-height:70px;border:1px solid #263247;border-radius:12px;background:linear-gradient(145deg,#121a28,#0b111b);overflow:hidden}.itemx2-codex-summary{position:relative;z-index:1;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(72px,auto);gap:10px;align-items:center;min-height:70px;padding:10px;cursor:pointer}.itemx2-codex-glyph{display:grid;place-items:center;width:48px;height:48px;border:1px solid #40506b;border-radius:11px;background:#0b111c;color:#dbe8ff;font-size:1.2rem}.itemx2-codex-copy{display:grid;gap:3px;min-width:0}.itemx2-codex-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#edf2fb;font-size:.82rem}.itemx2-codex-copy small{color:#8494ad;font-size:.66rem}.itemx2-codex-tags{display:flex;flex-wrap:wrap;gap:4px}.itemx2-codex-tags i{padding:2px 5px;border:1px solid #344259;border-radius:999px;color:#aebbd0;font-size:.58rem;font-style:normal}.itemx2-skill-meta{display:grid;grid-template-columns:auto auto;gap:2px 5px;align-items:center;padding:6px 7px;border:1px solid #2e3a50;border-radius:9px;background:rgba(9,14,23,.82);font-size:.58rem}.itemx2-skill-meta small{color:#6f809a}.itemx2-skill-meta b{color:#dce6f5;font-size:.62rem;text-align:right}.itemx2-mastery{grid-column:2/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.itemx2-mastery i{height:5px;border-radius:6px;background:#202a3a}.itemx2-mastery i.on{background:linear-gradient(90deg,#66b8ff,#a985ff);box-shadow:0 0 8px rgba(102,184,255,.35)}.itemx2-bestiary-card.active{border-color:#70404a;box-shadow:inset 3px 0 #b55b68}.itemx2-bestiary-card img{width:48px;height:48px;border-radius:11px;object-fit:cover}
 .itemx-codex-list{display:grid;gap:9px}.itemx-codex-list-button{width:100%;padding:0;border:0;color:inherit;text-align:left;font:inherit}.itemx2-codex-summary::after{content:'›';position:absolute;right:9px;bottom:5px;color:#71839f;font-size:.85rem;font-weight:900}.itemx-codex-page{position:relative;display:grid;gap:11px;min-height:100%;padding:2px 0 14px;animation:itemx-codex-page-in .22s cubic-bezier(.2,.78,.2,1) both}.itemx2-codex-page{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-summary{display:none}.itemx2-codex-entry-choice:checked~.itemx2-codex-page{display:grid}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note,.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-note{display:none}.itemx2-root-skills:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)),.itemx2-root-bestiary:has(.itemx2-codex-entry-choice:checked)>.itemx2-codex-entry:not(:has(.itemx2-codex-entry-choice:checked)){display:none}.itemx-codex-back{justify-self:start;display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border:1px solid #2d3a50;border-radius:9px;background:#101824;color:#c8d4e7;cursor:pointer;font:inherit;font-size:.7rem;font-weight:800}.itemx-codex-hero{position:relative;isolation:isolate;display:grid;place-items:center;min-height:218px;padding:24px 18px 20px;overflow:hidden;border:1px solid #33435d;border-radius:17px;background:radial-gradient(circle at 50% 45%,rgba(91,150,255,.19),transparent 31%),linear-gradient(145deg,#121b2b,#080d16 70%);box-shadow:inset 0 0 45px rgba(63,116,205,.1),0 12px 34px rgba(0,0,0,.32)}.itemx-codex-hero::before,.itemx-codex-hero::after{content:'';position:absolute;left:50%;top:44%;z-index:-1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.itemx-codex-hero::before{width:158px;height:158px;border:1px solid rgba(113,181,255,.34);background:repeating-conic-gradient(from 0deg,rgba(128,195,255,.28) 0 2deg,transparent 2deg 28deg);mask:radial-gradient(circle,transparent 53%,#000 54% 58%,transparent 59%);animation:itemx-codex-orbit 8s linear infinite}.itemx-codex-hero::after{width:112px;height:112px;border:1px solid rgba(173,139,255,.32);box-shadow:0 0 42px rgba(76,142,255,.2),inset 0 0 26px rgba(151,105,255,.12);animation:itemx-codex-orbit-reverse 5.5s linear infinite}.itemx-codex-hero-glyph{position:relative;z-index:2;display:grid;place-items:center;width:82px;height:82px;border:1px solid rgba(177,210,255,.55);border-radius:24px;background:radial-gradient(circle at 45% 38%,#263e62,#101827 68%);box-shadow:0 0 25px rgba(94,164,255,.28),inset 0 0 22px rgba(132,184,255,.16);color:#eff7ff;font-size:2.6rem;text-shadow:0 0 14px rgba(142,202,255,.8)}.itemx-codex-hero-copy{position:relative;z-index:2;display:grid;gap:5px;margin-top:18px;text-align:center}.itemx-codex-hero-copy small{color:#8fa4c4;font-size:.65rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.itemx-codex-hero-copy strong{color:#f3f7ff;font-size:1.08rem}.itemx-codex-hero-copy span{color:#9eb0ca;font-size:.68rem}.itemx-codex-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.itemx-codex-stat{display:grid;gap:4px;min-height:60px;padding:10px;border:1px solid #26344a;border-radius:11px;background:linear-gradient(145deg,#111a28,#0b111b)}.itemx-codex-stat small{color:#70819b;font-size:.59rem;font-weight:800}.itemx-codex-stat strong{color:#e8effa;font-size:.72rem;overflow-wrap:anywhere}.itemx-codex-section{display:grid;gap:7px;padding:12px;border:1px solid #243147;border-radius:12px;background:#0c131e;color:#becadd;font-size:.7rem;line-height:1.58}.itemx-codex-section h4{margin:0;color:#d9e6f8;font-size:.67rem;letter-spacing:.08em}.itemx-codex-section p{margin:0;white-space:pre-wrap}.itemx-codex-chip-row{display:flex;flex-wrap:wrap;gap:5px}.itemx-codex-chip-row i{padding:4px 7px;border:1px solid #34445e;border-radius:999px;background:#111a28;color:#b8c7dd;font-size:.61rem;font-style:normal}.itemx-codex-mastery{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.itemx-codex-mastery i{height:7px;border-radius:999px;background:#202b3c}.itemx-codex-mastery i.on{background:linear-gradient(90deg,#5cbcff,#a978ff);box-shadow:0 0 9px rgba(92,188,255,.42)}.itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{left:50%;top:18%;width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);transform:translate3d(-50%,0,0);will-change:transform,opacity;animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{position:relative;z-index:2;width:112px;height:112px;border:1px solid rgba(255,124,143,.58);border-radius:18px;object-fit:cover;box-shadow:0 0 0 5px rgba(93,24,35,.35),0 0 32px rgba(255,65,94,.3);filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}.itemx-threat-banner{position:absolute;left:10px;top:10px;z-index:3;padding:5px 8px;border:1px solid rgba(255,109,130,.48);border-radius:999px;background:rgba(41,10,17,.82);color:#ff9aab;font-size:.58rem;font-weight:900;letter-spacing:.12em}@keyframes itemx-codex-page-in{from{opacity:0;transform:translate3d(12px,0,0)}to{opacity:1;transform:none}}@keyframes itemx-codex-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes itemx-codex-orbit-reverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}@keyframes itemx-codex-scan{0%,100%{opacity:.2;transform:translate3d(-50%,0,0)}50%{opacity:1;transform:translate3d(-50%,132px,0)}}.itemx2-effects-off .itemx-fx,.itemx2-effects-off .itemx-cond,.itemx2-effects-off .itemx-codex-hero::before,.itemx2-effects-off .itemx-codex-hero::after,.itemx2-effects-off .itemx2-skill-card::after{display:none!important;animation:none!important}@media(prefers-reduced-motion:reduce){.itemx-codex-page,.itemx-codex-hero::before,.itemx-codex-hero::after{animation:none!important}}
 .itemx2-font-small{--itemx-ui-scale:1}.itemx2-font-medium{--itemx-ui-scale:1.12}.itemx2-font-large{--itemx-ui-scale:1.25}.itemx2-font-small,.itemx2-font-medium,.itemx2-font-large{--itemx-text-xs:calc(.62rem * var(--itemx-ui-scale));--itemx-text-sm:calc(.70rem * var(--itemx-ui-scale));--itemx-text-md:calc(.82rem * var(--itemx-ui-scale));--itemx-text-lg:calc(1.08rem * var(--itemx-ui-scale))}.itemx2-codex-copy strong{font-size:var(--itemx-text-md,.82rem)}.itemx-codex-hero-copy strong{font-size:var(--itemx-text-lg,1.08rem)}.itemx-codex-section{font-size:var(--itemx-text-sm,.7rem)}
@@ -393,7 +394,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx-skill-hero{border-color:color-mix(in srgb,var(--rk) 45%,#33435d);background:radial-gradient(ellipse at 50% 46%,color-mix(in srgb,var(--p) 15%,transparent),transparent 38%),linear-gradient(145deg,#141a28,#080c14 74%);box-shadow:inset 0 0 48px color-mix(in srgb,var(--pg) 26%,transparent),0 12px 34px rgba(0,0,0,.38)}.itemx-skill-hero .itemx2-skill-weapon-fx{z-index:0}.itemx-skill-hero .itemx-codex-hero-glyph{width:92px;height:92px;border-color:color-mix(in srgb,var(--rk) 62%,#58667d);border-radius:26px;background:radial-gradient(circle at 43% 36%,color-mix(in srgb,var(--p) 32%,#26364e),#0b111c 70%);box-shadow:0 0 0 4px color-mix(in srgb,var(--rk) 10%,transparent),0 0 34px color-mix(in srgb,var(--pg) 62%,transparent),inset 0 0 24px color-mix(in srgb,var(--p) 18%,transparent);text-shadow:0 0 17px color-mix(in srgb,var(--p) 80%,transparent)}.itemx-skill-hero.itemx2-skill-rank-normal .itemx-fx{opacity:.3}.itemx-skill-hero.itemx2-skill-rank-magic .itemx-fx{opacity:.48}.itemx-skill-hero.itemx2-skill-rank-rare .itemx-fx{opacity:.66}.itemx-skill-hero.itemx2-skill-rank-unique .itemx-fx{opacity:.82}.itemx-skill-hero.itemx2-skill-rank-epic .itemx-fx,.itemx-skill-hero.itemx2-skill-rank-legendary .itemx-fx,.itemx-skill-hero.itemx2-skill-rank-mythical .itemx-fx,.itemx-skill-hero.itemx2-skill-rank-empyrean .itemx-fx{opacity:1}.itemx-skill-hero.itemx2-skill-rank-legendary,.itemx-skill-hero.itemx2-skill-rank-mythical,.itemx-skill-hero.itemx2-skill-rank-empyrean{box-shadow:inset 0 0 58px color-mix(in srgb,var(--pg) 40%,transparent),0 15px 40px rgba(0,0,0,.42),0 0 22px color-mix(in srgb,var(--rk) 18%,transparent)}.itemx2-skill-type-passive .itemx-fx{opacity:.72}.itemx2-skill-type-sealed .itemx-fx,.itemx2-skill-status-sealed .itemx-fx{opacity:.3;filter:saturate(.42) brightness(.68)}.itemx2-skill-status-equipped .itemx-codex-hero-glyph{box-shadow:0 0 0 4px color-mix(in srgb,var(--rk) 16%,transparent),0 0 42px color-mix(in srgb,var(--pg) 78%,transparent),inset 0 0 24px color-mix(in srgb,var(--p) 22%,transparent)}.itemx2-skill-status-lost .itemx-fx{opacity:.12;filter:grayscale(.86) brightness(.5)}.itemx2-skill-status-lost .itemx-fx *{animation:none!important}
 .itemx-monster-hero{border-color:#623743;background:radial-gradient(circle at 50% 40%,rgba(222,62,88,.2),transparent 34%),repeating-linear-gradient(0deg,transparent 0 22px,rgba(179,63,79,.035) 23px),linear-gradient(145deg,#211018,#090d14 72%);box-shadow:inset 0 0 54px rgba(190,39,64,.12),0 12px 34px rgba(0,0,0,.38)}.itemx-monster-hero::before{width:174px;height:174px;border-color:rgba(255,99,123,.36);background:repeating-conic-gradient(from 0deg,rgba(255,86,112,.32) 0 1.5deg,transparent 1.5deg 22deg);animation-duration:11s}.itemx-monster-hero::after{left:50%;top:18%;width:100%;height:2px;border:0;border-radius:0;background:linear-gradient(90deg,transparent,#ff667e,transparent);box-shadow:0 0 18px rgba(255,62,92,.7);transform:translate3d(-50%,0,0);animation:itemx-codex-scan 3.2s ease-in-out infinite}.itemx-monster-portrait{filter:saturate(.86) contrast(1.06)}.itemx-monster-hero .itemx-codex-hero-glyph{border-color:rgba(255,124,143,.54);background:radial-gradient(circle at 45% 38%,#5a2632,#1b1018 70%);box-shadow:0 0 28px rgba(255,60,91,.3),inset 0 0 22px rgba(255,111,131,.12)}
 .itemx2-encounter-hero-fx{--fx:#bf687a;--fx2:#73849f;--fx-duration:6s}.itemx2-encounter-hero-fx i{inset:12% 18%;border:1px solid color-mix(in srgb,var(--fx) 48%,transparent);border-radius:50%;box-shadow:0 0 30px color-mix(in srgb,var(--fx) 25%,transparent);animation:itemx2-codex-spin var(--fx-duration) linear infinite}.itemx2-encounter-hero-fx b{inset:27% 8%;background:repeating-conic-gradient(from 20deg,color-mix(in srgb,var(--fx2) 32%,transparent) 0 2deg,transparent 2deg 31deg);mask:radial-gradient(circle,transparent 54%,#000 56% 58%,transparent 60%);animation:itemx2-codex-spin calc(var(--fx-duration) * 1.45) linear infinite reverse}.itemx2-encounter-hero-fx em{left:8%;right:8%;bottom:5%;height:34%;background:radial-gradient(ellipse at 50% 100%,color-mix(in srgb,var(--fx) 28%,transparent),transparent 68%);filter:blur(8px);animation:itemx2-codex-breathe calc(var(--fx-duration) * .75) ease-in-out infinite}
-.itemx2-encounter-theme-beast{--fx:#e7aa61;--fx2:#d85d4d}.itemx2-encounter-theme-undead{--fx:#8ed9c2;--fx2:#7c62a8}.itemx2-encounter-theme-construct{--fx:#75b9d6;--fx2:#b3ccd4}.itemx2-encounter-theme-dragon{--fx:#ff674b;--fx2:#efb74e}.itemx2-encounter-theme-aquatic{--fx:#49c9dc;--fx2:#557fe9}.itemx2-encounter-theme-insect{--fx:#9bc15e;--fx2:#d8b85a}.itemx2-encounter-theme-humanoid,.itemx2-encounter-theme-unknown{--fx:#bf687a;--fx2:#73849f}.itemx2-encounter-list-fx{opacity:.82;animation:itemx2-codex-breathe 6s ease-in-out infinite}.itemx2-encounter-theme-beast.itemx2-encounter-list-fx{background:linear-gradient(115deg,transparent 68%,color-mix(in srgb,var(--fx) 20%,transparent)),repeating-linear-gradient(70deg,transparent 0 13px,color-mix(in srgb,var(--fx2) 14%,transparent) 14px 15px)}.itemx2-encounter-theme-undead.itemx2-encounter-list-fx,.itemx2-encounter-theme-aquatic.itemx2-encounter-list-fx{background:radial-gradient(ellipse at 85% 80%,color-mix(in srgb,var(--fx) 30%,transparent),transparent 48%)}.itemx2-encounter-theme-construct.itemx2-encounter-list-fx{background:repeating-linear-gradient(90deg,transparent 0 20px,color-mix(in srgb,var(--fx) 11%,transparent) 21px),repeating-linear-gradient(0deg,transparent 0 15px,color-mix(in srgb,var(--fx2) 8%,transparent) 16px)}.itemx2-encounter-theme-dragon.itemx2-encounter-list-fx{background:radial-gradient(circle at 90% 50%,color-mix(in srgb,var(--fx) 32%,transparent),transparent 38%)}.itemx2-encounter-theme-insect.itemx2-encounter-list-fx{background:radial-gradient(circle at 82% 32%,color-mix(in srgb,var(--fx) 30%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 94% 61%,color-mix(in srgb,var(--fx2) 26%,transparent) 0 2px,transparent 3px)}.itemx2-threat-1{opacity:.88}.itemx2-threat-2{filter:brightness(1.12)}.itemx2-threat-3{filter:brightness(1.28) saturate(1.18)}.itemx2-encounter-warning .itemx2-encounter-hero-fx::after{content:'';position:absolute;left:0;right:0;top:12%;height:2px;background:linear-gradient(90deg,transparent,#ff637c,transparent);box-shadow:0 0 16px #ff3d60;animation:itemx2-codex-warning 3s ease-in-out infinite}.itemx2-encounter-sparring{--fx:#6eb8ee;--fx2:#d4b96a}.itemx2-encounter-ended{opacity:.34;filter:grayscale(.65)}.itemx2-encounter-ended,.itemx2-encounter-ended *{animation-play-state:paused!important}@keyframes itemx2-codex-spin{to{transform:rotate(360deg)}}@keyframes itemx2-codex-breathe{0%,100%{opacity:.42}50%{opacity:1}}@keyframes itemx2-codex-warning{0%,100%{opacity:.15;transform:translateY(0)}50%{opacity:.9;transform:translateY(130px)}}
+.itemx2-encounter-theme-beast{--fx:#e7aa61;--fx2:#d85d4d}.itemx2-encounter-theme-undead{--fx:#8ed9c2;--fx2:#7c62a8}.itemx2-encounter-theme-construct{--fx:#75b9d6;--fx2:#b3ccd4}.itemx2-encounter-theme-dragon{--fx:#ff674b;--fx2:#efb74e}.itemx2-encounter-theme-aquatic{--fx:#49c9dc;--fx2:#557fe9}.itemx2-encounter-theme-insect{--fx:#9bc15e;--fx2:#d8b85a}.itemx2-encounter-theme-humanoid,.itemx2-encounter-theme-unknown{--fx:#bf687a;--fx2:#73849f}.itemx2-encounter-list-fx{opacity:.82;animation:itemx2-codex-breathe 6s ease-in-out infinite}.itemx2-encounter-theme-beast.itemx2-encounter-list-fx{background:linear-gradient(115deg,transparent 68%,color-mix(in srgb,var(--fx) 20%,transparent)),repeating-linear-gradient(70deg,transparent 0 13px,color-mix(in srgb,var(--fx2) 14%,transparent) 14px 15px)}.itemx2-encounter-theme-undead.itemx2-encounter-list-fx,.itemx2-encounter-theme-aquatic.itemx2-encounter-list-fx{background:radial-gradient(ellipse at 85% 80%,color-mix(in srgb,var(--fx) 30%,transparent),transparent 48%)}.itemx2-encounter-theme-construct.itemx2-encounter-list-fx{background:repeating-linear-gradient(90deg,transparent 0 20px,color-mix(in srgb,var(--fx) 11%,transparent) 21px),repeating-linear-gradient(0deg,transparent 0 15px,color-mix(in srgb,var(--fx2) 8%,transparent) 16px)}.itemx2-encounter-theme-dragon.itemx2-encounter-list-fx{background:radial-gradient(circle at 90% 50%,color-mix(in srgb,var(--fx) 32%,transparent),transparent 38%)}.itemx2-encounter-theme-insect.itemx2-encounter-list-fx{background:radial-gradient(circle at 82% 32%,color-mix(in srgb,var(--fx) 30%,transparent) 0 2px,transparent 3px),radial-gradient(circle at 94% 61%,color-mix(in srgb,var(--fx2) 26%,transparent) 0 2px,transparent 3px)}.itemx2-threat-1.itemx2-encounter-list-fx{opacity:.88}.itemx2-threat-2.itemx2-encounter-list-fx,.itemx2-threat-2 .itemx2-encounter-hero-fx{filter:brightness(1.12)}.itemx2-threat-3.itemx2-encounter-list-fx,.itemx2-threat-3 .itemx2-encounter-hero-fx{filter:brightness(1.28) saturate(1.18)}.itemx2-encounter-warning .itemx2-encounter-hero-fx::after{content:'';position:absolute;left:0;right:0;top:12%;height:2px;background:linear-gradient(90deg,transparent,#ff637c,transparent);box-shadow:0 0 16px #ff3d60;animation:itemx2-codex-warning 3s ease-in-out infinite}.itemx2-encounter-sparring{--fx:#6eb8ee;--fx2:#d4b96a}.itemx2-encounter-ended.itemx2-encounter-list-fx,.itemx2-encounter-ended .itemx2-encounter-hero-fx{opacity:.34;filter:grayscale(.65)}.itemx2-encounter-ended .itemx-codex-hero-copy{opacity:.72}.itemx2-encounter-ended,.itemx2-encounter-ended *{animation-play-state:paused!important}@keyframes itemx2-codex-spin{to{transform:rotate(360deg)}}@keyframes itemx2-codex-breathe{0%,100%{opacity:.42}50%{opacity:1}}@keyframes itemx2-codex-warning{0%,100%{opacity:.15;transform:translateY(0)}50%{opacity:.9;transform:translateY(130px)}}
 .itemx2-encounter-outcome{position:relative;overflow:hidden;border-color:#453b31;background:radial-gradient(ellipse at 92% 14%,rgba(205,157,76,.11),transparent 42%),linear-gradient(145deg,#151711,#0d1118 72%)}.itemx2-encounter-outcome::after{content:'';position:absolute;right:-18px;bottom:-24px;width:98px;height:72px;border-radius:55% 45% 48% 52%;background:radial-gradient(ellipse,rgba(180,119,57,.13),transparent 68%);pointer-events:none}.itemx2-encounter-outcome-head{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px}.itemx2-encounter-outcome-head h4{color:#e8c98d}.itemx2-encounter-outcome-head i{padding:3px 7px;border:1px solid rgba(205,166,98,.28);border-radius:999px;background:rgba(55,43,23,.45);color:#d9bb82;font-size:.58rem;font-style:normal}.itemx2-encounter-outcome p{position:relative;z-index:1;color:#d3d8df}
 @keyframes itemx2-fire-breathe{from{opacity:.52;transform:translate3d(-2px,5px,0) scale(.96,1)}to{opacity:.88;transform:translate3d(3px,-4px,0) scale(1.04,1.06)}}@keyframes itemx2-fire-embers{from{opacity:.2;transform:translate3d(0,12px,0)}45%{opacity:.8}to{opacity:.08;transform:translate3d(5px,-20px,0)}}@keyframes itemx2-ice-float{from{opacity:.42;transform:translate3d(-3px,3px,0) rotate(-1.2deg)}to{opacity:.68;transform:translate3d(3px,-3px,0) rotate(1.4deg)}}@keyframes itemx2-lightning-quiet{0%,15%,19%,71%,75%,100%{opacity:.45}16%,18%,72%,74%{opacity:.9}}@keyframes itemx2-lightning-strike{0%,12%,17%,63%,68%,100%{opacity:.08}13%,16%,64%,67%{opacity:.84}}@keyframes itemx2-dark-draw{from{opacity:.35;transform:translate3d(-3px,1px,0) scale(1.04)}to{opacity:.66;transform:translate3d(4px,-2px,0) scale(.94)}}@keyframes itemx2-light-drift{from{opacity:.3;transform:translate3d(-2px,2px,0) scale(.98)}to{opacity:.64;transform:translate3d(3px,-2px,0) scale(1.03)}}@keyframes itemx2-arcane-parallax{from{opacity:.38;transform:translate3d(-3px,2px,0)}to{opacity:.68;transform:translate3d(4px,-3px,0)}}@keyframes itemx2-undead-haze{from{opacity:.32;transform:translate3d(-5px,2px,0)}to{opacity:.58;transform:translate3d(6px,-2px,0)}}@keyframes itemx2-construct-scan{0%,100%{opacity:.18;transform:translateY(-20px)}50%{opacity:.78;transform:translateY(116px)}}@keyframes itemx2-aquatic-caustic{from{opacity:.34;transform:translate3d(-3px,2px,0)}to{opacity:.6;transform:translate3d(4px,-3px,0)}}@keyframes itemx2-insect-drift{from{opacity:.35;transform:translate3d(-3px,2px,0)}to{opacity:.57;transform:translate3d(4px,-2px,0)}}@keyframes itemx2-combat-warning{0%,100%{opacity:.12;transform:translateY(0)}50%{opacity:.78;transform:translateY(132px)}}
 .itemx2-effects-off .itemx2-codex-fx{display:none!important;animation:none!important}.itemx2-effects-off .itemx2-codex-fx *{animation:none!important}@media(prefers-reduced-motion:reduce){.itemx2-codex-fx,.itemx2-codex-fx *,.itemx2-skill-weapon-fx,.itemx2-skill-weapon-fx *{animation:none!important}}
@@ -1325,7 +1326,7 @@ ${codexPageStyle()}
       runtime.legacyCommitTimer = null;
       try {
         await rebuildCurrent();
-        await catchUpLatestOutput();
+        await catchUpLatestOutput({ syncUi: false });
         await ensureRootInventory();
         if (!confirm && runtime.auxActive === 0 && !runtime.auxRecoveryPromise) scheduleLegacyCommitRecovery(true);
       } catch (error) { fail('legacy commit recovery', error); }
@@ -1368,7 +1369,7 @@ ${codexPageStyle()}
     return { ctx: { ...ctx, chat: compacted }, source: compactedSource };
   }
 
-  async function catchUpLatestOutput() {
+  async function catchUpLatestOutput({ syncUi = true } = {}) {
     if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.auxRecoveryPromise || runtime.bodyFxScrollActive) return;
     let ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return;
@@ -1396,7 +1397,35 @@ ${codexPageStyle()}
       runtime.catchUpFailures = Math.min(runtime.catchUpFailures + 1, 6);
       runtime.catchUpRetryAt = Date.now() + Math.min(120000, 5000 * (2 ** runtime.catchUpFailures));
     }
-    await ensureRootInventory();
+    if (syncUi) await ensureRootInventory();
+  }
+
+  function scheduleCommittedOutputSync() {
+    if (runtime.outputSyncPromise) {
+      runtime.outputSyncPending = true;
+      return runtime.outputSyncPromise;
+    }
+    const pending = (async () => {
+      do {
+        runtime.outputSyncPending = false;
+        await rebuildCurrent();
+        await catchUpLatestOutput({ syncUi: false });
+        await ensureRootInventory();
+      } while (runtime.outputSyncPending && !runtime.unloading);
+    })().catch((error) => fail('chat listener', error)).finally(() => {
+      if (runtime.outputSyncPromise === pending) runtime.outputSyncPromise = null;
+    });
+    runtime.outputSyncPromise = pending;
+    return pending;
+  }
+
+  function armCatchUpWatchdog() {
+    if (runtime.unloading) return;
+    if (runtime.catchUpTimer) globalThis.clearInterval(runtime.catchUpTimer);
+    const interval = runtime.hooks.listener === true ? 45000 : 4500;
+    runtime.catchUpTimer = globalThis.setInterval(() => {
+      void catchUpLatestOutput().catch((error) => fail('latest output catch-up', error));
+    }, interval);
   }
 
   const beforeRequest = async (messages, type) => {
@@ -1670,6 +1699,28 @@ ${codexPageStyle()}
     return false;
   }
 
+  function codexEntries(loaded, domain) {
+    const registry = domain === 'skill' ? loaded?.codexSnapshot?.skills : loaded?.codexSnapshot?.monsters;
+    return (registry?.order || []).map((id) => registry.entries[id]).filter(Boolean).slice(0, 60);
+  }
+
+  async function hydrateCheckedCodexDetail(domain, loaded) {
+    if (!runtime.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
+    const marker = await runtime.mainDoc.querySelector(`.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`);
+    if (!marker) return false;
+    const index = Number(await marker.textContent());
+    const entity = codexEntries(loaded, domain)[index];
+    if (!entity) return false;
+    const portrait = domain === 'monster' ? (loaded.portraits?.[entity.id] || '') : '';
+    const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
+    if (runtime.rootHydratedDetail === detailKey) return true;
+    const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
+    if (!detail) return false;
+    await detail.setInnerHTML(`<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}`);
+    runtime.rootHydratedDetail = detailKey;
+    return true;
+  }
+
   async function queryMainClass(className) {
     if (!runtime.mainDoc) return null;
     return await runtime.mainDoc.querySelector(`.x-risu-${className}`)
@@ -1798,8 +1849,12 @@ ${codexPageStyle()}
     }
   }
 
+  function invalidateHostSettingsVisibility() { runtime.hostSettingsCache.at = 0; }
+
   async function hostPluginSettingsVisible() {
     if (!runtime.mainDoc || runtime.allowDrawerOverSettings) return false;
+    const now = Date.now();
+    if (now - runtime.hostSettingsCache.at < 750) return runtime.hostSettingsCache.visible;
     try {
       const safeTargets = await runtime.mainDoc.querySelectorAll('button,[role="button"]');
       const targets = await Risuai.unwarpSafeArray(safeTargets);
@@ -1807,9 +1862,13 @@ ${codexPageStyle()}
         const text = String(await target.textContent() || '').replace(/\s+/g, ' ').trim();
         if (!text.includes('ITEMX CODEX · 권한 및 설정')) continue;
         const rect = await target.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) return true;
+        if (rect.width > 0 && rect.height > 0) {
+          runtime.hostSettingsCache = { at: now, visible: true };
+          return true;
+        }
       }
     } catch (error) { fail('host settings visibility', error); }
+    runtime.hostSettingsCache = { at: now, visible: false };
     return false;
   }
 
@@ -1832,6 +1891,7 @@ ${codexPageStyle()}
       else {
         await runtime.rootDrawer.removeClass('x-risu-itemx2-is-open');
         runtime.allowDrawerOverSettings = false;
+        invalidateHostSettingsVisibility();
         await syncHostSettingsVisibility();
       }
       return true;
@@ -1843,6 +1903,8 @@ ${codexPageStyle()}
     if (runtime.activeContextKey === nextKey) return false;
     runtime.activeContextKey = nextKey;
     runtime.rootItemPage = 0;
+    runtime.rootHydratedDetail = '';
+    invalidateHostSettingsVisibility();
     runtime.cachedLoaded = null;
     runtime.cachedGeneration = -1;
     runtime.pendingMarkers.clear();
@@ -1952,25 +2014,30 @@ ${codexPageStyle()}
     };
     const monsters = (codexSnapshot?.monsters?.order || []).map((id) => codexSnapshot.monsters.entries[id]).filter(Boolean).slice(0, 20);
     const narrative = (chat?.message || []).slice(-8).map((message) => ITEMXCore.messageText(message)).join('\n');
-    await Promise.all(monsters.map(async (monster) => {
-      const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative); if (!asset) return;
-      const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
-      if (runtime.portraitCache.has(cacheKey)) { result[monster.id] = runtime.portraitCache.get(cacheKey); return; }
-      try {
-        const image = asDataUrl(await Risuai.readImage(asset.id), asset.ext);
-        if (image) {
-          result[monster.id] = image;
-          if (image.length <= 4 * 1024 * 1024) {
-            runtime.portraitCache.set(cacheKey, image);
-            runtime.portraitCacheBytes += image.length;
-            while (runtime.portraitCache.size > 24 || runtime.portraitCacheBytes > 16 * 1024 * 1024) {
-              const oldest = runtime.portraitCache.keys().next().value, removed = runtime.portraitCache.get(oldest) || '';
-              runtime.portraitCache.delete(oldest); runtime.portraitCacheBytes = Math.max(0, runtime.portraitCacheBytes - removed.length);
+    let portraitCursor = 0;
+    const loadNextPortrait = async () => {
+      while (portraitCursor < monsters.length) {
+        const monster = monsters[portraitCursor++];
+        const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative); if (!asset) continue;
+        const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
+        if (runtime.portraitCache.has(cacheKey)) { result[monster.id] = runtime.portraitCache.get(cacheKey); continue; }
+        try {
+          const image = asDataUrl(await Risuai.readImage(asset.id), asset.ext);
+          if (image) {
+            result[monster.id] = image;
+            if (image.length <= 4 * 1024 * 1024) {
+              runtime.portraitCache.set(cacheKey, image);
+              runtime.portraitCacheBytes += image.length;
+              while (runtime.portraitCache.size > 24 || runtime.portraitCacheBytes > 16 * 1024 * 1024) {
+                const oldest = runtime.portraitCache.keys().next().value, removed = runtime.portraitCache.get(oldest) || '';
+                runtime.portraitCache.delete(oldest); runtime.portraitCacheBytes = Math.max(0, runtime.portraitCacheBytes - removed.length);
+              }
             }
           }
-        }
-      } catch {}
-    }));
+        } catch {}
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, monsters.length) }, () => loadNextPortrait()));
     return result;
   }
 
@@ -2071,6 +2138,31 @@ ${codexPageStyle()}
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
   }
 
+  const unwrapCodexPage = (html) => String(html || '').replace(/^<div class="itemx-codex-page itemx2-codex-page">/, '').replace(/<\/div>$/, '');
+  const portraitRevision = (portrait) => {
+    const source = String(portrait || '');
+    if (!source) return 'none';
+    const sample = source.length <= 4096 ? source : `${source.slice(0, 2048)}${source.slice(-2048)}`;
+    return `${source.length}:${ITEMXCore.fnv1a(sample)}`;
+  };
+  function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
+    const fingerprint = ITEMXCore.fnv1a(JSON.stringify(entity || {}));
+    return domain === 'skill'
+      ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`
+      : `monster:${entity?.id || ''}:${fingerprint}:${portraitRevision(portrait)}`;
+  }
+  function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 'world') {
+    const key = codexDetailCacheKey(domain, entity, portrait, rarityMode);
+    if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
+    const back = domain === 'skill'
+      ? '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>'
+      : '<label class="itemx-codex-back" for="itemx2-monster-none">‹ 조우 목록</label>';
+    const html = unwrapCodexPage(domain === 'skill' ? skillPageHtml(entity, back, rarityMode) : monsterPageHtml(entity, portrait, back));
+    runtime.detailHtmlCache.set(key, html);
+    while (runtime.detailHtmlCache.size > 60) runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    return html;
+  }
+
   function rootBadgeHtml() {
     const update = runtime.update.available ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>` : '';
     return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
@@ -2095,10 +2187,10 @@ ${codexPageStyle()}
     };
     const filters = [['all', '전체'], ['owned', '보유'], ['equipped', '장착'], ['observed', '관찰'], ['removed', '소실']];
     const controls = filters.map(([key]) => `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`).join('');
-    const skillList = tab === 'skills' ? (skills.map((skill, index) => `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice" id="itemx2-skill-${index}" name="itemx2-skill-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-skill-card" for="itemx2-skill-${index}">${skillSummaryHtml(skill, loaded.rarityMode)}</label>${skillPageHtml(skill, '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>', loaded.rarityMode)}</div>`).join('') || '<div class="itemx2-codex-empty">아직 확정된 스킬이 없답니다.</div>') : '';
+    const skillList = tab === 'skills' ? (skills.map((skill, index) => `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-skill-entry-choice" id="itemx2-skill-${index}" name="itemx2-skill-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-skill-card" for="itemx2-skill-${index}">${skillSummaryHtml(skill, loaded.rarityMode)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-skill-detail itemx2-root-skill-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div>`).join('') || '<div class="itemx2-codex-empty">아직 확정된 스킬이 없답니다.</div>') : '';
     const monsterList = tab === 'bestiary' ? (monsters.map((monster, index) => {
       const portrait = loaded.portraits?.[monster.id] || '';
-      return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label>${monsterPageHtml(monster, portrait, '<label class="itemx-codex-back" for="itemx2-monster-none">‹ 조우 목록</label>')}</div>`;
+      return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-monster-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-monster-detail itemx2-root-monster-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div>`;
     }).join('') || '<div class="itemx2-codex-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>') : '';
     const list = tab === 'inventory' ? (inventoryPage.map((item, index) => {
       const detailId = `itemx2-detail-${index}`;
@@ -2154,6 +2246,7 @@ ${codexPageStyle()}
       await header.setInnerHTML(regions.header);
       await nav.setInnerHTML(regions.nav);
       await body.setInnerHTML(regions.body);
+      runtime.rootHydratedDetail = '';
       return true;
     } catch (error) {
       debugRecord('root region fallback', error?.message || String(error));
@@ -2252,6 +2345,17 @@ ${codexPageStyle()}
               return;
             }
           }
+        }
+        if (runtime.activeRootTab === 'skills' || runtime.activeRootTab === 'bestiary') {
+          const cached = runtime.cachedLoaded;
+          const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+          const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
+          if (loaded && loaded.key === runtime.activeContextKey) {
+            await delay(0);
+            const domain = runtime.activeRootTab === 'skills' ? 'skill' : 'monster';
+            if (await hydrateCheckedCodexDetail(domain, loaded)) return;
+          }
+          return;
         }
         if (runtime.activeRootTab !== 'settings') return;
         const managerFold = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-fold');
@@ -2618,7 +2722,10 @@ ${codexPageStyle()}
       await root.setClassName(`x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}`);
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && runtime.rootContentReady && await updateRootRegions(html);
-      if (!regionUpdated) await root.setInnerHTML(html);
+      if (!regionUpdated) {
+        await root.setInnerHTML(html);
+        runtime.rootHydratedDetail = '';
+      }
       if (!attached) {
         const body = await runtime.mainDoc.querySelector('body');
         if (!body) throw new Error('Main document body unavailable');
@@ -2802,6 +2909,7 @@ ${codexPageStyle()}
     if (transition !== runtime.panelTransition || runtime.panelOpen) return;
     await Risuai.hideContainer();
     runtime.allowDrawerOverSettings = false;
+    invalidateHostSettingsVisibility();
     await syncHostSettingsVisibility();
   }
 
@@ -2852,6 +2960,7 @@ ${codexPageStyle()}
     const active = await context();
     if (!active) {
       runtime.allowDrawerOverSettings = false;
+      invalidateHostSettingsVisibility();
       runtime.status = '채팅 진입 대기';
       const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
       if (typeof Risuai.alertNormal === 'function') await Risuai.alertNormal(message);
@@ -2860,6 +2969,7 @@ ${codexPageStyle()}
     }
     runtime.activeContextKey = active.key;
     runtime.allowDrawerOverSettings = true;
+    invalidateHostSettingsVisibility();
     let styled = Boolean(runtime.mainDoc) || await installMainStyle();
     const loadingStarted = styled ? Date.now() : 0;
     if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
@@ -2915,13 +3025,7 @@ ${codexPageStyle()}
           runtime.hooks.listener = 'unsupported';
           log('chat listener unavailable; continuing with core request/output hooks');
         } else try {
-          await Risuai.addRisuChatListener('output', async (event) => {
-            try {
-              await rebuildCurrent();
-              await catchUpLatestOutput();
-              await ensureRootInventory();
-            } catch (error) { fail('chat listener', error); }
-          });
+          await Risuai.addRisuChatListener('output', () => { void scheduleCommittedOutputSync(); });
           runtime.hooks.listener = true;
         } catch (error) {
           const message = String(error?.message || error || '');
@@ -2934,6 +3038,7 @@ ${codexPageStyle()}
         runtime.lastHookError = '';
         runtime.status = prompt ? '모델 처리 권한 연결됨' : '정상';
       }
+      if (runtime.catchUpTimer) armCatchUpWatchdog();
       return runtime.permissions.replacer;
     } catch (error) {
       runtime.permissions.replacer = false;
@@ -2972,7 +3077,7 @@ ${codexPageStyle()}
       if (runtime.bodyFxScrollActive) return;
       if (!runtime.activeContextKey || !runtime.hostObserver || Date.now() - runtime.remountFallbackAt >= 10000) void ensureRootInventory();
     }, 1200);
-    runtime.catchUpTimer = globalThis.setInterval(() => { void catchUpLatestOutput().catch((error) => fail('latest output catch-up', error)); }, 4500);
+    armCatchUpWatchdog();
     runtime.updateTimer = globalThis.setInterval(() => { void checkForUpdate(); }, ITEMX_UPDATE_CHECK_MS);
     if (initial) void catchUpLatestOutput().catch((error) => fail('initial output catch-up', error));
     if (connected && styled) runtime.status = '정상';
@@ -2985,6 +3090,7 @@ ${codexPageStyle()}
   }
 
   await Risuai.onUnload(async () => {
+    runtime.unloading = true;
     runtime.panelOpen = false;
     runtime.panelTransition += 1;
     if (runtime.remountTimer) globalThis.clearInterval(runtime.remountTimer);
