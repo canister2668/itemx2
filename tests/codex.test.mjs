@@ -222,6 +222,8 @@ test('skill and encounter records derive safe emoji fallbacks and request free m
   assert.match(protocol, /choose one fitting emoji that reflects the skill identity/);
   assert.match(protocol, /choose one fitting emoji that reflects the creature identity/);
   assert.match(protocol, /never use ❔/);
+  assert.match(protocol, /character-bound power, command authority, supernatural mark, contract right/);
+  assert.match(protocol, /do not make the enduring capability transient/);
 });
 
 test('domain switches omit disabled protocol, context and events without leaking tags', () => {

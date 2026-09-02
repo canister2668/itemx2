@@ -12,7 +12,7 @@ async function bootWithOutput(data, options = {}) {
   let chat = { id: 'chat-guard', isStreaming: false, message: [...(options.prefixMessages || []), { role: 'char', data, metadata: { bgContinue: false } }], scriptstate: { ...(options.scriptstate || {}) } };
   let modelCalls = 0, chatWrites = 0;
   const prompts = [], requests = [];
-  const storage = new Map(), handlers = {}, replacers = {}, intervals = [];
+  const storage = new Map(options.freshDefaults ? [] : [['auxOutput:char-guard', 'missing']]), handlers = {}, replacers = {}, intervals = [];
   const Risuai = {
     pluginStorage: { getItem: async (key) => storage.get(key) ?? null, setItem: async (key, value) => storage.set(key, value) },
     safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
@@ -71,6 +71,15 @@ test('automatic auxiliary skips empty and visibly truncated committed outputs', 
   assert.equal(truncated.modelCalls, 0);
   assert.equal(empty.chatWrites, 0);
   assert.equal(truncated.chatWrites, 0);
+});
+
+test('fresh installs do not auto-call an unverified auxiliary provider', async () => {
+  const result = await bootWithOutput('완결된 서술이지만 보조모델 설정은 검증되지 않았다.', {
+    freshDefaults: true,
+    modelOutput: { type: 'fail', result: 'Unknown Plugin detected. Please change the model or enable the corresponding plugin.' }
+  });
+  assert.equal(result.modelCalls, 0);
+  assert.equal(result.chatWrites, 0);
 });
 
 test('missing mode still reviews partially tagged output for omitted sibling items', async () => {
@@ -239,12 +248,26 @@ test('auxiliary treats the first confirmed already-owned player skill as a disco
   );
   assert.equal(result.modelCalls, 1);
   assert.equal(result.chatWrites, 1);
-  assert.match(result.prompts[0], /first explicit confirmation that the player character owns, uses, has mastered, has equipped/);
-  assert.match(result.prompts[0], /Do not put an NPC or opponent's technique into the player skill registry/);
+  assert.match(result.prompts[0], /first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS/);
+  assert.match(result.prompts[0], /Keep NPC or opponent techniques only in encounter moves unless the player acquires them/);
   const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
   const skill = ledger.find((row) => row.domain === 'codex' && row.payload?.event?.domain === 'skill');
   assert.equal(skill.payload.event.entity.id, 'footwork');
   assert.equal(skill.payload.event.entity.name, '보법');
+});
+
+test('auxiliary treats a rechargeable character-bound command authority as a persistent skill', async () => {
+  const narrative = '지훈의 손등에는 계약 대상에게 절대 명령을 내릴 수 있는 세 획의 계약 인장이 귀속되어 있다. 한 획을 쓰면 소모되지만 기반 시스템에 연결된 동안 서서히 충전된다.';
+  const modelOutput = '<skillExam><id>contract_command_seal</id><name>세 획의 계약 인장</name><glyph>❤️‍🔥</glyph><rank>특수 마술 각인</rank><school>계약 권능</school><type>active</type><status>equipped</status><cost>발동당 인장 1획</cost><cooldown>기반 시스템 연결 중 서서히 재충전</cooldown><target>계약 대상</target><description>캐릭터에게 귀속된 절대 명령권.</description><effects>계약 대상에게 절대 명령</effects></skillExam>';
+  const result = await bootWithOutput(narrative, { modelOutput });
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.chatWrites, 1);
+  assert.match(result.prompts[0], /character-bound powers, command authorities, supernatural marks, contract rights/);
+  assert.match(result.prompts[0], /Finite or rechargeable charges belong in cost\/state/);
+  const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
+  const skill = ledger.find((row) => row.domain === 'codex' && row.payload?.event?.entity?.id === 'contract_command_seal');
+  assert.equal(skill.payload.event.entity.cost, '발동당 인장 1획');
+  assert.equal(skill.payload.event.entity.status, 'equipped');
 });
 
 test('detailed multi-item appraisal keeps safe partials and repairs them in one batch with one chat write', async () => {
