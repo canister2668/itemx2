@@ -10,11 +10,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 1\.9\.0-beta\.33$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.33$/m);
+  assert.match(source, /^\/\/@version 1\.9\.0-beta\.34$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v1\.9\.0-beta\.34$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(source, /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/main\/dist\/itemx2\.plugin\.js$/m);
-  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 33"/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = "1\.9 · BETA 34"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -181,6 +181,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /function codexInlineEventHtml\(payload, motion = 'full'\)/);
   assert.match(source, /NEW SKILL ARCHIVED/);
   assert.match(source, /itemx2-inline-quick/);
+  assert.match(source, /itemx2-inline-appraisal/);
+  assert.match(source, /function codexInlineAppraisalStyle\(entity, domain\)/);
+  assert.match(source, /itemx2-inline-tier/);
+  assert.match(source, /최근 전투 결과/);
   assert.match(source, /width:min\(400px,calc\(100% - 8px\)\)/);
   assert.match(source, /\.itemx2-inline-event \.itemx2-inline-state\{display:inline-flex/);
   assert.match(source, /ENCOUNTER RESOLVED/);
@@ -297,7 +301,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const ITEMXQuality =/);
   assert.match(source, /state: unresolvedPartials\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /아이템 상세정보 보완 중/);
-  assert.ok(source.length < 470000, 'plugin bundle must stay compact with lazy detail hydration and fixed-layer inline event cards');
+  assert.ok(source.length < 480000, 'plugin bundle must stay compact with lazy detail hydration and fixed-layer inline appraisal cards');
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
   assert.match(source, /\}, 1200\)/);
@@ -386,7 +390,7 @@ test('guide settings preview is generated from the real root settings renderer',
   const source = await readFile(resolve(root, 'design/itemx-settings-actual.html'), 'utf8');
   for (const label of ['연결 및 권한', '보조 모델 상태', '기능별 추적', '사이드 배지 위치', '아이템 관리', '현재 봇 ITEMX CODEX', '메인 출력', '보조 출력', '등급 기준', '시각 이펙트', '모듈 에셋 초상화', '글자 크기', '채팅 저장소', '현재 채팅 ITEMX 기록 제거']) assert.match(source, new RegExp(label));
   assert.doesNotMatch(source, /도감 컨텍스트 제한|이름 없는 잡졸|확장 UI 시안/);
-  assert.match(source, /ITEMX CODEX · 1\.9 · BETA 33/);
+  assert.match(source, /ITEMX CODEX · 1\.9 · BETA 34/);
 });
 
 test('preview uses the same renderer source as the plugin', async () => {
