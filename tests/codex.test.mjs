@@ -62,6 +62,21 @@ test('bounded context excludes inactive unmentioned encounters and assets stay r
   assert.deepEqual(JSON.parse(JSON.stringify(assets)), [{ name: 'enemy.webp', id: 'asset-id-1', ext: 'webp' }]);
 });
 
+test('character catalogs keep internal additional assets, ccAssets and emotion images', () => {
+  const names = [];
+  for (let i = 0; i < 450; i += 1) names.push([`bot_char_${String(i).padStart(3, '0')}_default`, `bot-${i}`, 'webp']);
+  names.push(['later_hero_default', 'asset-hero-default', 'webp'], ['later_hero_annoyed', 'asset-hero-annoyed', 'webp']);
+  const rows = codex.assetCatalog({
+    additionalAssets: names,
+    emotionImages: [['neutral', 'asset-neutral']],
+    ccAssets: [{ name: 'cc_portrait_default', uri: 'assets/cc-portrait.webp', ext: 'webp' }]
+  }, 20000, true);
+  assert.ok(rows.some((row) => row.name === 'later_hero_default'), 'bot additionalAssets after the old 400-name prefix stay in catalog');
+  assert.equal(codex.assetLookup(rows, 'cc_portrait_default')?.id, 'assets/cc-portrait.webp');
+  assert.equal(codex.assetForEntity(rows, { id: 'later_hero', name: '후반 히어로', aliases: [], portrait: 'NONE' })?.id, 'asset-hero-default');
+  assert.equal(rows.some((row) => row.name === 'neutral'), true);
+});
+
 test('portrait assets resolve exact names first and use only unambiguous normalized fallbacks', () => {
   const assets = codex.assetCatalog({
     additionalAssets: [['Wolf King.webp', 'asset-wolf', 'webp'], ['duplicate.png', 'asset-a', 'png'], ['DUPLICATE.PNG', 'asset-b', 'png']],
@@ -87,6 +102,60 @@ test('encounter portrait prefers standing defaults, then recent matching module 
   assert.equal(codex.assetForEntity(assets.filter((row) => !['Amber_standing', 'Amber_serious'].includes(row.name)), amber, '<eomg="Amber_serious">old</eomg>\n<eomg="Amber_determined">now</eomg>')?.id, 'assets/amber-determined.avif');
   assert.equal(codex.assetForEntity(assets, { ...amber, portrait: 'Amber_serious' }, '<eomg="Amber_determined">now</eomg>')?.id, 'assets/amber-serious.avif', 'explicit transport remains authoritative');
   assert.equal(codex.assetForEntity(assets, { id: 'unknown', name: '미상', aliases: [], portrait: 'NONE' }, '') ?? null, null);
+});
+
+test('large module catalogs keep later character portraits and ignore swimsuit standing false positives', () => {
+  const names = [];
+  for (let i = 0; i < 450; i += 1) names.push([`early_char_${String(i).padStart(3, '0')}_default`, `id-${i}`, 'webp']);
+  names.push(
+    ['hakurei_reimu_default', 'asset-reimu-default', 'webp'],
+    ['hakurei_reimu_annoyed', 'asset-reimu-annoyed', 'webp'],
+    ['hakurei_reimu_shower towel standing', 'asset-reimu-shower', 'webp'],
+    ['hakurei_reimu_swimsuit standing', 'asset-reimu-swim', 'webp'],
+    ['hong_meiling_defeated', 'asset-meiling-defeated', 'webp'],
+    ['hong_meiling_default', 'asset-meiling-default', 'webp'],
+    ['hong_meiling_swimsuit standing', 'asset-meiling-swim', 'webp'],
+    ['kirisame_marisa_smile', 'asset-marisa-smile', 'webp'],
+    ['kirisame_marisa_default', 'asset-marisa-default', 'webp']
+  );
+  const database = { enabledModules: ['thgy'], modules: [{ id: 'thgy', assets: names }] };
+  const rows = codex.activeModuleAssetCatalog(database, { modules: ['thgy'] }, {});
+  assert.ok(rows.some((row) => row.name === 'hakurei_reimu_default'), 'catalog must keep characters after the old 400-name prefix');
+  assert.ok(rows.some((row) => row.name === 'kirisame_marisa_default'));
+  assert.equal(codex.assetForEntity(rows, { id: 'reimu', name: '하쿠레이 레이무', aliases: [], portrait: 'NONE' })?.id, 'asset-reimu-default');
+  assert.equal(codex.assetForEntity(rows, { id: 'meiling', name: '홍 메이링', aliases: ['hong meiling'], portrait: 'NONE' }, '<img="hong_meiling_defeated">')?.id, 'asset-meiling-default');
+  assert.equal(codex.assetForEntity(rows, { id: 'kirisame_marisa', name: '키리사메 마리사', aliases: ['마리사'], portrait: 'NONE' })?.id, 'asset-marisa-default');
+  const protocolNames = codex.portraitProtocolNames(rows, {
+    narrative: '<img="hakurei_reimu_annoyed">\n<img="kirisame_marisa_smile">',
+    entities: [{ id: 'hong_meiling', name: '홍 메이링', aliases: [], portrait: 'NONE' }],
+    max: 180
+  });
+  assert.equal(protocolNames.includes('hakurei_reimu_annoyed'), true);
+  assert.equal(protocolNames.includes('kirisame_marisa_smile'), true);
+  assert.equal(protocolNames.includes('hong_meiling_default'), true);
+  assert.equal(protocolNames.includes('hakurei_reimu_swimsuit standing'), false);
+  assert.equal(protocolNames[0] === 'early_char_000_default', false);
+  assert.equal(codex.mentionedAssetNames('<img="hakurei_reimu_annoyed"> {{asset::hong_meiling_defeated}}').join(','), 'hakurei_reimu_annoyed,hong_meiling_defeated');
+});
+
+test('large portrait catalogs resolve from indexes instead of rescanning every row', () => {
+  const names = [];
+  for (let i = 0; i < 5000; i += 1) names.push([`char_${i}_default`, `id-${i}`, 'webp']);
+  names.push(['hakurei_reimu_default', 'asset-reimu-default', 'webp'], ['hakurei_reimu_annoyed', 'asset-reimu-annoyed', 'webp']);
+  const rows = codex.assetCatalog({ additionalAssets: names }, 20000);
+  const indexedAt = Date.now();
+  codex.portraitAssetIndex(rows);
+  assert.ok(Date.now() - indexedAt < 250, `portrait index build took ${Date.now() - indexedAt}ms`);
+  const started = Date.now();
+  for (let i = 0; i < 20; i += 1) assert.equal(codex.assetForEntity(rows, { id: 'reimu', name: '하쿠레이 레이무', aliases: [], portrait: 'NONE' })?.id, 'asset-reimu-default');
+  const protocolNames = codex.portraitProtocolNames(rows, {
+    narrative: '<img="hakurei_reimu_annoyed">',
+    entities: [{ id: 'reimu', name: '하쿠레이 레이무', aliases: [], portrait: 'NONE' }]
+  });
+  const elapsed = Date.now() - started;
+  assert.ok(elapsed < 40, `indexed portrait lookup took ${elapsed}ms`);
+  assert.equal(protocolNames.includes('hakurei_reimu_annoyed'), true);
+  assert.equal(protocolNames.includes('hakurei_reimu_default'), true);
 });
 
 test('module portrait catalog includes active scopes only and supports namespace and bound persona assets', () => {

@@ -60,7 +60,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const runtime = {
     latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxSawScroll: false, outputSyncDeferred: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, homeProbeAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncDeferred: false, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
-    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] }, lorebookCache: { key: '', at: 0, rows: [] }, lorebookScanPromise: null,
+    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] }, characterAssetCache: { key: '', at: 0, rows: [] }, combinedAssetCache: { key: '', at: 0, rows: [] }, lorebookCache: { key: '', at: 0, rows: [] }, lorebookScanPromise: null,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '', checkpointCacheRaw: null, checkpointCache: null,
     auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
   };
@@ -337,13 +337,43 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       .replace(ITEMX_CODEX_REF_RE, '')
       .replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
   }
-  function combinedPortraitAssets(character, moduleAssets = [], max = 400) {
-    const rows = ITEMXCodex.assetCatalog(character, max, true), seen = new Set(rows.map((row) => row.name));
-    for (const row of moduleAssets || []) {
+  function characterAssetFingerprint(character) {
+    const additional = character?.additionalAssets || [], emotions = character?.emotionImages || [], cc = character?.ccAssets || [];
+    const last = additional[additional.length - 1];
+    return `${additional.length}:${emotions.length}:${cc.length}:${additional[0]?.[0] || ''}:${last?.[0] || ''}:${cc[0]?.name || ''}`;
+  }
+
+  function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
+    const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
+    if (runtime.characterAssetCache.key === key && Date.now() - runtime.characterAssetCache.at < 30000) return runtime.characterAssetCache.rows;
+    const rows = ITEMXCodex.assetCatalog(character, max, true);
+    ITEMXCodex.portraitAssetIndex(rows);
+    runtime.characterAssetCache = { key, at: Date.now(), rows };
+    return rows;
+  }
+
+  function combinedPortraitAssets(character, moduleAssets = [], max = ITEMXCodex.ASSET_CATALOG_MAX) {
+    const extra = characterPortraitAssets(character, max);
+    if (!extra.length) {
+      const rows = moduleAssets || [];
+      return rows.length <= max ? rows : rows.slice(0, max);
+    }
+    if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
+    const combinedKey = `${runtime.characterAssetCache.key}|${runtime.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
+    if (runtime.combinedAssetCache.key === combinedKey && Date.now() - runtime.combinedAssetCache.at < 30000) return runtime.combinedAssetCache.rows;
+    const rows = extra.slice(), seen = new Set(rows.map((row) => row.name));
+    for (const row of moduleAssets) {
       if (rows.length >= max || !row?.name || !row?.id || seen.has(row.name)) continue;
       seen.add(row.name); rows.push(row);
     }
+    ITEMXCodex.portraitAssetIndex(rows);
+    runtime.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
     return rows;
+  }
+
+  function encounterEntities(snapshot) {
+    const monsters = snapshot?.monsters;
+    return (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
   }
 
   async function modulePortraitAssets(settings, character, chat) {
@@ -354,7 +384,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       const database = await Risuai.getDatabase(['modules', 'enabledModules', 'moduleIntergration', 'personas', 'selectedPersona']);
       if (!database) { runtime.permissions.db = false; runtime.moduleAssetCache = { key, at: Date.now(), rows: [] }; return []; }
       runtime.permissions.db = true;
-      const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, 400);
+      const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
+      ITEMXCodex.portraitAssetIndex(rows);
       runtime.moduleAssetCache = { key, at: Date.now(), rows };
       return rows;
     } catch (error) {
@@ -375,7 +406,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       if (!probe) { runtime.permissions.db = false; return false; }
       runtime.permissions.db = true;
       await setModuleAssetsEnabled(character, true);
-      runtime.moduleAssetCache = { key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`, at: Date.now(), rows: ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, 400) };
+      const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
+      ITEMXCodex.portraitAssetIndex(rows);
+      runtime.moduleAssetCache = { key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`, at: Date.now(), rows };
       return true;
     } catch (error) {
       runtime.permissions.db = false;
@@ -384,15 +417,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     }
   }
 
-  function protocolForSettings(settings, character, moduleAssets = []) {
+  function protocolForSettings(settings, character, moduleAssets = [], options = {}) {
     const parts = [];
     if (settings.itemsEnabled) parts.push(itemxProtocolText(settings.rarityMode));
     const domains = enabledCodexDomains(settings);
     if (domains.length) {
-      const characterLimit = moduleAssets.length ? 120 : 240;
-      const portraitRows = ITEMXCodex.assetCatalog(character, characterLimit, true), seen = new Set(portraitRows.map((row) => row.name));
-      for (const row of moduleAssets) { if (!seen.has(row.name)) { seen.add(row.name); portraitRows.push(row); } }
-      parts.push(ITEMXCodex.protocol(portraitRows.map((row) => row.name), { enabledDomains: domains, rarityMode: settings.rarityMode }));
+      const portraitRows = combinedPortraitAssets(character, moduleAssets, ITEMXCodex.ASSET_CATALOG_MAX);
+      const names = ITEMXCodex.portraitProtocolNames(portraitRows, {
+        narrative: options.narrative || '',
+        entities: options.entities || [],
+        max: ITEMXCodex.PORTRAIT_PROTOCOL_MAX
+      });
+      parts.push(ITEMXCodex.protocol(names, { enabledDomains: domains, rarityMode: settings.rarityMode }));
     }
     return parts.join('\n\n');
   }
@@ -1294,9 +1330,10 @@ ${codexPageStyle()}
       const domains = enabledCodexDomains(settings);
       const requested = [settings.itemsEnabled && 'items', settings.skillsEnabled && 'skills', settings.encountersEnabled && 'encounters'].filter(Boolean).join(', ');
       const moduleAssets = await modulePortraitAssets(settings, ctx.character, current);
+      const protocolOptions = { narrative: [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n'), entities: encounterEntities(codexSnapshot) };
       const itemRecoveryRules = settings.itemsEnabled ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.` : '';
       const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
-      const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
+      const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
       runtime.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
       const raw = modelText(response);
@@ -1648,7 +1685,7 @@ ${codexPageStyle()}
       const recent = safeMessages.slice(-4).map((message) => message.content || '').join('\n');
       const domains = enabledCodexDomains(settings);
       const moduleAssets = await modulePortraitAssets(settings, loaded.character, loaded.chat);
-      const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets)}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
+      const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets, { narrative: recent, entities: encounterEntities(loaded.codexSnapshot) })}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
       debugRecord('beforeRequest', { items: settings.itemsEnabled, skills: settings.skillsEnabled, encounters: settings.encountersEnabled, messages: safeMessages.length });
       return injectRequestProtocol(safeMessages, instruction);
     } catch (error) { fail('beforeRequest', error); return safeMessages; }
@@ -2432,7 +2469,7 @@ ${codexPageStyle()}
   }
 
   async function loadCodexPortraits(character, chat, codexSnapshot, settings) {
-    const result = {}, catalog = combinedPortraitAssets(character, await modulePortraitAssets(settings, character, chat), 600);
+    const result = {}, catalog = combinedPortraitAssets(character, await modulePortraitAssets(settings, character, chat), ITEMXCodex.ASSET_CATALOG_MAX);
     if (typeof Risuai.readImage !== 'function') return result;
     const asDataUrl = (value, ext = '') => {
       if (typeof value === 'string') return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
@@ -2465,7 +2502,17 @@ ${codexPageStyle()}
         const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
         if (runtime.portraitCache.has(cacheKey)) { result[monster.id] = runtime.portraitCache.get(cacheKey); continue; }
         try {
-          const image = asDataUrl(await Risuai.readImage(asset.id), asset.ext);
+          let raw = null;
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+              raw = await Risuai.readImage(asset.id);
+              if (raw) break;
+            } catch {
+              raw = null;
+            }
+            if (attempt < 2) await delay(280 * (attempt + 1));
+          }
+          const image = asDataUrl(raw, asset.ext);
           if (image) {
             result[monster.id] = image;
             if (image.length <= 4 * 1024 * 1024) {

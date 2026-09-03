@@ -13,6 +13,10 @@ const ITEMXCodex = (() => {
   const ITEMX_SKILL_RANKS = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
   const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
   const OPS = new Set(['merge', 'remove', 'restore']);
+  const ASSET_CATALOG_MAX = 30000;
+  const PORTRAIT_PROTOCOL_MAX = 180;
+  const REPRESENTATIVE_KINDS = ['standing', 'default', 'neutral', 'normal', 'idle', 'indifferent', 'serious'];
+  const ASSET_TOKEN_RE = /[_\s-]+/;
   const clean = (value, max = 800) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
   const emptySkillValue = (value) => /^(?:|none|null|unknown|n\/a|없음|해당\s*없음|미상)$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
@@ -333,15 +337,101 @@ const ITEMXCodex = (() => {
     result = result.replace(/\\/g, '/').replace(/\s+/g, ' ').trim().toLowerCase();
     return stem ? result.replace(/\.(?:png|jpe?g|webp|gif|avif)$/i, '') : result;
   }
+  function identityMatchesStem(identity, stem) {
+    if (!identity || identity.length < 2 || !stem) return false;
+    if (stem === identity || stem.startsWith(`${identity}_`) || stem.startsWith(`${identity}-`) || stem.startsWith(`${identity} `)) return true;
+    if (identity.length < 3) return false;
+    const idTokens = identity.split(ASSET_TOKEN_RE).filter((token) => token.length >= 2);
+    if (!idTokens.length) return false;
+    const stemTokens = stem.split(ASSET_TOKEN_RE).filter(Boolean);
+    for (let i = 0; i <= stemTokens.length - idTokens.length; i += 1) {
+      if (idTokens.every((token, index) => stemTokens[i + index] === token)) return true;
+    }
+    return false;
+  }
+  function representativeKindStem(stem, kind) {
+    if (!stem || !kind) return false;
+    if (stem === kind || stem.endsWith(`_${kind}`) || stem.endsWith(`-${kind}`)) return true;
+    return !stem.includes('_') && !stem.includes('-') && stem.endsWith(` ${kind}`);
+  }
+  function representativeFamily(stem) {
+    const value = normalizeAssetName(stem, true);
+    for (const kind of REPRESENTATIVE_KINDS) {
+      if (!representativeKindStem(value, kind)) continue;
+      if (value.endsWith(`_${kind}`) || value.endsWith(`-${kind}`) || value.endsWith(` ${kind}`)) return value.slice(0, -(kind.length + 1));
+      return value;
+    }
+    return value;
+  }
+  function mentionedAssetNames(narrative) {
+    const names = [];
+    const re = /<(?:img|eomg)\s*=\s*"([^"]+)"|\{\{\s*asset::([^}]+)\}\}/gi;
+    String(narrative || '').replace(re, (_, img, asset) => {
+      const name = clean(img || asset, 240);
+      if (name) names.push(name);
+      return '';
+    });
+    return names;
+  }
+  function portraitAssetIndex(rows) {
+    if (!rows) return { rows: [], byName: new Map(), byNormalized: new Map(), byStem: new Map(), byToken: new Map(), representatives: [] };
+    if (rows.__ix) return rows.__ix;
+    const byName = new Map(), byNormalized = new Map(), byStem = new Map(), byToken = new Map(), representatives = [];
+    const unique = (map, key, value) => {
+      if (!key) return;
+      if (map.has(key) && map.get(key) !== value) map.set(key, null);
+      else if (!map.has(key)) map.set(key, value);
+    };
+    for (const row of rows) {
+      if (!row?.name || !row?.id) continue;
+      const stem = normalizeAssetName(row.name, true);
+      const tokens = stem.split(ASSET_TOKEN_RE).filter(Boolean);
+      let kind = '';
+      for (const one of REPRESENTATIVE_KINDS) if (representativeKindStem(stem, one)) { kind = one; break; }
+      const prep = { row, stem, tokens, kind, family: kind ? representativeFamily(stem) : '' };
+      byName.set(row.name, row);
+      unique(byNormalized, normalizeAssetName(row.name), row);
+      unique(byStem, stem, prep);
+      const seenTok = new Set();
+      for (const token of tokens) {
+        if (token.length < 3 || seenTok.has(token)) continue;
+        seenTok.add(token);
+        const list = byToken.get(token);
+        if (list) list.push(prep);
+        else byToken.set(token, [prep]);
+      }
+      if (kind) representatives.push(prep);
+    }
+    const index = { rows, byName, byNormalized, byStem, byToken, representatives };
+    try { Object.defineProperty(rows, '__ix', { value: index, enumerable: false, configurable: true }); } catch {}
+    return index;
+  }
   function assetLookup(rows, requestedName) {
     const requested = clean(requestedName, 240); if (!requested) return null;
-    const exact = (rows || []).find((row) => row.name === requested); if (exact) return exact;
-    const normalized = normalizeAssetName(requested);
-    const normalizedMatches = (rows || []).filter((row) => normalizeAssetName(row.name) === normalized);
-    if (normalizedMatches.length === 1) return normalizedMatches[0];
-    const stem = normalizeAssetName(requested, true);
-    const stemMatches = (rows || []).filter((row) => normalizeAssetName(row.name, true) === stem);
-    return stemMatches.length === 1 ? stemMatches[0] : null;
+    const index = portraitAssetIndex(rows);
+    const exact = index.byName.get(requested); if (exact) return exact;
+    const named = index.byNormalized.get(normalizeAssetName(requested)); if (named) return named;
+    const stem = index.byStem.get(normalizeAssetName(requested, true));
+    return stem?.row || null;
+  }
+  function candidatePreps(index, identities) {
+    const out = [], seen = new Set();
+    const add = (prep) => {
+      if (!prep || seen.has(prep.row)) return;
+      if (!identities.some((identity) => identityMatchesStem(identity, prep.stem))) return;
+      seen.add(prep.row); out.push(prep);
+    };
+    for (const identity of identities) {
+      add(index.byStem.get(identity));
+      let pool = null;
+      for (const token of identity.split(ASSET_TOKEN_RE).filter((one) => one.length >= 3)) {
+        const list = index.byToken.get(token);
+        if (!list) { pool = []; break; }
+        if (!pool || list.length < pool.length) pool = list;
+      }
+      if (pool) for (const prep of pool) add(prep);
+    }
+    return out;
   }
   function assetForEntity(rows, entity, narrative = '') {
     const explicit = clean(entity?.portrait, 240);
@@ -353,28 +443,50 @@ const ITEMXCodex = (() => {
       .map((value) => normalizeAssetName(value, true))
       .filter((value) => value.length >= 2);
     if (!identities.length) return null;
-    const candidates = (rows || []).filter((row) => {
-      const stem = normalizeAssetName(row?.name, true);
-      return identities.some((identity) => stem === identity || stem.startsWith(`${identity}_`) || stem.startsWith(`${identity}-`) || stem.startsWith(`${identity} `));
-    });
+    const candidates = candidatePreps(portraitAssetIndex(rows), identities);
     if (!candidates.length) return null;
-    const representativeKinds = ['standing', 'default', 'neutral', 'normal', 'idle', 'indifferent', 'serious'];
-    for (const kind of representativeKinds) {
-      const direct = candidates.find((row) => identities.some((identity) => normalizeAssetName(row.name, true) === `${identity}_${kind}`));
-      if (direct) return direct;
-      const variant = candidates.find((row) => new RegExp(`(?:^|[_ -])${kind}$`, 'i').test(normalizeAssetName(row.name, true)));
-      if (variant) return variant;
+    for (const kind of REPRESENTATIVE_KINDS) {
+      const direct = candidates.find((prep) => identities.some((identity) => prep.stem === `${identity}_${kind}` || prep.stem === `${identity}-${kind}` || prep.stem === `${identity} ${kind}`));
+      if (direct) return direct.row;
+      const variant = candidates.find((prep) => prep.kind === kind);
+      if (variant) return variant.row;
     }
     const context = String(narrative || '').toLowerCase();
     let recent = null, recentAt = -1;
-    for (const row of candidates) {
-      const at = context.lastIndexOf(String(row.name || '').toLowerCase());
-      if (at > recentAt) { recent = row; recentAt = at; }
+    for (const prep of candidates) {
+      const at = context.lastIndexOf(String(prep.row.name || '').toLowerCase());
+      if (at > recentAt) { recent = prep.row; recentAt = at; }
     }
-    return recentAt >= 0 ? recent : candidates[0];
+    return recentAt >= 0 ? recent : candidates[0].row;
+  }
+  function portraitProtocolNames(rows, options = {}) {
+    const max = Math.max(0, Math.min(PORTRAIT_PROTOCOL_MAX, Number(options.max) || PORTRAIT_PROTOCOL_MAX));
+    const selected = [], seen = new Set();
+    const add = (name) => {
+      const key = normalizeAssetName(name, true);
+      if (!name || !key || seen.has(key) || selected.length >= max) return false;
+      seen.add(key); selected.push(name); return true;
+    };
+    for (const name of mentionedAssetNames(options.narrative)) {
+      const row = assetLookup(rows, name);
+      if (row) add(row.name);
+    }
+    for (const entity of options.entities || []) {
+      const row = assetForEntity(rows, entity, options.narrative);
+      if (row) add(row.name);
+    }
+    const families = new Set(), index = portraitAssetIndex(rows);
+    for (const kind of REPRESENTATIVE_KINDS) {
+      for (const prep of index.representatives) {
+        if (selected.length >= max) return selected;
+        if (prep.kind !== kind || !prep.family || families.has(prep.family)) continue;
+        families.add(prep.family); add(prep.row.name);
+      }
+    }
+    return selected;
   }
   function assetCatalog(character, max = 100, includeEmotion = false) {
-    const limit = Math.max(0, Math.min(1000, Number(max) || 0)), seen = new Set();
+    const limit = Math.max(0, Math.min(ASSET_CATALOG_MAX, Number(max) || 0)), seen = new Set();
     const collectAssets = (source, emotion = false) => {
       const rows = [];
       for (const tuple of source || []) {
@@ -385,12 +497,25 @@ const ITEMXCodex = (() => {
       }
       return rows;
     };
-    const additional = collectAssets(character?.additionalAssets), emotions = includeEmotion ? collectAssets(character?.emotionImages, true) : [];
-    if (!includeEmotion || additional.length + emotions.length <= limit) return additional.concat(emotions).slice(0, limit);
+    const collectCcAssets = (source) => {
+      const rows = [];
+      for (const one of source || []) {
+        if (!one || typeof one !== 'object' || Array.isArray(one)) continue;
+        const n = clean(one.name, 160), id = clean(one.uri || one.id, 240);
+        if (!n || !id || seen.has(n)) continue;
+        seen.add(n); rows.push({ name: n, id, ext: clean(one.ext, 20) });
+      }
+      return rows;
+    };
+    const additional = collectAssets(character?.additionalAssets);
+    const cc = collectCcAssets(character?.ccAssets);
+    const emotions = includeEmotion ? collectAssets(character?.emotionImages, true) : [];
+    const core = additional.concat(cc);
+    if (!includeEmotion || core.length + emotions.length <= limit) return core.concat(emotions).slice(0, limit);
     const emotionSlots = Math.min(emotions.length, Math.max(1, Math.floor(limit / 4)));
-    return additional.slice(0, Math.max(0, limit - emotionSlots)).concat(emotions.slice(0, emotionSlots));
+    return core.slice(0, Math.max(0, limit - emotionSlots)).concat(emotions.slice(0, emotionSlots));
   }
-  function activeModuleAssetCatalog(database, character, chat, max = 400) {
+  function activeModuleAssetCatalog(database, character, chat, max = ASSET_CATALOG_MAX) {
     const activeIds = new Set();
     const addIds = (values) => { for (const value of values || []) { const id = clean(value, 160); if (id) activeIds.add(id); } };
     addIds(database?.enabledModules); addIds(character?.modules); addIds(chat?.modules);
@@ -405,7 +530,9 @@ const ITEMXCodex = (() => {
     const personaId = clean(chat?.bindedPersona || database?.selectedPersona, 160);
     const persona = (database?.personas || []).find((one) => [one?.id, one?.chaId].some((value) => clean(value, 160) === personaId));
     if (persona?.embeddedModule?.assets) tuples.push(...persona.embeddedModule.assets);
-    return assetCatalog({ additionalAssets: tuples }, max, false);
+    const catalog = assetCatalog({ additionalAssets: tuples }, max, false);
+    portraitAssetIndex(catalog);
+    return catalog;
   }
   function anchor(state, narrative = '', max = 9000, options = {}) {
     const lines = ['[ITEMX CODEX · ACTIVE CONTEXT · authoritative]'];
@@ -415,16 +542,16 @@ const ITEMXCodex = (() => {
     return lines.join('\n').slice(0, max);
   }
   function protocol(assetNames = [], options = {}) {
-    const assets = assetNames.slice(0, 180).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ').slice(0, 12000) || 'NONE';
+    const assets = assetNames.slice(0, PORTRAIT_PROTOCOL_MAX).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ').slice(0, 12000) || 'NONE';
     const enabled = new Set(options.enabledDomains || ['skill', 'monster']), sections = ['## ITEMX CODEX TRANSPORT', 'Emit these hidden transports only when the narrative settles a change. Never expose the tags as prose.'];
     const skillRankRule = options.rarityMode === 'itemx'
       ? 'Use only ITEMX rank values normal|magic|rare|unique|epic|legendary|mythical|empyrean, based on explicit narrative power and prestige; do not inflate an unsupported rank.'
       : "Preserve the setting's own native rank, realm, discipline grade or proficiency wording exactly; do not replace it with ITEMX rarity names.";
     if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>...</level><mastery>...</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. This includes an owned, usable character-bound power, command authority, supernatural mark, contract right, transformation or summoning faculty. Finite or rechargeable charges belong in its cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If the setting has no explicit numeric scale, infer a conservative normalized level from 1 to 10 and mastery from 0 to 100 using the character's demonstrated experience with that skill: novice 1/0, established 4/40, practiced 5/55, veteran 7/75, master 9/90, transcendent 10/97. Treat these as estimates and never exaggerate beyond the narrative. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Always write informative cost and cooldown fields instead of bare NONE. Preserve explicit world-native resources, quantities and timing first. When exact numbers are absent, infer a conservative qualitative description from the demonstrated mechanism and intensity, such as slight mana drain, stamina exertion, sustained concentration, one ammunition, continuous use, brief recovery, magical stabilization, or a named narrative condition. Passive skills should say they are continuously applied and whether they require upkeep; sealed skills should state their unlock condition when known. Use '별도 소모 없음' or '재사용 제한 없음' only when the narrative actually supports cost-free or continuous use. Never invent precise numbers, a daily limit or a resource foreign to the setting. Cooldowns must never use turns, rounds, actions or initiative.");
-    if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
+    if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death. If this scene already used an exact character asset tag such as <img="name">, <eomg="name"> or {{asset::name}}, copy that exact name into portrait. Prefer a listed default/standing portrait when no scene tag exists.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');
   }
-  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, assetLookup, assetForEntity, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
+  return { VERSION, STATE_KEY, MARKER_RE, ASSET_CATALOG_MAX, PORTRAIT_PROTOCOL_MAX, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, mentionedAssetNames, portraitAssetIndex, assetLookup, assetForEntity, portraitProtocolNames, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
 })();
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCodex = ITEMXCodex;

@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.0.3
+//@version 2.0.4
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX CODEX · v2.0.3
+//@display-name ITEMX CODEX · v2.0.4
 //@description World Inventory & Encounter Archive
 
 
@@ -664,6 +664,10 @@ const ITEMXCodex = (() => {
   const ITEMX_SKILL_RANKS = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
   const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
   const OPS = new Set(['merge', 'remove', 'restore']);
+  const ASSET_CATALOG_MAX = 30000;
+  const PORTRAIT_PROTOCOL_MAX = 180;
+  const REPRESENTATIVE_KINDS = ['standing', 'default', 'neutral', 'normal', 'idle', 'indifferent', 'serious'];
+  const ASSET_TOKEN_RE = /[_\s-]+/;
   const clean = (value, max = 800) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
   const emptySkillValue = (value) => /^(?:|none|null|unknown|n\/a|없음|해당\s*없음|미상)$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
@@ -980,15 +984,101 @@ const ITEMXCodex = (() => {
     result = result.replace(/\\/g, '/').replace(/\s+/g, ' ').trim().toLowerCase();
     return stem ? result.replace(/\.(?:png|jpe?g|webp|gif|avif)$/i, '') : result;
   }
+  function identityMatchesStem(identity, stem) {
+    if (!identity || identity.length < 2 || !stem) return false;
+    if (stem === identity || stem.startsWith(`${identity}_`) || stem.startsWith(`${identity}-`) || stem.startsWith(`${identity} `)) return true;
+    if (identity.length < 3) return false;
+    const idTokens = identity.split(ASSET_TOKEN_RE).filter((token) => token.length >= 2);
+    if (!idTokens.length) return false;
+    const stemTokens = stem.split(ASSET_TOKEN_RE).filter(Boolean);
+    for (let i = 0; i <= stemTokens.length - idTokens.length; i += 1) {
+      if (idTokens.every((token, index) => stemTokens[i + index] === token)) return true;
+    }
+    return false;
+  }
+  function representativeKindStem(stem, kind) {
+    if (!stem || !kind) return false;
+    if (stem === kind || stem.endsWith(`_${kind}`) || stem.endsWith(`-${kind}`)) return true;
+    return !stem.includes('_') && !stem.includes('-') && stem.endsWith(` ${kind}`);
+  }
+  function representativeFamily(stem) {
+    const value = normalizeAssetName(stem, true);
+    for (const kind of REPRESENTATIVE_KINDS) {
+      if (!representativeKindStem(value, kind)) continue;
+      if (value.endsWith(`_${kind}`) || value.endsWith(`-${kind}`) || value.endsWith(` ${kind}`)) return value.slice(0, -(kind.length + 1));
+      return value;
+    }
+    return value;
+  }
+  function mentionedAssetNames(narrative) {
+    const names = [];
+    const re = /<(?:img|eomg)\s*=\s*"([^"]+)"|\{\{\s*asset::([^}]+)\}\}/gi;
+    String(narrative || '').replace(re, (_, img, asset) => {
+      const name = clean(img || asset, 240);
+      if (name) names.push(name);
+      return '';
+    });
+    return names;
+  }
+  function portraitAssetIndex(rows) {
+    if (!rows) return { rows: [], byName: new Map(), byNormalized: new Map(), byStem: new Map(), byToken: new Map(), representatives: [] };
+    if (rows.__ix) return rows.__ix;
+    const byName = new Map(), byNormalized = new Map(), byStem = new Map(), byToken = new Map(), representatives = [];
+    const unique = (map, key, value) => {
+      if (!key) return;
+      if (map.has(key) && map.get(key) !== value) map.set(key, null);
+      else if (!map.has(key)) map.set(key, value);
+    };
+    for (const row of rows) {
+      if (!row?.name || !row?.id) continue;
+      const stem = normalizeAssetName(row.name, true);
+      const tokens = stem.split(ASSET_TOKEN_RE).filter(Boolean);
+      let kind = '';
+      for (const one of REPRESENTATIVE_KINDS) if (representativeKindStem(stem, one)) { kind = one; break; }
+      const prep = { row, stem, tokens, kind, family: kind ? representativeFamily(stem) : '' };
+      byName.set(row.name, row);
+      unique(byNormalized, normalizeAssetName(row.name), row);
+      unique(byStem, stem, prep);
+      const seenTok = new Set();
+      for (const token of tokens) {
+        if (token.length < 3 || seenTok.has(token)) continue;
+        seenTok.add(token);
+        const list = byToken.get(token);
+        if (list) list.push(prep);
+        else byToken.set(token, [prep]);
+      }
+      if (kind) representatives.push(prep);
+    }
+    const index = { rows, byName, byNormalized, byStem, byToken, representatives };
+    try { Object.defineProperty(rows, '__ix', { value: index, enumerable: false, configurable: true }); } catch {}
+    return index;
+  }
   function assetLookup(rows, requestedName) {
     const requested = clean(requestedName, 240); if (!requested) return null;
-    const exact = (rows || []).find((row) => row.name === requested); if (exact) return exact;
-    const normalized = normalizeAssetName(requested);
-    const normalizedMatches = (rows || []).filter((row) => normalizeAssetName(row.name) === normalized);
-    if (normalizedMatches.length === 1) return normalizedMatches[0];
-    const stem = normalizeAssetName(requested, true);
-    const stemMatches = (rows || []).filter((row) => normalizeAssetName(row.name, true) === stem);
-    return stemMatches.length === 1 ? stemMatches[0] : null;
+    const index = portraitAssetIndex(rows);
+    const exact = index.byName.get(requested); if (exact) return exact;
+    const named = index.byNormalized.get(normalizeAssetName(requested)); if (named) return named;
+    const stem = index.byStem.get(normalizeAssetName(requested, true));
+    return stem?.row || null;
+  }
+  function candidatePreps(index, identities) {
+    const out = [], seen = new Set();
+    const add = (prep) => {
+      if (!prep || seen.has(prep.row)) return;
+      if (!identities.some((identity) => identityMatchesStem(identity, prep.stem))) return;
+      seen.add(prep.row); out.push(prep);
+    };
+    for (const identity of identities) {
+      add(index.byStem.get(identity));
+      let pool = null;
+      for (const token of identity.split(ASSET_TOKEN_RE).filter((one) => one.length >= 3)) {
+        const list = index.byToken.get(token);
+        if (!list) { pool = []; break; }
+        if (!pool || list.length < pool.length) pool = list;
+      }
+      if (pool) for (const prep of pool) add(prep);
+    }
+    return out;
   }
   function assetForEntity(rows, entity, narrative = '') {
     const explicit = clean(entity?.portrait, 240);
@@ -1000,28 +1090,50 @@ const ITEMXCodex = (() => {
       .map((value) => normalizeAssetName(value, true))
       .filter((value) => value.length >= 2);
     if (!identities.length) return null;
-    const candidates = (rows || []).filter((row) => {
-      const stem = normalizeAssetName(row?.name, true);
-      return identities.some((identity) => stem === identity || stem.startsWith(`${identity}_`) || stem.startsWith(`${identity}-`) || stem.startsWith(`${identity} `));
-    });
+    const candidates = candidatePreps(portraitAssetIndex(rows), identities);
     if (!candidates.length) return null;
-    const representativeKinds = ['standing', 'default', 'neutral', 'normal', 'idle', 'indifferent', 'serious'];
-    for (const kind of representativeKinds) {
-      const direct = candidates.find((row) => identities.some((identity) => normalizeAssetName(row.name, true) === `${identity}_${kind}`));
-      if (direct) return direct;
-      const variant = candidates.find((row) => new RegExp(`(?:^|[_ -])${kind}$`, 'i').test(normalizeAssetName(row.name, true)));
-      if (variant) return variant;
+    for (const kind of REPRESENTATIVE_KINDS) {
+      const direct = candidates.find((prep) => identities.some((identity) => prep.stem === `${identity}_${kind}` || prep.stem === `${identity}-${kind}` || prep.stem === `${identity} ${kind}`));
+      if (direct) return direct.row;
+      const variant = candidates.find((prep) => prep.kind === kind);
+      if (variant) return variant.row;
     }
     const context = String(narrative || '').toLowerCase();
     let recent = null, recentAt = -1;
-    for (const row of candidates) {
-      const at = context.lastIndexOf(String(row.name || '').toLowerCase());
-      if (at > recentAt) { recent = row; recentAt = at; }
+    for (const prep of candidates) {
+      const at = context.lastIndexOf(String(prep.row.name || '').toLowerCase());
+      if (at > recentAt) { recent = prep.row; recentAt = at; }
     }
-    return recentAt >= 0 ? recent : candidates[0];
+    return recentAt >= 0 ? recent : candidates[0].row;
+  }
+  function portraitProtocolNames(rows, options = {}) {
+    const max = Math.max(0, Math.min(PORTRAIT_PROTOCOL_MAX, Number(options.max) || PORTRAIT_PROTOCOL_MAX));
+    const selected = [], seen = new Set();
+    const add = (name) => {
+      const key = normalizeAssetName(name, true);
+      if (!name || !key || seen.has(key) || selected.length >= max) return false;
+      seen.add(key); selected.push(name); return true;
+    };
+    for (const name of mentionedAssetNames(options.narrative)) {
+      const row = assetLookup(rows, name);
+      if (row) add(row.name);
+    }
+    for (const entity of options.entities || []) {
+      const row = assetForEntity(rows, entity, options.narrative);
+      if (row) add(row.name);
+    }
+    const families = new Set(), index = portraitAssetIndex(rows);
+    for (const kind of REPRESENTATIVE_KINDS) {
+      for (const prep of index.representatives) {
+        if (selected.length >= max) return selected;
+        if (prep.kind !== kind || !prep.family || families.has(prep.family)) continue;
+        families.add(prep.family); add(prep.row.name);
+      }
+    }
+    return selected;
   }
   function assetCatalog(character, max = 100, includeEmotion = false) {
-    const limit = Math.max(0, Math.min(1000, Number(max) || 0)), seen = new Set();
+    const limit = Math.max(0, Math.min(ASSET_CATALOG_MAX, Number(max) || 0)), seen = new Set();
     const collectAssets = (source, emotion = false) => {
       const rows = [];
       for (const tuple of source || []) {
@@ -1032,12 +1144,25 @@ const ITEMXCodex = (() => {
       }
       return rows;
     };
-    const additional = collectAssets(character?.additionalAssets), emotions = includeEmotion ? collectAssets(character?.emotionImages, true) : [];
-    if (!includeEmotion || additional.length + emotions.length <= limit) return additional.concat(emotions).slice(0, limit);
+    const collectCcAssets = (source) => {
+      const rows = [];
+      for (const one of source || []) {
+        if (!one || typeof one !== 'object' || Array.isArray(one)) continue;
+        const n = clean(one.name, 160), id = clean(one.uri || one.id, 240);
+        if (!n || !id || seen.has(n)) continue;
+        seen.add(n); rows.push({ name: n, id, ext: clean(one.ext, 20) });
+      }
+      return rows;
+    };
+    const additional = collectAssets(character?.additionalAssets);
+    const cc = collectCcAssets(character?.ccAssets);
+    const emotions = includeEmotion ? collectAssets(character?.emotionImages, true) : [];
+    const core = additional.concat(cc);
+    if (!includeEmotion || core.length + emotions.length <= limit) return core.concat(emotions).slice(0, limit);
     const emotionSlots = Math.min(emotions.length, Math.max(1, Math.floor(limit / 4)));
-    return additional.slice(0, Math.max(0, limit - emotionSlots)).concat(emotions.slice(0, emotionSlots));
+    return core.slice(0, Math.max(0, limit - emotionSlots)).concat(emotions.slice(0, emotionSlots));
   }
-  function activeModuleAssetCatalog(database, character, chat, max = 400) {
+  function activeModuleAssetCatalog(database, character, chat, max = ASSET_CATALOG_MAX) {
     const activeIds = new Set();
     const addIds = (values) => { for (const value of values || []) { const id = clean(value, 160); if (id) activeIds.add(id); } };
     addIds(database?.enabledModules); addIds(character?.modules); addIds(chat?.modules);
@@ -1052,7 +1177,9 @@ const ITEMXCodex = (() => {
     const personaId = clean(chat?.bindedPersona || database?.selectedPersona, 160);
     const persona = (database?.personas || []).find((one) => [one?.id, one?.chaId].some((value) => clean(value, 160) === personaId));
     if (persona?.embeddedModule?.assets) tuples.push(...persona.embeddedModule.assets);
-    return assetCatalog({ additionalAssets: tuples }, max, false);
+    const catalog = assetCatalog({ additionalAssets: tuples }, max, false);
+    portraitAssetIndex(catalog);
+    return catalog;
   }
   function anchor(state, narrative = '', max = 9000, options = {}) {
     const lines = ['[ITEMX CODEX · ACTIVE CONTEXT · authoritative]'];
@@ -1062,17 +1189,17 @@ const ITEMXCodex = (() => {
     return lines.join('\n').slice(0, max);
   }
   function protocol(assetNames = [], options = {}) {
-    const assets = assetNames.slice(0, 180).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ').slice(0, 12000) || 'NONE';
+    const assets = assetNames.slice(0, PORTRAIT_PROTOCOL_MAX).map((x) => clean(x, 160)).filter(Boolean).join(' ;; ').slice(0, 12000) || 'NONE';
     const enabled = new Set(options.enabledDomains || ['skill', 'monster']), sections = ['## ITEMX CODEX TRANSPORT', 'Emit these hidden transports only when the narrative settles a change. Never expose the tags as prose.'];
     const skillRankRule = options.rarityMode === 'itemx'
       ? 'Use only ITEMX rank values normal|magic|rare|unique|epic|legendary|mythical|empyrean, based on explicit narrative power and prestige; do not inflate an unsupported rank.'
       : "Preserve the setting's own native rank, realm, discipline grade or proficiency wording exactly; do not replace it with ITEMX rarity names.";
     if (enabled.has('skill')) sections.push(`Skills: <skillExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the skill identity, form or use; do not mechanically repeat a default and never use ❔</glyph><rank>...</rank><school>...</school><type>active|passive|sealed</type><status>learned|equipped|sealed|lost</status><level>...</level><mastery>...</mastery><cost>...</cost><cooldown>...</cooldown><target>...</target><affinity>...</affinity><description>...</description><effects>one ;; two</effects><growth>...</growth></skillExam>. Update with <skillPatch><id>...</id><action>learn|equip|unequip|mastery|seal|unseal|forget</action> or <op>merge|remove|restore</op> plus changed fields only.</skillPatch> ${skillRankRule}`, "The player skill registry records persistent named capabilities, techniques, proficiencies and masteries. This includes an owned, usable character-bound power, command authority, supernatural mark, contract right, transformation or summoning faculty. Finite or rechargeable charges belong in its cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. First explicit confirmation that the player already owns, uses, has mastered, has equipped, or is concretely known to possess one is a settled discovery event even when it was learned before this turn; emit skillExam if it is absent from ACTIVE CONTEXT. Registry discovery is not the moment of learning: never default a veteran or previously owned skill to level 1 or mastery 0 merely because it is first recorded. Preserve an explicit numeric skill or directly associated proficiency level/mastery from the narrative. If the setting has no explicit numeric scale, infer a conservative normalized level from 1 to 10 and mastery from 0 to 100 using the character's demonstrated experience with that skill: novice 1/0, established 4/40, practiced 5/55, veteran 7/75, master 9/90, transcendent 10/97. Treat these as estimates and never exaggerate beyond the narrative. Level 1 or mastery 0 is valid only when the narrative supports a newly learned or untrained skill. A bracketed word or generic action alone is not proof. Do not register an NPC or opponent's technique as a player skill; keep it in that encounter's moves unless the player actually acquires it. Track later learning, mastery, equipment, sealing and loss. Transient buffs and flavor descriptions are not skills. Always write informative cost and cooldown fields instead of bare NONE. Preserve explicit world-native resources, quantities and timing first. When exact numbers are absent, infer a conservative qualitative description from the demonstrated mechanism and intensity, such as slight mana drain, stamina exertion, sustained concentration, one ammunition, continuous use, brief recovery, magical stabilization, or a named narrative condition. Passive skills should say they are continuously applied and whether they require upkeep; sealed skills should state their unlock condition when known. Use '별도 소모 없음' or '재사용 제한 없음' only when the narrative actually supports cost-free or continuous use. Never invent precise numbers, a daily limit or a resource foreign to the setting. Cooldowns must never use turns, rounds, actions or initiative.");
-    if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
+    if (enabled.has('monster')) sections.push('Encounter bestiary: register only actual hostility/combat or an accepted duel/spar. Mentions, rumors, passive NPCs and unaccepted challenges do not register. Group unnamed mobs. Use <monsterExam><id>snake_case</id><name>...</name><glyph>choose one fitting emoji that reflects the creature identity or form; do not mechanically repeat a default and never use ❔</glyph><aliases>a ;; b</aliases><type>...</type><threat>...</threat><relation>hostile|sparring|neutral|allied|unknown</relation><status>active|ended|escaped|defeated|dead|unknown</status><portrait>exact asset name or NONE</portrait><weaknesses>...</weaknesses><resistances>...</resistances><moves>...</moves><description>...</description><outcome>latest completed combat result only; one or two concise sentences grounded in the narrative, including who or what delivered the decisive resolution and how; omit while unresolved or unsupported</outcome></monsterExam>. Update with <monsterPatch><id>...</id><action>encounter|end|escape|defeat|kill|ally</action><outcome>latest completed combat result when the narrative establishes it</outcome> or <op>merge|remove|restore</op> plus changed fields only.</monsterPatch> Preserve the previous outcome when a new encounter begins. Replace it only when a later combat is conclusively resolved. Never invent a victor, finishing move, wound, capture or death. If this scene already used an exact character asset tag such as <img="name">, <eomg="name"> or {{asset::name}}, copy that exact name into portrait. Prefer a listed default/standing portrait when no scene tag exists.', `AVAILABLE PORTRAIT ASSET NAMES (exact match only): ${assets}`);
     sections.push('Use existing ids. Close every tag. Multiple events are separate blocks in narrative order.');
     return sections.join('\n');
   }
-  return { VERSION, STATE_KEY, MARKER_RE, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, assetLookup, assetForEntity, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
+  return { VERSION, STATE_KEY, MARKER_RE, ASSET_CATALOG_MAX, PORTRAIT_PROTOCOL_MAX, esc, clone, marker, decodePayload, registry, snapshot, applyEvent, reconcileSkillEvent, extractResponse, eventsFromText, rebuild, requestView, normalizeAssetName, mentionedAssetNames, portraitAssetIndex, assetLookup, assetForEntity, portraitProtocolNames, assetCatalog, activeModuleAssetCatalog, anchor, protocol };
 })();
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCodex = ITEMXCodex;
 const ITEMXLorebook = (() => {
@@ -1430,8 +1557,8 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 @media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
 `;
 const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.0.3";
-const ITEMX_VERSION_LABEL = "2.0.3";
+const ITEMX_PLUGIN_VERSION = "2.0.4";
+const ITEMX_VERSION_LABEL = "2.0.4";
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -1458,7 +1585,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const runtime = {
     latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxSawScroll: false, outputSyncDeferred: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, homeProbeAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncDeferred: false, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
-    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] }, lorebookCache: { key: '', at: 0, rows: [] }, lorebookScanPromise: null,
+    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] }, characterAssetCache: { key: '', at: 0, rows: [] }, combinedAssetCache: { key: '', at: 0, rows: [] }, lorebookCache: { key: '', at: 0, rows: [] }, lorebookScanPromise: null,
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '', checkpointCacheRaw: null, checkpointCache: null,
     auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
   };
@@ -1732,13 +1859,43 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       .replace(ITEMX_CODEX_REF_RE, '')
       .replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
   }
-  function combinedPortraitAssets(character, moduleAssets = [], max = 400) {
-    const rows = ITEMXCodex.assetCatalog(character, max, true), seen = new Set(rows.map((row) => row.name));
-    for (const row of moduleAssets || []) {
+  function characterAssetFingerprint(character) {
+    const additional = character?.additionalAssets || [], emotions = character?.emotionImages || [], cc = character?.ccAssets || [];
+    const last = additional[additional.length - 1];
+    return `${additional.length}:${emotions.length}:${cc.length}:${additional[0]?.[0] || ''}:${last?.[0] || ''}:${cc[0]?.name || ''}`;
+  }
+
+  function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
+    const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
+    if (runtime.characterAssetCache.key === key && Date.now() - runtime.characterAssetCache.at < 30000) return runtime.characterAssetCache.rows;
+    const rows = ITEMXCodex.assetCatalog(character, max, true);
+    ITEMXCodex.portraitAssetIndex(rows);
+    runtime.characterAssetCache = { key, at: Date.now(), rows };
+    return rows;
+  }
+
+  function combinedPortraitAssets(character, moduleAssets = [], max = ITEMXCodex.ASSET_CATALOG_MAX) {
+    const extra = characterPortraitAssets(character, max);
+    if (!extra.length) {
+      const rows = moduleAssets || [];
+      return rows.length <= max ? rows : rows.slice(0, max);
+    }
+    if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
+    const combinedKey = `${runtime.characterAssetCache.key}|${runtime.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
+    if (runtime.combinedAssetCache.key === combinedKey && Date.now() - runtime.combinedAssetCache.at < 30000) return runtime.combinedAssetCache.rows;
+    const rows = extra.slice(), seen = new Set(rows.map((row) => row.name));
+    for (const row of moduleAssets) {
       if (rows.length >= max || !row?.name || !row?.id || seen.has(row.name)) continue;
       seen.add(row.name); rows.push(row);
     }
+    ITEMXCodex.portraitAssetIndex(rows);
+    runtime.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
     return rows;
+  }
+
+  function encounterEntities(snapshot) {
+    const monsters = snapshot?.monsters;
+    return (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
   }
 
   async function modulePortraitAssets(settings, character, chat) {
@@ -1749,7 +1906,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       const database = await Risuai.getDatabase(['modules', 'enabledModules', 'moduleIntergration', 'personas', 'selectedPersona']);
       if (!database) { runtime.permissions.db = false; runtime.moduleAssetCache = { key, at: Date.now(), rows: [] }; return []; }
       runtime.permissions.db = true;
-      const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, 400);
+      const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
+      ITEMXCodex.portraitAssetIndex(rows);
       runtime.moduleAssetCache = { key, at: Date.now(), rows };
       return rows;
     } catch (error) {
@@ -1770,7 +1928,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       if (!probe) { runtime.permissions.db = false; return false; }
       runtime.permissions.db = true;
       await setModuleAssetsEnabled(character, true);
-      runtime.moduleAssetCache = { key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`, at: Date.now(), rows: ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, 400) };
+      const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
+      ITEMXCodex.portraitAssetIndex(rows);
+      runtime.moduleAssetCache = { key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`, at: Date.now(), rows };
       return true;
     } catch (error) {
       runtime.permissions.db = false;
@@ -1779,15 +1939,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     }
   }
 
-  function protocolForSettings(settings, character, moduleAssets = []) {
+  function protocolForSettings(settings, character, moduleAssets = [], options = {}) {
     const parts = [];
     if (settings.itemsEnabled) parts.push(itemxProtocolText(settings.rarityMode));
     const domains = enabledCodexDomains(settings);
     if (domains.length) {
-      const characterLimit = moduleAssets.length ? 120 : 240;
-      const portraitRows = ITEMXCodex.assetCatalog(character, characterLimit, true), seen = new Set(portraitRows.map((row) => row.name));
-      for (const row of moduleAssets) { if (!seen.has(row.name)) { seen.add(row.name); portraitRows.push(row); } }
-      parts.push(ITEMXCodex.protocol(portraitRows.map((row) => row.name), { enabledDomains: domains, rarityMode: settings.rarityMode }));
+      const portraitRows = combinedPortraitAssets(character, moduleAssets, ITEMXCodex.ASSET_CATALOG_MAX);
+      const names = ITEMXCodex.portraitProtocolNames(portraitRows, {
+        narrative: options.narrative || '',
+        entities: options.entities || [],
+        max: ITEMXCodex.PORTRAIT_PROTOCOL_MAX
+      });
+      parts.push(ITEMXCodex.protocol(names, { enabledDomains: domains, rarityMode: settings.rarityMode }));
     }
     return parts.join('\n\n');
   }
@@ -2673,9 +2836,10 @@ ${codexPageStyle()}
       const domains = enabledCodexDomains(settings);
       const requested = [settings.itemsEnabled && 'items', settings.skillsEnabled && 'skills', settings.encountersEnabled && 'encounters'].filter(Boolean).join(', ');
       const moduleAssets = await modulePortraitAssets(settings, ctx.character, current);
+      const protocolOptions = { narrative: [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n'), entities: encounterEntities(codexSnapshot) };
       const itemRecoveryRules = settings.itemsEnabled ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.` : '';
       const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
-      const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
+      const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
       runtime.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
       const raw = modelText(response);
@@ -3022,7 +3186,7 @@ ${codexPageStyle()}
       const recent = safeMessages.slice(-4).map((message) => message.content || '').join('\n');
       const domains = enabledCodexDomains(settings);
       const moduleAssets = await modulePortraitAssets(settings, loaded.character, loaded.chat);
-      const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets)}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
+      const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets, { narrative: recent, entities: encounterEntities(loaded.codexSnapshot) })}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
       debugRecord('beforeRequest', { items: settings.itemsEnabled, skills: settings.skillsEnabled, encounters: settings.encountersEnabled, messages: safeMessages.length });
       return injectRequestProtocol(safeMessages, instruction);
     } catch (error) { fail('beforeRequest', error); return safeMessages; }
@@ -3806,7 +3970,7 @@ ${codexPageStyle()}
   }
 
   async function loadCodexPortraits(character, chat, codexSnapshot, settings) {
-    const result = {}, catalog = combinedPortraitAssets(character, await modulePortraitAssets(settings, character, chat), 600);
+    const result = {}, catalog = combinedPortraitAssets(character, await modulePortraitAssets(settings, character, chat), ITEMXCodex.ASSET_CATALOG_MAX);
     if (typeof Risuai.readImage !== 'function') return result;
     const asDataUrl = (value, ext = '') => {
       if (typeof value === 'string') return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
@@ -3839,7 +4003,17 @@ ${codexPageStyle()}
         const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
         if (runtime.portraitCache.has(cacheKey)) { result[monster.id] = runtime.portraitCache.get(cacheKey); continue; }
         try {
-          const image = asDataUrl(await Risuai.readImage(asset.id), asset.ext);
+          let raw = null;
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+              raw = await Risuai.readImage(asset.id);
+              if (raw) break;
+            } catch {
+              raw = null;
+            }
+            if (attempt < 2) await delay(280 * (attempt + 1));
+          }
+          const image = asDataUrl(raw, asset.ext);
           if (image) {
             result[monster.id] = image;
             if (image.length <= 4 * 1024 * 1024) {
