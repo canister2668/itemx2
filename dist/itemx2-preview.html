@@ -210,7 +210,7 @@
     @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }
     @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion) * { animation:none!important; } }
     @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }
-.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.2</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
+.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.3</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 const ITEMXCore = (() => {
   'use strict';
 
@@ -452,6 +452,7 @@ const ITEMXCore = (() => {
     const op = OPS.has((f.op || '').toLowerCase()) ? f.op.toLowerCase() : null;
     if (f.action && !action) return { error: `patch_bad_action:${clean(f.action, 80)}` };
     if (f.op && !op) return { error: `patch_bad_op:${clean(f.op, 80)}` };
+    if (action && op) return { error: 'patch_conflicting_operation' };
     if (!action && !op) return { error: 'patch_missing_operation' };
     if (!id && action !== 'transform' && action !== 'swap') return { error: 'patch_no_id' };
     const fields = {};
@@ -472,7 +473,11 @@ const ITEMXCore = (() => {
   function newRegistry() { return { order: [], items: {}, diagnostics: [] }; }
   function insert(reg, item) { if (!reg.items[item.id]) reg.order.push(item.id); reg.items[item.id] = item; }
   function diagnostic(reg, code, detail = '') { reg.diagnostics.push({ code, detail }); if (reg.diagnostics.length > 50) reg.diagnostics.shift(); }
-  function available(item) { return !item || item.possession === 'removed' ? 0 : Math.max(0, Number(item.count) || 1); }
+  function available(item) {
+    if (!item || item.possession === 'removed') return 0;
+    const value = item.count == null || String(item.count).trim() === '' ? 1 : Number(item.count);
+    return Number.isFinite(value) ? Math.max(0, value) : 1;
+  }
   function removeQuantity(item, quantity) {
     const have = available(item), take = quantity === 'all' ? have : (quantity || 1);
     if (take < 1 || take > have) return false;
@@ -528,15 +533,25 @@ const ITEMXCore = (() => {
   }
 
   function applyPatch(reg, patch) {
+    if (!patch || (patch.action && patch.op) || (patch.action && !ACTIONS.has(patch.action)) || (patch.op && !OPS.has(patch.op)) || (!patch.action && !patch.op)) {
+      diagnostic(reg, 'patch_bad_operation', patch?.id || ''); return null;
+    }
     if (patch.action === 'transform') {
-      if (patch.inputs.some((one) => available(reg.items[one.id]) < one.quantity) || patch.outputs.some((one) => !reg.items[one.id])) { diagnostic(reg, 'action_invalid_transform'); return null; }
-      patch.inputs.forEach((one) => removeQuantity(reg.items[one.id], one.quantity));
-      patch.outputs.forEach((one) => { const item = reg.items[one.id]; const have = item.possession === 'owned' ? available(item) : 0; item.count = have + one.quantity; item.possession = 'owned'; item.location = 'inventory'; });
+      const aggregate = (rows) => (rows || []).reduce((totals, row) => totals.set(row.id, (totals.get(row.id) || 0) + row.quantity), new Map());
+      const inputs = aggregate(patch.inputs), outputs = aggregate(patch.outputs);
+      if (!inputs.size || !outputs.size || [...inputs].some(([id, quantity]) => available(reg.items[id]) < quantity) || [...outputs.keys()].some((id) => !reg.items[id])) { diagnostic(reg, 'action_invalid_transform'); return null; }
+      const affected = new Map([...new Set([...inputs.keys(), ...outputs.keys()])].map((id) => [id, clone(reg.items[id])]));
+      for (const [id, quantity] of inputs) if (!removeQuantity(affected.get(id), quantity)) { diagnostic(reg, 'action_invalid_transform'); return null; }
+      for (const [id, quantity] of outputs) {
+        const item = affected.get(id), have = item.possession === 'owned' ? available(item) : 0;
+        item.count = have + quantity; item.possession = 'owned'; item.location = 'inventory'; item.slot = null; item.removedReason = null;
+      }
+      for (const [id, item] of affected) reg.items[id] = item;
       return reg.items[patch.outputs[0]?.id] || null;
     }
     if (patch.action === 'swap') {
       const oldItem = reg.items[patch.unequip], newItem = reg.items[patch.equip];
-      if (!oldItem || !newItem || oldItem.location !== 'equipped' || (oldItem.slot && oldItem.slot !== patch.slot)) { diagnostic(reg, 'action_invalid_swap'); return null; }
+      if (!oldItem || !newItem || oldItem.location !== 'equipped' || oldItem.possession !== 'owned' || available(oldItem) < 1 || newItem.possession !== 'owned' || available(newItem) < 1 || (oldItem.slot && oldItem.slot !== patch.slot)) { diagnostic(reg, 'action_invalid_swap'); return null; }
       const conflict = slotConflict(reg, newItem.id, patch.slot);
       if (conflict && conflict.id !== oldItem.id) { diagnostic(reg, 'action_slot_occupied', conflict.id); return null; }
       oldItem.location = 'inventory'; oldItem.slot = null; newItem.possession = 'owned'; newItem.location = 'equipped'; newItem.slot = patch.slot; return newItem;
@@ -555,7 +570,7 @@ const ITEMXCore = (() => {
       } else if (patch.action === 'restore') {
         item.count = patch.quantity === 'all' ? 1 : (patch.quantity || Math.max(available(item), 1)); item.possession = 'owned'; item.location = 'inventory'; item.removedReason = null;
       } else if (patch.action === 'equip') {
-        if (!patch.slot || item.possession === 'removed' || slotConflict(reg, item.id, patch.slot)) { diagnostic(reg, 'action_invalid_equip', item.id); return null; }
+        if (!patch.slot || item.possession !== 'owned' || available(item) < 1 || slotConflict(reg, item.id, patch.slot)) { diagnostic(reg, 'action_invalid_equip', item.id); return null; }
         item.possession = 'owned'; item.location = 'equipped'; item.slot = patch.slot;
       } else if (patch.action === 'unequip') {
         if (item.location !== 'equipped') { diagnostic(reg, 'action_not_equipped', item.id); return null; }
@@ -616,9 +631,13 @@ const ITEMXCore = (() => {
       out.push(text.slice(cursor, part.start));
       const parsed = part.kind === 'xml' ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`) : parseBracket(part.body, `${part.raw}:${index}`);
       if (parsed.item) {
-        const event = { kind: 'exam', item: parsed.item }; const view = clone(applyEvent(reg, event)); events.push(event); out.push(marker({ v: VERSION, event, view }));
+        const event = { kind: 'exam', item: parsed.item }, view = clone(applyEvent(reg, event));
+        if (view) { events.push(event); out.push(marker({ v: VERSION, event, view })); }
+        else { const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed'; errors.push(error); out.push(marker({ v: VERSION, error })); }
       } else if (parsed.patch) {
-        const event = { kind: 'patch', patch: parsed.patch }; const view = clone(applyEvent(reg, event)); events.push(event); out.push(marker({ v: VERSION, event, view }));
+        const event = { kind: 'patch', patch: parsed.patch }, view = clone(applyEvent(reg, event));
+        if (view) { events.push(event); out.push(marker({ v: VERSION, event, view })); }
+        else { const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed'; errors.push(error); out.push(marker({ v: VERSION, error })); }
       } else {
         const error = parsed.error || 'invalid_transport'; errors.push(error); out.push(marker({ v: VERSION, error }));
       }
@@ -650,14 +669,8 @@ const ITEMXCore = (() => {
     const next = clone(chat || {}); next.scriptstate = { ...(next.scriptstate || {}) };
     next.scriptstate[CHAT_KEY] ||= randomId();
     const encoded = JSON.stringify(snapshot);
-    next.scriptstate[STATE_KEY] = encoded.length <= 524288 ? encoded : JSON.stringify({
-      schema: snapshot?.schema || VERSION,
-      rev: snapshot?.rev || 1,
-      fingerprint: snapshot?.fingerprint || '',
-      updatedAt: snapshot?.updatedAt || Date.now(),
-      compacted: true,
-      registry: { order: [], items: {}, diagnostics: [{ code: 'snapshot_compacted' }] }
-    });
+    if (encoded.length <= 524288) next.scriptstate[STATE_KEY] = encoded;
+    else delete next.scriptstate[STATE_KEY];
     return next;
   }
   function requestView(text) {
@@ -824,4 +837,4 @@ const ITEMXRenderer = (() => {
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
 
-const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.2</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
+const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.3</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>

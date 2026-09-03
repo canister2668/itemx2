@@ -39,12 +39,17 @@ const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
 const ITEMX_MANUAL_KEY = '$__itemx2_manual_events';
 const ITEMX_MESSAGE_EVENT_KEY = '$__itemx2_message_events';
+const ITEMX_CHECKPOINT_KEY = '$__itemx2_checkpoint';
 const ITEMX_AUX_KEY = '$__itemx2_aux_processed';
+const ITEMX_LORE_KEY = '$__itemx2_lore_enrichment';
 const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
 const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
 const ITEMX_AUX_SETTLE_MS = 1500;
 const ITEMX_AUX_PROMPT_REVISION = 2;
 const ITEMX_ROOT_PAGE_SIZE = 16;
+const ITEMX_CHECKPOINT_TAIL_EVENTS = 128;
+const ITEMX_CHECKPOINT_TAIL_MESSAGES = 32;
+const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 128;
 const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX CODEX"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="10.5" font-weight="900" letter-spacing="2">CODEX</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(ITEMX_BADGE_SVG)}`;
 
@@ -55,8 +60,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const runtime = {
     latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxSawScroll: false, outputSyncDeferred: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, homeProbeAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncDeferred: false, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
-    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] },
-    panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
+    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] }, lorebookCache: { key: '', at: 0, rows: [] }, lorebookScanPromise: null,
+    panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '', checkpointCacheRaw: null, checkpointCache: null,
     auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
   };
 
@@ -220,8 +225,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       Risuai.pluginStorage.getItem(`debugEnabled:${id}`),
       Risuai.pluginStorage.getItem(`effectsEnabled:${id}`),
       Risuai.pluginStorage.getItem(`fontScale:${id}`),
-      Risuai.pluginStorage.getItem(`moduleAssetsEnabled:${id}`)
-    ]).then(([enabled, main, aux, rarity, items, skills, encounters, debug, effects, fontScale, moduleAssets]) => {
+      Risuai.pluginStorage.getItem(`moduleAssetsEnabled:${id}`),
+      Risuai.pluginStorage.getItem(`lorebookEncounterEnabled:${id}`)
+    ]).then(([enabled, main, aux, rarity, items, skills, encounters, debug, effects, fontScale, moduleAssets, lorebookEncounter]) => {
       const settings = {
         enabled: enabled !== '0', mainOutput: main !== '0',
         // The public API cannot preflight the shared auxiliary provider.
@@ -230,7 +236,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         itemsEnabled: items !== '0', skillsEnabled: skills !== '0', encountersEnabled: encounters !== '0', debugEnabled: debug === '1',
         effectsEnabled: effects !== '0',
         fontScale: ['small', 'medium', 'large'].includes(fontScale) ? fontScale : 'small',
-        moduleAssetsEnabled: moduleAssets === '1'
+        moduleAssetsEnabled: moduleAssets === '1',
+        lorebookEncounterEnabled: lorebookEncounter === '1'
       };
       runtime.settingsCache.set(id, settings);
       runtime.visualEffectsEnabled = settings.effectsEnabled;
@@ -301,6 +308,11 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     await Risuai.pluginStorage.setItem(`moduleAssetsEnabled:${settingsId(character)}`, value ? '1' : '0');
     updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
     runtime.moduleAssetCache = { key: '', at: 0, rows: [] };
+  }
+
+  async function setLorebookEncounterEnabled(character, value) {
+    await Risuai.pluginStorage.setItem(`lorebookEncounterEnabled:${settingsId(character)}`, value ? '1' : '0');
+    updateCachedSettings(character, { lorebookEncounterEnabled: Boolean(value) });
   }
 
   const AUX_LABELS = { off: '끔', missing: '누락 시', always: '항상 검토' };
@@ -520,7 +532,9 @@ ${codexPageStyle()}
     try {
       const raw = chat?.scriptstate?.[ITEMX_MANUAL_KEY];
       const rows = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      return Array.isArray(rows) ? rows.filter((row) => row && Number.isInteger(row.afterIndex) && row.event?.kind).slice(-256) : [];
+      // Manual events are authoritative source facts. Never truncate them by
+      // count: doing so can discard an old exam while retaining later patches.
+      return Array.isArray(rows) ? rows.filter((row) => row && Number.isInteger(row.afterIndex) && row.event?.kind) : [];
     } catch { return []; }
   }
 
@@ -528,12 +542,41 @@ ${codexPageStyle()}
     try {
       const raw = chat?.scriptstate?.[ITEMX_MESSAGE_EVENT_KEY];
       const rows = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      return Array.isArray(rows) ? rows.filter((row) => row && /^[A-Za-z0-9_-]{1,80}$/.test(row.ref || '') && ['item', 'codex'].includes(row.domain) && row.payload?.event).slice(-512) : [];
+      // Every compact ref in a surviving message needs its event payload for
+      // deterministic replay, including edits or rerolls of old messages.
+      return Array.isArray(rows) ? rows.filter((row) => row && /^[A-Za-z0-9_-]{1,80}$/.test(row.ref || '') && ['item', 'codex'].includes(row.domain) && row.payload?.event) : [];
     } catch { return []; }
   }
 
+  function replayCheckpoint(chat) {
+    try {
+      const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
+      if (typeof raw === 'string' && raw === runtime.checkpointCacheRaw) return runtime.checkpointCache;
+      const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (value?.v !== 1 || !Number.isInteger(value.boundary) || !value.item?.registry || !value.codex?.skills || !Array.isArray(value.rows) || !Array.isArray(value.manual)) return null;
+      if (typeof raw === 'string') { runtime.checkpointCacheRaw = raw; runtime.checkpointCache = value; }
+      return value;
+    } catch { return null; }
+  }
+
+  function prefixMarkerFingerprint(chat, boundary) {
+    let source = `b:${boundary}`;
+    for (let index = 0; index <= boundary; index += 1) {
+      const markers = messageData(chat?.message?.[index]).match(/<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g);
+      if (markers) source += `|${index}:${markers.join('')}`;
+    }
+    return ITEMXCore.fnv1a(source);
+  }
+
+  function checkpointStatus(chat) {
+    const checkpoint = replayCheckpoint(chat);
+    const valid = Boolean(checkpoint && checkpoint.boundary < (chat?.message || []).length && checkpoint.prefix === prefixMarkerFingerprint(chat, checkpoint.boundary));
+    return { checkpoint, valid };
+  }
+
   function buildMessageEventLookup(chat) {
-    const rows = messageEventLedger(chat), itemByRef = new Map(), codexByRef = new Map(), payloads = new Map();
+    const archived = replayCheckpoint(chat)?.rows || [];
+    const rows = [...archived, ...messageEventLedger(chat)], itemByRef = new Map(), codexByRef = new Map(), payloads = new Map();
     for (const row of rows) {
       if (row.domain === 'item') itemByRef.set(row.ref, row.payload);
       else if (row.domain === 'codex') codexByRef.set(row.ref, row.payload);
@@ -545,10 +588,11 @@ ${codexPageStyle()}
   function replaySourceFingerprint(chat) {
     const state = chat?.scriptstate || {};
     const stable = (value) => typeof value === 'string' ? value : JSON.stringify(value ?? null);
-    let source = `${stable(state[ITEMX_MANUAL_KEY])}|${stable(state[ITEMX_MESSAGE_EVENT_KEY])}`;
+    const status = checkpointStatus(chat), start = status.valid ? status.checkpoint.boundary + 1 : 0;
+    let source = `${status.valid ? `${status.checkpoint.boundary}:${status.checkpoint.prefix}` : stable(state[ITEMX_CHECKPOINT_KEY])}|${stable(state[ITEMX_MANUAL_KEY])}|${stable(state[ITEMX_MESSAGE_EVENT_KEY])}`;
     const markerRe = /<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g;
-    for (const [index, message] of (chat?.message || []).entries()) {
-      const markers = messageData(message).match(markerRe);
+    for (let index = start; index < (chat?.message || []).length; index += 1) {
+      const markers = messageData(chat.message[index]).match(markerRe);
       if (markers) source += `|${index}:${markers.join('')}`;
     }
     return ITEMXCore.fnv1a(source);
@@ -570,6 +614,7 @@ ${codexPageStyle()}
       ? { v: ITEMXCodex.VERSION, d: codexEvent.domain || '', k: codexEvent.kind, a: codexEvent.patch?.action, o: codexEvent.patch?.op, q: Object.keys(codexEvent.patch?.fields || {}), e: codexView, p: previous }
       : { v: ITEMXCore.VERSION, i: {
         i: view.id, n: view.name, t: view.itemType, e: view.emoji, r: view.rarity, d: view.displayRarity,
+        p: view.power, q: view.required, u: view.durability, c: view.cost, o: view.possession, l: view.location,
         k: view.count, s: view.slot, h: view.theme, a: view.affinity, b: view.affinity2, x: view.condition,
         f: (view.effects || []).map((row) => [row.name, row.desc]), g: (view.augments || []).map((row) => [row.name, row.desc]), z: view.trivia
       } };
@@ -610,7 +655,7 @@ ${codexPageStyle()}
     if (full) return ITEMXCore.decodePayload(full[1]);
     const ref = String(marker || '').match(/^<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->$/);
     if (!ref) return null;
-    return inlineViewPayload(ref[2], 'item') || runtime.eventPayloads.get(`item:${ref[1]}`) || null;
+    return runtime.eventPayloads.get(`item:${ref[1]}`) || inlineViewPayload(ref[2], 'item') || null;
   }
 
   function itemPayloadId(payload) {
@@ -694,9 +739,11 @@ ${codexPageStyle()}
   }
 
   function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
-    const state = ITEMXCodex.snapshot(); let transport = '';
-    for (const message of chat?.message || []) {
-      const narrative = messageData(message);
+    const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
+    const messages = chat?.message || [], start = Math.max(0, options.start || 0), end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
+    let transport = options.transport || '';
+    for (let index = start; index <= end; index += 1) {
+      const narrative = messageData(messages[index]);
       for (const event of messageEvents(narrative, 'codex', lookup)) {
         // Events are reconciled exactly once when committed. Replay is a pure
         // fold over stored facts, never a second interpretation of prose.
@@ -733,29 +780,62 @@ ${codexPageStyle()}
       text.replace(ITEMX_REF_RE, (_, ref) => { used.add(`item:${ref}`); return ''; });
       text.replace(ITEMX_CODEX_REF_RE, (_, ref) => { used.add(`codex:${ref}`); return ''; });
     }
-    const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row).slice(-512);
-    let encodedLedger = JSON.stringify(kept);
-    while (kept.length > 1 && encodedLedger.length > 393216) {
-      kept.shift();
-      encodedLedger = JSON.stringify(kept);
-    }
-    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: encodedLedger };
-    return { chat: reconcileStoredRefViews(next, index).chat, changed: true };
+    // Remove only orphaned rows. Count/byte truncation corrupts replay by
+    // leaving refs in messages whose authoritative events no longer exist.
+    const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row);
+    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(kept) };
+    const reconciled = reconcileStoredRefViews(next, index).chat;
+    return { chat: checkpointReplay(reconciled), changed: true };
   }
 
-  function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat)) {
+  function checkpointReplay(chat) {
+    const messages = Array.isArray(chat?.message) ? chat.message : [], status = checkpointStatus(chat);
+    const liveRows = messageEventLedger(chat), liveManual = manualLedger(chat);
+    const tailMessages = messages.length - (status.valid ? status.checkpoint.boundary + 1 : 0);
+    const eventPressure = liveRows.length + liveManual.length >= ITEMX_CHECKPOINT_TAIL_EVENTS;
+    const messagePressure = tailMessages >= ITEMX_CHECKPOINT_TRIGGER_MESSAGES;
+    if (!eventPressure && !messagePressure && !(status.checkpoint && !status.valid)) return chat;
+    const boundary = messagePressure ? messages.length - ITEMX_CHECKPOINT_TAIL_MESSAGES - 1 : messages.length - 1;
+    if (boundary < 0 || (status.valid && boundary <= status.checkpoint.boundary)) return chat;
+    const lookup = buildMessageEventLookup(chat);
+    const allManual = [...(status.checkpoint?.manual || []), ...liveManual];
+    const item = rebuildWithManual(chat, lookup, { end: boundary, manual: allManual });
+    const codex = rebuildCodexWithLedger(chat, lookup, { end: boundary });
+    const used = new Set();
+    for (let index = 0; index <= boundary; index += 1) {
+      const text = messageData(messages[index]);
+      text.replace(ITEMX_REF_RE, (_, ref) => { used.add(`item:${ref}`); return ''; });
+      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => { used.add(`codex:${ref}`); return ''; });
+    }
+    const rowsByKey = new Map(lookup.rows.map((row) => [`${row.domain}:${row.ref}`, row]));
+    const rows = [...rowsByKey].filter(([key]) => used.has(key)).map(([, row]) => row);
+    const manual = allManual.filter((row) => row.afterIndex >= 0 && row.afterIndex <= boundary);
+    const checkpoint = { v: 1, boundary, prefix: prefixMarkerFingerprint(chat, boundary), item, codex, rows, manual };
+    const encoded = JSON.stringify(checkpoint);
+    if (encoded.length > 1572864) return chat;
+    const next = ITEMXCore.clone(chat);
+    const tailRows = [...rowsByKey].filter(([key]) => !used.has(key)).map(([, row]) => row);
+    const tailManual = allManual.filter((row) => !(row.afterIndex >= 0 && row.afterIndex <= boundary));
+    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_CHECKPOINT_KEY]: encoded, [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows), [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual) };
+    delete next.scriptstate[ITEMXCore.STATE_KEY];
+    return next;
+  }
+
+  function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat), options = {}) {
     const messages = Array.isArray(chat?.message) ? chat.message : [];
-    const ledger = manualLedger(chat), manualByIndex = new Map(), manualTail = [], reg = ITEMXCore.newRegistry();
+    const start = Math.max(0, options.start || 0), end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
+    const ledger = options.manual || [...(start === 0 ? replayCheckpoint(chat)?.manual || [] : []), ...manualLedger(chat)], manualByIndex = new Map(), manualTail = [], reg = options.registry ? ITEMXCore.clone(options.registry) : ITEMXCore.newRegistry();
     for (const row of ledger) {
-      if (row.afterIndex < 0 || row.afterIndex >= messages.length) manualTail.push(row);
+      if (row.afterIndex < 0 || row.afterIndex >= messages.length) { if (end === messages.length - 1) manualTail.push(row); }
+      else if (row.afterIndex < start || row.afterIndex > end) continue;
       else {
         const rows = manualByIndex.get(row.afterIndex) || [];
         rows.push(row); manualByIndex.set(row.afterIndex, rows);
       }
     }
-    let transport = '';
+    let transport = options.transport || '';
     const apply = (event) => { ITEMXCore.applyEvent(reg, event); transport += ITEMXCore.marker({ v: ITEMXCore.VERSION, event }); };
-    for (let index = 0; index < messages.length; index += 1) {
+    for (let index = start; index <= end; index += 1) {
       for (const event of messageEvents(messageData(messages[index]), 'item', lookup)) apply(event);
       for (const row of manualByIndex.get(index) || []) apply(row.event);
     }
@@ -778,8 +858,12 @@ ${codexPageStyle()}
         }
       }
       const lookup = buildMessageEventLookup(latestChat);
-      const snapshot = rebuildWithManual(latestChat, lookup);
-      const codexSnapshot = rebuildCodexWithLedger(latestChat, lookup);
+      const checkpoint = checkpointStatus(latestChat);
+      const manual = checkpoint.valid ? manualLedger(latestChat) : [...(checkpoint.checkpoint?.manual || []), ...manualLedger(latestChat)];
+      const replay = checkpoint.valid ? { start: checkpoint.checkpoint.boundary + 1, registry: checkpoint.checkpoint.item.registry, base: checkpoint.checkpoint.codex } : {};
+      const snapshot = rebuildWithManual(latestChat, lookup, { ...replay, manual });
+      const codexBase = rebuildCodexWithLedger(latestChat, lookup, replay);
+      const codexSnapshot = ITEMXLorebook.apply(codexBase, ITEMXLorebook.read(latestChat));
       const settings = await outputSettings(ctx.character);
       refreshLatest(latestChat, lookup);
       // Normal rebuilds are deliberately read-only. Writing an entire chat
@@ -795,7 +879,7 @@ ${codexPageStyle()}
 
   const CHAT_DATA_KEYS = [
     ITEMXCore.STATE_KEY, ITEMXCore.CHAT_KEY, ITEMXCodex.STATE_KEY,
-    ITEMX_MANUAL_KEY, ITEMX_MESSAGE_EVENT_KEY, ITEMX_AUX_KEY
+    ITEMX_MANUAL_KEY, ITEMX_MESSAGE_EVENT_KEY, ITEMX_CHECKPOINT_KEY, ITEMX_AUX_KEY, ITEMX_LORE_KEY
   ];
 
   function cleanChatPluginData(chat) {
@@ -881,9 +965,10 @@ ${codexPageStyle()}
     const ledger = manualLedger(latest);
     const afterIndex = Math.max(-1, (latest.message || []).length - 1);
     for (const event of events) ledger.push({ at: Date.now(), afterIndex, label, event: ITEMXCore.clone(event) });
-    const next = ITEMXCore.clone(latest);
-    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger.slice(-256)) };
-    const snapshot = rebuildWithManual(next);
+    let next = ITEMXCore.clone(latest);
+    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger) };
+    next = checkpointReplay(next);
+    const snapshot = rebuildWithManual(next, buildMessageEventLookup(next), checkpointStatus(next).valid ? { start: replayCheckpoint(next).boundary + 1, registry: replayCheckpoint(next).item.registry, manual: manualLedger(next) } : {});
     await Risuai.setChatToIndex(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
     runtime.status = `${label} · ${events.length}건`;
     return rebuildCurrent();
@@ -1218,16 +1303,18 @@ ${codexPageStyle()}
       if (!raw) throw new Error('보조 출력이 비어 있습니다.');
       const parsed = settings.itemsEnabled ? ITEMXCore.extractResponse(raw, snapshot.registry) : { content: stripItemTransport(raw), events: [], errors: [] };
       const validationRegistry = ITEMXCore.clone(snapshot.registry);
-      const validItems = [], partials = [];
+      const validItems = [], partials = [], rejectedIds = [];
       const itemSiblings = parsed.events.filter((event) => event.kind === 'exam').map((event) => event.item);
+      const itemEvidenceContext = [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n\n');
       for (const event of parsed.events) {
         if (event.kind !== 'exam') {
           if (ITEMXCore.applyEvent(validationRegistry, event) != null) validItems.push(event);
           continue;
         }
-        const evidence = ITEMXQuality.detectItemEvidence(committedNarrative, event.item, itemSiblings);
+        let evidence = ITEMXQuality.detectItemEvidence(committedNarrative, event.item, itemSiblings);
+        if (!evidence.segment) evidence = ITEMXQuality.detectItemEvidence(itemEvidenceContext, event.item, itemSiblings);
         const quality = ITEMXQuality.validateRecoveredItem(event, evidence);
-        if (quality.status === 'rejected') continue;
+        if (quality.status === 'rejected') { rejectedIds.push(event.item.id); continue; }
         const accepted = quality.status === 'partial' ? ITEMXQuality.projectSafePartial(event, quality, validationRegistry) : event;
         if (ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
         validItems.push(accepted);
@@ -1257,13 +1344,21 @@ ${codexPageStyle()}
       const validationCodex = ITEMXCodex.clone(codexSnapshot);
       const validCodex = codexParsed.events.filter((event) => ITEMXCodex.applyEvent(validationCodex, event) != null);
       const valid = [...validItems, ...validCodex];
-      debugRecord('auxiliary', { requested, events: valid.length, itemEvents: validItems.length, codexEvents: validCodex.length, partials: partials.length, partialFinal: unresolvedPartials.length });
+      debugRecord('auxiliary', { requested, events: valid.length, itemEvents: validItems.length, codexEvents: validCodex.length, partials: partials.length, partialFinal: unresolvedPartials.length, rejected: rejectedIds.length });
       const allErrors = [...parsed.errors, ...codexParsed.errors];
       if (!valid.length && allErrors.length) throw new Error(`보조 출력 검증 실패 (${allErrors[0]})`);
 
       const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
       if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return null;
       if (!valid.length) {
+        if (rejectedIds.length) {
+          const next = ITEMXCore.clone(latest), history = auxiliaryHistory(next);
+          history[guardKey] = { at: Date.now(), qualityRevision: ITEMXQuality.REVISION, state: 'rejected', events: 0, rejectedIds };
+          next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64))) };
+          await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, next);
+          if (runtime.activeContextKey === ctx.key) { runtime.status = '보조 출력 · 근거 불충분'; await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0); }
+          return [];
+        }
         await rememberAuxiliaryZero(ctx, guardKey);
         if (runtime.activeContextKey === ctx.key) {
           runtime.status = '보조 출력 · 누락 없음';
@@ -1288,7 +1383,7 @@ ${codexPageStyle()}
       if (typeof message?.data === 'string') message.data = positionMarkersByNarrative(`${message.data.trimEnd()}\n\n${markerText}`);
       else if (typeof message?.content === 'string') message.content = positionMarkersByNarrative(`${message.content.trimEnd()}\n\n${markerText}`);
       else return null;
-      const record = { at: Date.now(), qualityRevision: ITEMXQuality.REVISION, state: unresolvedPartials.length ? 'partial_final' : 'complete', events: valid.length, partialIds: unresolvedPartials.map((one) => one.event.item.id) };
+      const record = { at: Date.now(), qualityRevision: ITEMXQuality.REVISION, state: unresolvedPartials.length || rejectedIds.length ? 'partial_final' : 'complete', events: valid.length, partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds] };
       history[guardKey] = record;
       next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64))) };
       const compacted = compactMessageTransports(next, index).chat;
@@ -1431,7 +1526,8 @@ ${codexPageStyle()}
     runtime.legacyCommitTimer = globalThis.setTimeout(async () => {
       runtime.legacyCommitTimer = null;
       try {
-        await rebuildCurrent();
+        const loaded = await rebuildCurrent();
+        if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
         await catchUpLatestOutput({ syncUi: false });
         await ensureRootInventory();
         if (!confirm && runtime.auxActive === 0 && !runtime.auxRecoveryPromise) scheduleLegacyCommitRecovery(true);
@@ -1518,7 +1614,8 @@ ${codexPageStyle()}
     const pending = (async () => {
       do {
         runtime.outputSyncPending = false;
-        await rebuildCurrent();
+        const loaded = await rebuildCurrent();
+        if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
         await catchUpLatestOutput({ syncUi: false });
         await ensureRootInventory();
       } while (runtime.outputSyncPending && !runtime.unloading);
@@ -1714,7 +1811,7 @@ ${codexPageStyle()}
       return '';
     }).replace(ITEMX_REF_RE, (_, ref, inline) => {
       found = true;
-      const payload = inlineViewPayload(inline, 'item') || runtime.eventPayloads.get(`item:${ref}`);
+      const payload = runtime.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
       if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
       const motion = markerMotion(`ITEMX2@${ref}`);
       const html = renderPayload(`item-ref:${ref}`, payload, motion);
@@ -2032,6 +2129,68 @@ ${codexPageStyle()}
       }
       throw error;
     }
+  }
+
+  async function lorebookEntries(contextKey, { refresh = false } = {}) {
+    if (!refresh && runtime.lorebookCache.key === contextKey && runtime.lorebookCache.at && Date.now() - runtime.lorebookCache.at < 10000) return runtime.lorebookCache.rows;
+    const response = await callOptionalRisuApi('getCurrentLorebookEntries');
+    if (!response.available) {
+      const error = new Error('현재 RisuAI에서 로어북 조회 API를 지원하지 않습니다.');
+      error.code = 'LOREBOOK_API_UNAVAILABLE';
+      throw error;
+    }
+    const rows = Array.isArray(response.value) ? response.value
+      : Array.isArray(response.value?.entries) ? response.value.entries
+        : Array.isArray(response.value?.lorebook) ? response.value.lorebook : [];
+    runtime.lorebookCache = { key: contextKey, at: Date.now(), rows };
+    return rows;
+  }
+
+  async function scanLorebookEncounters({ refresh = false, silent = false } = {}) {
+    if (runtime.lorebookScanPromise) return runtime.lorebookScanPromise;
+    const pending = (async () => {
+      const ctx = await context();
+      if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
+      const entries = await lorebookEntries(ctx.key, { refresh });
+      const active = await context();
+      if (!active || active.key !== ctx.key) throw new Error('스캔 중 채팅이 바뀌었습니다. 다시 시도하세요.');
+      const scanResult = await enqueue(ctx.key, async () => {
+        const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+        if (!latest) throw new Error('현재 채팅을 다시 불러오지 못했습니다.');
+        if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
+          throw new Error('출력 스트리밍이 끝난 뒤 로어북을 스캔할 수 있습니다.');
+        }
+        const lookup = buildMessageEventLookup(latest);
+        const base = rebuildCodexWithLedger(latest, lookup);
+        const previous = ITEMXLorebook.read(latest);
+        const scanned = ITEMXLorebook.scan(base, entries, previous);
+        if (!scanned.result.enriched && !scanned.result.removed) return { ...scanned, changed: false };
+        const next = ITEMXCore.clone(latest);
+        next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) };
+        await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, next);
+        return { ...scanned, changed: true };
+      });
+      if (scanResult.changed) {
+        runtime.cachedLoaded = null;
+        runtime.detailHtmlCache.clear();
+        runtime.rootFingerprint = '';
+        runtime.generation += 1;
+        await rebuildCurrent();
+      }
+      const summary = scanResult.result;
+      if (!silent || summary.enriched || summary.removed) runtime.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
+      debugRecord('lorebook scan', summary);
+      if (!silent) await notifyUser(`조우 로어북 스캔 완료 · 보완 ${summary.enriched}건 · 정리 ${summary.removed}건 · 일치 ${summary.matched}건${summary.ambiguous ? ` · 모호하여 제외 ${summary.ambiguous}건` : ''}`, 'success');
+      return scanResult;
+    })().catch(async (error) => {
+      if (!silent) await notifyUser(`조우 로어북 스캔 실패: ${error.message || error}`, 'error');
+      else debugRecord('automatic lorebook scan skipped', error?.message || String(error));
+      return null;
+    }).finally(() => {
+      if (runtime.lorebookScanPromise === pending) runtime.lorebookScanPromise = null;
+    });
+    runtime.lorebookScanPromise = pending;
+    return pending;
   }
 
   async function notifyUser(message, tone = 'error') {
@@ -2419,7 +2578,8 @@ ${codexPageStyle()}
     const outcomeLabels = { ended: '교전 종료', escaped: '도주', defeated: '토벌', dead: '사망', unknown: '결말 기록' };
     const outcomeStatus = themeText(monster.outcomeStatus || monster.status);
     const outcome = monster.outcome ? `<section class="itemx-codex-section itemx2-encounter-outcome"><span class="itemx2-encounter-outcome-head"><h4>⚔️ 최근 전투 결과</h4><i>${ITEMXCore.esc(outcomeLabels[outcomeStatus] || '결말 기록')}${monster.outcomeEncounter ? ` · ${Number(monster.outcomeEncounter)}번째 조우` : ''}</i></span><p>${ITEMXCore.esc(monster.outcome)}</p></section>` : '';
-    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
+    const lore = monster._lore ? '<section class="itemx-codex-section"><small>📚 로어북 공개 정보로 보완된 기록</small></section>' : '';
+    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}${lore}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
   }
 
   const unwrapCodexPage = (html) => String(html || '').replace(/^<div class="itemx-codex-page itemx2-codex-page">/, '').replace(/<\/div>$/, '');
@@ -2493,7 +2653,7 @@ ${codexPageStyle()}
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
     const cleanupArmed = runtime.cleanupArmedUntil > Date.now();
-    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 누락 복구 또는 항상 검사를 직접 선택하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈의 캐릭터 에셋을 조우 초상화 후보에 더합니다. 권한·탐색·이미지 로드 실패 시 이모지로 표시합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우의 주요 글자만 즉시 조절합니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 누락 복구 또는 항상 검사를 직접 선택하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈의 캐릭터 에셋을 조우 초상화 후보에 더합니다. 권한·탐색·이미지 로드 실패 시 이모지로 표시합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 실제 등록된 조우만 정확 일치로 보완합니다. 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우의 주요 글자만 즉시 조절합니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
     const pager = pageCount > 1 ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>` : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
     const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
@@ -2538,7 +2698,7 @@ ${codexPageStyle()}
     }
   }
 
-  const rootStateFingerprint = (loaded) => [loaded.snapshot?.fingerprint, loaded.codexSnapshot?.fingerprint, Number(loaded.enabled), Number(loaded.itemsEnabled), Number(loaded.skillsEnabled), Number(loaded.encountersEnabled), Number(loaded.mainOutput), loaded.auxOutput, loaded.rarityMode, Number(loaded.moduleAssetsEnabled), Number(loaded.debugEnabled)].join(':');
+  const rootStateFingerprint = (loaded) => [loaded.snapshot?.fingerprint, loaded.codexSnapshot?.fingerprint, Number(loaded.enabled), Number(loaded.itemsEnabled), Number(loaded.skillsEnabled), Number(loaded.encountersEnabled), Number(loaded.mainOutput), loaded.auxOutput, loaded.rarityMode, Number(loaded.moduleAssetsEnabled), Number(loaded.lorebookEncounterEnabled), Number(loaded.debugEnabled)].join(':');
 
   async function managerRowIndexAtY(count, clientY) {
     let low = 0, high = count - 1;
@@ -2892,6 +3052,31 @@ ${codexPageStyle()}
           }
         }
         const moduleAssets = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-module-assets');
+        const lorebookToggle = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook');
+        if (lorebookToggle) {
+          const rect = await lorebookToggle.getBoundingClientRect();
+          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+            await applyRootSetting(async () => {
+              const loaded = await cachedOrRebuildCurrent(); if (!loaded) return;
+              const value = !(cachedSettings(loaded.character) || await outputSettings(loaded.character)).lorebookEncounterEnabled;
+              await setLorebookEncounterEnabled(loaded.character, value);
+              loaded.lorebookEncounterEnabled = value;
+              runtime.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
+              if (value) await scanLorebookEncounters({ refresh: true, silent: true });
+              await openRootInventory({ open: true, tab: 'settings' });
+            });
+            return;
+          }
+        }
+        const lorebookScan = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook-scan');
+        if (lorebookScan) {
+          const rect = await lorebookScan.getBoundingClientRect();
+          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+            await scanLorebookEncounters({ refresh: true });
+            await openRootInventory({ open: true, tab: 'settings' });
+            return;
+          }
+        }
         if (moduleAssets) {
           const rect = await moduleAssets.getBoundingClientRect();
           if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
@@ -3075,7 +3260,7 @@ ${codexPageStyle()}
     const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
     const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
     const cleanupArmed = runtime.cleanupArmedUntil > Date.now();
-    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 직접 켜세요.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈 에셋을 사용하며 실패하면 이모지로 표시합니다.</small></span><button class="itemx-tool ${loaded.moduleAssetsEnabled ? 'itemx-setting-on' : ''}" data-action="module-assets">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우 UI에 적용합니다.</small></span><select class="itemx-position-select" data-action="font-scale"><option value="small" ${loaded.fontScale === 'small' ? 'selected' : ''}>소</option><option value="medium" ${loaded.fontScale === 'medium' ? 'selected' : ''}>중</option><option value="large" ${loaded.fontScale === 'large' ? 'selected' : ''}>대</option></select></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section><section class="itemx-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다.</small></span><button class="itemx-tool itemx-manager-danger" data-action="cleanup-chat">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
+    const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 직접 켜세요.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈 에셋을 사용하며 실패하면 이모지로 표시합니다.</small></span><button class="itemx-tool ${loaded.moduleAssetsEnabled ? 'itemx-setting-on' : ''}" data-action="module-assets">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 등록된 조우만 정확 일치로 보완하며 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx-manager-actions"><button class="itemx-tool ${loaded.lorebookEncounterEnabled ? 'itemx-setting-on' : ''}" data-action="lorebook-toggle">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx-tool" data-action="lorebook-scan">지금 스캔</button></span></section><section class="itemx-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우 UI에 적용합니다.</small></span><select class="itemx-position-select" data-action="font-scale"><option value="small" ${loaded.fontScale === 'small' ? 'selected' : ''}>소</option><option value="medium" ${loaded.fontScale === 'medium' ? 'selected' : ''}>중</option><option value="large" ${loaded.fontScale === 'large' ? 'selected' : ''}>대</option></select></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section><section class="itemx-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다.</small></span><button class="itemx-tool itemx-manager-danger" data-action="cleanup-chat">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
     const iframeSkills = ui.tab === 'skills' ? (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean) : [];
     const iframeMonsters = ui.tab === 'bestiary' ? (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean) : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
@@ -3110,6 +3295,22 @@ ${codexPageStyle()}
       runtime.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
       if (!enabled) await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
       drawInventory(loaded);
+    });
+    root.querySelector('[data-action="lorebook-toggle"]')?.addEventListener('click', async () => {
+      loaded.lorebookEncounterEnabled = !loaded.lorebookEncounterEnabled;
+      await setLorebookEncounterEnabled(loaded.character, loaded.lorebookEncounterEnabled);
+      runtime.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
+      if (loaded.lorebookEncounterEnabled) await scanLorebookEncounters({ refresh: true, silent: true });
+      const next = await rebuildCurrent();
+      if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
+      else drawInventory(loaded);
+    });
+    root.querySelector('[data-action="lorebook-scan"]')?.addEventListener('click', async () => {
+      runtime.status = '조우 로어북 스캔 중'; drawInventory(loaded);
+      await scanLorebookEncounters({ refresh: true });
+      const next = await rebuildCurrent();
+      if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
+      else drawInventory(loaded);
     });
     root.querySelector('[data-action="font-scale"]')?.addEventListener('change', async (event) => { const value = event.target.value; await setFontScale(loaded.character, value); loaded.fontScale = value; runtime.status = `글자 크기 · ${{small:'소',medium:'중',large:'대'}[value]}`; drawInventory(loaded); });
     root.querySelector('[data-action="rebuild"]')?.addEventListener('click', async () => { const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); } });

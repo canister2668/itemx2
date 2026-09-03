@@ -63,6 +63,8 @@ const ITEMXCodex = (() => {
 
   function normalizeSkillExam(raw, seed) {
     const name = clean(raw.name, 160); if (!name) return { error: 'skill_no_name' };
+    if (raw.type && !SKILL_TYPES.has(raw.type)) return { error: 'skill_bad_type' };
+    if (raw.status && !SKILL_STATUS.has(raw.status)) return { error: 'skill_bad_status' };
     const type = SKILL_TYPES.has(raw.type) ? raw.type : 'active';
     const status = SKILL_STATUS.has(raw.status) ? raw.status : (type === 'sealed' ? 'sealed' : 'learned');
     return { event: { domain: 'skill', kind: 'exam', entity: {
@@ -75,6 +77,8 @@ const ITEMXCodex = (() => {
   }
   function normalizeMonsterExam(raw, seed) {
     const name = clean(raw.name, 160); if (!name) return { error: 'monster_no_name' };
+    if (raw.relation && !RELATIONS.has(raw.relation)) return { error: 'monster_bad_relation' };
+    if (raw.status && !ENCOUNTER_STATUS.has(raw.status)) return { error: 'monster_bad_status' };
     const relation = RELATIONS.has(raw.relation) ? raw.relation : 'unknown';
     const status = ENCOUNTER_STATUS.has(raw.status) ? raw.status : 'unknown';
     return { event: { domain: 'monster', kind: 'exam', entity: {
@@ -88,7 +92,14 @@ const ITEMXCodex = (() => {
     const id = ID_RE.test(raw.id || '') ? raw.id : null; if (!id) return { error: `${domain}_patch_no_id` };
     const allowedActions = domain === 'skill' ? SKILL_ACTIONS : MONSTER_ACTIONS;
     const action = allowedActions.has(raw.action) ? raw.action : null, op = OPS.has(raw.op) ? raw.op : null;
+    if (raw.action && !action) return { error: `${domain}_patch_bad_action` };
+    if (raw.op && !op) return { error: `${domain}_patch_bad_op` };
+    if (action && op) return { error: `${domain}_patch_conflicting_operation` };
     if (!action && !op) return { error: `${domain}_patch_missing_operation` };
+    if (domain === 'skill' && raw.type && !SKILL_TYPES.has(raw.type)) return { error: 'skill_patch_bad_type' };
+    if (domain === 'skill' && raw.status && !SKILL_STATUS.has(raw.status)) return { error: 'skill_patch_bad_status' };
+    if (domain === 'monster' && raw.relation && !RELATIONS.has(raw.relation)) return { error: 'monster_patch_bad_relation' };
+    if (domain === 'monster' && raw.status && !ENCOUNTER_STATUS.has(raw.status)) return { error: 'monster_patch_bad_status' };
     const allowed = domain === 'skill'
       ? ['name','glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth']
       : ['name','glyph','aliases','type','threat','relation','status','portrait','weaknesses','resistances','moves','description','outcome'];
@@ -96,8 +107,8 @@ const ITEMXCodex = (() => {
     for (const key of allowed) if (raw[key] !== '') fields[key === 'type' && domain === 'monster' ? 'kind' : key] = ['effects','aliases','weaknesses','resistances','moves'].includes(key) ? list(raw[key]) : clean(raw[key], key === 'description' ? 1200 : key === 'outcome' ? 600 : 800);
     if ('mastery' in fields) { fields.mastery = mastery(fields.mastery); if (fields.mastery == null) delete fields.mastery; }
     if ('level' in fields) { fields.level = skillLevel(fields.level); if (fields.level == null) delete fields.level; }
-    if ('cost' in fields) fields.cost = costValue(fields.cost, fields.type, fields.status);
-    if ('cooldown' in fields) fields.cooldown = cooldownValue(fields.cooldown, fields.type, fields.status);
+    // Cost/cooldown normalization needs the existing entity's effective type
+    // and status, so it is deliberately deferred to applyEvent().
     return { event: { domain, kind: 'patch', patch: { id, action, op, fields } } };
   }
   function parseTransport(tag, attrText, body, seed) {
@@ -119,12 +130,14 @@ const ITEMXCodex = (() => {
     const reg = event.domain === 'skill' ? state.skills : state.monsters;
     if (event.kind === 'exam') {
       if (!event.entity?.id || !ID_RE.test(event.entity.id)) { reg.diagnostics.push({ code: 'exam_invalid' }); return null; }
+      if (event.domain === 'skill' && (!SKILL_TYPES.has(event.entity.type) || !SKILL_STATUS.has(event.entity.status))) { reg.diagnostics.push({ code: 'exam_bad_enum', id: event.entity.id }); return null; }
+      if (event.domain === 'monster' && (!RELATIONS.has(event.entity.relation) || !ENCOUNTER_STATUS.has(event.entity.status))) { reg.diagnostics.push({ code: 'exam_bad_enum', id: event.entity.id }); return null; }
       const prior = reg.entries[event.entity.id], next = clone(event.entity), provided = new Set(next._provided || []), placeholders = new Set(next._placeholder || []);
       delete next._provided;
       delete next._placeholder;
       if (prior && event.domain === 'skill') {
         for (const key of placeholders) provided.delete(key);
-        for (const key of ['status', 'mastery', 'level', 'cost', 'cooldown']) if (!provided.has(key)) next[key] = prior[key];
+        for (const key of ['glyph','rank','school','type','status','level','mastery','cost','cooldown','target','affinity','description','effects','growth']) if (!provided.has(key)) next[key] = clone(prior[key]);
         const inferred = new Set(next._inferred || []);
         for (const key of prior._inferred || []) if (!provided.has(key)) inferred.add(key);
         if (inferred.size) next._inferred = [...inferred];
@@ -132,7 +145,7 @@ const ITEMXCodex = (() => {
       }
       if (event.domain === 'skill') { next.cost = costValue(next.cost, next.type, next.status); next.cooldown = cooldownValue(next.cooldown, next.type, next.status); next.glyph = ITEMXCore.resolveSkillGlyph(next); }
       if (prior && event.domain === 'monster') {
-        for (const key of ['status', 'active', 'relation', 'encounterCount']) if (!provided.has(key)) next[key] = prior[key];
+        for (const key of ['glyph','aliases','kind','threat','relation','status','portrait','weaknesses','resistances','moves','description']) if (!provided.has(key === 'kind' ? 'type' : key)) next[key] = clone(prior[key]);
         next.encounterCount = Number(prior.encounterCount) || 1;
         if (!provided.has('outcome')) {
           next.outcome = prior.outcome || '';
@@ -147,23 +160,34 @@ const ITEMXCodex = (() => {
       return put(reg, next);
     }
     const entity = reg.entries[event.patch?.id]; if (!entity) { reg.diagnostics.push({ code: 'patch_missing', id: event.patch?.id }); return null; }
-    const { action, op, fields } = event.patch;
-    if (op === 'remove') { entity.status = 'lost'; entity.active = false; }
-    else if (op === 'restore') Object.assign(entity, clone(fields), { status: event.domain === 'skill' ? 'learned' : 'active', active: event.domain === 'monster' });
+    const { action = null, op = null, fields = {} } = event.patch || {};
+    const allowedActions = event.domain === 'skill' ? SKILL_ACTIONS : MONSTER_ACTIONS;
+    if ((action && !allowedActions.has(action)) || (op && !OPS.has(op)) || (action && op) || (!action && !op)) { reg.diagnostics.push({ code: 'patch_bad_operation', id: entity.id }); return null; }
+    if (event.domain === 'skill' && (('type' in fields && !SKILL_TYPES.has(fields.type)) || ('status' in fields && !SKILL_STATUS.has(fields.status)))) { reg.diagnostics.push({ code: 'patch_bad_enum', id: entity.id }); return null; }
+    if (event.domain === 'monster' && (('relation' in fields && !RELATIONS.has(fields.relation)) || ('status' in fields && !ENCOUNTER_STATUS.has(fields.status)))) { reg.diagnostics.push({ code: 'patch_bad_enum', id: entity.id }); return null; }
+    if (op === 'remove') { entity.status = event.domain === 'skill' ? 'lost' : 'ended'; entity.active = false; }
+    else if (op === 'restore') {
+      Object.assign(entity, clone(fields));
+      if (!('status' in fields)) entity.status = event.domain === 'skill' ? (entity.type === 'sealed' ? 'sealed' : 'learned') : 'unknown';
+    }
     else if (op === 'merge') Object.assign(entity, clone(fields));
+    else if (action) Object.assign(entity, clone(fields));
     if (event.domain === 'skill') {
-      entity.cost = costValue(entity.cost, entity.type, entity.status);
-      entity.cooldown = cooldownValue(entity.cooldown, entity.type, entity.status);
-      entity.glyph = ITEMXCore.resolveSkillGlyph(entity);
       if (entity._inferred && fields && ('level' in fields || 'mastery' in fields)) {
         const explicitProgress = new Set(Object.keys(fields).filter((key) => key === 'level' || key === 'mastery'));
         entity._inferred = entity._inferred.filter((key) => !explicitProgress.has(key));
       }
-      if (action === 'equip') entity.status = 'equipped'; if (action === 'unequip' || action === 'learn' || action === 'unseal') entity.status = 'learned';
+      if (action === 'equip') entity.status = 'equipped';
+      if (action === 'unequip' || action === 'learn') entity.status = 'learned';
+      if (action === 'unseal') { if (entity.type === 'sealed') entity.type = 'active'; entity.status = 'learned'; }
       if (action === 'seal') entity.status = 'sealed'; if (action === 'forget') entity.status = 'lost'; if (action === 'mastery' && 'mastery' in fields) entity.mastery = mastery(fields.mastery);
+      if (!SKILL_TYPES.has(entity.type)) entity.type = 'active';
+      if (!SKILL_STATUS.has(entity.status)) entity.status = entity.type === 'sealed' ? 'sealed' : 'learned';
+      entity.cost = costValue(entity.cost, entity.type, entity.status);
+      entity.cooldown = cooldownValue(entity.cooldown, entity.type, entity.status);
+      entity.glyph = ITEMXCore.resolveSkillGlyph(entity);
     } else {
-      entity.glyph = ITEMXCore.resolveMonsterGlyph(entity);
-      if (action === 'encounter') { entity.status = 'active'; entity.active = true; entity.encounterCount = (Number(entity.encounterCount) || 1) + 1; }
+      if (action === 'encounter') { entity.status = 'active'; entity.encounterCount = (Number(entity.encounterCount) || 1) + 1; }
       const endStatus = { end: 'ended', escape: 'escaped', defeat: 'defeated', kill: 'dead', ally: 'ended' }[action];
       if (endStatus) {
         entity.status = endStatus; entity.active = false; if (action === 'ally') entity.relation = 'allied';
@@ -172,7 +196,10 @@ const ITEMXCodex = (() => {
         entity.outcomeStatus = ENCOUNTER_STATUS.has(entity.status) ? entity.status : 'unknown';
         entity.outcomeEncounter = Number(entity.encounterCount) || 1;
       }
-      if (ENCOUNTER_STATUS.has(entity.status)) entity.active = entity.status === 'active';
+      if (!RELATIONS.has(entity.relation)) entity.relation = 'unknown';
+      if (!ENCOUNTER_STATUS.has(entity.status)) entity.status = 'unknown';
+      entity.active = entity.status === 'active' && ['hostile', 'sparring'].includes(entity.relation);
+      entity.glyph = ITEMXCore.resolveMonsterGlyph(entity);
     }
     return entity;
   }
@@ -289,7 +316,8 @@ const ITEMXCodex = (() => {
         const id = parsed.event.kind === 'exam' ? parsed.event.entity?.id : parsed.event.patch?.id;
         const previous = id && reg.entries[id] ? clone(reg.entries[id]) : null;
         const view = clone(applyEvent(state, parsed.event));
-        events.push(parsed.event); output.push(marker({ v: VERSION, event: parsed.event, view, previous }));
+        if (view) { events.push(parsed.event); output.push(marker({ v: VERSION, event: parsed.event, view, previous })); }
+        else { const error = reg.diagnostics.at(-1)?.code || 'codex_apply_failed'; errors.push(error); output.push(marker({ v: VERSION, error })); }
       }
       else { errors.push(parsed.error || 'codex_invalid_transport'); output.push(marker({ v: VERSION, error: parsed.error || 'codex_invalid_transport' })); }
       cursor = part.end;

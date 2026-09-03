@@ -240,6 +240,7 @@ const ITEMXCore = (() => {
     const op = OPS.has((f.op || '').toLowerCase()) ? f.op.toLowerCase() : null;
     if (f.action && !action) return { error: `patch_bad_action:${clean(f.action, 80)}` };
     if (f.op && !op) return { error: `patch_bad_op:${clean(f.op, 80)}` };
+    if (action && op) return { error: 'patch_conflicting_operation' };
     if (!action && !op) return { error: 'patch_missing_operation' };
     if (!id && action !== 'transform' && action !== 'swap') return { error: 'patch_no_id' };
     const fields = {};
@@ -260,7 +261,11 @@ const ITEMXCore = (() => {
   function newRegistry() { return { order: [], items: {}, diagnostics: [] }; }
   function insert(reg, item) { if (!reg.items[item.id]) reg.order.push(item.id); reg.items[item.id] = item; }
   function diagnostic(reg, code, detail = '') { reg.diagnostics.push({ code, detail }); if (reg.diagnostics.length > 50) reg.diagnostics.shift(); }
-  function available(item) { return !item || item.possession === 'removed' ? 0 : Math.max(0, Number(item.count) || 1); }
+  function available(item) {
+    if (!item || item.possession === 'removed') return 0;
+    const value = item.count == null || String(item.count).trim() === '' ? 1 : Number(item.count);
+    return Number.isFinite(value) ? Math.max(0, value) : 1;
+  }
   function removeQuantity(item, quantity) {
     const have = available(item), take = quantity === 'all' ? have : (quantity || 1);
     if (take < 1 || take > have) return false;
@@ -316,15 +321,25 @@ const ITEMXCore = (() => {
   }
 
   function applyPatch(reg, patch) {
+    if (!patch || (patch.action && patch.op) || (patch.action && !ACTIONS.has(patch.action)) || (patch.op && !OPS.has(patch.op)) || (!patch.action && !patch.op)) {
+      diagnostic(reg, 'patch_bad_operation', patch?.id || ''); return null;
+    }
     if (patch.action === 'transform') {
-      if (patch.inputs.some((one) => available(reg.items[one.id]) < one.quantity) || patch.outputs.some((one) => !reg.items[one.id])) { diagnostic(reg, 'action_invalid_transform'); return null; }
-      patch.inputs.forEach((one) => removeQuantity(reg.items[one.id], one.quantity));
-      patch.outputs.forEach((one) => { const item = reg.items[one.id]; const have = item.possession === 'owned' ? available(item) : 0; item.count = have + one.quantity; item.possession = 'owned'; item.location = 'inventory'; });
+      const aggregate = (rows) => (rows || []).reduce((totals, row) => totals.set(row.id, (totals.get(row.id) || 0) + row.quantity), new Map());
+      const inputs = aggregate(patch.inputs), outputs = aggregate(patch.outputs);
+      if (!inputs.size || !outputs.size || [...inputs].some(([id, quantity]) => available(reg.items[id]) < quantity) || [...outputs.keys()].some((id) => !reg.items[id])) { diagnostic(reg, 'action_invalid_transform'); return null; }
+      const affected = new Map([...new Set([...inputs.keys(), ...outputs.keys()])].map((id) => [id, clone(reg.items[id])]));
+      for (const [id, quantity] of inputs) if (!removeQuantity(affected.get(id), quantity)) { diagnostic(reg, 'action_invalid_transform'); return null; }
+      for (const [id, quantity] of outputs) {
+        const item = affected.get(id), have = item.possession === 'owned' ? available(item) : 0;
+        item.count = have + quantity; item.possession = 'owned'; item.location = 'inventory'; item.slot = null; item.removedReason = null;
+      }
+      for (const [id, item] of affected) reg.items[id] = item;
       return reg.items[patch.outputs[0]?.id] || null;
     }
     if (patch.action === 'swap') {
       const oldItem = reg.items[patch.unequip], newItem = reg.items[patch.equip];
-      if (!oldItem || !newItem || oldItem.location !== 'equipped' || (oldItem.slot && oldItem.slot !== patch.slot)) { diagnostic(reg, 'action_invalid_swap'); return null; }
+      if (!oldItem || !newItem || oldItem.location !== 'equipped' || oldItem.possession !== 'owned' || available(oldItem) < 1 || newItem.possession !== 'owned' || available(newItem) < 1 || (oldItem.slot && oldItem.slot !== patch.slot)) { diagnostic(reg, 'action_invalid_swap'); return null; }
       const conflict = slotConflict(reg, newItem.id, patch.slot);
       if (conflict && conflict.id !== oldItem.id) { diagnostic(reg, 'action_slot_occupied', conflict.id); return null; }
       oldItem.location = 'inventory'; oldItem.slot = null; newItem.possession = 'owned'; newItem.location = 'equipped'; newItem.slot = patch.slot; return newItem;
@@ -343,7 +358,7 @@ const ITEMXCore = (() => {
       } else if (patch.action === 'restore') {
         item.count = patch.quantity === 'all' ? 1 : (patch.quantity || Math.max(available(item), 1)); item.possession = 'owned'; item.location = 'inventory'; item.removedReason = null;
       } else if (patch.action === 'equip') {
-        if (!patch.slot || item.possession === 'removed' || slotConflict(reg, item.id, patch.slot)) { diagnostic(reg, 'action_invalid_equip', item.id); return null; }
+        if (!patch.slot || item.possession !== 'owned' || available(item) < 1 || slotConflict(reg, item.id, patch.slot)) { diagnostic(reg, 'action_invalid_equip', item.id); return null; }
         item.possession = 'owned'; item.location = 'equipped'; item.slot = patch.slot;
       } else if (patch.action === 'unequip') {
         if (item.location !== 'equipped') { diagnostic(reg, 'action_not_equipped', item.id); return null; }
@@ -404,9 +419,13 @@ const ITEMXCore = (() => {
       out.push(text.slice(cursor, part.start));
       const parsed = part.kind === 'xml' ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`) : parseBracket(part.body, `${part.raw}:${index}`);
       if (parsed.item) {
-        const event = { kind: 'exam', item: parsed.item }; const view = clone(applyEvent(reg, event)); events.push(event); out.push(marker({ v: VERSION, event, view }));
+        const event = { kind: 'exam', item: parsed.item }, view = clone(applyEvent(reg, event));
+        if (view) { events.push(event); out.push(marker({ v: VERSION, event, view })); }
+        else { const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed'; errors.push(error); out.push(marker({ v: VERSION, error })); }
       } else if (parsed.patch) {
-        const event = { kind: 'patch', patch: parsed.patch }; const view = clone(applyEvent(reg, event)); events.push(event); out.push(marker({ v: VERSION, event, view }));
+        const event = { kind: 'patch', patch: parsed.patch }, view = clone(applyEvent(reg, event));
+        if (view) { events.push(event); out.push(marker({ v: VERSION, event, view })); }
+        else { const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed'; errors.push(error); out.push(marker({ v: VERSION, error })); }
       } else {
         const error = parsed.error || 'invalid_transport'; errors.push(error); out.push(marker({ v: VERSION, error }));
       }
@@ -438,14 +457,8 @@ const ITEMXCore = (() => {
     const next = clone(chat || {}); next.scriptstate = { ...(next.scriptstate || {}) };
     next.scriptstate[CHAT_KEY] ||= randomId();
     const encoded = JSON.stringify(snapshot);
-    next.scriptstate[STATE_KEY] = encoded.length <= 524288 ? encoded : JSON.stringify({
-      schema: snapshot?.schema || VERSION,
-      rev: snapshot?.rev || 1,
-      fingerprint: snapshot?.fingerprint || '',
-      updatedAt: snapshot?.updatedAt || Date.now(),
-      compacted: true,
-      registry: { order: [], items: {}, diagnostics: [{ code: 'snapshot_compacted' }] }
-    });
+    if (encoded.length <= 524288) next.scriptstate[STATE_KEY] = encoded;
+    else delete next.scriptstate[STATE_KEY];
     return next;
   }
   function requestView(text) {

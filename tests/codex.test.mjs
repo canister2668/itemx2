@@ -122,7 +122,7 @@ test('incomplete codex transport preserves later status trailers and item marker
 });
 
 test('re-exam preserves live skill and encounter state unless explicitly supplied', () => {
-  const first = codex.extractResponse('<skillExam><id>moon</id><name>월영참</name><type>active</type><status>equipped</status><level>9</level><mastery>73</mastery><cost>월광 집중</cost><cooldown>호흡 안정 후</cooldown></skillExam><monsterExam><id>wolf</id><name>흑랑왕</name><relation>hostile</relation><status>active</status></monsterExam>', codex.snapshot());
+  const first = codex.extractResponse('<skillExam><id>moon</id><name>월영참</name><glyph>🌙</glyph><rank>절정</rank><school>월광검법</school><type>passive</type><status>equipped</status><level>9</level><mastery>73</mastery><cost>월광 집중</cost><cooldown>호흡 안정 후</cooldown><target>단일</target><affinity>light</affinity><description>기존 설명</description><effects>참격 ;; 월광</effects><growth>극성</growth></skillExam><monsterExam><id>wolf</id><name>흑랑왕</name><glyph>🐺</glyph><aliases>검은 늑대</aliases><type>요수</type><threat>상</threat><relation>hostile</relation><status>active</status><portrait>wolf.webp</portrait><weaknesses>화염</weaknesses><resistances>암흑</resistances><moves>물어뜯기</moves><description>오래된 설명</description></monsterExam>', codex.snapshot());
   const defeated = codex.extractResponse('<monsterPatch><id>wolf</id><action>defeat</action></monsterPatch>', first.snapshot);
   const reexam = codex.extractResponse('<skillExam><id>moon</id><name>월영참 개</name><description>새 설명</description></skillExam><monsterExam><id>wolf</id><name>흑랑왕 개</name><description>새 설명</description></monsterExam>', defeated.snapshot);
   assert.equal(reexam.snapshot.skills.entries.moon.status, 'equipped');
@@ -130,9 +130,77 @@ test('re-exam preserves live skill and encounter state unless explicitly supplie
   assert.equal(reexam.snapshot.skills.entries.moon.mastery, 73);
   assert.equal(reexam.snapshot.skills.entries.moon.cost, '월광 집중');
   assert.equal(reexam.snapshot.skills.entries.moon.cooldown, '호흡 안정 후');
+  assert.equal(reexam.snapshot.skills.entries.moon.type, 'passive');
+  assert.equal(reexam.snapshot.skills.entries.moon.rank, '절정');
+  assert.equal(reexam.snapshot.skills.entries.moon.school, '월광검법');
+  assert.equal(reexam.snapshot.skills.entries.moon.affinity, 'light');
+  assert.deepEqual([...reexam.snapshot.skills.entries.moon.effects], ['참격', '월광']);
   assert.equal(reexam.snapshot.monsters.entries.wolf.status, 'defeated');
   assert.equal(reexam.snapshot.monsters.entries.wolf.active, false);
   assert.equal(reexam.snapshot.monsters.entries.wolf.encounterCount, 1);
+  assert.equal(reexam.snapshot.monsters.entries.wolf.kind, '요수');
+  assert.equal(reexam.snapshot.monsters.entries.wolf.threat, '상');
+  assert.equal(reexam.snapshot.monsters.entries.wolf.portrait, 'wolf.webp');
+  assert.deepEqual([...reexam.snapshot.monsters.entries.wolf.moves], ['물어뜯기']);
+});
+
+test('patch enums and conflicting operations are rejected before registry mutation', () => {
+  const base = codex.extractResponse('<skillExam><id>s1</id><name>기척 감지</name><type>passive</type></skillExam><monsterExam><id>m1</id><name>늑대</name><relation>hostile</relation><status>active</status></monsterExam>', codex.snapshot()).snapshot;
+  for (const raw of [
+    '<skillPatch><id>s1</id><op>merge</op><type>banana</type></skillPatch>',
+    '<skillPatch><id>s1</id><op>merge</op><status>potato</status></skillPatch>',
+    '<monsterPatch><id>m1</id><op>merge</op><relation>banana</relation></monsterPatch>',
+    '<monsterPatch><id>m1</id><op>merge</op><status>potato</status></monsterPatch>',
+    '<monsterPatch><id>m1</id><action>end</action><op>remove</op></monsterPatch>'
+  ]) {
+    const result = codex.extractResponse(raw, base);
+    assert.equal(result.events.length, 0);
+    assert.equal(result.errors.length, 1);
+  }
+  assert.equal(base.monsters.entries.m1.relation, 'hostile');
+  assert.equal(base.monsters.entries.m1.status, 'active');
+  const direct = codex.clone(base);
+  assert.equal(codex.applyEvent(direct, { domain: 'monster', kind: 'patch', patch: { id: 'm1', action: null, op: 'merge', fields: { relation: 'banana' } } }), null);
+  assert.equal(direct.monsters.entries.m1.relation, 'hostile');
+});
+
+test('monster patch state always remains inside its enum and active respects relation', () => {
+  const first = codex.extractResponse('<monsterExam><id>m1</id><name>기사</name><relation>neutral</relation><status>unknown</status></monsterExam>', codex.snapshot());
+  const activated = codex.extractResponse('<monsterPatch><id>m1</id><op>merge</op><status>active</status></monsterPatch>', first.snapshot);
+  assert.equal(activated.snapshot.monsters.entries.m1.status, 'active');
+  assert.equal(activated.snapshot.monsters.entries.m1.active, false);
+  const removed = codex.extractResponse('<monsterPatch><id>m1</id><op>remove</op></monsterPatch>', activated.snapshot);
+  assert.equal(removed.snapshot.monsters.entries.m1.status, 'ended');
+  assert.equal(removed.snapshot.monsters.entries.m1.active, false);
+  const restored = codex.extractResponse('<monsterPatch><id>m1</id><op>restore</op></monsterPatch>', removed.snapshot);
+  assert.equal(restored.snapshot.monsters.entries.m1.status, 'unknown');
+  assert.equal(restored.snapshot.monsters.entries.m1.active, false);
+});
+
+test('passive NONE patch is normalized with the existing skill type', () => {
+  const first = codex.extractResponse('<skillExam><id>sense</id><name>기척 감지</name><type>passive</type></skillExam>', codex.snapshot());
+  const patched = codex.extractResponse('<skillPatch><id>sense</id><op>merge</op><cost>NONE</cost><cooldown>NONE</cooldown></skillPatch>', first.snapshot);
+  assert.equal(patched.snapshot.skills.entries.sense.cost, '상시 효과 · 별도 소모 없음');
+  assert.equal(patched.snapshot.skills.entries.sense.cooldown, '상시 적용');
+});
+
+test('unsealing a sealed skill resolves both type and status', () => {
+  const first = codex.extractResponse('<skillExam><id>seal_art</id><name>봉인술</name><type>sealed</type><status>sealed</status><cost>NONE</cost><cooldown>NONE</cooldown></skillExam>', codex.snapshot());
+  const unsealed = codex.extractResponse('<skillPatch><id>seal_art</id><action>unseal</action><cost>NONE</cost><cooldown>NONE</cooldown></skillPatch>', first.snapshot);
+  const skill = unsealed.snapshot.skills.entries.seal_art;
+  assert.equal(skill.type, 'active');
+  assert.equal(skill.status, 'learned');
+  assert.equal(skill.cost, '별도 소모 없음');
+  assert.equal(skill.cooldown, '재사용 제한 없음');
+});
+
+test('codex apply failures are error markers and never valid events', () => {
+  const result = codex.extractResponse('<monsterPatch><id>missing</id><action>defeat</action></monsterPatch>', codex.snapshot());
+  assert.equal(result.events.length, 0);
+  assert.equal(result.errors.at(-1), 'patch_missing');
+  const payload = codex.decodePayload(result.content.match(/<!--CODEX2:([A-Za-z0-9_-]+)-->/)[1]);
+  assert.equal(payload.event, undefined);
+  assert.equal(payload.error, 'patch_missing');
 });
 
 test('repeat skill scans cannot downgrade progress or erase detailed cost and cooldown', () => {

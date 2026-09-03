@@ -378,12 +378,85 @@ test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated
     scriptstate: {
       $__itemx2_state: '{}', $__itemx2_chat_id: 'id', $__itemx2_codex_state: '{}',
       $__itemx2_manual_events: '[]', $__itemx2_message_events: '[]', $__itemx2_aux_processed: '{}',
+      $__itemx2_checkpoint: '{}',
       unrelated: 'keep'
     }
   });
   assert.equal(cleaned.removedMarkers, 2);
-  assert.equal(cleaned.removedStateKeys, 6);
+  assert.equal(cleaned.removedStateKeys, 7);
   assert.doesNotMatch(cleaned.chat.message[0].data, /ITEMX2|CODEX2/);
   assert.match(cleaned.chat.message[0].data, /<state>보존<\/state>/);
   assert.equal(JSON.stringify(cleaned.chat.scriptstate), JSON.stringify({ unrelated: 'keep' }));
+});
+
+test('checkpoint folds old replay state while preserving old refs and rebuilding after prefix edits', async () => {
+  const handlers = {};
+  const Risuai = {
+    pluginStorage: { getItem: async () => null, setItem: async () => {} },
+    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
+    getCurrentCharacterIndex: async () => { throw new TypeError('outside chat'); },
+    getCurrentChatIndex: async () => { throw new TypeError('outside chat'); },
+    getCharacter: async () => null,
+    registerSetting: async () => ({ id: 'setting' }),
+    addRisuScriptHandler: async (mode, fn) => { handlers[mode] = fn; },
+    removeRisuScriptHandler: async () => {}, unregisterUIPart: async () => {}, onUnload: async () => {}, hideContainer: async () => {}
+  };
+  const sandbox = vm.createContext({
+    console, Buffer, TextEncoder, TextDecoder, structuredClone, setTimeout, clearTimeout,
+    setInterval: () => 1, clearInterval: () => {}, Risuai, document: { head: {}, body: {} }
+  });
+  const built = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
+  const instrumented = built.replace(
+    '  async function cachedOrRebuildCurrent() {',
+    `  globalThis.__itemxCheckpointForTest = (chat) => {
+      const next = checkpointReplay(chat), status = checkpointStatus(next), lookup = buildMessageEventLookup(next);
+      const manual = status.valid ? manualLedger(next) : [...(status.checkpoint?.manual || []), ...manualLedger(next)];
+      const replay = status.valid ? { start: status.checkpoint.boundary + 1, registry: status.checkpoint.item.registry } : {};
+      const snapshot = rebuildWithManual(next, lookup, { ...replay, manual });
+      const codexReplay = status.valid ? { start: status.checkpoint.boundary + 1, base: status.checkpoint.codex } : {};
+      const codex = rebuildCodexWithLedger(next, lookup, codexReplay);
+      loadMessageEventLedger(next, lookup);
+      return { chat: next, valid: status.valid, boundary: status.checkpoint?.boundary, tailRows: messageEventLedger(next).length, tailManual: manualLedger(next).length, itemIds: snapshot.registry.order, skillIds: codex.skills.order };
+    };
+  async function cachedOrRebuildCurrent() {`
+  );
+  await vm.runInContext(instrumented, sandbox);
+  const rows = [], message = [];
+  for (let index = 0; index < 140; index += 1) {
+    const id = `checkpoint_item_${index}`, ref = `i${index.toString(36)}_0_ref`;
+    const item = { id, name: `기록 ${index}`, itemType: '기록물', emoji: '📜', rarity: 'normal', displayRarity: '일반', possession: 'owned', location: 'inventory', count: 1, effects: [], augments: [] };
+    rows.push({ ref, domain: 'item', payload: { v: 2, event: { kind: 'exam', item }, view: item } });
+    message.push({ role: 'char', data: `기록 ${index}\n<!--ITEMX2@${ref}-->` });
+  }
+  const skill = { id: 'checkpoint_skill', name: '보존 기술', glyph: '✨', rank: '숙련', school: '', type: 'active', status: 'learned', level: 5, mastery: 55, cost: '기력 소모', cooldown: '짧은 회복', target: '', affinity: 'arcane', description: '', effects: [], growth: '' };
+  rows.push({ ref: 'c1e_0_skill', domain: 'codex', payload: { v: 1, event: { domain: 'skill', kind: 'exam', entity: skill }, view: skill } });
+  message[50].data += '\n<!--CODEX2@c1e_0_skill-->';
+  const manualItem = (id) => ({ kind: 'exam', item: { id, name: id, itemType: '기록물', emoji: '📜', rarity: 'normal', displayRarity: '일반', possession: 'owned', location: 'inventory', count: 1, effects: [], augments: [] } });
+  const manual = [
+    { at: 1, afterIndex: 10, label: 'prefix', event: manualItem('manual_prefix') },
+    { at: 2, afterIndex: 130, label: 'tail', event: manualItem('manual_tail') }
+  ];
+  const source = { id: 'checkpoint-chat', message, scriptstate: { $__itemx2_message_events: JSON.stringify(rows), $__itemx2_manual_events: JSON.stringify(manual) } };
+  const folded = sandbox.__itemxCheckpointForTest(source);
+  assert.equal(folded.valid, true);
+  assert.equal(folded.boundary, 107);
+  assert.equal(folded.tailRows, 32);
+  assert.equal(folded.tailManual, 1);
+  assert.equal(folded.itemIds.length, 142);
+  assert.deepEqual(Array.from(folded.skillIds), ['checkpoint_skill']);
+  assert.match(handlers.display(folded.chat.message[0].data), /기록 0/);
+  folded.chat.message[0].data = '첫 기록을 삭제했다.';
+  const rebuilt = sandbox.__itemxCheckpointForTest(folded.chat);
+  assert.equal(rebuilt.valid, true);
+  assert.equal(rebuilt.itemIds.includes('checkpoint_item_0'), false);
+  assert.equal(rebuilt.itemIds.length, 141);
+  assert.equal(rebuilt.itemIds.includes('manual_prefix'), true);
+  assert.deepEqual(Array.from(rebuilt.skillIds), ['checkpoint_skill']);
+
+  const manualHeavy = Array.from({ length: 140 }, (_, index) => ({ at: index, afterIndex: 9, label: 'manual', event: manualItem(`manual_only_${index}`) }));
+  const manualFolded = sandbox.__itemxCheckpointForTest({ id: 'manual-heavy', message: Array.from({ length: 10 }, () => ({ role: 'char', data: '기록 없음' })), scriptstate: { $__itemx2_message_events: '[]', $__itemx2_manual_events: JSON.stringify(manualHeavy) } });
+  assert.equal(manualFolded.valid, true);
+  assert.equal(manualFolded.boundary, 9);
+  assert.equal(manualFolded.tailManual, 0);
+  assert.equal(manualFolded.itemIds.length, 140);
 });

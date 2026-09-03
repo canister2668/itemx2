@@ -305,3 +305,26 @@ test('failed partial repair commits once as partial_final and does not auto-retr
   await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   assert.equal(result.modelCalls, 2);
 });
+
+test('context-established item identity survives a pronoun-only committed output', async () => {
+  const output = '<itemExam><id>black_iron_blade</id><name>흑철검</name><type>장검</type><emoji>🗡️</emoji><internalrarity>rare</internalrarity><possession>owned</possession><location>equipped</location></itemExam>';
+  const result = await bootWithOutput('그 검을 허리에 찼다.', {
+    prefixMessages: [{ role: 'char', data: '앞서 흑철검을 넘겨받아 소유권을 확인했다.' }],
+    modelOutput: output
+  });
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.chatWrites, 1);
+  const state = JSON.parse(result.chat().scriptstate.$__itemx2_state);
+  assert.equal(state.registry.items.black_iron_blade.name, '흑철검');
+});
+
+test('unsupported auxiliary identity is recorded as rejected, never as no omissions', async () => {
+  const output = '<itemExam><id>phantom_blade</id><name>없는검</name><type>장검</type><emoji>🗡️</emoji><internalrarity>rare</internalrarity><possession>owned</possession><location>inventory</location></itemExam>';
+  const result = await bootWithOutput('일행은 빈 방을 지나갔다.', { modelOutput: output });
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.chatWrites, 1);
+  const history = JSON.parse(result.chat().scriptstate.$__itemx2_aux_processed);
+  assert.equal(Object.values(history)[0].state, 'rejected');
+  assert.equal(result.storage.has('auxZero:0:0'), false);
+  assert.doesNotMatch(result.chat().message.at(-1).data, /ITEMX2@/);
+});

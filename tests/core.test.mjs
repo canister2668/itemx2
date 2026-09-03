@@ -99,15 +99,13 @@ test('unfinished ITEMX transport is quarantined without eating later trailers or
   assert.equal(generic.content, '일반 HTML <item>표시</item> 뒤 본문');
 });
 
-test('oversized derived snapshots are actually compacted below the storage ceiling', () => {
-  const chat = { scriptstate: {} };
+test('oversized derived snapshots are omitted instead of masquerading as an empty registry', () => {
+  const chat = { scriptstate: { unrelated: 'keep' } };
   const huge = { schema: 2, rev: 2, fingerprint: 'x', updatedAt: Date.now(), registry: { order: ['huge'], items: { huge: { id: 'huge', trivia: '가'.repeat(600000) } }, diagnostics: [] } };
   const written = core.writeSnapshot(chat, huge);
-  const encoded = written.scriptstate.$__itemx2_state;
-  const parsed = JSON.parse(encoded);
-  assert.ok(encoded.length < 4096);
-  assert.equal(parsed.compacted, true);
-  assert.deepEqual(Array.from(parsed.registry.order), []);
+  assert.equal(written.scriptstate.$__itemx2_state, undefined);
+  assert.equal(core.readSnapshot(written), null);
+  assert.equal(written.scriptstate.unrelated, 'keep');
 });
 
 test('unknown operations and state-changing merge fields are rejected', () => {
@@ -116,6 +114,52 @@ test('unknown operations and state-changing merge fields are rejected', () => {
   const merge = core.extractResponse('<itemPatch><id>x</id><op>merge</op><location>equipped</location></itemPatch>', core.newRegistry());
   assert.equal(merge.events.length, 0);
   assert.match(merge.errors[0], /merge_state/);
+  const conflicting = core.extractResponse('<itemPatch><id>x</id><action>consume</action><op>remove</op><quantity>1</quantity></itemPatch>', core.newRegistry());
+  assert.equal(conflicting.events.length, 0);
+  assert.match(conflicting.errors[0], /conflicting_operation/);
+  const direct = core.newRegistry();
+  core.applyEvent(direct, { kind: 'exam', item: { id: 'x', name: '시험품', possession: 'owned', location: 'inventory', count: 1 } });
+  assert.equal(core.applyEvent(direct, { kind: 'patch', patch: { id: 'x', action: 'consume', op: 'remove', fields: {}, quantity: 1 } }), null);
+  assert.equal(direct.items.x.count, 1);
+});
+
+test('a zero-count item cannot be consumed as a phantom unit', () => {
+  const reg = core.newRegistry();
+  core.applyEvent(reg, { kind: 'exam', item: { id: 'empty_stack', name: '빈 병', itemType: '소모품', emoji: '🧪', rarity: 'normal', displayRarity: '일반', possession: 'owned', location: 'inventory', count: 0, effects: [], augments: [] } });
+  const result = core.applyEvent(reg, { kind: 'patch', patch: { id: 'empty_stack', action: 'consume', op: null, fields: {}, quantity: 1 } });
+  assert.equal(result, null);
+  assert.equal(reg.items.empty_stack.count, 0);
+  assert.equal(reg.diagnostics.at(-1).code, 'action_insufficient_quantity');
+});
+
+test('apply failures are quarantined instead of being emitted as valid events', () => {
+  const result = core.extractResponse('<itemPatch><id>missing</id><action>equip</action><slot>main_hand</slot></itemPatch>', core.newRegistry());
+  assert.equal(result.events.length, 0);
+  assert.equal(result.errors.at(-1), 'patch_unknown_id');
+  const payload = core.decodePayload(result.content.match(/<!--ITEMX2:([A-Za-z0-9_-]+)-->/)[1]);
+  assert.equal(payload.event, undefined);
+  assert.equal(payload.error, 'patch_unknown_id');
+});
+
+test('zero-count equipment and swap targets are rejected without mutation', () => {
+  const reg = core.newRegistry();
+  const put = (item) => core.applyEvent(reg, { kind: 'exam', item: { itemType: '장비', emoji: '⚔️', rarity: 'normal', displayRarity: '일반', effects: [], augments: [], ...item } });
+  put({ id: 'old', name: '기존 검', possession: 'owned', location: 'equipped', slot: 'main_hand', count: 1 });
+  put({ id: 'empty', name: '빈 검', possession: 'owned', location: 'inventory', slot: null, count: 0 });
+  assert.equal(core.applyEvent(reg, { kind: 'patch', patch: { id: 'empty', action: 'equip', op: null, fields: {}, slot: 'off_hand' } }), null);
+  assert.equal(reg.items.empty.location, 'inventory');
+  assert.equal(core.applyEvent(reg, { kind: 'patch', patch: { id: null, action: 'swap', op: null, fields: {}, equip: 'empty', unequip: 'old', slot: 'main_hand' } }), null);
+  assert.equal(reg.items.old.location, 'equipped');
+  assert.equal(reg.items.empty.location, 'inventory');
+});
+
+test('duplicate transform inputs are aggregated and failure is atomic', () => {
+  const initial = core.extractResponse(`${exam('ore', '광석', '<count>3</count>')}\n${exam('ingot', '주괴', '<count>0</count>')}`, core.newRegistry());
+  const result = core.extractResponse('<itemPatch><action>transform</action><inputs>ore:2,ore:2</inputs><outputs>ingot:1</outputs></itemPatch>', initial.registry);
+  assert.equal(result.events.length, 0);
+  assert.equal(result.errors.at(-1), 'action_invalid_transform');
+  assert.equal(result.registry.items.ore.count, 3);
+  assert.equal(result.registry.items.ingot.count, 0);
 });
 
 test('renderer escapes model content and uses one shared card renderer', () => {
