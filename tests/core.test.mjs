@@ -147,3 +147,20 @@ test('filtered ambient and moving affinity visuals use static child layers witho
   assert.equal((html.match(/affinity-signature-visual/g) || []).length, 2);
   assert.equal((html.match(/craft-mote /g) || []).length, 16);
 });
+
+test('inline lite motion preserves the theme while bounding animated particle DOM', () => {
+  const item = core.normalizeItem({ id: 'scroll_lite', name: '홍련검', type: '검', emoji: '⚔️', internalrarity: 'legendary', theme: 'forged', affinity: 'fire' }).item;
+  const full = renderer.renderCard(item, { inline: true, motion: 'full' });
+  const lite = renderer.renderCard(item, { inline: true, motion: 'lite' });
+  const off = renderer.renderCard(item, { inline: true, motion: 'off' });
+  assert.equal((full.match(/craft-mote /g) || []).length, 16);
+  assert.equal((lite.match(/craft-mote /g) || []).length, 10);
+  assert.equal((full.match(/afx-fire i/g) || []).length, 0);
+  assert.equal((full.match(/<i style=/g) || []).length >= 16, true);
+  assert.equal((lite.match(/<i style=/g) || []).length < (full.match(/<i style=/g) || []).length, true);
+  assert.match(lite, /motion-lite/);
+  assert.equal(off.includes('craft-mote'), false);
+  assert.equal(off.includes('affinity-signature'), false);
+  assert.equal(off.includes('itemx-fx'), false);
+  assert.equal(off.includes('itemx-cond'), false);
+});

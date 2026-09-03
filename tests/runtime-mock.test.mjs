@@ -70,6 +70,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await replacers.beforeRequest([{ role: 'user', content: '커밋 전 경합을 재현한다.' }], 'main');
   const immediateDisplay = await handlers.display(cleaned);
   assert.match(immediateDisplay, /itemx-card/);
+  assert.match(immediateDisplay, /motion-lite/);
   chat.message.push({ role: 'char', data: cleaned });
   await new Promise((resolve) => setTimeout(resolve, 130));
   assert.equal(chat.scriptstate.$__itemx2_state, undefined);
@@ -112,12 +113,16 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.ok(mixedCleaned.indexOf('<!--CODEX2:') < mixedCleaned.indexOf('[Status: 정상]'));
   const mixedDisplay = await handlers.display(mixedCleaned);
   assert.match(mixedDisplay, /itemx2-inline-skill/);
+  assert.match(mixedDisplay, /motion-lite/);
   assert.match(mixedDisplay, /NEW SKILL ARCHIVED/);
   assert.match(mixedDisplay, /월영참/);
   assert.match(mixedDisplay, /itemx2-inline-quick/);
   assert.match(mixedDisplay, /진기 24/);
   assert.match(mixedDisplay, /18초/);
   assert.match(mixedDisplay, /달빛 검기 · 빙결 대상 추가 피해/);
+  const historicalDisplay = await handlers.display(cleaned);
+  assert.match(historicalDisplay, /motion-off/);
+  assert.equal(historicalDisplay.includes('<div class="itemx-fx">'), false, 'historical body cards must not retain animated FX DOM');
   const trailerNameHit = await replacers.afterRequest('새 기술을 익혔다.\n<skillExam><id>trailer_form</id><name>월영참</name><type>active</type><status>learned</status></skillExam>\n\n[Status: 월영참 CD 18초]', 'main');
   assert.ok(trailerNameHit.indexOf('<!--CODEX2:') < trailerNameHit.indexOf('[Status: 월영참'));
 

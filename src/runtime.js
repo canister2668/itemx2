@@ -3,7 +3,7 @@ const ITEMX_STYLE = __ITEMX_STYLE_JSON__;
 const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
 const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
-const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);contain:layout paint style;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
+const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);content-visibility:auto;contain:layout paint style;contain-intrinsic-size:auto 128px;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
 const ITEMX_CODEX_INLINE_DENSE_STYLE = `.itemx2-inline-event.itemx2-inline-event{align-self:start;box-sizing:border-box;width:min(400px,calc(100% - 8px));max-width:400px;margin:.42rem auto .65rem;border-radius:11px;line-height:1.2}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;height:auto;padding:6px 8px 5px}.itemx2-inline-event .itemx2-inline-icon{align-self:center;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:9px;font-size:1.08rem;line-height:1}.itemx2-inline-event .itemx2-inline-copy{align-self:center;gap:1px;line-height:1.15}.itemx2-inline-event .itemx2-inline-kicker{font-size:.46rem;line-height:1.2;letter-spacing:.12em}.itemx2-inline-event .itemx2-inline-name{font-size:.82rem;line-height:1.18}.itemx2-inline-event .itemx2-inline-meta{font-size:.51rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.itemx2-inline-event .itemx2-inline-quick{display:flex;align-items:center;gap:3px;min-width:0;margin-top:2px;overflow:hidden}.itemx2-inline-event .itemx2-inline-quick i{flex:0 1 auto;min-width:0;height:auto;padding:1px 4px;border:1px solid rgba(150,165,190,.16);border-radius:4px;background:rgba(255,255,255,.035);color:#9ca9bb;font-size:.47rem;font-style:normal;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-quick i b{color:var(--ix-tone);font-weight:900}.itemx2-inline-event .itemx2-inline-foot{align-items:center;min-height:23px;height:auto;padding:4px 8px;font-size:.53rem;line-height:1.3}.itemx2-inline-event .itemx2-inline-foot b{font-size:.49rem}.itemx2-inline-event .itemx2-inline-foot span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-state{display:inline-flex;align-self:center;align-items:center;justify-content:center;width:auto;height:auto;min-height:0;padding:2px 5px;font-size:.46rem;line-height:1.2;white-space:nowrap}@media(max-width:520px){.itemx2-inline-event.itemx2-inline-event{margin:.36rem auto .58rem}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:34px minmax(0,1fr) auto;gap:6px;min-height:51px;padding:5px 7px 4px}.itemx2-inline-event .itemx2-inline-icon{width:34px;height:34px;min-width:34px;min-height:34px}.itemx2-inline-event .itemx2-inline-name{font-size:.78rem}.itemx2-inline-event .itemx2-inline-quick{gap:2px}.itemx2-inline-event .itemx2-inline-quick i{padding:1px 3px;font-size:.44rem}.itemx2-inline-event .itemx2-inline-quick i:nth-last-child(n+5){display:none}.itemx2-inline-event .itemx2-inline-foot{min-height:21px;padding:3px 7px;font-size:.5rem}}`;
 const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .itemx2-inline-event.itemx2-inline-appraisal{--ix-fg:#e8e0d2;--ix-dim:#9f9586;--ix-line:#544936;--ix-surface:rgba(93,76,48,.18);border:1px solid var(--ix-line);border-radius:3px;background:repeating-linear-gradient(102deg,rgba(255,235,190,.024) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.13) 0 3px,transparent 3px 9px),radial-gradient(115% 92% at 50% -16%,#292218,#11100e 72%);color:var(--ix-fg);font-family:"Nanum Myeongjo","Noto Serif KR",Georgia,serif;box-shadow:inset 0 0 36px rgba(0,0,0,.54),0 7px 18px rgba(0,0,0,.22),0 0 14px color-mix(in srgb,var(--rk,#a58add) 18%,transparent)}
@@ -53,7 +53,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const queues = new Map();
   const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, homeProbeAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
+    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxSawScroll: false, outputSyncDeferred: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, homeProbeAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncDeferred: false, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
     status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
     permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] },
     panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '',
@@ -487,7 +487,7 @@ ${codexPageStyle()}
   function prefixRisuClasses(css) {
     return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) => name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`);
   }
-  const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{animation-play-state:paused!important}`;
+  const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event{box-shadow:none!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{animation-play-state:paused!important;filter:none!important;mix-blend-mode:normal!important;box-shadow:none!important}`;
   const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-codex-fx,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-event::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-icon::before,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-warning{display:none!important;animation:none!important}`;
   const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
 
@@ -1507,6 +1507,10 @@ ${codexPageStyle()}
   }
 
   function scheduleCommittedOutputSync() {
+    if (runtime.bodyFxScrollActive) {
+      runtime.outputSyncDeferred = true;
+      return runtime.outputSyncPromise;
+    }
     if (runtime.outputSyncPromise) {
       runtime.outputSyncPending = true;
       return runtime.outputSyncPromise;
@@ -1651,7 +1655,7 @@ ${codexPageStyle()}
         ['재사용', entity.cooldown || '미상']
       ].map(([label, value]) => codexInlineStat(label, value)).join('');
       const effect = (entity.effects || []).slice(0, 2).join(' · ') || entity.description || entity.growth || '스킬 정보가 CODEX에 기록되었습니다.';
-      const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motion === 'off' ? 'motion-off' : ''}`;
+      const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motion === 'off' ? 'motion-off' : (motion === 'lite' ? 'motion-lite' : '')}`;
       const meta = [entity.school || '미분류', entity.type || 'active', entity.status || 'learned', entity.target ? `대상 ${entity.target}` : ''].filter(Boolean).join(' · ');
       return `<section class="${classes}" style="${appraisal.style}"><div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.rank || '미분류')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(meta)}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? '성장 기록' : '발현 효과'}</b><span>${ITEMXCore.esc(effect)}</span></footer></section>`;
     }
@@ -1668,7 +1672,7 @@ ${codexPageStyle()}
       ['관계', entity.relation || 'unknown'],
       ['상태', entity.status || 'unknown']
     ].map(([label, value]) => codexInlineStat(label, value)).join('');
-    const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : ''}`;
+    const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : (motion === 'lite' ? 'motion-lite' : '')}`;
     const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
     return `<section class="${classes}" style="${appraisal.style}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(encounterEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.threat || '위협 미상')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(aliases || entity.description || '전투 도감 기록')}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${ended ? '최근 전투 결과' : '관측 기록'}</b><span>${ITEMXCore.esc(detail)}</span></footer></section>`;
   }
@@ -1687,12 +1691,17 @@ ${codexPageStyle()}
       while (runtime.markerHtmlCache.size > 64) runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
       return html;
     };
-    const itemMotion = runtime.visualEffectsEnabled ? 'full' : 'off';
+    const markerMotion = (key) => {
+      if (!runtime.visualEffectsEnabled) return 'off';
+      if (!runtime.latestMarkers.size) return 'lite';
+      return runtime.latestMarkers.has(key) ? 'lite' : 'off';
+    };
     const rendered = source.replace(ITEMXCore.MARKER_RE, (_, code) => {
       found = true;
       const payload = ITEMXCore.decodePayload(code);
       if (!payload || payload.error) return '';
-      const html = renderPayload(`item:${code}`, payload, itemMotion);
+      const motion = markerMotion(`ITEMX2:${code}`);
+      const html = renderPayload(`item:${code}`, payload, motion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
       return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
@@ -1700,14 +1709,15 @@ ${codexPageStyle()}
       found = true;
       const payload = ITEMXCodex.decodePayload(code);
       if (!payload || payload.error) return '';
-      const html = codexInlineEventHtml(payload, itemMotion);
+      const html = codexInlineEventHtml(payload, markerMotion(`CODEX2:${code}`));
       if (html) { hasCodexCard = true; return html; }
       return '';
     }).replace(ITEMX_REF_RE, (_, ref, inline) => {
       found = true;
       const payload = inlineViewPayload(inline, 'item') || runtime.eventPayloads.get(`item:${ref}`);
       if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
-      const html = renderPayload(`item-ref:${ref}`, payload, itemMotion);
+      const motion = markerMotion(`ITEMX2@${ref}`);
+      const html = renderPayload(`item-ref:${ref}`, payload, motion);
       if (html) { hasFullCard = true; return html; }
       const item = payload.view || payload.event?.item;
       return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX CODEX · ${ITEMXCore.esc(ref)}</span>`;
@@ -1716,7 +1726,7 @@ ${codexPageStyle()}
       if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
       const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
       if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
-      const html = codexInlineEventHtml(payload, itemMotion);
+      const html = codexInlineEventHtml(payload, markerMotion(`CODEX2@${ref}`));
       if (html) { hasCodexCard = true; return html; }
       return '';
     });
@@ -1726,13 +1736,26 @@ ${codexPageStyle()}
   };
 
   function beginBodyScrollEffects() {
+    runtime.bodyFxSawScroll = false;
     if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
     runtime.bodyFxStartTimer = globalThis.setTimeout(() => {
       runtime.bodyFxStartTimer = null;
-      if (runtime.bodyFxScrollActive || !runtime.bodyFxClassOwner) return;
-      runtime.bodyFxScrollActive = true;
-      void runtime.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
-    }, 70);
+      activateBodyScrollEffects();
+    }, 80);
+  }
+
+  function activateBodyScrollEffects() {
+    if (runtime.bodyFxScrollActive || !runtime.bodyFxClassOwner) return;
+    runtime.bodyFxScrollActive = true;
+    void runtime.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
+  }
+
+  function continueBodyScrollEffects() {
+    runtime.bodyFxSawScroll = true;
+    if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
+    runtime.bodyFxStartTimer = null;
+    activateBodyScrollEffects();
+    endBodyScrollEffects(220);
   }
 
   function endBodyScrollEffects(delayMs = 0) {
@@ -1744,7 +1767,12 @@ ${codexPageStyle()}
       if (!runtime.bodyFxScrollActive) return;
       runtime.bodyFxScrollActive = false;
       if (runtime.bodyFxClassOwner) void runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+      runtime.hostSyncDeferred = false;
       scheduleHostDomSync(180);
+      if (runtime.outputSyncDeferred) {
+        runtime.outputSyncDeferred = false;
+        void scheduleCommittedOutputSync();
+      }
     }, delayMs);
   }
 
@@ -1772,8 +1800,9 @@ ${codexPageStyle()}
       runtime.bodyFxEventOwner = body;
       const bindings = [
         ['pointerdown', beginBodyScrollEffects],
-        ['pointerup', () => endBodyScrollEffects(900)],
-        ['pointercancel', () => endBodyScrollEffects(120)],
+        ['scroll', continueBodyScrollEffects],
+        ['pointerup', () => endBodyScrollEffects(runtime.bodyFxSawScroll ? 220 : 40)],
+        ['pointercancel', () => endBodyScrollEffects(runtime.bodyFxSawScroll ? 220 : 40)],
         ['scrollend', () => endBodyScrollEffects(40)]
       ];
       for (const [type, handler] of bindings) {
@@ -2035,10 +2064,16 @@ ${codexPageStyle()}
   }
 
   function scheduleHostDomSync(delayMs = 320) {
+    if (runtime.bodyFxScrollActive) {
+      runtime.hostSyncDeferred = true;
+      if (runtime.hostSyncTimer) globalThis.clearTimeout(runtime.hostSyncTimer);
+      runtime.hostSyncTimer = null;
+      return;
+    }
     if (runtime.hostSyncTimer) globalThis.clearTimeout(runtime.hostSyncTimer);
     runtime.hostSyncTimer = globalThis.setTimeout(async () => {
       runtime.hostSyncTimer = null;
-      if (runtime.bodyFxScrollActive) { scheduleHostDomSync(420); return; }
+      if (runtime.bodyFxScrollActive) { runtime.hostSyncDeferred = true; return; }
       if (runtime.hostSyncBusy) return;
       runtime.hostSyncBusy = true;
       try {
@@ -2056,6 +2091,10 @@ ${codexPageStyle()}
       const body = await runtime.mainDoc.querySelector('body');
       if (!body) return;
       runtime.hostObserver = await Risuai.createMutationObserver((recordsSafe) => {
+        if (runtime.bodyFxScrollActive) {
+          runtime.hostSyncDeferred = true;
+          return;
+        }
         void (async () => {
           try {
             const records = await Risuai.unwarpSafeArray(recordsSafe);
@@ -2159,6 +2198,9 @@ ${codexPageStyle()}
       try { await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
     }
     runtime.bodyFxScrollActive = false;
+    runtime.bodyFxSawScroll = false;
+    runtime.outputSyncDeferred = false;
+    runtime.hostSyncDeferred = false;
     runtime.bodyFxClassOwner = null;
     refreshLatest(active?.chat || { message: [], scriptstate: {} });
     await removeRootDrawer();
@@ -3374,6 +3416,9 @@ ${codexPageStyle()}
       try { await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
     }
     runtime.bodyFxScrollActive = false;
+    runtime.bodyFxSawScroll = false;
+    runtime.outputSyncDeferred = false;
+    runtime.hostSyncDeferred = false;
     try { await Risuai.hideContainer(); } catch {}
     await removeRootDrawer();
     await removeBodyEffectGovernor();
