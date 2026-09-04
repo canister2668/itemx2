@@ -27,7 +27,9 @@ for (const shot of [
   await page.screenshot({ path: resolve(root, `dist/${shot.name}.png`), fullPage: true });
   const card = await page.locator('.itemx-card').count();
   const panel = await page.locator('.itemx-panel').count();
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
   console.log(`${shot.name}: card=${card} panel=${panel} horizontalOverflow=${overflow}`);
   await page.close();
 }

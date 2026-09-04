@@ -210,7 +210,7 @@
     @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }
     @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion) * { animation:none!important; } }
     @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }
-.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.4</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
+.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.5</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 const ITEMXCore = (() => {
   'use strict';
 
@@ -225,54 +225,144 @@ const ITEMXCore = (() => {
   const CONDITIONS = new Set(['blessed', 'cursed', 'corrupted', 'glitched', 'sealed']);
   const POSSESSIONS = new Set(['observed', 'owned', 'removed']);
   const LOCATIONS = new Set(['inventory', 'equipped', 'storage', 'unknown']);
-  const ACTIONS = new Set(['acquire', 'transfer', 'consume', 'equip', 'unequip', 'move', 'transform', 'destroy', 'restore', 'swap']);
+  const ACTIONS = new Set([
+    'acquire',
+    'transfer',
+    'consume',
+    'equip',
+    'unequip',
+    'move',
+    'transform',
+    'destroy',
+    'restore',
+    'swap'
+  ]);
   const OPS = new Set(['merge', 'remove', 'restore']);
-  const RARITY_LABELS = { normal: '일반', magic: '매직', rare: '레어', unique: '유니크', epic: '에픽', legendary: '전설', mythical: '신화', empyrean: '창천' };
+  const RARITY_LABELS = {
+    normal: '일반',
+    magic: '매직',
+    rare: '레어',
+    unique: '유니크',
+    epic: '에픽',
+    legendary: '전설',
+    mythical: '신화',
+    empyrean: '창천'
+  };
   const FIELD_ALIASES = {
-    id: 'id', name: 'name', '이름': 'name', type: 'type', '분류': 'type', '종류': 'type', emoji: 'emoji',
-    rarity: 'internalrarity', internalrarity: 'internalrarity', grade: 'internalrarity', '등급': 'internalrarity',
-    display: 'displayrarity', displayrarity: 'displayrarity', '표기': 'displayrarity',
-    power: 'power', '위력': 'power', required: 'required', '요구': 'required',
-    durability: 'durability', '내구': 'durability', '내구도': 'durability',
-    cost: 'cost', price: 'cost', value: 'cost', '가치': 'cost',
-    possession: 'possession', location: 'location', count: 'count', slot: 'slot', pin: 'pin',
-    theme: 'theme', craft: 'theme', affinity: 'affinity', affinity2: 'affinity2', condition: 'condition',
-    effects: 'effects', effect: 'effects', augments: 'augments', augment: 'augments', trivia: 'trivia', desc: 'trivia', description: 'trivia',
-    action: 'action', op: 'op', quantity: 'quantity', destination: 'destination', reason: 'reason', '사유': 'reason',
-    inputs: 'inputs', outputs: 'outputs', equip: 'equip', unequip: 'unequip'
+    id: 'id',
+    name: 'name',
+    이름: 'name',
+    type: 'type',
+    분류: 'type',
+    종류: 'type',
+    emoji: 'emoji',
+    rarity: 'internalrarity',
+    internalrarity: 'internalrarity',
+    grade: 'internalrarity',
+    등급: 'internalrarity',
+    display: 'displayrarity',
+    displayrarity: 'displayrarity',
+    표기: 'displayrarity',
+    power: 'power',
+    위력: 'power',
+    required: 'required',
+    요구: 'required',
+    durability: 'durability',
+    내구: 'durability',
+    내구도: 'durability',
+    cost: 'cost',
+    price: 'cost',
+    value: 'cost',
+    가치: 'cost',
+    possession: 'possession',
+    location: 'location',
+    count: 'count',
+    slot: 'slot',
+    pin: 'pin',
+    theme: 'theme',
+    craft: 'theme',
+    affinity: 'affinity',
+    affinity2: 'affinity2',
+    condition: 'condition',
+    effects: 'effects',
+    effect: 'effects',
+    augments: 'augments',
+    augment: 'augments',
+    trivia: 'trivia',
+    desc: 'trivia',
+    description: 'trivia',
+    action: 'action',
+    op: 'op',
+    quantity: 'quantity',
+    destination: 'destination',
+    reason: 'reason',
+    사유: 'reason',
+    inputs: 'inputs',
+    outputs: 'outputs',
+    equip: 'equip',
+    unequip: 'unequip'
   };
 
-  const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
+  const clone = (value) => (value == null ? value : JSON.parse(JSON.stringify(value)));
   const clean = (value, max = 800) => {
     if (value == null) return '';
-    return String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+    return String(value)
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, max);
   };
-  const decodeEntities = (value) => clean(String(value ?? '')
-    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'").replace(/&amp;/gi, '&'));
-  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const decodeEntities = (value) =>
+    clean(
+      String(value ?? '')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/&amp;/gi, '&')
+    );
+  const esc = (value) =>
+    String(value ?? '').replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+    );
   const fnv1a = (value) => {
     let h = 0x811c9dc5;
-    const bytes = typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(String(value)) : Array.from(Buffer.from(String(value)));
-    for (const b of bytes) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0; }
+    const bytes =
+      typeof TextEncoder !== 'undefined'
+        ? new TextEncoder().encode(String(value))
+        : Array.from(Buffer.from(String(value)));
+    for (const b of bytes) {
+      h ^= b;
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
     return h.toString(16).padStart(8, '0');
   };
-  const randomId = () => globalThis.crypto?.randomUUID?.() || `itemx2-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  const randomId = () =>
+    globalThis.crypto?.randomUUID?.() || `itemx2-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const bytesToB64 = (bytes) => {
     if (typeof Buffer !== 'undefined') return Buffer.from(bytes).toString('base64');
-    let bin = ''; for (const b of bytes) bin += String.fromCharCode(b);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
     return btoa(bin);
   };
   const b64ToBytes = (value) => {
     if (typeof Buffer !== 'undefined') return Uint8Array.from(Buffer.from(value, 'base64'));
-    const bin = atob(value); return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const bin = atob(value);
+    return Uint8Array.from(bin, (c) => c.charCodeAt(0));
   };
-  const encodePayload = (value) => bytesToB64(new TextEncoder().encode(JSON.stringify(value))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  const encodePayload = (value) =>
+    bytesToB64(new TextEncoder().encode(JSON.stringify(value)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
   const decodePayload = (value) => {
     try {
       const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
       return JSON.parse(new TextDecoder().decode(b64ToBytes(padded)));
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   };
   const marker = (payload) => `<!--ITEMX2:${encodePayload(payload)}-->`;
 
@@ -282,32 +372,63 @@ const ITEMXCore = (() => {
     try {
       const pictographs = glyph.match(/\p{Extended_Pictographic}/gu) || [];
       const regions = glyph.match(/\p{Regional_Indicator}/gu) || [];
-      return (pictographs.length === 1 || (glyph.includes('\u200d') && pictographs.length > 1) || regions.length === 2) && pictographs.length + regions.length > 0;
-    } catch { return /[\u{1F000}-\u{1FAFF}\u2600-\u27BF]/u.test(glyph); }
+      return (
+        (pictographs.length === 1 || (glyph.includes('\u200d') && pictographs.length > 1) || regions.length === 2) &&
+        pictographs.length + regions.length > 0
+      );
+    } catch {
+      return /[\u{1F000}-\u{1FAFF}\u2600-\u27BF]/u.test(glyph);
+    }
   }
 
   function itemEmojiFallback(item = {}) {
     const text = `${item.itemType || item.type || ''} ${item.name || ''}`.toLowerCase();
     const choices = [
-      [/(?:검|도|blade|sword|katana)/, '🗡️'], [/(?:방패|갑옷|방어구|shield|armor)/, '🛡️'],
-      [/(?:활|석궁|bow|crossbow)/, '🏹'], [/(?:지팡이|완드|staff|wand)/, '🪄'], [/(?:총|포|gun|rifle|cannon)/, '🔫'],
-      [/(?:반지|ring)/, '💍'], [/(?:목걸이|부적|necklace|amulet|talisman)/, '📿'], [/(?:장화|신발|boots?|shoes?)/, '👢'],
-      [/(?:물약|포션|약품|potion|elixir)/, '🧪'], [/(?:책|서|두루마리|book|tome|scroll)/, '📖'],
+      [/(?:검|도|blade|sword|katana)/, '🗡️'],
+      [/(?:방패|갑옷|방어구|shield|armor)/, '🛡️'],
+      [/(?:활|석궁|bow|crossbow)/, '🏹'],
+      [/(?:지팡이|완드|staff|wand)/, '🪄'],
+      [/(?:총|포|gun|rifle|cannon)/, '🔫'],
+      [/(?:반지|ring)/, '💍'],
+      [/(?:목걸이|부적|necklace|amulet|talisman)/, '📿'],
+      [/(?:장화|신발|boots?|shoes?)/, '👢'],
+      [/(?:물약|포션|약품|potion|elixir)/, '🧪'],
+      [/(?:책|서|두루마리|book|tome|scroll)/, '📖'],
       [/(?:광석|금속|재료|원석|ore|ingot|material|stone)/, '🧱']
     ];
     return choices.find(([pattern]) => pattern.test(text))?.[1] || '📦';
   }
 
-  const resolveItemEmoji = (item) => isUsableGlyph(item?.emoji) ? clean(item.emoji, 24) : itemEmojiFallback(item);
+  const resolveItemEmoji = (item) => (isUsableGlyph(item?.emoji) ? clean(item.emoji, 24) : itemEmojiFallback(item));
   const resolveSkillGlyph = (skill = {}) => {
     if (isUsableGlyph(skill.glyph || skill.emoji)) return clean(skill.glyph || skill.emoji, 24);
     const text = `${skill.affinity || ''} ${skill.type || skill.kind || ''} ${skill.name || ''}`.toLowerCase();
-    return [[/(?:fire|화염|불꽃)/, '🔥'], [/(?:ice|빙결|서리)/, '❄️'], [/(?:lightning|번개|뇌전)/, '⚡'], [/(?:heal|회복|치유)/, '💚'], [/(?:shield|방어|보호)/, '🛡️'], [/(?:stealth|은신|암영)/, '🌫️'], [/(?:slash|검|도법)/, '🗡️']].find(([p]) => p.test(text))?.[1] || '✨';
+    return (
+      [
+        [/(?:fire|화염|불꽃)/, '🔥'],
+        [/(?:ice|빙결|서리)/, '❄️'],
+        [/(?:lightning|번개|뇌전)/, '⚡'],
+        [/(?:heal|회복|치유)/, '💚'],
+        [/(?:shield|방어|보호)/, '🛡️'],
+        [/(?:stealth|은신|암영)/, '🌫️'],
+        [/(?:slash|검|도법)/, '🗡️']
+      ].find(([p]) => p.test(text))?.[1] || '✨'
+    );
   };
   const resolveMonsterGlyph = (monster = {}) => {
     if (isUsableGlyph(monster.glyph || monster.emoji)) return clean(monster.glyph || monster.emoji, 24);
     const text = `${monster.kind || monster.type || ''} ${monster.name || ''}`.toLowerCase();
-    return [[/(?:dragon|용|룡)/, '🐉'], [/(?:wolf|늑대)/, '🐺'], [/(?:rabbit|토끼)/, '🐇'], [/(?:undead|망자|해골|좀비)/, '💀'], [/(?:slime|슬라임)/, '🫧'], [/(?:golem|골렘)/, '🗿'], [/(?:insect|벌레|곤충)/, '🐛']].find(([p]) => p.test(text))?.[1] || '🐾';
+    return (
+      [
+        [/(?:dragon|용|룡)/, '🐉'],
+        [/(?:wolf|늑대)/, '🐺'],
+        [/(?:rabbit|토끼)/, '🐇'],
+        [/(?:undead|망자|해골|좀비)/, '💀'],
+        [/(?:slime|슬라임)/, '🫧'],
+        [/(?:golem|골렘)/, '🗿'],
+        [/(?:insect|벌레|곤충)/, '🐛']
+      ].find(([p]) => p.test(text))?.[1] || '🐾'
+    );
   };
 
   function field(xml, name) {
@@ -318,18 +439,26 @@ const ITEMXCore = (() => {
 
   function attrs(text) {
     const out = {};
-    String(text || '').replace(/([A-Za-z_\u3131-\uD79D][\w\-\u3131-\uD79D]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g, (_, key, a, b, c) => {
-      out[key.toLowerCase()] = decodeEntities(a ?? b ?? c ?? ''); return '';
-    });
+    String(text || '').replace(
+      /([A-Za-z_\u3131-\uD79D][\w\-\u3131-\uD79D]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g,
+      (_, key, a, b, c) => {
+        out[key.toLowerCase()] = decodeEntities(a ?? b ?? c ?? '');
+        return '';
+      }
+    );
     return out;
   }
 
   function listPairs(value, max = 12) {
     if (!value) return [];
-    return String(value).split(';;').slice(0, max).map((part) => {
-      const [name, ...rest] = part.split('::');
-      return { name: clean(name, 160), desc: clean(rest.join('::'), 800) };
-    }).filter((one) => one.name);
+    return String(value)
+      .split(';;')
+      .slice(0, max)
+      .map((part) => {
+        const [name, ...rest] = part.split('::');
+        return { name: clean(name, 160), desc: clean(rest.join('::'), 800) };
+      })
+      .filter((one) => one.name);
   }
 
   function nestedPairs(xml, singular, max = 12) {
@@ -348,7 +477,8 @@ const ITEMXCore = (() => {
     const out = {};
     for (const [key, value] of Object.entries(raw || {})) {
       const canonical = FIELD_ALIASES[String(key).toLowerCase()] || FIELD_ALIASES[key];
-      if (canonical && value != null && clean(value) !== '') out[canonical] = clean(value, canonical === 'trivia' ? 1200 : 800);
+      if (canonical && value != null && clean(value) !== '')
+        out[canonical] = clean(value, canonical === 'trivia' ? 1200 : 800);
     }
     return out;
   }
@@ -376,17 +506,46 @@ const ITEMXCore = (() => {
     if (affinity2 === affinity) affinity2 = null;
     const condition = CONDITIONS.has((f.condition || '').toLowerCase()) ? f.condition.toLowerCase() : null;
     let location = LOCATIONS.has((f.location || '').toLowerCase()) ? f.location.toLowerCase() : 'unknown';
-    let possession = POSSESSIONS.has((f.possession || '').toLowerCase()) ? f.possession.toLowerCase() : (location === 'unknown' ? 'observed' : 'owned');
+    let possession = POSSESSIONS.has((f.possession || '').toLowerCase())
+      ? f.possession.toLowerCase()
+      : location === 'unknown'
+        ? 'observed'
+        : 'owned';
     if (possession === 'removed') location = 'unknown';
     const count = /^\d+$/.test(f.count || '') ? Math.max(0, Number(f.count)) : 1;
     const item = {
-      id, name, itemType: clean(f.type, 160) || '기타', emoji: clean(f.emoji, 24), rarity,
-      displayRarity: clean(f.displayrarity, 80) || RARITY_LABELS[rarity], power: clean(f.power, 160),
-      required: clean(f.required, 160), durability: clean(f.durability, 160), cost: clean(f.cost, 160),
-      possession, location, count, slot: clean(f.slot, 80) || null, pin: /^(1|true)$/i.test(f.pin || ''),
-      trivia: clean(f.trivia, 1200), theme, affinity, affinity2, condition,
-      effects: Array.isArray(raw.effects) ? raw.effects.slice(0, 12).map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) })).filter((x) => x.name) : listPairs(f.effects),
-      augments: Array.isArray(raw.augments) ? raw.augments.slice(0, 12).map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) })).filter((x) => x.name) : listPairs(f.augments),
+      id,
+      name,
+      itemType: clean(f.type, 160) || '기타',
+      emoji: clean(f.emoji, 24),
+      rarity,
+      displayRarity: clean(f.displayrarity, 80) || RARITY_LABELS[rarity],
+      power: clean(f.power, 160),
+      required: clean(f.required, 160),
+      durability: clean(f.durability, 160),
+      cost: clean(f.cost, 160),
+      possession,
+      location,
+      count,
+      slot: clean(f.slot, 80) || null,
+      pin: /^(1|true)$/i.test(f.pin || ''),
+      trivia: clean(f.trivia, 1200),
+      theme,
+      affinity,
+      affinity2,
+      condition,
+      effects: Array.isArray(raw.effects)
+        ? raw.effects
+            .slice(0, 12)
+            .map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) }))
+            .filter((x) => x.name)
+        : listPairs(f.effects),
+      augments: Array.isArray(raw.augments)
+        ? raw.augments
+            .slice(0, 12)
+            .map((x) => ({ name: clean(x.name, 160), desc: clean(x.desc, 800) }))
+            .filter((x) => x.name)
+        : listPairs(f.augments),
       _provided
     };
     item.emoji = resolveItemEmoji(item);
@@ -406,9 +565,10 @@ const ITEMXCore = (() => {
     const augments = nestedPairs(body, 'augment');
     if (effects.length || /<effects?\b/i.test(body)) raw.effects = effects;
     if (augments.length || /<augments?\b/i.test(body)) raw.augments = augments;
-    const visual = field(body, 'visual') ? (body.match(/<visual\b[^>]*>([\s\S]*?)<\/visual\s*>/i)?.[1] || '') : body;
+    const visual = field(body, 'visual') ? body.match(/<visual\b[^>]*>([\s\S]*?)<\/visual\s*>/i)?.[1] || '' : body;
     for (const key of ['theme', 'craft', 'affinity', 'affinity2', 'condition']) {
-      const value = field(visual, key); if (value) raw[key] = value;
+      const value = field(visual, key);
+      if (value) raw[key] = value;
     }
     const lower = String(tag).toLowerCase();
     const isPatch = lower === 'itempatch' || (lower === 'itemx' && (raw.action || raw.op || !raw.name));
@@ -456,51 +616,124 @@ const ITEMXCore = (() => {
     if (!action && !op) return { error: 'patch_missing_operation' };
     if (!id && action !== 'transform' && action !== 'swap') return { error: 'patch_no_id' };
     const fields = {};
-    const map = { name: 'name', type: 'itemType', emoji: 'emoji', internalrarity: 'rarity', displayrarity: 'displayRarity', power: 'power', required: 'required', durability: 'durability', cost: 'cost', trivia: 'trivia', theme: 'theme', affinity: 'affinity', affinity2: 'affinity2', condition: 'condition', location: 'location', possession: 'possession', count: 'count', slot: 'slot' };
+    const map = {
+      name: 'name',
+      type: 'itemType',
+      emoji: 'emoji',
+      internalrarity: 'rarity',
+      displayrarity: 'displayRarity',
+      power: 'power',
+      required: 'required',
+      durability: 'durability',
+      cost: 'cost',
+      trivia: 'trivia',
+      theme: 'theme',
+      affinity: 'affinity',
+      affinity2: 'affinity2',
+      condition: 'condition',
+      location: 'location',
+      possession: 'possession',
+      count: 'count',
+      slot: 'slot'
+    };
     for (const [from, to] of Object.entries(map)) if (f[from] != null) fields[to] = f[from] === '-' ? null : f[from];
     if (Array.isArray(raw.effects)) fields.effects = raw.effects;
     if (Array.isArray(raw.augments)) fields.augments = raw.augments;
-    if (op === 'merge' && ['location', 'possession', 'count', 'slot'].some((key) => key in fields)) return { error: 'patch_merge_state_field' };
+    if (op === 'merge' && ['location', 'possession', 'count', 'slot'].some((key) => key in fields))
+      return { error: 'patch_merge_state_field' };
     if (op === 'merge' && Object.keys(fields).length === 0) return { error: 'patch_empty_merge' };
     const quantity = f.quantity ? parseQuantity(f.quantity) : null;
     if (f.quantity && quantity == null) return { error: 'patch_bad_quantity' };
-    const inputs = parseItemList(f.inputs), outputs = parseItemList(f.outputs);
+    const inputs = parseItemList(f.inputs),
+      outputs = parseItemList(f.outputs);
     if (action === 'transform' && (!inputs || !outputs)) return { error: 'patch_transform_shape' };
-    if (action === 'swap' && (!ID_RE.test(f.equip || '') || !ID_RE.test(f.unequip || '') || !f.slot)) return { error: 'patch_swap_shape' };
-    return { patch: { id, action, op, fields, quantity, destination: clean(f.destination, 160), reason: clean(f.reason, 160), slot: clean(f.slot, 80) || null, inputs, outputs, equip: f.equip || null, unequip: f.unequip || null } };
+    if (action === 'swap' && (!ID_RE.test(f.equip || '') || !ID_RE.test(f.unequip || '') || !f.slot))
+      return { error: 'patch_swap_shape' };
+    return {
+      patch: {
+        id,
+        action,
+        op,
+        fields,
+        quantity,
+        destination: clean(f.destination, 160),
+        reason: clean(f.reason, 160),
+        slot: clean(f.slot, 80) || null,
+        inputs,
+        outputs,
+        equip: f.equip || null,
+        unequip: f.unequip || null
+      }
+    };
   }
 
-  function newRegistry() { return { order: [], items: {}, diagnostics: [] }; }
-  function insert(reg, item) { if (!reg.items[item.id]) reg.order.push(item.id); reg.items[item.id] = item; }
-  function diagnostic(reg, code, detail = '') { reg.diagnostics.push({ code, detail }); if (reg.diagnostics.length > 50) reg.diagnostics.shift(); }
+  function newRegistry() {
+    return { order: [], items: {}, diagnostics: [] };
+  }
+  function insert(reg, item) {
+    if (!reg.items[item.id]) reg.order.push(item.id);
+    reg.items[item.id] = item;
+  }
+  function diagnostic(reg, code, detail = '') {
+    reg.diagnostics.push({ code, detail });
+    if (reg.diagnostics.length > 50) reg.diagnostics.shift();
+  }
   function available(item) {
     if (!item || item.possession === 'removed') return 0;
     const value = item.count == null || String(item.count).trim() === '' ? 1 : Number(item.count);
     return Number.isFinite(value) ? Math.max(0, value) : 1;
   }
   function removeQuantity(item, quantity) {
-    const have = available(item), take = quantity === 'all' ? have : (quantity || 1);
+    const have = available(item),
+      take = quantity === 'all' ? have : quantity || 1;
     if (take < 1 || take > have) return false;
     item.count = have - take;
-    if (item.count === 0) { item.possession = 'removed'; item.location = 'unknown'; item.slot = null; }
+    if (item.count === 0) {
+      item.possession = 'removed';
+      item.location = 'unknown';
+      item.slot = null;
+    }
     return true;
   }
   function slotConflict(reg, id, slot) {
-    return reg.order.map((key) => reg.items[key]).find((other) => other && other.id !== id && other.possession !== 'removed' && other.location === 'equipped' && (other.slot === slot || (other.slot === 'two_hands' && ['main_hand', 'off_hand'].includes(slot)) || (slot === 'two_hands' && ['main_hand', 'off_hand'].includes(other.slot))));
+    return reg.order
+      .map((key) => reg.items[key])
+      .find(
+        (other) =>
+          other &&
+          other.id !== id &&
+          other.possession !== 'removed' &&
+          other.location === 'equipped' &&
+          (other.slot === slot ||
+            (other.slot === 'two_hands' && ['main_hand', 'off_hand'].includes(slot)) ||
+            (slot === 'two_hands' && ['main_hand', 'off_hand'].includes(other.slot)))
+      );
   }
 
   function applyExam(reg, source) {
-    const item = clone(source), prev = reg.items[item.id];
+    const item = clone(source),
+      prev = reg.items[item.id];
     const provided = new Set(item._provided || []);
     delete item._provided;
     if (prev) {
       // Omitted appraisal fields are not evidence that established details
       // became empty. Explicit patches remain the way to clear a field.
       const descriptive = {
-        itemType: 'type', emoji: 'emoji', rarity: 'internalrarity', displayRarity: 'displayrarity',
-        power: 'power', required: 'required', durability: 'durability', cost: 'cost', trivia: 'trivia',
-        theme: 'theme', affinity: 'affinity', affinity2: 'affinity2', condition: 'condition',
-        effects: 'effects', augments: 'augments'
+        itemType: 'type',
+        emoji: 'emoji',
+        rarity: 'internalrarity',
+        displayRarity: 'displayrarity',
+        power: 'power',
+        required: 'required',
+        durability: 'durability',
+        cost: 'cost',
+        trivia: 'trivia',
+        theme: 'theme',
+        affinity: 'affinity',
+        affinity2: 'affinity2',
+        condition: 'condition',
+        effects: 'effects',
+        augments: 'augments'
       };
       for (const [property, provenance] of Object.entries(descriptive)) {
         if (!provided.has(provenance)) item[property] = clone(prev[property]);
@@ -516,10 +749,17 @@ const ITEMXCore = (() => {
       if (prev.removedReason) item.removedReason = prev.removedReason;
     }
     item.emoji = resolveItemEmoji(item);
-    if (item.location === 'equipped' && (item.possession !== 'owned' || (item.slot && slotConflict(reg, item.id, item.slot)))) {
-      diagnostic(reg, 'exam_invalid_equipped', item.id); item.possession = 'owned'; item.location = 'inventory'; item.slot = null;
+    if (
+      item.location === 'equipped' &&
+      (item.possession !== 'owned' || (item.slot && slotConflict(reg, item.id, item.slot)))
+    ) {
+      diagnostic(reg, 'exam_invalid_equipped', item.id);
+      item.possession = 'owned';
+      item.location = 'inventory';
+      item.slot = null;
     }
-    insert(reg, item); return item;
+    insert(reg, item);
+    return item;
   }
 
   function applyFields(item, fields) {
@@ -533,58 +773,155 @@ const ITEMXCore = (() => {
   }
 
   function applyPatch(reg, patch) {
-    if (!patch || (patch.action && patch.op) || (patch.action && !ACTIONS.has(patch.action)) || (patch.op && !OPS.has(patch.op)) || (!patch.action && !patch.op)) {
-      diagnostic(reg, 'patch_bad_operation', patch?.id || ''); return null;
+    if (
+      !patch ||
+      (patch.action && patch.op) ||
+      (patch.action && !ACTIONS.has(patch.action)) ||
+      (patch.op && !OPS.has(patch.op)) ||
+      (!patch.action && !patch.op)
+    ) {
+      diagnostic(reg, 'patch_bad_operation', patch?.id || '');
+      return null;
     }
     if (patch.action === 'transform') {
-      const aggregate = (rows) => (rows || []).reduce((totals, row) => totals.set(row.id, (totals.get(row.id) || 0) + row.quantity), new Map());
-      const inputs = aggregate(patch.inputs), outputs = aggregate(patch.outputs);
-      if (!inputs.size || !outputs.size || [...inputs].some(([id, quantity]) => available(reg.items[id]) < quantity) || [...outputs.keys()].some((id) => !reg.items[id])) { diagnostic(reg, 'action_invalid_transform'); return null; }
-      const affected = new Map([...new Set([...inputs.keys(), ...outputs.keys()])].map((id) => [id, clone(reg.items[id])]));
-      for (const [id, quantity] of inputs) if (!removeQuantity(affected.get(id), quantity)) { diagnostic(reg, 'action_invalid_transform'); return null; }
+      const aggregate = (rows) =>
+        (rows || []).reduce((totals, row) => totals.set(row.id, (totals.get(row.id) || 0) + row.quantity), new Map());
+      const inputs = aggregate(patch.inputs),
+        outputs = aggregate(patch.outputs);
+      if (
+        !inputs.size ||
+        !outputs.size ||
+        [...inputs].some(([id, quantity]) => available(reg.items[id]) < quantity) ||
+        [...outputs.keys()].some((id) => !reg.items[id])
+      ) {
+        diagnostic(reg, 'action_invalid_transform');
+        return null;
+      }
+      const affected = new Map(
+        [...new Set([...inputs.keys(), ...outputs.keys()])].map((id) => [id, clone(reg.items[id])])
+      );
+      for (const [id, quantity] of inputs)
+        if (!removeQuantity(affected.get(id), quantity)) {
+          diagnostic(reg, 'action_invalid_transform');
+          return null;
+        }
       for (const [id, quantity] of outputs) {
-        const item = affected.get(id), have = item.possession === 'owned' ? available(item) : 0;
-        item.count = have + quantity; item.possession = 'owned'; item.location = 'inventory'; item.slot = null; item.removedReason = null;
+        const item = affected.get(id),
+          have = item.possession === 'owned' ? available(item) : 0;
+        item.count = have + quantity;
+        item.possession = 'owned';
+        item.location = 'inventory';
+        item.slot = null;
+        item.removedReason = null;
       }
       for (const [id, item] of affected) reg.items[id] = item;
       return reg.items[patch.outputs[0]?.id] || null;
     }
     if (patch.action === 'swap') {
-      const oldItem = reg.items[patch.unequip], newItem = reg.items[patch.equip];
-      if (!oldItem || !newItem || oldItem.location !== 'equipped' || oldItem.possession !== 'owned' || available(oldItem) < 1 || newItem.possession !== 'owned' || available(newItem) < 1 || (oldItem.slot && oldItem.slot !== patch.slot)) { diagnostic(reg, 'action_invalid_swap'); return null; }
+      const oldItem = reg.items[patch.unequip],
+        newItem = reg.items[patch.equip];
+      if (
+        !oldItem ||
+        !newItem ||
+        oldItem.location !== 'equipped' ||
+        oldItem.possession !== 'owned' ||
+        available(oldItem) < 1 ||
+        newItem.possession !== 'owned' ||
+        available(newItem) < 1 ||
+        (oldItem.slot && oldItem.slot !== patch.slot)
+      ) {
+        diagnostic(reg, 'action_invalid_swap');
+        return null;
+      }
       const conflict = slotConflict(reg, newItem.id, patch.slot);
-      if (conflict && conflict.id !== oldItem.id) { diagnostic(reg, 'action_slot_occupied', conflict.id); return null; }
-      oldItem.location = 'inventory'; oldItem.slot = null; newItem.possession = 'owned'; newItem.location = 'equipped'; newItem.slot = patch.slot; return newItem;
+      if (conflict && conflict.id !== oldItem.id) {
+        diagnostic(reg, 'action_slot_occupied', conflict.id);
+        return null;
+      }
+      oldItem.location = 'inventory';
+      oldItem.slot = null;
+      newItem.possession = 'owned';
+      newItem.location = 'equipped';
+      newItem.slot = patch.slot;
+      return newItem;
     }
     const item = patch.id && reg.items[patch.id];
-    if (!item) { diagnostic(reg, 'patch_unknown_id', patch.id || patch.action); return null; }
+    if (!item) {
+      diagnostic(reg, 'patch_unknown_id', patch.id || patch.action);
+      return null;
+    }
     if (patch.action) {
       if (['transfer', 'consume', 'destroy'].includes(patch.action)) {
-        if (patch.quantity == null && available(item) > 1) { diagnostic(reg, 'action_quantity_required', item.id); return null; }
-        if (!removeQuantity(item, patch.quantity)) { diagnostic(reg, 'action_insufficient_quantity', item.id); return null; }
+        if (patch.quantity == null && available(item) > 1) {
+          diagnostic(reg, 'action_quantity_required', item.id);
+          return null;
+        }
+        if (!removeQuantity(item, patch.quantity)) {
+          diagnostic(reg, 'action_insufficient_quantity', item.id);
+          return null;
+        }
         if (item.possession === 'removed') item.removedReason = patch.reason || patch.action;
       } else if (patch.action === 'acquire') {
-        if (patch.quantity === 'all') { diagnostic(reg, 'action_bad_quantity', item.id); return null; }
+        if (patch.quantity === 'all') {
+          diagnostic(reg, 'action_bad_quantity', item.id);
+          return null;
+        }
         const have = item.possession === 'owned' ? available(item) : 0;
-        item.count = have + (patch.quantity || 1); item.possession = 'owned'; item.location = 'inventory'; item.removedReason = null;
+        item.count = have + (patch.quantity || 1);
+        item.possession = 'owned';
+        item.location = 'inventory';
+        item.removedReason = null;
       } else if (patch.action === 'restore') {
-        item.count = patch.quantity === 'all' ? 1 : (patch.quantity || Math.max(available(item), 1)); item.possession = 'owned'; item.location = 'inventory'; item.removedReason = null;
+        item.count = patch.quantity === 'all' ? 1 : patch.quantity || Math.max(available(item), 1);
+        item.possession = 'owned';
+        item.location = 'inventory';
+        item.removedReason = null;
       } else if (patch.action === 'equip') {
-        if (!patch.slot || item.possession !== 'owned' || available(item) < 1 || slotConflict(reg, item.id, patch.slot)) { diagnostic(reg, 'action_invalid_equip', item.id); return null; }
-        item.possession = 'owned'; item.location = 'equipped'; item.slot = patch.slot;
+        if (
+          !patch.slot ||
+          item.possession !== 'owned' ||
+          available(item) < 1 ||
+          slotConflict(reg, item.id, patch.slot)
+        ) {
+          diagnostic(reg, 'action_invalid_equip', item.id);
+          return null;
+        }
+        item.possession = 'owned';
+        item.location = 'equipped';
+        item.slot = patch.slot;
       } else if (patch.action === 'unequip') {
-        if (item.location !== 'equipped') { diagnostic(reg, 'action_not_equipped', item.id); return null; }
-        item.location = 'inventory'; item.slot = null;
+        if (item.location !== 'equipped') {
+          diagnostic(reg, 'action_not_equipped', item.id);
+          return null;
+        }
+        item.location = 'inventory';
+        item.slot = null;
       } else if (patch.action === 'move') {
         const destination = patch.fields.location || patch.destination;
-        if (!LOCATIONS.has(destination) || destination === 'equipped' || item.possession === 'removed') { diagnostic(reg, 'action_invalid_move', item.id); return null; }
-        item.location = destination; item.slot = null;
+        if (!LOCATIONS.has(destination) || destination === 'equipped' || item.possession === 'removed') {
+          diagnostic(reg, 'action_invalid_move', item.id);
+          return null;
+        }
+        item.location = destination;
+        item.slot = null;
       }
       return item;
     }
     if (patch.op === 'merge') applyFields(item, patch.fields);
-    else if (patch.op === 'remove') { item.possession = 'removed'; item.location = 'unknown'; item.slot = null; item.count = 0; item.removedReason = patch.reason; }
-    else if (patch.op === 'restore') { applyFields(item, patch.fields); item.possession ||= 'owned'; if (item.possession === 'removed') item.possession = 'owned'; item.location = item.location === 'unknown' ? 'inventory' : item.location; item.count = Math.max(1, Number(item.count) || 1); item.removedReason = null; }
+    else if (patch.op === 'remove') {
+      item.possession = 'removed';
+      item.location = 'unknown';
+      item.slot = null;
+      item.count = 0;
+      item.removedReason = patch.reason;
+    } else if (patch.op === 'restore') {
+      applyFields(item, patch.fields);
+      item.possession ||= 'owned';
+      if (item.possession === 'removed') item.possession = 'owned';
+      item.location = item.location === 'unknown' ? 'inventory' : item.location;
+      item.count = Math.max(1, Number(item.count) || 1);
+      item.removedReason = null;
+    }
     return item;
   }
 
@@ -598,9 +935,13 @@ const ITEMXCore = (() => {
     const xml = /<(itemExam|itemPatch|itemx)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
     const bracket = /\[(?:itemx|아이템)\s*:\s*([^\]\r\n]*)\]/gi;
     let m;
-    while ((m = xml.exec(text))) matches.push({ start: m.index, end: xml.lastIndex, raw: m[0], kind: 'xml', tag: m[1], attrs: m[2], body: m[3] });
-    while ((m = bracket.exec(text))) matches.push({ start: m.index, end: bracket.lastIndex, raw: m[0], kind: 'bracket', body: m[1] });
-    return matches.sort((a, b) => a.start - b.start || b.end - a.end).filter((one, index, all) => !all.slice(0, index).some((prev) => one.start < prev.end));
+    while ((m = xml.exec(text)))
+      matches.push({ start: m.index, end: xml.lastIndex, raw: m[0], kind: 'xml', tag: m[1], attrs: m[2], body: m[3] });
+    while ((m = bracket.exec(text)))
+      matches.push({ start: m.index, end: bracket.lastIndex, raw: m[0], kind: 'bracket', body: m[1] });
+    return matches
+      .sort((a, b) => a.start - b.start || b.end - a.end)
+      .filter((one, index, all) => !all.slice(0, index).some((prev) => one.start < prev.end));
   }
 
   function stripResidualTransport(text) {
@@ -610,7 +951,12 @@ const ITEMXCore = (() => {
       let boundary = out.indexOf('\n\n', opener.index);
       while (boundary >= 0) {
         const suffix = out.slice(boundary + 2).trimStart();
-        if (!/^<\/?(?:id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip)\b/i.test(suffix)) break;
+        if (
+          !/^<\/?(?:id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip)\b/i.test(
+            suffix
+          )
+        )
+          break;
         boundary = out.indexOf('\n\n', boundary + 2);
       }
       out = boundary < 0 ? out.slice(0, opener.index) : out.slice(0, opener.index) + out.slice(boundary + 2);
@@ -618,28 +964,54 @@ const ITEMXCore = (() => {
     const bracket = /\[(?:itemx|아이템)\s*:/i.exec(out);
     if (bracket) out = out.slice(0, bracket.index) + out.slice(bracket.index).replace(/^[^\r\n]*/, '');
     out = out.replace(/<\/?(?:itemExam|itemPatch|itemx)\b[^>]*>?/gi, '');
-    return out.replace(/^\s*```(?:xml)?\s*$/gim, '').replace(/\n{3,}/g, '\n\n').trim();
+    return out
+      .replace(/^\s*```(?:xml)?\s*$/gim, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
   function extractResponse(content, baseRegistry = newRegistry()) {
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);
-    if (!transports.length && !/(?:<\/?(?:itemExam|itemPatch|itemx)\b|\[(?:itemx|아이템)\s*:)/i.test(text)) return { content: text, registry: reg, events: [], errors: [] };
-    const out = []; const events = []; const errors = []; let cursor = 0;
+    if (!transports.length && !/(?:<\/?(?:itemExam|itemPatch|itemx)\b|\[(?:itemx|아이템)\s*:)/i.test(text))
+      return { content: text, registry: reg, events: [], errors: [] };
+    const out = [];
+    const events = [];
+    const errors = [];
+    let cursor = 0;
     transports.forEach((part, index) => {
       out.push(text.slice(cursor, part.start));
-      const parsed = part.kind === 'xml' ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`) : parseBracket(part.body, `${part.raw}:${index}`);
+      const parsed =
+        part.kind === 'xml'
+          ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
+          : parseBracket(part.body, `${part.raw}:${index}`);
       if (parsed.item) {
-        const event = { kind: 'exam', item: parsed.item }, view = clone(applyEvent(reg, event));
-        if (view) { events.push(event); out.push(marker({ v: VERSION, event, view })); }
-        else { const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed'; errors.push(error); out.push(marker({ v: VERSION, error })); }
+        const event = { kind: 'exam', item: parsed.item },
+          view = clone(applyEvent(reg, event));
+        if (view) {
+          events.push(event);
+          out.push(marker({ v: VERSION, event, view }));
+        } else {
+          const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
+          errors.push(error);
+          out.push(marker({ v: VERSION, error }));
+        }
       } else if (parsed.patch) {
-        const event = { kind: 'patch', patch: parsed.patch }, view = clone(applyEvent(reg, event));
-        if (view) { events.push(event); out.push(marker({ v: VERSION, event, view })); }
-        else { const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed'; errors.push(error); out.push(marker({ v: VERSION, error })); }
+        const event = { kind: 'patch', patch: parsed.patch },
+          view = clone(applyEvent(reg, event));
+        if (view) {
+          events.push(event);
+          out.push(marker({ v: VERSION, event, view }));
+        } else {
+          const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
+          errors.push(error);
+          out.push(marker({ v: VERSION, error }));
+        }
       } else {
-        const error = parsed.error || 'invalid_transport'; errors.push(error); out.push(marker({ v: VERSION, error }));
+        const error = parsed.error || 'invalid_transport';
+        errors.push(error);
+        out.push(marker({ v: VERSION, error }));
       }
       cursor = part.end;
     });
@@ -647,26 +1019,46 @@ const ITEMXCore = (() => {
     return { content: stripResidualTransport(out.join('')), registry: reg, events, errors };
   }
 
-  function messageText(message) { return typeof message?.data === 'string' ? message.data : (typeof message?.content === 'string' ? message.content : ''); }
+  function messageText(message) {
+    return typeof message?.data === 'string'
+      ? message.data
+      : typeof message?.content === 'string'
+        ? message.content
+        : '';
+  }
   function eventsFromText(text) {
-    const events = []; String(text || '').replace(MARKER_RE, (_, encoded) => { const payload = decodePayload(encoded); if (payload?.v === VERSION && payload.event) events.push(payload.event); return ''; }); return events;
+    const events = [];
+    String(text || '').replace(MARKER_RE, (_, encoded) => {
+      const payload = decodePayload(encoded);
+      if (payload?.v === VERSION && payload.event) events.push(payload.event);
+      return '';
+    });
+    return events;
   }
   function rebuild(messages) {
-    const reg = newRegistry(); let transport = '';
+    const reg = newRegistry();
+    let transport = '';
     for (const msg of messages || []) {
       const text = messageText(msg);
-      for (const event of eventsFromText(text)) { applyEvent(reg, event); transport += marker({ v: VERSION, event }); }
+      for (const event of eventsFromText(text)) {
+        applyEvent(reg, event);
+        transport += marker({ v: VERSION, event });
+      }
     }
     return { schema: VERSION, rev: 1, fingerprint: fnv1a(transport), updatedAt: Date.now(), registry: reg };
   }
   function readSnapshot(chat) {
     try {
-      const raw = chat?.scriptstate?.[STATE_KEY]; const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const raw = chat?.scriptstate?.[STATE_KEY];
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       return parsed?.schema === VERSION && parsed.registry ? parsed : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
   function writeSnapshot(chat, snapshot) {
-    const next = clone(chat || {}); next.scriptstate = { ...(next.scriptstate || {}) };
+    const next = clone(chat || {});
+    next.scriptstate = { ...(next.scriptstate || {}) };
     next.scriptstate[CHAT_KEY] ||= randomId();
     const encoded = JSON.stringify(snapshot);
     if (encoded.length <= 524288) next.scriptstate[STATE_KEY] = encoded;
@@ -675,27 +1067,76 @@ const ITEMXCore = (() => {
   }
   function requestView(text) {
     return String(text || '').replace(MARKER_RE, (_, encoded) => {
-      const payload = decodePayload(encoded); const item = payload?.event?.kind === 'exam' ? payload.event.item : null;
+      const payload = decodePayload(encoded);
+      const item = payload?.event?.kind === 'exam' ? payload.event.item : null;
       return item ? `[${resolveItemEmoji(item)} ${item.name} | id=${item.id}]` : '';
     });
   }
   function anchor(snapshot, max = 12000) {
     const reg = snapshot?.registry || newRegistry();
-    const items = reg.order.map((id) => reg.items[id]).filter(Boolean).sort((a, b) => Number(b.location === 'equipped') - Number(a.location === 'equipped'));
+    const items = reg.order
+      .map((id) => reg.items[id])
+      .filter(Boolean)
+      .sort((a, b) => Number(b.location === 'equipped') - Number(a.location === 'equipped'));
     const lines = ['[ITEMX 2 · CURRENT INVENTORY · authoritative]'];
     for (const item of items) {
-      const bits = [`id=${item.id}`, `name=${item.name}`, `type=${item.itemType}`, `rarity=${item.rarity}`, `possession=${item.possession}`, `location=${item.location}`, `count=${item.count || 0}`];
-      for (const key of ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition']) if (item[key]) bits.push(`${key}=${item[key]}`);
-      if (item.effects?.length) bits.push(`effects=${item.effects.slice(0, 3).map((one) => `${one.name}::${one.desc}`).join(' ;; ')}`);
+      const bits = [
+        `id=${item.id}`,
+        `name=${item.name}`,
+        `type=${item.itemType}`,
+        `rarity=${item.rarity}`,
+        `possession=${item.possession}`,
+        `location=${item.location}`,
+        `count=${item.count || 0}`
+      ];
+      for (const key of ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition'])
+        if (item[key]) bits.push(`${key}=${item[key]}`);
+      if (item.effects?.length)
+        bits.push(
+          `effects=${item.effects
+            .slice(0, 3)
+            .map((one) => `${one.name}::${one.desc}`)
+            .join(' ;; ')}`
+        );
       const line = `- ${bits.join(' | ')}`;
-      if ((lines.join('\n').length + line.length) > max) break;
+      if (lines.join('\n').length + line.length > max) break;
       lines.push(line);
     }
     lines.push('Use existing ids. Emit events only for settled item creation or change.');
     return lines.join('\n');
   }
 
-  return { VERSION, STATE_KEY, CHAT_KEY, MARKER_RE, RARITY_LABELS, esc, fnv1a, marker, decodePayload, parseXml, parseBracket, normalizeItem, normalizePatch, newRegistry, applyEvent, extractResponse, eventsFromText, rebuild, readSnapshot, writeSnapshot, requestView, anchor, messageText, clone, isUsableGlyph, itemEmojiFallback, resolveItemEmoji, resolveSkillGlyph, resolveMonsterGlyph };
+  return {
+    VERSION,
+    STATE_KEY,
+    CHAT_KEY,
+    MARKER_RE,
+    RARITY_LABELS,
+    esc,
+    fnv1a,
+    marker,
+    decodePayload,
+    parseXml,
+    parseBracket,
+    normalizeItem,
+    normalizePatch,
+    newRegistry,
+    applyEvent,
+    extractResponse,
+    eventsFromText,
+    rebuild,
+    readSnapshot,
+    writeSnapshot,
+    requestView,
+    anchor,
+    messageText,
+    clone,
+    isUsableGlyph,
+    itemEmojiFallback,
+    resolveItemEmoji,
+    resolveSkillGlyph,
+    resolveMonsterGlyph
+  };
 })();
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXCore = ITEMXCore;
@@ -703,75 +1144,236 @@ if (typeof globalThis !== 'undefined') globalThis.ITEMXCore = ITEMXCore;
 /* ITEMX 2 shared renderer. The chat body and plugin inventory call this file. */
 const ITEMXRenderer = (() => {
   'use strict';
-  const esc = (value) => globalThis.ITEMXCore ? ITEMXCore.esc(value) : String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = (value) =>
+    globalThis.ITEMXCore
+      ? ITEMXCore.esc(value)
+      : String(value ?? '').replace(
+          /[&<>"']/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+        );
   const affinities = {
-    fire: { name: '화염', icon: '🔥', c: '#ff7a3d', g: 'rgba(255,122,61,.42)' }, ice: { name: '냉기', icon: '❄️', c: '#58cbf5', g: 'rgba(88,203,245,.40)' },
-    lightning: { name: '번개', icon: '⚡', c: '#f5d13c', g: 'rgba(245,209,60,.38)' }, wind: { name: '바람', icon: '🌪️', c: '#86e5c4', g: 'rgba(134,229,196,.34)' },
-    earth: { name: '대지', icon: '🪨', c: '#c69a5c', g: 'rgba(198,154,92,.34)' }, light: { name: '광휘', icon: '☀️', c: '#ffe6a8', g: 'rgba(255,230,168,.40)' },
-    dark: { name: '암흑', icon: '🌑', c: '#9a6bff', g: 'rgba(154,107,255,.42)' }, arcane: { name: '비전', icon: '✦', c: '#7f9cff', g: 'rgba(127,156,255,.40)' }, poison: { name: '맹독', icon: '☠️', c: '#a6e34a', g: 'rgba(166,227,74,.36)' },
-    blood: { name: '혈기', icon: '🩸', c: '#d1354f', g: 'rgba(209,53,79,.42)' }, void: { name: '공허', icon: '🕳️', c: '#ff5ec2', g: 'rgba(255,94,194,.42)' }
+    fire: { name: '화염', icon: '🔥', c: '#ff7a3d', g: 'rgba(255,122,61,.42)' },
+    ice: { name: '냉기', icon: '❄️', c: '#58cbf5', g: 'rgba(88,203,245,.40)' },
+    lightning: { name: '번개', icon: '⚡', c: '#f5d13c', g: 'rgba(245,209,60,.38)' },
+    wind: { name: '바람', icon: '🌪️', c: '#86e5c4', g: 'rgba(134,229,196,.34)' },
+    earth: { name: '대지', icon: '🪨', c: '#c69a5c', g: 'rgba(198,154,92,.34)' },
+    light: { name: '광휘', icon: '☀️', c: '#ffe6a8', g: 'rgba(255,230,168,.40)' },
+    dark: { name: '암흑', icon: '🌑', c: '#9a6bff', g: 'rgba(154,107,255,.42)' },
+    arcane: { name: '비전', icon: '✦', c: '#7f9cff', g: 'rgba(127,156,255,.40)' },
+    poison: { name: '맹독', icon: '☠️', c: '#a6e34a', g: 'rgba(166,227,74,.36)' },
+    blood: { name: '혈기', icon: '🩸', c: '#d1354f', g: 'rgba(209,53,79,.42)' },
+    void: { name: '공허', icon: '🕳️', c: '#ff5ec2', g: 'rgba(255,94,194,.42)' }
   };
   const crafts = {
-    arcane: { name: '마도', eyebrow: 'CODEX · APPRAISAL', shapes: ['shard', 'shard', 'shard', 'diamond'], paths: ['rise', 'drift', 'pulse'], colors: [['#d8b25c', '#f6e6bd'], ['#b8873a', '#ffe9b5']], accent: '#d8b25c', glow: 'rgba(216,178,92,.30)', ambient: { rays: 4, veil: 5 } },
-    forged: { name: '대장간', eyebrow: 'FORGE · ASSAY', shapes: ['ash', 'ash', 'ash', 'shard'], paths: ['rise', 'drift'], colors: [['#e07a3a', '#ffd0a0'], ['#8a6440', '#e8b184']], accent: '#e07a3a', glow: 'rgba(224,122,58,.30)', ambient: { fog: 3, rays: 4, veil: 5 } },
-    oriental: { name: '무림', eyebrow: '兵器鑑定', shapes: ['ash', 'ash', 'ash', 'petal'], paths: ['sway', 'sway', 'drift'], colors: [['#b9aa91', '#756957'], ['#d0b67f', '#8b7045'], ['#a33a40', '#e08a83']], accent: '#b82f36', glow: 'rgba(184,47,54,.22)', ambient: { fog: 3, rays: 4, veil: 5 } },
-    clockwork: { name: '시계공학', eyebrow: 'ATELIER · No.', shapes: ['gear', 'gear', 'gear', 'block'], paths: ['turn', 'rise'], colors: [['#c98a2e', '#f3dfae'], ['#a9803c', '#ffe4b0']], accent: '#c98a2e', glow: 'rgba(201,138,46,.32)', ambient: { scan: 4, veil: 5 } },
-    synthetic: { name: '합성체', eyebrow: 'GEAR SCAN', shapes: ['block', 'block', 'block', 'streak'], paths: ['jitter', 'rise'], colors: [['#4ef2ff', '#0a3a44'], ['#ff3d6e', '#3a0d1c']], accent: '#4ef2ff', glow: 'rgba(78,242,255,.35)', ambient: { scan: 1, veil: 3 } },
-    celestial: { name: '천체', eyebrow: 'ASTRA · AUGURY', shapes: ['cross', 'cross', 'cross', 'diamond'], paths: ['pulse', 'rise', 'drift'], colors: [['#ffd98a', '#fff6e0'], ['#9fb4ff', '#e6ecff']], accent: '#ffd98a', glow: 'rgba(255,217,138,.30)', ambient: { rays: 2, veil: 3 } },
-    organic: { name: '유기체', eyebrow: 'SYLVAN · READING', shapes: ['petal', 'petal', 'petal', 'ash'], paths: ['sway', 'drift'], colors: [['#7fe0a1', '#eafbe6'], ['#4a9c62', '#bff0cd']], accent: '#7fe0a1', glow: 'rgba(127,224,161,.28)', ambient: { fog: 2, rays: 4, veil: 5 } }
+    arcane: {
+      name: '마도',
+      eyebrow: 'CODEX · APPRAISAL',
+      shapes: ['shard', 'shard', 'shard', 'diamond'],
+      paths: ['rise', 'drift', 'pulse'],
+      colors: [
+        ['#d8b25c', '#f6e6bd'],
+        ['#b8873a', '#ffe9b5']
+      ],
+      accent: '#d8b25c',
+      glow: 'rgba(216,178,92,.30)',
+      ambient: { rays: 4, veil: 5 }
+    },
+    forged: {
+      name: '대장간',
+      eyebrow: 'FORGE · ASSAY',
+      shapes: ['ash', 'ash', 'ash', 'shard'],
+      paths: ['rise', 'drift'],
+      colors: [
+        ['#e07a3a', '#ffd0a0'],
+        ['#8a6440', '#e8b184']
+      ],
+      accent: '#e07a3a',
+      glow: 'rgba(224,122,58,.30)',
+      ambient: { fog: 3, rays: 4, veil: 5 }
+    },
+    oriental: {
+      name: '무림',
+      eyebrow: '兵器鑑定',
+      shapes: ['ash', 'ash', 'ash', 'petal'],
+      paths: ['sway', 'sway', 'drift'],
+      colors: [
+        ['#b9aa91', '#756957'],
+        ['#d0b67f', '#8b7045'],
+        ['#a33a40', '#e08a83']
+      ],
+      accent: '#b82f36',
+      glow: 'rgba(184,47,54,.22)',
+      ambient: { fog: 3, rays: 4, veil: 5 }
+    },
+    clockwork: {
+      name: '시계공학',
+      eyebrow: 'ATELIER · No.',
+      shapes: ['gear', 'gear', 'gear', 'block'],
+      paths: ['turn', 'rise'],
+      colors: [
+        ['#c98a2e', '#f3dfae'],
+        ['#a9803c', '#ffe4b0']
+      ],
+      accent: '#c98a2e',
+      glow: 'rgba(201,138,46,.32)',
+      ambient: { scan: 4, veil: 5 }
+    },
+    synthetic: {
+      name: '합성체',
+      eyebrow: 'GEAR SCAN',
+      shapes: ['block', 'block', 'block', 'streak'],
+      paths: ['jitter', 'rise'],
+      colors: [
+        ['#4ef2ff', '#0a3a44'],
+        ['#ff3d6e', '#3a0d1c']
+      ],
+      accent: '#4ef2ff',
+      glow: 'rgba(78,242,255,.35)',
+      ambient: { scan: 1, veil: 3 }
+    },
+    celestial: {
+      name: '천체',
+      eyebrow: 'ASTRA · AUGURY',
+      shapes: ['cross', 'cross', 'cross', 'diamond'],
+      paths: ['pulse', 'rise', 'drift'],
+      colors: [
+        ['#ffd98a', '#fff6e0'],
+        ['#9fb4ff', '#e6ecff']
+      ],
+      accent: '#ffd98a',
+      glow: 'rgba(255,217,138,.30)',
+      ambient: { rays: 2, veil: 3 }
+    },
+    organic: {
+      name: '유기체',
+      eyebrow: 'SYLVAN · READING',
+      shapes: ['petal', 'petal', 'petal', 'ash'],
+      paths: ['sway', 'drift'],
+      colors: [
+        ['#7fe0a1', '#eafbe6'],
+        ['#4a9c62', '#bff0cd']
+      ],
+      accent: '#7fe0a1',
+      glow: 'rgba(127,224,161,.28)',
+      ambient: { fog: 2, rays: 4, veil: 5 }
+    }
   };
   const reactions = {
-    'fire+wind': ['화염폭풍', '불티가 바람의 궤도를 타고 휘몰아친다.'], 'fire+ice': ['열충격', '상반된 온도가 충돌하여 방어를 파쇄한다.'],
-    'ice+lightning': ['극뢰', '빙결된 대상 사이로 번개가 연쇄 전도된다.'], 'fire+light': ['성화', '정화의 불꽃이 타락한 존재에게 추가 피해를 준다.'],
-    'dark+void': ['심연붕괴', '공간을 잠식해 대상의 저항을 안쪽으로 붕괴시킨다.'], 'blood+poison': ['혈독', '상처에 스며든 독성이 맥박마다 증폭된다.'],
+    'fire+wind': ['화염폭풍', '불티가 바람의 궤도를 타고 휘몰아친다.'],
+    'fire+ice': ['열충격', '상반된 온도가 충돌하여 방어를 파쇄한다.'],
+    'ice+lightning': ['극뢰', '빙결된 대상 사이로 번개가 연쇄 전도된다.'],
+    'fire+light': ['성화', '정화의 불꽃이 타락한 존재에게 추가 피해를 준다.'],
+    'dark+void': ['심연붕괴', '공간을 잠식해 대상의 저항을 안쪽으로 붕괴시킨다.'],
+    'blood+poison': ['혈독', '상처에 스며든 독성이 맥박마다 증폭된다.'],
     'earth+wind': ['사암폭풍', '연마된 모래가 넓은 범위를 지속 절삭한다.']
   };
-  const rarityLabels = { normal: '일반', magic: '매직', rare: '레어', unique: '유니크', epic: '에픽', legendary: '전설', mythical: '신화', empyrean: '창천' };
-  const particleBudget = { normal: 4, magic: 6, rare: 8, unique: 16, epic: 16, legendary: 16, mythical: 16, empyrean: 16 };
+  const rarityLabels = {
+    normal: '일반',
+    magic: '매직',
+    rare: '레어',
+    unique: '유니크',
+    epic: '에픽',
+    legendary: '전설',
+    mythical: '신화',
+    empyrean: '창천'
+  };
+  const particleBudget = {
+    normal: 4,
+    magic: 6,
+    rare: 8,
+    unique: 16,
+    epic: 16,
+    legendary: 16,
+    mythical: 16,
+    empyrean: 16
+  };
   const ambientLevel = { normal: 1, magic: 2, rare: 3, unique: 3, epic: 4, legendary: 4, mythical: 5, empyrean: 5 };
   const locationLabels = { inventory: '소지품', equipped: '장착', storage: '보관', unknown: '위치 불명' };
   const possessionLabels = { observed: '관찰', owned: '보유', removed: '소실' };
-  const rarityColors = { normal: '#5c6577', magic: '#6fa8e8', rare: '#45c8c0', unique: '#a888f0', epic: '#dd7be0', legendary: '#f0a640', mythical: '#ff7a7a', empyrean: '#ffe9a8' };
+  const rarityColors = {
+    normal: '#5c6577',
+    magic: '#6fa8e8',
+    rare: '#45c8c0',
+    unique: '#a888f0',
+    epic: '#dd7be0',
+    legendary: '#f0a640',
+    mythical: '#ff7a7a',
+    empyrean: '#ffe9a8'
+  };
 
   const keyFor = (a, b) => [a, b].sort().join('+');
-  const reactionFor = (a, b) => reactions[keyFor(a, b)] || ['이중 공명', `${affinities[a]?.name || a}과 ${affinities[b]?.name || b}의 성질이 번갈아 발현된다.`];
+  const reactionFor = (a, b) =>
+    reactions[keyFor(a, b)] || [
+      '이중 공명',
+      `${affinities[a]?.name || a}과 ${affinities[b]?.name || b}의 성질이 번갈아 발현된다.`
+    ];
   const itemVars = (item) => {
-    const craft = crafts[item.theme] || crafts.arcane, primary = affinities[item.affinity] || { c: craft.accent, g: craft.glow }, secondary = affinities[item.affinity2] || primary;
+    const craft = crafts[item.theme] || crafts.arcane,
+      primary = affinities[item.affinity] || { c: craft.accent, g: craft.glow },
+      secondary = affinities[item.affinity2] || primary;
     return `--p:${primary.c};--pg:${primary.g};--s:${secondary.c};--sg:${secondary.g};--rk:${rarityColors[item.rarity] || rarityColors.normal}`;
   };
 
   function currentEffects(item, motion = 'full') {
     if (motion === 'off') return '';
-    const craft = crafts[item.theme] || crafts.arcane, rarity = item.rarity || 'normal';
-    const level = ambientLevel[rarity] || 1, count = motion === 'lite' ? Math.min(10, particleBudget[rarity] || 4) : (particleBudget[rarity] || 4);
+    const craft = crafts[item.theme] || crafts.arcane,
+      rarity = item.rarity || 'normal';
+    const level = ambientLevel[rarity] || 1,
+      count = motion === 'lite' ? Math.min(10, particleBudget[rarity] || 4) : particleBudget[rarity] || 4;
     let rays = '';
-    if (craft.ambient.rays && level >= craft.ambient.rays) [4, 44, 77, 119, 158, 196, 233, 271, 306, 339].forEach((r, i) => { rays += `<i style="--r:${r}deg;--w:${[5.1, 2.8, 7.4, 3.3, 6, 4.2, 8.1, 3, 5.6, 2.5][i]}%"></i>`; });
+    if (craft.ambient.rays && level >= craft.ambient.rays)
+      [4, 44, 77, 119, 158, 196, 233, 271, 306, 339].forEach((r, i) => {
+        rays += `<i style="--r:${r}deg;--w:${[5.1, 2.8, 7.4, 3.3, 6, 4.2, 8.1, 3, 5.6, 2.5][i]}%"></i>`;
+      });
     let motes = '';
     const seed = parseInt(ITEMXCore.fnv1a(item.id || item.name || '?'), 16) || 1;
     for (let i = 0; i < count; i++) {
-      const n = seed + i * 43, z = 2 + (n % 5) * .75, shape = craft.shapes[n % craft.shapes.length], path = craft.paths[(n * 3 + 1) % craft.paths.length], pair = craft.colors[n % craft.colors.length];
-      motes += `<i class="craft-mote shape-${shape} path-${path} ${shape === 'diamond' ? 'diamond' : ''}" style="--x:${n % 101}%;--z:${z}px;--mh:${z * 2.8}px;--ca:${pair[0]};--cb:${pair[1]};--o:${.22 + (n % 4) * .1};--d:${7 + (n % 8)}s;--delay:-${(n % 9) * .75}s;--drift:${-34 + (n % 69)}px;--drift2:${(34 - (n % 69)) * .7}px"></i>`;
+      const n = seed + i * 43,
+        z = 2 + (n % 5) * 0.75,
+        shape = craft.shapes[n % craft.shapes.length],
+        path = craft.paths[(n * 3 + 1) % craft.paths.length],
+        pair = craft.colors[n % craft.colors.length];
+      motes += `<i class="craft-mote shape-${shape} path-${path} ${shape === 'diamond' ? 'diamond' : ''}" style="--x:${n % 101}%;--z:${z}px;--mh:${z * 2.8}px;--ca:${pair[0]};--cb:${pair[1]};--o:${0.22 + (n % 4) * 0.1};--d:${7 + (n % 8)}s;--delay:-${(n % 9) * 0.75}s;--drift:${-34 + (n % 69)}px;--drift2:${(34 - (n % 69)) * 0.7}px"></i>`;
     }
-    const fog = craft.ambient.fog && level >= craft.ambient.fog ? '<div class="current-fog"><span class="current-fog-visual"></span></div>' : '';
+    const fog =
+      craft.ambient.fog && level >= craft.ambient.fog
+        ? '<div class="current-fog"><span class="current-fog-visual"></span></div>'
+        : '';
     const scan = craft.ambient.scan && level >= craft.ambient.scan ? '<div class="current-scan"></div>' : '';
-    const veil = craft.ambient.veil && level >= craft.ambient.veil ? '<div class="current-veil"><span class="current-veil-visual"></span></div>' : '';
+    const veil =
+      craft.ambient.veil && level >= craft.ambient.veil
+        ? '<div class="current-veil"><span class="current-veil-visual"></span></div>'
+        : '';
     return `<div class="current-fx">${rays ? `<div class="current-rays">${rays}</div>` : ''}${fog}${scan}${veil}${motes}</div>`;
   }
 
   function affinityEffects(kind, role, rarity, motion = 'full') {
     if (!kind || !affinities[kind] || motion === 'off') return '';
-    const a = affinities[kind], tag = kind === 'lightning' ? 'b' : 'i', budgetScale = Math.max(.28, (particleBudget[rarity] || 4) / 16);
-    let count = kind === 'lightning' ? 14 : (kind === 'ice' ? 18 : (kind === 'wind' ? 11 : 16));
-    count = Math.max(3, Math.ceil(count * budgetScale * (role === 'secondary' ? .68 : 1) * (motion === 'lite' ? .72 : 1)));
+    const a = affinities[kind],
+      tag = kind === 'lightning' ? 'b' : 'i',
+      budgetScale = Math.max(0.28, (particleBudget[rarity] || 4) / 16);
+    let count = kind === 'lightning' ? 14 : kind === 'ice' ? 18 : kind === 'wind' ? 11 : 16;
+    count = Math.max(
+      3,
+      Math.ceil(count * budgetScale * (role === 'secondary' ? 0.68 : 1) * (motion === 'lite' ? 0.72 : 1))
+    );
     let bits = '';
     for (let i = 0; i < count; i++) {
-      const style = `--x:${(i * 37 + 11) % 98}%;--y:${(i * 29 + 7) % 91}%;--z:${4 + (i % 5) * 2.3}px;--h:${24 + (i % 6) * 9}px;--iw:${2.5 + (i % 5) * 1.4}px;--ih:${10 + (i % 5) * 3.5}px;--ph:${7 + (i % 5) * 2.4}px;--d:${2.5 + (i % 7) * .76}s;--delay:-${(i % 8) * .63}s;--drift:${-42 + (i * 23) % 85}px;--sk:${-18 + (i * 11) % 37}deg;--r:${-38 + (i * 31) % 77}deg;--ac:${a.c}`;
+      const style = `--x:${(i * 37 + 11) % 98}%;--y:${(i * 29 + 7) % 91}%;--z:${4 + (i % 5) * 2.3}px;--h:${24 + (i % 6) * 9}px;--iw:${2.5 + (i % 5) * 1.4}px;--ih:${10 + (i % 5) * 3.5}px;--ph:${7 + (i % 5) * 2.4}px;--d:${2.5 + (i % 7) * 0.76}s;--delay:-${(i % 8) * 0.63}s;--drift:${-42 + ((i * 23) % 85)}px;--sk:${-18 + ((i * 11) % 37)}deg;--r:${-38 + ((i * 31) % 77)}deg;--ac:${a.c}`;
       bits += `<${tag} style="${style}"></${tag}>`;
     }
     const secondary = role === 'secondary' ? ' secondary' : '';
-    const extra = kind === 'lightning' ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div>` : (kind === 'ice' ? `<div class="ice-cracks${secondary}" style="--ac:${a.c}"></div>` : '');
+    const extra =
+      kind === 'lightning'
+        ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div>`
+        : kind === 'ice'
+          ? `<div class="ice-cracks${secondary}" style="--ac:${a.c}"></div>`
+          : '';
     const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
-    const signature = kind === 'ice' ? '' : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}">${movingSignature ? '<span class="affinity-signature-visual"></span>' : ''}</div>`;
+    const signature =
+      kind === 'ice'
+        ? ''
+        : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}">${movingSignature ? '<span class="affinity-signature-visual"></span>' : ''}</div>`;
     return `${signature}${extra}<div class="afx afx-${kind}${role === 'secondary' ? ' afx-secondary' : ''}" style="--ac:${a.c}">${bits}</div>`;
   }
 
@@ -780,7 +1382,8 @@ const ITEMXRenderer = (() => {
     const primary = affinities[item.affinity];
     let out = `<span class="affinity-chip" style="--chip:${primary.c}">${primary.icon} ${primary.name}<small>${item.affinity2 ? '주속성' : '단일 속성'}</small></span>`;
     if (item.affinity2) {
-      const secondary = affinities[item.affinity2], reaction = reactionFor(item.affinity, item.affinity2);
+      const secondary = affinities[item.affinity2],
+        reaction = reactionFor(item.affinity, item.affinity2);
       out += `<span class="affinity-chip" style="--chip:${secondary.c}">${secondary.icon} ${secondary.name}<small>부속성</small></span><span class="affinity-chip reaction-chip">✦ ${esc(reaction[0])}</span>`;
     }
     return `<div class="affinity-row">${out}</div>`;
@@ -788,21 +1391,35 @@ const ITEMXRenderer = (() => {
 
   function renderSkillFx(skill, rarity = 'normal', motion = 'full') {
     const affinity = affinities[skill?.affinity] ? skill.affinity : 'arcane';
-    const item = { id: skill?.id || skill?.name || 'skill', name: skill?.name || '스킬', theme: 'arcane', rarity: rarityLabels[rarity] ? rarity : 'normal', affinity };
+    const item = {
+      id: skill?.id || skill?.name || 'skill',
+      name: skill?.name || '스킬',
+      theme: 'arcane',
+      rarity: rarityLabels[rarity] ? rarity : 'normal',
+      affinity
+    };
     return `<div class="itemx-fx itemx2-skill-weapon-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div></div>`;
   }
 
   function stats(item) {
-    const values = [['위력', item.power], ['요구', item.required], ['내구', item.durability], ['가치', item.cost]].filter(([, value]) => value);
+    const values = [
+      ['위력', item.power],
+      ['요구', item.required],
+      ['내구', item.durability],
+      ['가치', item.cost]
+    ].filter(([, value]) => value);
     if (!values.length) return '';
     return `<div class="itemx-stats">${values.map(([key, value]) => `<div class="itemx-stat"><span class="itemx-statk">${key}</span><span class="itemx-statv">${esc(value)}</span></div>`).join('')}</div>`;
   }
 
   function effectSection(item) {
-    const effects = Array.isArray(item.effects) ? item.effects : [], augments = Array.isArray(item.augments) ? item.augments : [];
+    const effects = Array.isArray(item.effects) ? item.effects : [],
+      augments = Array.isArray(item.augments) ? item.augments : [];
     let out = '';
-    if (effects.length) out += `<div class="itemx-gap"></div><div class="itemx-section-label">특수 효과</div><div class="itemx-effects">${effects.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
-    if (augments.length) out += `<div class="itemx-gap"></div><div class="itemx-section-label">증강</div><div class="itemx-effects">${augments.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
+    if (effects.length)
+      out += `<div class="itemx-gap"></div><div class="itemx-section-label">특수 효과</div><div class="itemx-effects">${effects.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
+    if (augments.length)
+      out += `<div class="itemx-gap"></div><div class="itemx-section-label">증강</div><div class="itemx-effects">${augments.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
     return out;
   }
 
@@ -813,15 +1430,32 @@ const ITEMXRenderer = (() => {
 
   function renderCard(item, options = {}) {
     if (!item) return '';
-    const theme = crafts[item.theme] ? item.theme : 'arcane', rarity = rarityLabels[item.rarity] ? item.rarity : 'normal', motion = options.motion || 'full';
-    const classes = ['itemx-card', `craft-${theme}`, `rarity-${rarity}`, item.condition ? `condition-${item.condition}` : '', motion === 'off' ? 'motion-off' : (motion === 'lite' ? 'motion-lite' : ''), options.inline ? 'itemx-inline-card' : ''].filter(Boolean).join(' ');
-    const possession = possessionLabels[item.possession] || item.possession || '관찰', location = locationLabels[item.location] || item.location || '위치 불명';
-    const fx = motion === 'off' ? '' : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>`;
+    const theme = crafts[item.theme] ? item.theme : 'arcane',
+      rarity = rarityLabels[item.rarity] ? item.rarity : 'normal',
+      motion = options.motion || 'full';
+    const classes = [
+      'itemx-card',
+      `craft-${theme}`,
+      `rarity-${rarity}`,
+      item.condition ? `condition-${item.condition}` : '',
+      motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
+      options.inline ? 'itemx-inline-card' : ''
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const possession = possessionLabels[item.possession] || item.possession || '관찰',
+      location = locationLabels[item.location] || item.location || '위치 불명';
+    const fx =
+      motion === 'off'
+        ? ''
+        : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>`;
     return `<article class="${classes}" style="${itemVars(item)}" data-itemx-id="${esc(item.id)}">${themeDecor(theme)}${fx}<div class="itemx-content"><div class="itemx-head"><div class="itemx-medallion"><span class="itemx-emoji">${esc(ITEMXCore.resolveItemEmoji(item))}</span></div><div class="itemx-titles"><div class="itemx-eyebrow">${esc(crafts[theme].eyebrow)}</div><span class="itemx-name">${esc(item.name || '???')}</span><span class="itemx-tier">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="itemx-subline"><span>${esc(possession)} · ${esc(location)}</span><span>${esc(item.itemType || '기타')}</span>${Number(item.count) > 1 ? `<span>×${Number(item.count)}</span>` : ''}</span></div></div>${affinityUi(item)}<div class="itemx-rule"></div>${stats(item)}${effectSection(item)}${item.trivia ? `<div class="itemx-flavor">${esc(item.trivia)}</div>` : ''}</div></article>`;
   }
 
   function renderTile(item) {
-    const icons = [item.affinity && affinities[item.affinity]?.icon, item.affinity2 && affinities[item.affinity2]?.icon].filter(Boolean).join('');
+    const icons = [item.affinity && affinities[item.affinity]?.icon, item.affinity2 && affinities[item.affinity2]?.icon]
+      .filter(Boolean)
+      .join('');
     return `<button class="itemx-tile rarity-${esc(item.rarity || 'normal')}" style="${itemVars(item)}" data-item-id="${esc(item.id)}"><span class="itemx-tile-bar"></span>${item.location === 'equipped' ? '<span class="itemx-tile-eq"></span>' : ''}${icons ? `<span class="itemx-tile-aff">${icons}</span>` : ''}<span class="itemx-tile-em">${esc(ITEMXCore.resolveItemEmoji(item))}</span><span class="itemx-tile-nm">${esc(item.name || '???')}</span><span class="itemx-tile-meta"><span class="itemx-tile-rk">${esc(item.displayRarity || rarityLabels[item.rarity] || '일반')}</span><span class="itemx-tile-lc">${esc(item.itemType || '기타')}</span></span></button>`;
   }
 
@@ -832,9 +1466,20 @@ const ITEMXRenderer = (() => {
     return id ? `<span class="itemx-event-chip">ITEMX CODEX · ${esc(id)} 변경</span>` : '';
   }
 
-  return { affinities, crafts, rarityLabels, reactions, particleBudget, renderCard, renderTile, renderMarkerPayload, renderSkillFx, itemVars };
+  return {
+    affinities,
+    crafts,
+    rarityLabels,
+    reactions,
+    particleBudget,
+    renderCard,
+    renderTile,
+    renderMarkerPayload,
+    renderSkillFx,
+    itemVars
+  };
 })();
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
 
-const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.4</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
+const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.5</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>

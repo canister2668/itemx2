@@ -2,7 +2,8 @@
 const ITEMX_STYLE = __ITEMX_STYLE_JSON__;
 const ITEMX_CHAT_STYLE = __ITEMX_CHAT_STYLE_JSON__;
 const ITEMX_MAIN_STYLE = __ITEMX_MAIN_STYLE_JSON__;
-const ITEMX_CHIP_STYLE = '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
+const ITEMX_CHIP_STYLE =
+  '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);content-visibility:auto;contain:layout paint style;contain-intrinsic-size:auto 128px;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
 const ITEMX_CODEX_INLINE_DENSE_STYLE = `.itemx2-inline-event.itemx2-inline-event{align-self:start;box-sizing:border-box;width:min(400px,calc(100% - 8px));max-width:400px;margin:.42rem auto .65rem;border-radius:11px;line-height:1.2}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;height:auto;padding:6px 8px 5px}.itemx2-inline-event .itemx2-inline-icon{align-self:center;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:9px;font-size:1.08rem;line-height:1}.itemx2-inline-event .itemx2-inline-copy{align-self:center;gap:1px;line-height:1.15}.itemx2-inline-event .itemx2-inline-kicker{font-size:.46rem;line-height:1.2;letter-spacing:.12em}.itemx2-inline-event .itemx2-inline-name{font-size:.82rem;line-height:1.18}.itemx2-inline-event .itemx2-inline-meta{font-size:.51rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.itemx2-inline-event .itemx2-inline-quick{display:flex;align-items:center;gap:3px;min-width:0;margin-top:2px;overflow:hidden}.itemx2-inline-event .itemx2-inline-quick i{flex:0 1 auto;min-width:0;height:auto;padding:1px 4px;border:1px solid rgba(150,165,190,.16);border-radius:4px;background:rgba(255,255,255,.035);color:#9ca9bb;font-size:.47rem;font-style:normal;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-quick i b{color:var(--ix-tone);font-weight:900}.itemx2-inline-event .itemx2-inline-foot{align-items:center;min-height:23px;height:auto;padding:4px 8px;font-size:.53rem;line-height:1.3}.itemx2-inline-event .itemx2-inline-foot b{font-size:.49rem}.itemx2-inline-event .itemx2-inline-foot span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-state{display:inline-flex;align-self:center;align-items:center;justify-content:center;width:auto;height:auto;min-height:0;padding:2px 5px;font-size:.46rem;line-height:1.2;white-space:nowrap}@media(max-width:520px){.itemx2-inline-event.itemx2-inline-event{margin:.36rem auto .58rem}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:34px minmax(0,1fr) auto;gap:6px;min-height:51px;padding:5px 7px 4px}.itemx2-inline-event .itemx2-inline-icon{width:34px;height:34px;min-width:34px;min-height:34px}.itemx2-inline-event .itemx2-inline-name{font-size:.78rem}.itemx2-inline-event .itemx2-inline-quick{gap:2px}.itemx2-inline-event .itemx2-inline-quick i{padding:1px 3px;font-size:.44rem}.itemx2-inline-event .itemx2-inline-quick i:nth-last-child(n+5){display:none}.itemx2-inline-event .itemx2-inline-foot{min-height:21px;padding:3px 7px;font-size:.5rem}}`;
 const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
@@ -56,13 +57,114 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 (async () => {
   'use strict';
   const queues = new Map();
-  const ui = { tab: 'inventory', filter: 'all', query: '', selected: null, selectedSkill: null, selectedMonster: null, manageId: null, motion: true };
+  const ui = {
+    tab: 'inventory',
+    filter: 'all',
+    query: '',
+    selected: null,
+    selectedSkill: null,
+    selectedMonster: null,
+    manageId: null,
+    motion: true
+  };
   const runtime = {
-    latestMarkers: new Set(), latestOutput: '', pendingMarkers: new Set(), pendingMarkersAt: 0, eventPayloads: new Map(), markerHtmlCache: new Map(), detailHtmlCache: new Map(), settingsCache: new Map(), settingsLoadPromises: new Map(), cachedLoaded: null, cachedGeneration: -1, portraitCache: new Map(), portraitCacheBytes: 0, mainStyle: null, mainStylePosition: '', mainDoc: null, rootDrawer: null, rootFingerprint: '', rootContentReady: false, rootHydratedDetail: '', activeRootTab: 'inventory', rootItemPage: 0, rootTabBusy: false, rootClickBusy: false, rootClickOwner: null, rootClickBindings: [], bodyFxEventOwner: null, bodyFxEventIds: [], bodyFxClassOwner: null, bodyFxStartTimer: null, bodyFxScrollTimer: null, bodyFxScrollActive: false, bodyFxSawScroll: false, outputSyncDeferred: false, uiParts: [], generation: 0, remountTimer: null, remountFallbackAt: 0, homeProbeAt: 0, catchUpTimer: null, updateTimer: null, hostObserver: null, hostSyncTimer: null, hostSyncDeferred: false, hostSyncBusy: false, hostSettingsCache: { at: 0, visible: false }, feedbackTimer: null, catchUpFingerprint: '', catchUpFailedFingerprint: '', catchUpFailures: 0, catchUpRetryAt: 0, auxCandidateFingerprint: '', auxCandidateSince: 0, auxCandidateChecks: 0, legacyCommitTimer: null, remounting: false, hookInstallPromise: null, outputSyncPromise: null, outputSyncPending: false, connectionBusy: false, settingChangeBusy: false, auxRecoveryPromise: null,
-    status: 'UI 준비', lastDomError: '', lastHookError: '', unloading: false, hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
-    permissions: { replacer: null, mainDom: null, db: null }, badgePosition: 'rm', compactContainer: true, moduleAssetCache: { key: '', at: 0, rows: [] }, characterAssetCache: { key: '', at: 0, rows: [] }, combinedAssetCache: { key: '', at: 0, rows: [] }, lorebookCache: { key: '', at: 0, rows: [] }, lorebookScanPromise: null,
-    panelOpen: false, panelTransition: 0, auxActive: 0, auxLabel: '보조 모델 처리 중', auxToastTimer: null, auxProviderUnavailable: false, auxProviderError: '', uiRemountAfter: 0, hostSettingsVisible: false, allowDrawerOverSettings: false, activeContextKey: '', checkpointCacheRaw: null, checkpointCache: null,
-    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }, update: { checking: false, checkedAt: 0, latest: '', available: false }, debugEnabled: false, visualEffectsEnabled: true, debugEntries: [], cleanupArmedUntil: 0
+    latestMarkers: new Set(),
+    latestOutput: '',
+    pendingMarkers: new Set(),
+    pendingMarkersAt: 0,
+    eventPayloads: new Map(),
+    markerHtmlCache: new Map(),
+    detailHtmlCache: new Map(),
+    settingsCache: new Map(),
+    settingsLoadPromises: new Map(),
+    cachedLoaded: null,
+    cachedGeneration: -1,
+    portraitCache: new Map(),
+    portraitCacheBytes: 0,
+    mainStyle: null,
+    mainStylePosition: '',
+    mainDoc: null,
+    rootDrawer: null,
+    rootOpen: false,
+    rootFingerprint: '',
+    rootContentReady: false,
+    rootHydratedDetail: '',
+    activeRootTab: 'inventory',
+    rootItemPage: 0,
+    rootTabBusy: false,
+    rootClickBusy: false,
+    rootClickOwner: null,
+    rootClickBindings: [],
+    bodyFxEventOwner: null,
+    bodyFxEventIds: [],
+    bodyFxClassOwner: null,
+    bodyFxStartTimer: null,
+    bodyFxScrollTimer: null,
+    bodyFxScrollActive: false,
+    bodyFxSawScroll: false,
+    outputSyncDeferred: false,
+    uiParts: [],
+    generation: 0,
+    remountTimer: null,
+    remountInterval: 0,
+    remountFallbackAt: 0,
+    homeProbeAt: 0,
+    catchUpTimer: null,
+    updateTimer: null,
+    hostObserver: null,
+    hostSyncTimer: null,
+    hostSyncDeferred: false,
+    hostSyncBusy: false,
+    hostSettingsCache: { at: 0, visible: false },
+    feedbackTimer: null,
+    catchUpFingerprint: '',
+    catchUpFailedFingerprint: '',
+    catchUpFailures: 0,
+    catchUpRetryAt: 0,
+    auxCandidateFingerprint: '',
+    auxCandidateSince: 0,
+    auxCandidateChecks: 0,
+    legacyCommitTimer: null,
+    remounting: false,
+    hookInstallPromise: null,
+    outputSyncPromise: null,
+    outputSyncPending: false,
+    connectionBusy: false,
+    settingChangeBusy: false,
+    auxRecoveryPromise: null,
+    status: 'UI 준비',
+    lastDomError: '',
+    lastHookError: '',
+    unloading: false,
+    hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
+    permissions: { replacer: null, mainDom: null, db: null },
+    badgePosition: 'rm',
+    compactContainer: true,
+    moduleAssetCache: { key: '', at: 0, rows: [] },
+    characterAssetCache: { key: '', at: 0, rows: [] },
+    combinedAssetCache: { key: '', at: 0, rows: [] },
+    lorebookCache: { key: '', at: 0, rows: [] },
+    lorebookScanPromise: null,
+    lorebookAutoFingerprint: '',
+    panelOpen: false,
+    panelTransition: 0,
+    auxActive: 0,
+    auxLabel: '보조 모델 처리 중',
+    auxToastTimer: null,
+    auxProviderUnavailable: false,
+    auxProviderError: '',
+    uiRemountAfter: 0,
+    hostSettingsVisible: false,
+    allowDrawerOverSettings: false,
+    activeContextKey: '',
+    checkpointCacheRaw: null,
+    checkpointCache: null,
+    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null },
+    update: { checking: false, checkedAt: 0, latest: '', available: false },
+    debugEnabled: false,
+    visualEffectsEnabled: true,
+    debugEntries: [],
+    cleanupArmedUntil: 0
   };
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
@@ -73,14 +175,19 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     if (runtime.debugEntries.length > 30) runtime.debugEntries.splice(0, runtime.debugEntries.length - 30);
     console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
   };
-  const fail = (where, error) => { debugRecord(`ERROR · ${where}`, error?.message || String(error)); console.error(`[ITEMX 2] ${where}`, error); };
+  const fail = (where, error) => {
+    debugRecord(`ERROR · ${where}`, error?.message || String(error));
+    console.error(`[ITEMX 2] ${where}`, error);
+  };
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   async function withTimeout(promise, timeoutMs, message) {
     let timer = null;
     try {
       return await Promise.race([
         promise,
-        new Promise((_, reject) => { timer = globalThis.setTimeout(() => reject(new Error(message)), timeoutMs); })
+        new Promise((_, reject) => {
+          timer = globalThis.setTimeout(() => reject(new Error(message)), timeoutMs);
+        })
       ]);
     } finally {
       if (timer) globalThis.clearTimeout(timer);
@@ -88,10 +195,17 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
   function compareVersions(left, right) {
     const parse = (value) => {
-      const [main, prerelease = ''] = String(value || '').trim().replace(/^v/i, '').split('-', 2);
-      return { main: main.split('.').map((part) => Number.parseInt(part, 10) || 0), pre: prerelease ? prerelease.split('.') : [] };
+      const [main, prerelease = ''] = String(value || '')
+        .trim()
+        .replace(/^v/i, '')
+        .split('-', 2);
+      return {
+        main: main.split('.').map((part) => Number.parseInt(part, 10) || 0),
+        pre: prerelease ? prerelease.split('.') : []
+      };
     };
-    const a = parse(left), b = parse(right);
+    const a = parse(left),
+      b = parse(right);
     for (let index = 0; index < Math.max(a.main.length, b.main.length); index += 1) {
       const difference = (a.main[index] || 0) - (b.main[index] || 0);
       if (difference) return difference > 0 ? 1 : -1;
@@ -140,14 +254,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
           await eyebrow.appendChild(label);
         }
       }
-    } catch (error) { fail('update indicator', error); }
+    } catch (error) {
+      fail('update indicator', error);
+    }
   }
   async function checkForUpdate() {
     if (runtime.update.checking || !runtime.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
     runtime.update.checking = true;
     try {
       let cached = null;
-      try { cached = JSON.parse(await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY) || 'null'); } catch {}
+      try {
+        cached = JSON.parse((await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY)) || 'null');
+      } catch {}
       if (cached?.latest) {
         runtime.update.checkedAt = Number(cached.checkedAt) || 0;
         runtime.update.latest = String(cached.latest);
@@ -155,18 +273,27 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         await syncUpdateIndicator();
       }
       if (Date.now() - runtime.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
-      const response = await withTimeout(Risuai.nativeFetch(ITEMX_UPDATE_URL, {
-        method: 'GET', headers: { Range: 'bytes=0-2047' }, cache: 'no-store'
-      }), 6000, '업데이트 확인 시간이 초과되었습니다');
+      const response = await withTimeout(
+        Risuai.nativeFetch(ITEMX_UPDATE_URL, {
+          method: 'GET',
+          headers: { Range: 'bytes=0-2047' },
+          cache: 'no-store'
+        }),
+        6000,
+        '업데이트 확인 시간이 초과되었습니다'
+      );
       if (!response?.ok) throw new Error(`업데이트 서버 응답 ${response?.status || '없음'}`);
-      const header = String(await response.text() || '');
+      const header = String((await response.text()) || '');
       const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
       if (!latest) throw new Error('업데이트 버전 헤더를 찾지 못했습니다');
       runtime.update.checkedAt = Date.now();
       runtime.update.latest = latest;
       runtime.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
       try {
-        await Risuai.safeLocalStorage.setItem(ITEMX_UPDATE_CACHE_KEY, JSON.stringify({ checkedAt: runtime.update.checkedAt, latest }));
+        await Risuai.safeLocalStorage.setItem(
+          ITEMX_UPDATE_CACHE_KEY,
+          JSON.stringify({ checkedAt: runtime.update.checkedAt, latest })
+        );
       } catch {}
       await syncUpdateIndicator();
     } catch (error) {
@@ -178,22 +305,42 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const messageData = (message) => ITEMXCore.messageText(message);
   const markerCodes = (text) => {
     const out = new Set();
-    String(text || '').replace(ITEMXCore.MARKER_RE, (_, code) => { out.add(`ITEMX2:${code}`); return ''; });
-    String(text || '').replace(ITEMXCodex.MARKER_RE, (_, code) => { out.add(`CODEX2:${code}`); return ''; });
-    String(text || '').replace(ITEMX_REF_RE, (_, ref) => { out.add(`ITEMX2@${ref}`); return ''; });
-    String(text || '').replace(ITEMX_CODEX_REF_RE, (_, ref) => { out.add(`CODEX2@${ref}`); return ''; });
+    String(text || '').replace(ITEMXCore.MARKER_RE, (_, code) => {
+      out.add(`ITEMX2:${code}`);
+      return '';
+    });
+    String(text || '').replace(ITEMXCodex.MARKER_RE, (_, code) => {
+      out.add(`CODEX2:${code}`);
+      return '';
+    });
+    String(text || '').replace(ITEMX_REF_RE, (_, ref) => {
+      out.add(`ITEMX2@${ref}`);
+      return '';
+    });
+    String(text || '').replace(ITEMX_CODEX_REF_RE, (_, ref) => {
+      out.add(`CODEX2@${ref}`);
+      return '';
+    });
     return out;
   };
 
   async function context() {
     try {
       const [characterIndex, chatIndex, character] = await Promise.all([
-        Risuai.getCurrentCharacterIndex(), Risuai.getCurrentChatIndex(), Risuai.getCharacter()
+        Risuai.getCurrentCharacterIndex(),
+        Risuai.getCurrentChatIndex(),
+        Risuai.getCharacter()
       ]);
       if (characterIndex == null || chatIndex == null || !character) return null;
       const chat = await Risuai.getChatFromIndex(characterIndex, chatIndex);
       if (!chat) return null;
-      return { characterIndex, chatIndex, character, chat, key: `${character.chaId || characterIndex}:${chat.id || chatIndex}` };
+      return {
+        characterIndex,
+        chatIndex,
+        character,
+        chat,
+        key: `${character.chaId || characterIndex}:${chat.id || chatIndex}`
+      };
     } catch (error) {
       // PocketRisu has no current chatPage on Home. A globally loaded plugin
       // must treat that route as an idle state, not as an initialization error.
@@ -205,7 +352,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const settingsId = (character) => character?.chaId || 'unknown';
   const cachedSettings = (character) => runtime.settingsCache.get(settingsId(character));
   function updateCachedSettings(character, patch) {
-    const id = settingsId(character), current = runtime.settingsCache.get(id);
+    const id = settingsId(character),
+      current = runtime.settingsCache.get(id);
     if (current) runtime.settingsCache.set(id, { ...current, ...patch });
     if ('effectsEnabled' in patch) runtime.visualEffectsEnabled = Boolean(patch.effectsEnabled);
   }
@@ -227,28 +375,49 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       Risuai.pluginStorage.getItem(`fontScale:${id}`),
       Risuai.pluginStorage.getItem(`moduleAssetsEnabled:${id}`),
       Risuai.pluginStorage.getItem(`lorebookEncounterEnabled:${id}`)
-    ]).then(([enabled, main, aux, rarity, items, skills, encounters, debug, effects, fontScale, moduleAssets, lorebookEncounter]) => {
-      const settings = {
-        enabled: enabled !== '0', mainOutput: main !== '0',
-        // The public API cannot preflight the shared auxiliary provider.
-        auxOutput: ['off', 'missing', 'always'].includes(aux) ? aux : 'off',
-        rarityMode: ['world', 'itemx'].includes(rarity) ? rarity : 'world',
-        itemsEnabled: items !== '0', skillsEnabled: skills !== '0', encountersEnabled: encounters !== '0', debugEnabled: debug === '1',
-        effectsEnabled: effects !== '0',
-        fontScale: ['small', 'medium', 'large'].includes(fontScale) ? fontScale : 'small',
-        moduleAssetsEnabled: moduleAssets === '1',
-        lorebookEncounterEnabled: lorebookEncounter === '1'
-      };
-      runtime.settingsCache.set(id, settings);
-      runtime.visualEffectsEnabled = settings.effectsEnabled;
-      return settings;
-    }).finally(() => runtime.settingsLoadPromises.delete(id));
+    ])
+      .then(
+        ([
+          enabled,
+          main,
+          aux,
+          rarity,
+          items,
+          skills,
+          encounters,
+          debug,
+          effects,
+          fontScale,
+          moduleAssets,
+          lorebookEncounter
+        ]) => {
+          const settings = {
+            enabled: enabled !== '0',
+            mainOutput: main !== '0',
+            // The public API cannot preflight the shared auxiliary provider.
+            auxOutput: ['off', 'missing', 'always'].includes(aux) ? aux : 'off',
+            rarityMode: ['world', 'itemx'].includes(rarity) ? rarity : 'world',
+            itemsEnabled: items !== '0',
+            skillsEnabled: skills !== '0',
+            encountersEnabled: encounters !== '0',
+            debugEnabled: debug === '1',
+            effectsEnabled: effects !== '0',
+            fontScale: ['small', 'medium', 'large'].includes(fontScale) ? fontScale : 'small',
+            moduleAssetsEnabled: moduleAssets === '1',
+            lorebookEncounterEnabled: lorebookEncounter === '1'
+          };
+          runtime.settingsCache.set(id, settings);
+          runtime.visualEffectsEnabled = settings.effectsEnabled;
+          return settings;
+        }
+      )
+      .finally(() => runtime.settingsLoadPromises.delete(id));
     runtime.settingsLoadPromises.set(id, loading);
     return { ...(await loading) };
   }
 
   async function isEnabled(character) {
-    return (cachedSettings(character) || await outputSettings(character)).enabled;
+    return (cachedSettings(character) || (await outputSettings(character))).enabled;
   }
 
   async function setEnabled(character, value) {
@@ -261,7 +430,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     if (!keys[domain]) throw new Error('Invalid ITEMX domain');
     await Risuai.pluginStorage.setItem(`${keys[domain]}:${character?.chaId || 'unknown'}`, value ? '1' : '0');
     updateCachedSettings(character, { [keys[domain]]: Boolean(value) });
-    runtime.catchUpFingerprint = ''; runtime.catchUpFailedFingerprint = ''; runtime.auxCandidateFingerprint = '';
+    runtime.catchUpFingerprint = '';
+    runtime.catchUpFailedFingerprint = '';
+    runtime.auxCandidateFingerprint = '';
   }
 
   async function setDebugEnabled(character, value) {
@@ -280,7 +451,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     if (!['off', 'missing', 'always'].includes(value)) throw new Error('Invalid auxiliary output mode');
     await Risuai.pluginStorage.setItem(`auxOutput:${character?.chaId || 'unknown'}`, value);
     updateCachedSettings(character, { auxOutput: value });
-    runtime.catchUpFingerprint = ''; runtime.catchUpFailedFingerprint = ''; runtime.auxCandidateFingerprint = '';
+    runtime.catchUpFingerprint = '';
+    runtime.catchUpFailedFingerprint = '';
+    runtime.auxCandidateFingerprint = '';
   }
 
   async function setRarityMode(character, value) {
@@ -313,22 +486,30 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function setLorebookEncounterEnabled(character, value) {
     await Risuai.pluginStorage.setItem(`lorebookEncounterEnabled:${settingsId(character)}`, value ? '1' : '0');
     updateCachedSettings(character, { lorebookEncounterEnabled: Boolean(value) });
+    runtime.lorebookAutoFingerprint = '';
   }
 
   const AUX_LABELS = { off: '끔', missing: '누락 시', always: '항상 검토' };
   const RARITY_MODE_LABELS = { world: '세계관 우선', itemx: 'ITEMX 강제' };
 
   function itemxProtocolText(rarityMode = 'world') {
-    const policy = rarityMode === 'itemx'
-      ? `## ITEMX Rarity Policy: FORCED\nITEMX rarity is an internal relative power and visual tier, not necessarily the world's printed grade name. Preserve the setting's local grade wording in display. An explicit user-requested ITEMX tier always wins. When the narrative conclusively establishes a newly appraised item as the setting's absolute highest grade, ultimate pinnacle, server/world-unique apex, or beyond the existing grade system, emit rarity=empyrean even if the setting calls that grade Epic; keep the local wording and distinction in display. Use mythical or legendary for clearly lower relative standings. Do not promote from ornate prose alone: the apex standing must be settled by the narrative.`
-      : `## ITEMX Rarity Policy: WORLD FIRST\nTreat the setting's literal item grade as authoritative. Map its stated grade to the nearest literal ITEMX rarity and do not promote it merely because it is described as the setting's best. Preserve the local grade wording in display.`;
+    const policy =
+      rarityMode === 'itemx'
+        ? `## ITEMX Rarity Policy: FORCED\nITEMX rarity is an internal relative power and visual tier, not necessarily the world's printed grade name. Preserve the setting's local grade wording in display. An explicit user-requested ITEMX tier always wins. When the narrative conclusively establishes a newly appraised item as the setting's absolute highest grade, ultimate pinnacle, server/world-unique apex, or beyond the existing grade system, emit rarity=empyrean even if the setting calls that grade Epic; keep the local wording and distinction in display. Use mythical or legendary for clearly lower relative standings. Do not promote from ornate prose alone: the apex standing must be settled by the narrative.`
+        : `## ITEMX Rarity Policy: WORLD FIRST\nTreat the setting's literal item grade as authoritative. Map its stated grade to the nearest literal ITEMX rarity and do not promote it merely because it is described as the setting's best. Preserve the local grade wording in display.`;
     return `${ITEMX_PROTOCOL_TEXT}\n\n${policy}`;
   }
 
-  const enabledCodexDomains = (settings) => [settings.skillsEnabled && 'skill', settings.encountersEnabled && 'monster'].filter(Boolean);
-  const stripItemTransport = (content) => ITEMXCore.extractResponse(String(content || ''), ITEMXCore.newRegistry()).content.replace(ITEMXCore.MARKER_RE, '');
-  const stripAllTransport = (content) => ITEMXCodex.extractResponse(stripItemTransport(content), ITEMXCodex.snapshot(), { enabledDomains: [] }).content.replace(ITEMXCodex.MARKER_RE, '');
-  const OWNED_TRANSPORT_HINT_RE = /<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
+  const enabledCodexDomains = (settings) =>
+    [settings.skillsEnabled && 'skill', settings.encountersEnabled && 'monster'].filter(Boolean);
+  const stripItemTransport = (content) =>
+    ITEMXCore.extractResponse(String(content || ''), ITEMXCore.newRegistry()).content.replace(ITEMXCore.MARKER_RE, '');
+  const stripAllTransport = (content) =>
+    ITEMXCodex.extractResponse(stripItemTransport(content), ITEMXCodex.snapshot(), {
+      enabledDomains: []
+    }).content.replace(ITEMXCodex.MARKER_RE, '');
+  const OWNED_TRANSPORT_HINT_RE =
+    /<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
   function processTransportStripper(content) {
     const source = String(content || '');
     if (!OWNED_TRANSPORT_HINT_RE.test(source)) return source;
@@ -338,14 +519,17 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       .replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
   }
   function characterAssetFingerprint(character) {
-    const additional = character?.additionalAssets || [], emotions = character?.emotionImages || [], cc = character?.ccAssets || [];
+    const additional = character?.additionalAssets || [],
+      emotions = character?.emotionImages || [],
+      cc = character?.ccAssets || [];
     const last = additional[additional.length - 1];
     return `${additional.length}:${emotions.length}:${cc.length}:${additional[0]?.[0] || ''}:${last?.[0] || ''}:${cc[0]?.name || ''}`;
   }
 
   function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
     const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
-    if (runtime.characterAssetCache.key === key && Date.now() - runtime.characterAssetCache.at < 30000) return runtime.characterAssetCache.rows;
+    if (runtime.characterAssetCache.key === key && Date.now() - runtime.characterAssetCache.at < 30000)
+      return runtime.characterAssetCache.rows;
     const rows = ITEMXCodex.assetCatalog(character, max, true);
     ITEMXCodex.portraitAssetIndex(rows);
     runtime.characterAssetCache = { key, at: Date.now(), rows };
@@ -360,11 +544,14 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     }
     if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
     const combinedKey = `${runtime.characterAssetCache.key}|${runtime.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
-    if (runtime.combinedAssetCache.key === combinedKey && Date.now() - runtime.combinedAssetCache.at < 30000) return runtime.combinedAssetCache.rows;
-    const rows = extra.slice(), seen = new Set(rows.map((row) => row.name));
+    if (runtime.combinedAssetCache.key === combinedKey && Date.now() - runtime.combinedAssetCache.at < 30000)
+      return runtime.combinedAssetCache.rows;
+    const rows = extra.slice(),
+      seen = new Set(rows.map((row) => row.name));
     for (const row of moduleAssets) {
       if (rows.length >= max || !row?.name || !row?.id || seen.has(row.name)) continue;
-      seen.add(row.name); rows.push(row);
+      seen.add(row.name);
+      rows.push(row);
     }
     ITEMXCodex.portraitAssetIndex(rows);
     runtime.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
@@ -376,13 +563,30 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     return (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
   }
 
+  function encounterRegistryFingerprint(snapshot) {
+    const monsters = snapshot?.monsters;
+    const rows = (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
+    return ITEMXCore.fnv1a(JSON.stringify(rows));
+  }
+
   async function modulePortraitAssets(settings, character, chat) {
     if (!settings?.moduleAssetsEnabled || typeof Risuai.getDatabase !== 'function') return [];
     const key = `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`;
-    if (runtime.moduleAssetCache.key === key && Date.now() - runtime.moduleAssetCache.at < 30000) return runtime.moduleAssetCache.rows;
+    if (runtime.moduleAssetCache.key === key && Date.now() - runtime.moduleAssetCache.at < 30000)
+      return runtime.moduleAssetCache.rows;
     try {
-      const database = await Risuai.getDatabase(['modules', 'enabledModules', 'moduleIntergration', 'personas', 'selectedPersona']);
-      if (!database) { runtime.permissions.db = false; runtime.moduleAssetCache = { key, at: Date.now(), rows: [] }; return []; }
+      const database = await Risuai.getDatabase([
+        'modules',
+        'enabledModules',
+        'moduleIntergration',
+        'personas',
+        'selectedPersona'
+      ]);
+      if (!database) {
+        runtime.permissions.db = false;
+        runtime.moduleAssetCache = { key, at: Date.now(), rows: [] };
+        return [];
+      }
       runtime.permissions.db = true;
       const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
       ITEMXCodex.portraitAssetIndex(rows);
@@ -399,16 +603,33 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function enableModuleAssets(character, chat) {
     if (typeof Risuai.getDatabase !== 'function') return false;
     try {
-      if (typeof Risuai.requestPluginPermission === 'function' && await Risuai.requestPluginPermission('db') !== true) {
-        runtime.permissions.db = false; return false;
+      if (
+        typeof Risuai.requestPluginPermission === 'function' &&
+        (await Risuai.requestPluginPermission('db')) !== true
+      ) {
+        runtime.permissions.db = false;
+        return false;
       }
-      const probe = await Risuai.getDatabase(['modules', 'enabledModules', 'moduleIntergration', 'personas', 'selectedPersona']);
-      if (!probe) { runtime.permissions.db = false; return false; }
+      const probe = await Risuai.getDatabase([
+        'modules',
+        'enabledModules',
+        'moduleIntergration',
+        'personas',
+        'selectedPersona'
+      ]);
+      if (!probe) {
+        runtime.permissions.db = false;
+        return false;
+      }
       runtime.permissions.db = true;
       await setModuleAssetsEnabled(character, true);
       const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
       ITEMXCodex.portraitAssetIndex(rows);
-      runtime.moduleAssetCache = { key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`, at: Date.now(), rows };
+      runtime.moduleAssetCache = {
+        key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`,
+        at: Date.now(),
+        rows
+      };
       return true;
     } catch (error) {
       runtime.permissions.db = false;
@@ -422,7 +643,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     if (settings.itemsEnabled) parts.push(itemxProtocolText(settings.rarityMode));
     const domains = enabledCodexDomains(settings);
     if (domains.length) {
-      const portraitRows = combinedPortraitAssets(character, moduleAssets, ITEMXCodex.ASSET_CATALOG_MAX);
+      const portraitRows = domains.includes('monster')
+        ? combinedPortraitAssets(character, moduleAssets, ITEMXCodex.ASSET_CATALOG_MAX)
+        : [];
       const names = ITEMXCodex.portraitProtocolNames(portraitRows, {
         narrative: options.narrative || '',
         entities: options.entities || [],
@@ -434,8 +657,12 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   const BADGE_POSITIONS = [
-    ['lb', '좌하'], ['lm', '좌중'], ['lt', '좌상'],
-    ['rb', '우하'], ['rm', '우중'], ['rt', '우상']
+    ['lb', '좌하'],
+    ['lm', '좌중'],
+    ['lt', '좌상'],
+    ['rb', '우하'],
+    ['rm', '우중'],
+    ['rt', '우상']
   ];
 
   async function loadBadgePosition() {
@@ -452,10 +679,14 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       rm: 'right:4px!important;left:auto!important;top:50%!important;bottom:auto!important;transform:translateY(-50%)!important;border-radius:8px 0 0 8px!important',
       rt: 'right:4px!important;left:auto!important;top:calc(4.5rem + env(safe-area-inset-top,0px))!important;bottom:auto!important;transform:none!important;border-radius:8px 0 0 8px!important'
     };
-    const button = 'button[aria-label="ITEMX CODEX"],button[aria-label="ITEMX"],button:has(img[src*="ITEMX%20CODEX"]),button:has(img[src*="ITEMX%20inventory"])';
-    const states = 'button[aria-label="ITEMX CODEX"]:hover,button[aria-label="ITEMX CODEX"]:active,button[aria-label="ITEMX CODEX"]:focus,button[aria-label="ITEMX"]:hover,button[aria-label="ITEMX"]:active,button[aria-label="ITEMX"]:focus,button:has(img[src*="ITEMX%20CODEX"]):hover,button:has(img[src*="ITEMX%20CODEX"]):active,button:has(img[src*="ITEMX%20CODEX"]):focus,button:has(img[src*="ITEMX%20inventory"]):hover,button:has(img[src*="ITEMX%20inventory"]):active,button:has(img[src*="ITEMX%20inventory"]):focus';
-    const wrappers = 'button[aria-label="ITEMX CODEX"]>div,button[aria-label="ITEMX"]>div,button:has(img[src*="ITEMX%20CODEX"])>div,button:has(img[src*="ITEMX%20inventory"])>div';
-    const images = 'button[aria-label="ITEMX CODEX"] img,button[aria-label="ITEMX"] img,button:has(img[src*="ITEMX%20CODEX"]) img[src*="ITEMX%20CODEX"],button:has(img[src*="ITEMX%20inventory"]) img[src*="ITEMX%20inventory"]';
+    const button =
+      'button[aria-label="ITEMX CODEX"],button[aria-label="ITEMX"],button:has(img[src*="ITEMX%20CODEX"]),button:has(img[src*="ITEMX%20inventory"])';
+    const states =
+      'button[aria-label="ITEMX CODEX"]:hover,button[aria-label="ITEMX CODEX"]:active,button[aria-label="ITEMX CODEX"]:focus,button[aria-label="ITEMX"]:hover,button[aria-label="ITEMX"]:active,button[aria-label="ITEMX"]:focus,button:has(img[src*="ITEMX%20CODEX"]):hover,button:has(img[src*="ITEMX%20CODEX"]):active,button:has(img[src*="ITEMX%20CODEX"]):focus,button:has(img[src*="ITEMX%20inventory"]):hover,button:has(img[src*="ITEMX%20inventory"]):active,button:has(img[src*="ITEMX%20inventory"]):focus';
+    const wrappers =
+      'button[aria-label="ITEMX CODEX"]>div,button[aria-label="ITEMX"]>div,button:has(img[src*="ITEMX%20CODEX"])>div,button:has(img[src*="ITEMX%20inventory"])>div';
+    const images =
+      'button[aria-label="ITEMX CODEX"] img,button[aria-label="ITEMX"] img,button:has(img[src*="ITEMX%20CODEX"]) img[src*="ITEMX%20CODEX"],button:has(img[src*="ITEMX%20inventory"]) img[src*="ITEMX%20inventory"]';
     return `${button}{${positions[runtime.badgePosition] || positions.rm};display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;outline:0!important;background:none!important;background-color:transparent!important;box-shadow:none!important;cursor:pointer!important;touch-action:manipulation!important;z-index:50!important}${states}{background:none!important;background-color:transparent!important;box-shadow:none!important}${wrappers}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}${images}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;max-width:48px!important;max-height:176px!important;border-radius:0!important;object-fit:contain!important}`;
   }
 
@@ -533,16 +764,25 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 ${codexPageStyle()}
 `;
   function prefixRisuClasses(css) {
-    return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) => name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`);
+    return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) =>
+      name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`
+    );
   }
   const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event{box-shadow:none!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{animation-play-state:paused!important;filter:none!important;mix-blend-mode:normal!important;box-shadow:none!important}`;
   const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-codex-fx,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-event::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-icon::before,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-warning{display:none!important;animation:none!important}`;
-  const mainStyleText = () => `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
+  const mainStyleText = () =>
+    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
 
   function enqueue(key, work) {
     const prev = queues.get(key) || Promise.resolve();
-    const next = prev.catch(() => {}).then(work).finally(() => { if (queues.get(key) === next) queues.delete(key); });
-    queues.set(key, next); return next;
+    const next = prev
+      .catch(() => {})
+      .then(work)
+      .finally(() => {
+        if (queues.get(key) === next) queues.delete(key);
+      });
+    queues.set(key, next);
+    return next;
   }
 
   function refreshLatest(chat, lookup = buildMessageEventLookup(chat)) {
@@ -551,7 +791,10 @@ ${codexPageStyle()}
     let latest = '';
     for (let i = messages.length - 1; i >= 0; i--) {
       const text = messageData(messages[i]);
-      if (messageEvents(text, 'item', lookup).length || messageEvents(text, 'codex', lookup).length) { latest = text; break; }
+      if (messageEvents(text, 'item', lookup).length || messageEvents(text, 'codex', lookup).length) {
+        latest = text;
+        break;
+      }
     }
     runtime.latestOutput = latest;
     const persisted = markerCodes(latest);
@@ -570,8 +813,12 @@ ${codexPageStyle()}
       const rows = typeof raw === 'string' ? JSON.parse(raw) : raw;
       // Manual events are authoritative source facts. Never truncate them by
       // count: doing so can discard an old exam while retaining later patches.
-      return Array.isArray(rows) ? rows.filter((row) => row && Number.isInteger(row.afterIndex) && row.event?.kind) : [];
-    } catch { return []; }
+      return Array.isArray(rows)
+        ? rows.filter((row) => row && Number.isInteger(row.afterIndex) && row.event?.kind)
+        : [];
+    } catch {
+      return [];
+    }
   }
 
   function messageEventLedger(chat) {
@@ -580,8 +827,18 @@ ${codexPageStyle()}
       const rows = typeof raw === 'string' ? JSON.parse(raw) : raw;
       // Every compact ref in a surviving message needs its event payload for
       // deterministic replay, including edits or rerolls of old messages.
-      return Array.isArray(rows) ? rows.filter((row) => row && /^[A-Za-z0-9_-]{1,80}$/.test(row.ref || '') && ['item', 'codex'].includes(row.domain) && row.payload?.event) : [];
-    } catch { return []; }
+      return Array.isArray(rows)
+        ? rows.filter(
+            (row) =>
+              row &&
+              /^[A-Za-z0-9_-]{1,80}$/.test(row.ref || '') &&
+              ['item', 'codex'].includes(row.domain) &&
+              row.payload?.event
+          )
+        : [];
+    } catch {
+      return [];
+    }
   }
 
   function replayCheckpoint(chat) {
@@ -589,16 +846,31 @@ ${codexPageStyle()}
       const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
       if (typeof raw === 'string' && raw === runtime.checkpointCacheRaw) return runtime.checkpointCache;
       const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (value?.v !== 1 || !Number.isInteger(value.boundary) || !value.item?.registry || !value.codex?.skills || !Array.isArray(value.rows) || !Array.isArray(value.manual)) return null;
-      if (typeof raw === 'string') { runtime.checkpointCacheRaw = raw; runtime.checkpointCache = value; }
+      if (
+        value?.v !== 1 ||
+        !Number.isInteger(value.boundary) ||
+        !value.item?.registry ||
+        !value.codex?.skills ||
+        !Array.isArray(value.rows) ||
+        !Array.isArray(value.manual)
+      )
+        return null;
+      if (typeof raw === 'string') {
+        runtime.checkpointCacheRaw = raw;
+        runtime.checkpointCache = value;
+      }
       return value;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   function prefixMarkerFingerprint(chat, boundary) {
     let source = `b:${boundary}`;
     for (let index = 0; index <= boundary; index += 1) {
-      const markers = messageData(chat?.message?.[index]).match(/<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g);
+      const markers = messageData(chat?.message?.[index]).match(
+        /<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g
+      );
       if (markers) source += `|${index}:${markers.join('')}`;
     }
     return ITEMXCore.fnv1a(source);
@@ -606,13 +878,20 @@ ${codexPageStyle()}
 
   function checkpointStatus(chat) {
     const checkpoint = replayCheckpoint(chat);
-    const valid = Boolean(checkpoint && checkpoint.boundary < (chat?.message || []).length && checkpoint.prefix === prefixMarkerFingerprint(chat, checkpoint.boundary));
+    const valid = Boolean(
+      checkpoint &&
+      checkpoint.boundary < (chat?.message || []).length &&
+      checkpoint.prefix === prefixMarkerFingerprint(chat, checkpoint.boundary)
+    );
     return { checkpoint, valid };
   }
 
   function buildMessageEventLookup(chat) {
     const archived = replayCheckpoint(chat)?.rows || [];
-    const rows = [...archived, ...messageEventLedger(chat)], itemByRef = new Map(), codexByRef = new Map(), payloads = new Map();
+    const rows = [...archived, ...messageEventLedger(chat)],
+      itemByRef = new Map(),
+      codexByRef = new Map(),
+      payloads = new Map();
     for (const row of rows) {
       if (row.domain === 'item') itemByRef.set(row.ref, row.payload);
       else if (row.domain === 'codex') codexByRef.set(row.ref, row.payload);
@@ -623,8 +902,9 @@ ${codexPageStyle()}
 
   function replaySourceFingerprint(chat) {
     const state = chat?.scriptstate || {};
-    const stable = (value) => typeof value === 'string' ? value : JSON.stringify(value ?? null);
-    const status = checkpointStatus(chat), start = status.valid ? status.checkpoint.boundary + 1 : 0;
+    const stable = (value) => (typeof value === 'string' ? value : JSON.stringify(value ?? null));
+    const status = checkpointStatus(chat),
+      start = status.valid ? status.checkpoint.boundary + 1 : 0;
     let source = `${status.valid ? `${status.checkpoint.boundary}:${status.checkpoint.prefix}` : stable(state[ITEMX_CHECKPOINT_KEY])}|${stable(state[ITEMX_MANUAL_KEY])}|${stable(state[ITEMX_MESSAGE_EVENT_KEY])}`;
     const markerRe = /<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g;
     for (let index = start; index < (chat?.message || []).length; index += 1) {
@@ -642,18 +922,78 @@ ${codexPageStyle()}
     const view = payload?.view;
     if (!view) return '';
     const codexEvent = payload?.event || {};
-    const codexView = codexEvent.domain === 'skill'
-      ? { i: view.id, n: view.name, g: view.glyph, r: view.rank, h: view.school, t: view.type, s: view.status, l: view.level, m: view.mastery, c: view.cost, o: view.cooldown, a: view.affinity, x: view.target, w: view.growth, z: view.description, f: (view.effects || []).slice(0, 2) }
-      : { i: view.id, n: view.name, g: view.glyph, k: view.kind, t: view.threat, r: view.relation, s: view.status, a: view.active, o: view.outcome, c: view.encounterCount, f: (view.moves || []).slice(0, 3) };
+    const codexView =
+      codexEvent.domain === 'skill'
+        ? {
+            i: view.id,
+            n: view.name,
+            g: view.glyph,
+            r: view.rank,
+            h: view.school,
+            t: view.type,
+            s: view.status,
+            l: view.level,
+            m: view.mastery,
+            c: view.cost,
+            o: view.cooldown,
+            a: view.affinity,
+            x: view.target,
+            w: view.growth,
+            z: view.description,
+            f: (view.effects || []).slice(0, 2)
+          }
+        : {
+            i: view.id,
+            n: view.name,
+            g: view.glyph,
+            k: view.kind,
+            t: view.threat,
+            r: view.relation,
+            s: view.status,
+            a: view.active,
+            o: view.outcome,
+            c: view.encounterCount,
+            f: (view.moves || []).slice(0, 3)
+          };
     const previous = payload?.previous ? { m: payload.previous.mastery, s: payload.previous.status } : undefined;
-    const envelope = domain === 'codex'
-      ? { v: ITEMXCodex.VERSION, d: codexEvent.domain || '', k: codexEvent.kind, a: codexEvent.patch?.action, o: codexEvent.patch?.op, q: Object.keys(codexEvent.patch?.fields || {}), e: codexView, p: previous }
-      : { v: ITEMXCore.VERSION, i: {
-        i: view.id, n: view.name, t: view.itemType, e: view.emoji, r: view.rarity, d: view.displayRarity,
-        p: view.power, q: view.required, u: view.durability, c: view.cost, o: view.possession, l: view.location,
-        k: view.count, s: view.slot, h: view.theme, a: view.affinity, b: view.affinity2, x: view.condition,
-        f: (view.effects || []).map((row) => [row.name, row.desc]), g: (view.augments || []).map((row) => [row.name, row.desc]), z: view.trivia
-      } };
+    const envelope =
+      domain === 'codex'
+        ? {
+            v: ITEMXCodex.VERSION,
+            d: codexEvent.domain || '',
+            k: codexEvent.kind,
+            a: codexEvent.patch?.action,
+            o: codexEvent.patch?.op,
+            q: Object.keys(codexEvent.patch?.fields || {}),
+            e: codexView,
+            p: previous
+          }
+        : {
+            v: ITEMXCore.VERSION,
+            i: {
+              i: view.id,
+              n: view.name,
+              t: view.itemType,
+              e: view.emoji,
+              r: view.rarity,
+              d: view.displayRarity,
+              p: view.power,
+              q: view.required,
+              u: view.durability,
+              c: view.cost,
+              o: view.possession,
+              l: view.location,
+              k: view.count,
+              s: view.slot,
+              h: view.theme,
+              a: view.affinity,
+              b: view.affinity2,
+              x: view.condition,
+              f: (view.effects || []).map((row) => [row.name, row.desc]),
+              g: (view.augments || []).map((row) => [row.name, row.desc]),
+              z: view.trivia
+            }
+          };
     const marker = ITEMXCore.marker(envelope);
     return marker.startsWith('<!--ITEMX2:') && marker.endsWith('-->') ? marker.slice('<!--ITEMX2:'.length, -3) : '';
   }
@@ -666,24 +1006,83 @@ ${codexPageStyle()}
   function inlineViewPayload(code, domain) {
     if (!code) return null;
     const payload = ITEMXCore.decodePayload(code);
-    if (payload?.view) return domain === 'codex' ? { v: payload.v, event: { domain: payload.domain || '' }, view: payload.view } : { v: payload.v, view: payload.view };
+    if (payload?.view)
+      return domain === 'codex'
+        ? { v: payload.v, event: { domain: payload.domain || '' }, view: payload.view }
+        : { v: payload.v, view: payload.view };
     if (domain === 'codex' && payload?.e) {
-      const item = payload.e, skill = payload.d === 'skill';
+      const item = payload.e,
+        skill = payload.d === 'skill';
       const view = skill
-        ? { id: item.i, name: item.n, glyph: item.g, rank: item.r, school: item.h, type: item.t, status: item.s, level: item.l, mastery: item.m, cost: item.c, cooldown: item.o, affinity: item.a, target: item.x, growth: item.w, description: item.z, effects: item.f || [] }
-        : { id: item.i, name: item.n, glyph: item.g, kind: item.k, threat: item.t, relation: item.r, status: item.s, active: item.a, outcome: item.o, encounterCount: item.c, moves: item.f || [] };
+        ? {
+            id: item.i,
+            name: item.n,
+            glyph: item.g,
+            rank: item.r,
+            school: item.h,
+            type: item.t,
+            status: item.s,
+            level: item.l,
+            mastery: item.m,
+            cost: item.c,
+            cooldown: item.o,
+            affinity: item.a,
+            target: item.x,
+            growth: item.w,
+            description: item.z,
+            effects: item.f || []
+          }
+        : {
+            id: item.i,
+            name: item.n,
+            glyph: item.g,
+            kind: item.k,
+            threat: item.t,
+            relation: item.r,
+            status: item.s,
+            active: item.a,
+            outcome: item.o,
+            encounterCount: item.c,
+            moves: item.f || []
+          };
       const event = { domain: payload.d || '', kind: payload.k || 'exam' };
-      if (event.kind === 'patch') event.patch = { id: item.i, action: payload.a || null, op: payload.o || null, fields: Object.fromEntries((payload.q || []).map((key) => [key, true])) };
+      if (event.kind === 'patch')
+        event.patch = {
+          id: item.i,
+          action: payload.a || null,
+          op: payload.o || null,
+          fields: Object.fromEntries((payload.q || []).map((key) => [key, true]))
+        };
       return { v: payload.v, event, view, previous: payload.p ? { mastery: payload.p.m, status: payload.p.s } : null };
     }
     if (domain !== 'item' || !payload?.i) return null;
     const item = payload.i;
-    return { v: payload.v, view: {
-      id: item.i, name: item.n, itemType: item.t, emoji: item.e, rarity: item.r, displayRarity: item.d,
-      power: item.p, required: item.q, durability: item.u, cost: item.c, possession: item.o, location: item.l,
-      count: item.k, slot: item.s, theme: item.h, affinity: item.a, affinity2: item.b, condition: item.x,
-      effects: (item.f || []).map((row) => ({ name: row[0], desc: row[1] })), augments: (item.g || []).map((row) => ({ name: row[0], desc: row[1] })), trivia: item.z
-    } };
+    return {
+      v: payload.v,
+      view: {
+        id: item.i,
+        name: item.n,
+        itemType: item.t,
+        emoji: item.e,
+        rarity: item.r,
+        displayRarity: item.d,
+        power: item.p,
+        required: item.q,
+        durability: item.u,
+        cost: item.c,
+        possession: item.o,
+        location: item.l,
+        count: item.k,
+        slot: item.s,
+        theme: item.h,
+        affinity: item.a,
+        affinity2: item.b,
+        condition: item.x,
+        effects: (item.f || []).map((row) => ({ name: row[0], desc: row[1] })),
+        augments: (item.g || []).map((row) => ({ name: row[0], desc: row[1] })),
+        trivia: item.z
+      }
+    };
   }
 
   function itemMarkerPayload(marker) {
@@ -701,17 +1100,22 @@ ${codexPageStyle()}
   function coalesceAdjacentItemMarkers(content) {
     const source = String(content || '');
     const re = /<!--ITEMX2:[A-Za-z0-9_-]+-->|<!--ITEMX2@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?-->/g;
-    const rows = []; let match;
-    while ((match = re.exec(source))) rows.push({ start: match.index, end: re.lastIndex, raw: match[0], payload: itemMarkerPayload(match[0]) });
+    const rows = [];
+    let match;
+    while ((match = re.exec(source)))
+      rows.push({ start: match.index, end: re.lastIndex, raw: match[0], payload: itemMarkerPayload(match[0]) });
     if (rows.length < 2) return source;
     const hidden = new Set();
     for (let index = 0; index < rows.length - 1; index += 1) {
-      const current = rows[index], next = rows[index + 1];
-      const id = itemPayloadId(current.payload), nextId = itemPayloadId(next.payload);
+      const current = rows[index],
+        next = rows[index + 1];
+      const id = itemPayloadId(current.payload),
+        nextId = itemPayloadId(next.payload);
       if (id && id === nextId && next.payload?.view && !source.slice(current.end, next.start).trim()) hidden.add(index);
     }
     if (!hidden.size) return source;
-    let output = '', cursor = 0;
+    let output = '',
+      cursor = 0;
     rows.forEach((row, index) => {
       output += source.slice(cursor, row.start);
       if (!hidden.has(index)) output += row.raw;
@@ -733,19 +1137,31 @@ ${codexPageStyle()}
     if (latestIndex < 0 || latestIndex >= messages.length) {
       for (let index = messages.length - 1; index >= 0; index -= 1) {
         const source = messageData(messages[index]);
-        if (source.match(ITEMX_REF_RE) || source.match(ITEMX_CODEX_REF_RE)) { latestIndex = index; break; }
+        if (source.match(ITEMX_REF_RE) || source.match(ITEMX_CODEX_REF_RE)) {
+          latestIndex = index;
+          break;
+        }
       }
     }
-    let next = null, changed = false;
+    let next = null,
+      changed = false;
     for (let index = 0; index < messages.length; index += 1) {
       const original = messageData(messages[index]);
       const keepInline = index === latestIndex;
-      let source = original.replace(ITEMX_REF_RE, (raw, ref, inline) => keepInline
-        ? (inline ? raw : compactRefMarker('ITEMX2', ref, byKey.get(`item:${ref}`), 'item'))
-        : bareRefMarker('ITEMX2', ref));
-      source = source.replace(ITEMX_CODEX_REF_RE, (raw, ref, inline) => keepInline
-        ? (inline ? raw : compactRefMarker('CODEX2', ref, byKey.get(`codex:${ref}`), 'codex'))
-        : bareRefMarker('CODEX2', ref));
+      let source = original.replace(ITEMX_REF_RE, (raw, ref, inline) =>
+        keepInline
+          ? inline
+            ? raw
+            : compactRefMarker('ITEMX2', ref, byKey.get(`item:${ref}`), 'item')
+          : bareRefMarker('ITEMX2', ref)
+      );
+      source = source.replace(ITEMX_CODEX_REF_RE, (raw, ref, inline) =>
+        keepInline
+          ? inline
+            ? raw
+            : compactRefMarker('CODEX2', ref, byKey.get(`codex:${ref}`), 'codex')
+          : bareRefMarker('CODEX2', ref)
+      );
       if (source === original) continue;
       if (!next) next = ITEMXCore.clone(chat);
       const message = next.message[index];
@@ -776,25 +1192,33 @@ ${codexPageStyle()}
 
   function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
     const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
-    const messages = chat?.message || [], start = Math.max(0, options.start || 0), end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
+    const messages = chat?.message || [],
+      start = Math.max(0, options.start || 0),
+      end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
     let transport = options.transport || '';
     for (let index = start; index <= end; index += 1) {
       const narrative = messageData(messages[index]);
       for (const event of messageEvents(narrative, 'codex', lookup)) {
         // Events are reconciled exactly once when committed. Replay is a pure
         // fold over stored facts, never a second interpretation of prose.
-        ITEMXCodex.applyEvent(state, event); transport += JSON.stringify(event);
+        ITEMXCodex.applyEvent(state, event);
+        transport += JSON.stringify(event);
       }
     }
-    state.fingerprint = ITEMXCore.fnv1a(transport); state.updatedAt = Date.now();
+    state.fingerprint = ITEMXCore.fnv1a(transport);
+    state.updatedAt = Date.now();
     return state;
   }
 
   function compactMessageTransports(chat, index) {
-    const next = ITEMXCore.clone(chat), message = next.message?.[index];
+    const next = ITEMXCore.clone(chat),
+      message = next.message?.[index];
     if (!message) return { chat: next, changed: false };
-    let source = messageData(message), ordinal = 0, changed = false;
-    const rows = messageEventLedger(next), byKey = new Map(rows.map((row) => [`${row.domain}:${row.ref}`, row]));
+    let source = messageData(message),
+      ordinal = 0,
+      changed = false;
+    const rows = messageEventLedger(next),
+      byKey = new Map(rows.map((row) => [`${row.domain}:${row.ref}`, row]));
     const replace = (domain, regex, decode, prefix) => {
       source = source.replace(regex, (raw, code) => {
         const payload = decode(code);
@@ -813,8 +1237,14 @@ ${codexPageStyle()}
     const used = new Set();
     for (const one of next.message || []) {
       const text = messageData(one);
-      text.replace(ITEMX_REF_RE, (_, ref) => { used.add(`item:${ref}`); return ''; });
-      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => { used.add(`codex:${ref}`); return ''; });
+      text.replace(ITEMX_REF_RE, (_, ref) => {
+        used.add(`item:${ref}`);
+        return '';
+      });
+      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => {
+        used.add(`codex:${ref}`);
+        return '';
+      });
     }
     // Remove only orphaned rows. Count/byte truncation corrupts replay by
     // leaving refs in messages whose authoritative events no longer exist.
@@ -825,8 +1255,10 @@ ${codexPageStyle()}
   }
 
   function checkpointReplay(chat) {
-    const messages = Array.isArray(chat?.message) ? chat.message : [], status = checkpointStatus(chat);
-    const liveRows = messageEventLedger(chat), liveManual = manualLedger(chat);
+    const messages = Array.isArray(chat?.message) ? chat.message : [],
+      status = checkpointStatus(chat);
+    const liveRows = messageEventLedger(chat),
+      liveManual = manualLedger(chat);
     const tailMessages = messages.length - (status.valid ? status.checkpoint.boundary + 1 : 0);
     const eventPressure = liveRows.length + liveManual.length >= ITEMX_CHECKPOINT_TAIL_EVENTS;
     const messagePressure = tailMessages >= ITEMX_CHECKPOINT_TRIGGER_MESSAGES;
@@ -840,8 +1272,14 @@ ${codexPageStyle()}
     const used = new Set();
     for (let index = 0; index <= boundary; index += 1) {
       const text = messageData(messages[index]);
-      text.replace(ITEMX_REF_RE, (_, ref) => { used.add(`item:${ref}`); return ''; });
-      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => { used.add(`codex:${ref}`); return ''; });
+      text.replace(ITEMX_REF_RE, (_, ref) => {
+        used.add(`item:${ref}`);
+        return '';
+      });
+      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => {
+        used.add(`codex:${ref}`);
+        return '';
+      });
     }
     const rowsByKey = new Map(lookup.rows.map((row) => [`${row.domain}:${row.ref}`, row]));
     const rows = [...rowsByKey].filter(([key]) => used.has(key)).map(([, row]) => row);
@@ -852,31 +1290,54 @@ ${codexPageStyle()}
     const next = ITEMXCore.clone(chat);
     const tailRows = [...rowsByKey].filter(([key]) => !used.has(key)).map(([, row]) => row);
     const tailManual = allManual.filter((row) => !(row.afterIndex >= 0 && row.afterIndex <= boundary));
-    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_CHECKPOINT_KEY]: encoded, [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows), [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual) };
+    next.scriptstate = {
+      ...(next.scriptstate || {}),
+      [ITEMX_CHECKPOINT_KEY]: encoded,
+      [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows),
+      [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual)
+    };
     delete next.scriptstate[ITEMXCore.STATE_KEY];
     return next;
   }
 
   function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat), options = {}) {
     const messages = Array.isArray(chat?.message) ? chat.message : [];
-    const start = Math.max(0, options.start || 0), end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
-    const ledger = options.manual || [...(start === 0 ? replayCheckpoint(chat)?.manual || [] : []), ...manualLedger(chat)], manualByIndex = new Map(), manualTail = [], reg = options.registry ? ITEMXCore.clone(options.registry) : ITEMXCore.newRegistry();
+    const start = Math.max(0, options.start || 0),
+      end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
+    const ledger = options.manual || [
+        ...(start === 0 ? replayCheckpoint(chat)?.manual || [] : []),
+        ...manualLedger(chat)
+      ],
+      manualByIndex = new Map(),
+      manualTail = [],
+      reg = options.registry ? ITEMXCore.clone(options.registry) : ITEMXCore.newRegistry();
     for (const row of ledger) {
-      if (row.afterIndex < 0 || row.afterIndex >= messages.length) { if (end === messages.length - 1) manualTail.push(row); }
-      else if (row.afterIndex < start || row.afterIndex > end) continue;
+      if (row.afterIndex < 0 || row.afterIndex >= messages.length) {
+        if (end === messages.length - 1) manualTail.push(row);
+      } else if (row.afterIndex < start || row.afterIndex > end) continue;
       else {
         const rows = manualByIndex.get(row.afterIndex) || [];
-        rows.push(row); manualByIndex.set(row.afterIndex, rows);
+        rows.push(row);
+        manualByIndex.set(row.afterIndex, rows);
       }
     }
     let transport = options.transport || '';
-    const apply = (event) => { ITEMXCore.applyEvent(reg, event); transport += ITEMXCore.marker({ v: ITEMXCore.VERSION, event }); };
+    const apply = (event) => {
+      ITEMXCore.applyEvent(reg, event);
+      transport += ITEMXCore.marker({ v: ITEMXCore.VERSION, event });
+    };
     for (let index = start; index <= end; index += 1) {
       for (const event of messageEvents(messageData(messages[index]), 'item', lookup)) apply(event);
       for (const row of manualByIndex.get(index) || []) apply(row.event);
     }
     for (const row of manualTail) apply(row.event);
-    return { schema: ITEMXCore.VERSION, rev: 2, fingerprint: ITEMXCore.fnv1a(transport), updatedAt: Date.now(), registry: reg };
+    return {
+      schema: ITEMXCore.VERSION,
+      rev: 2,
+      fingerprint: ITEMXCore.fnv1a(transport),
+      updatedAt: Date.now(),
+      registry: reg
+    };
   }
 
   async function rebuildCurrent({ upgradeDisplayRefs = false } = {}) {
@@ -885,7 +1346,11 @@ ${codexPageStyle()}
     return enqueue(ctx.key, async () => {
       let latestChat = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
       if (!latestChat) return null;
-      if (upgradeDisplayRefs && !latestChat.isStreaming && !(latestChat.message || []).some((message) => message?.isStreaming)) {
+      if (
+        upgradeDisplayRefs &&
+        !latestChat.isStreaming &&
+        !(latestChat.message || []).some((message) => message?.isStreaming)
+      ) {
         const reconciled = reconcileStoredRefViews(latestChat);
         if (reconciled.changed && runtime.activeContextKey === ctx.key) {
           await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, reconciled.chat);
@@ -895,10 +1360,19 @@ ${codexPageStyle()}
       }
       const lookup = buildMessageEventLookup(latestChat);
       const checkpoint = checkpointStatus(latestChat);
-      const manual = checkpoint.valid ? manualLedger(latestChat) : [...(checkpoint.checkpoint?.manual || []), ...manualLedger(latestChat)];
-      const replay = checkpoint.valid ? { start: checkpoint.checkpoint.boundary + 1, registry: checkpoint.checkpoint.item.registry, base: checkpoint.checkpoint.codex } : {};
+      const manual = checkpoint.valid
+        ? manualLedger(latestChat)
+        : [...(checkpoint.checkpoint?.manual || []), ...manualLedger(latestChat)];
+      const replay = checkpoint.valid
+        ? {
+            start: checkpoint.checkpoint.boundary + 1,
+            registry: checkpoint.checkpoint.item.registry,
+            base: checkpoint.checkpoint.codex
+          }
+        : {};
       const snapshot = rebuildWithManual(latestChat, lookup, { ...replay, manual });
       const codexBase = rebuildCodexWithLedger(latestChat, lookup, replay);
+      const lorebookSourceFingerprint = encounterRegistryFingerprint(codexBase);
       const codexSnapshot = ITEMXLorebook.apply(codexBase, ITEMXLorebook.read(latestChat));
       const settings = await outputSettings(ctx.character);
       refreshLatest(latestChat, lookup);
@@ -906,7 +1380,15 @@ ${codexPageStyle()}
       // snapshot here can race another module's output hook and restore an
       // older assistant message over its freshly appended display markers.
       runtime.status = `정상 · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
-      const loaded = { ...ctx, chat: latestChat, snapshot, codexSnapshot, replayFingerprint: replaySourceFingerprint(latestChat), ...settings };
+      const loaded = {
+        ...ctx,
+        chat: latestChat,
+        snapshot,
+        codexSnapshot,
+        lorebookSourceFingerprint,
+        replayFingerprint: replaySourceFingerprint(latestChat),
+        ...settings
+      };
       runtime.cachedLoaded = loaded;
       runtime.cachedGeneration = runtime.generation;
       return loaded;
@@ -914,16 +1396,26 @@ ${codexPageStyle()}
   }
 
   const CHAT_DATA_KEYS = [
-    ITEMXCore.STATE_KEY, ITEMXCore.CHAT_KEY, ITEMXCodex.STATE_KEY,
-    ITEMX_MANUAL_KEY, ITEMX_MESSAGE_EVENT_KEY, ITEMX_CHECKPOINT_KEY, ITEMX_AUX_KEY, ITEMX_LORE_KEY
+    ITEMXCore.STATE_KEY,
+    ITEMXCore.CHAT_KEY,
+    ITEMXCodex.STATE_KEY,
+    ITEMX_MANUAL_KEY,
+    ITEMX_MESSAGE_EVENT_KEY,
+    ITEMX_CHECKPOINT_KEY,
+    ITEMX_AUX_KEY,
+    ITEMX_LORE_KEY
   ];
 
   function cleanChatPluginData(chat) {
-    const next = ITEMXCore.clone(chat), messages = Array.isArray(next?.message) ? next.message : [];
-    let cleanedMessages = 0, removedMarkers = 0, removedStateKeys = 0;
+    const next = ITEMXCore.clone(chat),
+      messages = Array.isArray(next?.message) ? next.message : [];
+    let cleanedMessages = 0,
+      removedMarkers = 0,
+      removedStateKeys = 0;
     for (const message of messages) {
       const original = messageData(message);
-      const markers = original.match(/<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g) || [];
+      const markers =
+        original.match(/<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g) || [];
       let source = stripAllTransport(original)
         .replace(ITEMX_REF_RE, '')
         .replace(ITEMX_CODEX_REF_RE, '')
@@ -938,7 +1430,8 @@ ${codexPageStyle()}
     next.scriptstate = { ...(next.scriptstate || {}) };
     for (const key of CHAT_DATA_KEYS) {
       if (!Object.prototype.hasOwnProperty.call(next.scriptstate, key)) continue;
-      delete next.scriptstate[key]; removedStateKeys += 1;
+      delete next.scriptstate[key];
+      removedStateKeys += 1;
     }
     return { chat: next, cleanedMessages, removedMarkers, removedStateKeys };
   }
@@ -963,11 +1456,23 @@ ${codexPageStyle()}
       return cleaned;
     });
     runtime.cleanupArmedUntil = 0;
-    runtime.latestMarkers.clear(); runtime.latestOutput = ''; runtime.pendingMarkers.clear(); runtime.pendingMarkersAt = 0;
-    runtime.eventPayloads = new Map(); runtime.markerHtmlCache.clear(); runtime.detailHtmlCache.clear();
-    runtime.catchUpFingerprint = ''; runtime.catchUpFailedFingerprint = ''; runtime.catchUpFailures = 0; runtime.catchUpRetryAt = 0;
-    runtime.auxCandidateFingerprint = ''; runtime.auxCandidateSince = 0; runtime.auxCandidateChecks = 0;
-    runtime.cachedLoaded = null; runtime.cachedGeneration = -1; runtime.generation += 1;
+    runtime.latestMarkers.clear();
+    runtime.latestOutput = '';
+    runtime.pendingMarkers.clear();
+    runtime.pendingMarkersAt = 0;
+    runtime.eventPayloads = new Map();
+    runtime.markerHtmlCache.clear();
+    runtime.detailHtmlCache.clear();
+    runtime.catchUpFingerprint = '';
+    runtime.catchUpFailedFingerprint = '';
+    runtime.catchUpFailures = 0;
+    runtime.catchUpRetryAt = 0;
+    runtime.auxCandidateFingerprint = '';
+    runtime.auxCandidateSince = 0;
+    runtime.auxCandidateChecks = 0;
+    runtime.cachedLoaded = null;
+    runtime.cachedGeneration = -1;
+    runtime.generation += 1;
     runtime.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
     const loaded = await rebuildCurrent();
     if (loaded) loaded.enabled = false;
@@ -979,10 +1484,11 @@ ${codexPageStyle()}
     if (!active) return null;
     const cached = runtime.cachedLoaded;
     if (
-      cached?.key === active.key
-      && runtime.cachedGeneration === runtime.generation
-      && cached.replayFingerprint === replaySourceFingerprint(active.chat)
-    ) return cached;
+      cached?.key === active.key &&
+      runtime.cachedGeneration === runtime.generation &&
+      cached.replayFingerprint === replaySourceFingerprint(active.chat)
+    )
+      return cached;
     return rebuildCurrent();
   }
 
@@ -990,7 +1496,12 @@ ${codexPageStyle()}
     const active = await context();
     if (!active) return null;
     const cached = runtime.cachedLoaded;
-    if (cached?.key === active.key && runtime.cachedGeneration === runtime.generation && cached.replayFingerprint === replaySourceFingerprint(active.chat)) return cached;
+    if (
+      cached?.key === active.key &&
+      runtime.cachedGeneration === runtime.generation &&
+      cached.replayFingerprint === replaySourceFingerprint(active.chat)
+    )
+      return cached;
     return rebuildCurrent();
   }
 
@@ -1004,7 +1515,17 @@ ${codexPageStyle()}
     let next = ITEMXCore.clone(latest);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger) };
     next = checkpointReplay(next);
-    const snapshot = rebuildWithManual(next, buildMessageEventLookup(next), checkpointStatus(next).valid ? { start: replayCheckpoint(next).boundary + 1, registry: replayCheckpoint(next).item.registry, manual: manualLedger(next) } : {});
+    const snapshot = rebuildWithManual(
+      next,
+      buildMessageEventLookup(next),
+      checkpointStatus(next).valid
+        ? {
+            start: replayCheckpoint(next).boundary + 1,
+            registry: replayCheckpoint(next).item.registry,
+            manual: manualLedger(next)
+          }
+        : {}
+    );
     await Risuai.setChatToIndex(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
     runtime.status = `${label} · ${events.length}건`;
     return rebuildCurrent();
@@ -1020,8 +1541,15 @@ ${codexPageStyle()}
 
   function auxiliaryProviderError(value) {
     const text = value instanceof Error ? String(value.message || value) : modelText(value);
-    if (!/(?:Unknown Plugin detected\. Please change the model or enable the corresponding plugin\.|Plugin calls are blocked by the caller\.)/i.test(text)) return null;
-    const error = new Error('보조 모델 제공자를 사용할 수 없습니다. Risu 설정에서 보조 모델을 변경하거나 해당 제공자 플러그인을 켜세요.');
+    if (
+      !/(?:Unknown Plugin detected\. Please change the model or enable the corresponding plugin\.|Plugin calls are blocked by the caller\.)/i.test(
+        text
+      )
+    )
+      return null;
+    const error = new Error(
+      '보조 모델 제공자를 사용할 수 없습니다. Risu 설정에서 보조 모델을 변경하거나 해당 제공자 플러그인을 켜세요.'
+    );
     error.code = 'AUX_PROVIDER_UNAVAILABLE';
     return error;
   }
@@ -1035,16 +1563,40 @@ ${codexPageStyle()}
   }
 
   function connectionSummary() {
-    const hook = runtime.permissions.replacer === true ? ['모델 훅 연결', 'on'] : runtime.permissions.replacer === false ? ['모델 훅 오류', 'off'] : ['모델 훅 확인 전', 'warn'];
-    const dom = runtime.permissions.mainDom === true ? ['화면 연결', 'on'] : runtime.permissions.mainDom === false ? ['화면 권한 필요', 'off'] : ['화면 확인 전', 'warn'];
-    const listener = runtime.hooks.listener === 'unsupported' ? ['Pocket 호환', 'warn'] : runtime.hooks.listener ? ['커밋 감지', 'on'] : ['커밋 감지 전', 'warn'];
-    return { hook, dom, listener, ready: runtime.permissions.replacer === true && runtime.permissions.mainDom === true };
+    const hook =
+      runtime.permissions.replacer === true
+        ? ['모델 훅 연결', 'on']
+        : runtime.permissions.replacer === false
+          ? ['모델 훅 오류', 'off']
+          : ['모델 훅 확인 전', 'warn'];
+    const dom =
+      runtime.permissions.mainDom === true
+        ? ['화면 연결', 'on']
+        : runtime.permissions.mainDom === false
+          ? ['화면 권한 필요', 'off']
+          : ['화면 확인 전', 'warn'];
+    const listener =
+      runtime.hooks.listener === 'unsupported'
+        ? ['Pocket 호환', 'warn']
+        : runtime.hooks.listener
+          ? ['커밋 감지', 'on']
+          : ['커밋 감지 전', 'warn'];
+    return {
+      hook,
+      dom,
+      listener,
+      ready: runtime.permissions.replacer === true && runtime.permissions.mainDom === true
+    };
   }
 
   async function updateConnectionUi() {
     if (!runtime.mainDoc) return;
     const connection = connectionSummary();
-    const chips = [['hook', connection.hook], ['dom', connection.dom], ['listener', connection.listener]];
+    const chips = [
+      ['hook', connection.hook],
+      ['dom', connection.dom],
+      ['listener', connection.listener]
+    ];
     for (const [key, [label, tone]] of chips) {
       const chip = await runtime.mainDoc.querySelector(`.x-risu-itemx2-connection-${key}`);
       if (!chip) continue;
@@ -1073,8 +1625,11 @@ ${codexPageStyle()}
   async function applyRootSetting(change) {
     if (runtime.settingChangeBusy) return;
     runtime.settingChangeBusy = true;
-    try { await change(); }
-    finally { runtime.settingChangeBusy = false; }
+    try {
+      await change();
+    } finally {
+      runtime.settingChangeBusy = false;
+    }
   }
 
   async function setAuxOutcome(state, label, events = null) {
@@ -1106,11 +1661,15 @@ ${codexPageStyle()}
       const recent = runtime.auxLast.at && Date.now() - runtime.auxLast.at < 2600;
       if (runtime.auxActive > 0 || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
       else await indicator.removeClass('x-risu-itemx2-aux-status-on');
-      if (runtime.auxLast.state === 'done' && runtime.auxActive === 0) await indicator.addClass('x-risu-itemx2-aux-status-done');
+      if (runtime.auxLast.state === 'done' && runtime.auxActive === 0)
+        await indicator.addClass('x-risu-itemx2-aux-status-done');
       else await indicator.removeClass('x-risu-itemx2-aux-status-done');
-      if (runtime.auxLast.state === 'failed' && runtime.auxActive === 0) await indicator.addClass('x-risu-itemx2-aux-status-failed');
+      if (runtime.auxLast.state === 'failed' && runtime.auxActive === 0)
+        await indicator.addClass('x-risu-itemx2-aux-status-failed');
       else await indicator.removeClass('x-risu-itemx2-aux-status-failed');
-    } catch (error) { fail('aux indicator', error); }
+    } catch (error) {
+      fail('aux indicator', error);
+    }
   }
 
   async function runAuxModel(prompt, label = '보조 모델 처리 중') {
@@ -1143,7 +1702,8 @@ ${codexPageStyle()}
     } finally {
       runtime.auxActive = Math.max(0, runtime.auxActive - 1);
       await syncAuxIndicator();
-      if (runtime.auxActive === 0) await setAuxOutcome(runtime.auxLast.state, runtime.auxLast.label, runtime.auxLast.events);
+      if (runtime.auxActive === 0)
+        await setAuxOutcome(runtime.auxLast.state, runtime.auxLast.label, runtime.auxLast.events);
     }
   }
 
@@ -1152,7 +1712,9 @@ ${codexPageStyle()}
       const raw = chat?.scriptstate?.[ITEMX_AUX_KEY];
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   }
 
   async function auxiliaryZeroHistory(ctx) {
@@ -1160,19 +1722,27 @@ ${codexPageStyle()}
       const raw = await Risuai.pluginStorage.getItem(`auxZero:${ctx.key}`);
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   }
 
   async function rememberAuxiliaryZero(ctx, guardKey) {
     const history = await auxiliaryZeroHistory(ctx);
     history[guardKey] = Date.now();
-    await Risuai.pluginStorage.setItem(`auxZero:${ctx.key}`, JSON.stringify(Object.fromEntries(Object.entries(history).slice(-24))));
+    await Risuai.pluginStorage.setItem(
+      `auxZero:${ctx.key}`,
+      JSON.stringify(Object.fromEntries(Object.entries(history).slice(-24)))
+    );
   }
 
   function messageMetadata(message) {
     if (message?.metadata && typeof message.metadata === 'object') return message.metadata;
-    try { return typeof message?.metadata === 'string' ? JSON.parse(message.metadata) : {}; }
-    catch { return {}; }
+    try {
+      return typeof message?.metadata === 'string' ? JSON.parse(message.metadata) : {};
+    } catch {
+      return {};
+    }
   }
 
   function incompleteCommittedOutput(source) {
@@ -1190,7 +1760,9 @@ ${codexPageStyle()}
   function automaticAuxReady(chat, index, source) {
     const message = chat?.message?.[index];
     const metadata = messageMetadata(message);
-    return !chat?.isStreaming && !message?.isStreaming && metadata.bgContinue !== true && !incompleteCommittedOutput(source);
+    return (
+      !chat?.isStreaming && !message?.isStreaming && metadata.bgContinue !== true && !incompleteCommittedOutput(source)
+    );
   }
 
   function automaticAuxSettled(ctx, index, source) {
@@ -1207,7 +1779,8 @@ ${codexPageStyle()}
 
   function stateItemEvidence(chat) {
     const rows = [];
-    const keyPattern = /(weapon|armor|item|inventory|equipment|outfit|accessor|gear|belonging|무기|방어구|아이템|장비|의상|소지품)/i;
+    const keyPattern =
+      /(weapon|armor|item|inventory|equipment|outfit|accessor|gear|belonging|무기|방어구|아이템|장비|의상|소지품)/i;
     for (const [key, raw] of Object.entries(chat?.scriptstate || {})) {
       // ITEMX must not feed either its own derived state or stale
       // legacy ITEMX module state back to the model as world evidence.
@@ -1220,7 +1793,8 @@ ${codexPageStyle()}
     return rows.length ? rows.join('\n').slice(0, 4000) : '(no item-like state variables)';
   }
 
-  const LIGHTBOARD_DATA_RE = /(?:^|\n)[ \t]*---[ \t]*\r?\n[ \t]*\[LBDATA START\][\s\S]*?\[LBDATA END\][ \t]*\r?\n[ \t]*---[ \t]*(?=\r?\n|$)/gi;
+  const LIGHTBOARD_DATA_RE =
+    /(?:^|\n)[ \t]*---[ \t]*\r?\n[ \t]*\[LBDATA START\][\s\S]*?\[LBDATA END\][ \t]*\r?\n[ \t]*---[ \t]*(?=\r?\n|$)/gi;
   function stripAuxiliaryDataBlocks(value) {
     return String(value || '').replace(LIGHTBOARD_DATA_RE, '\n');
   }
@@ -1228,7 +1802,9 @@ ${codexPageStyle()}
   function auxiliaryVisibleText(value, { itemRefs = true } = {}) {
     let text = stripAuxiliaryDataBlocks(value);
     text = text.replace(/<(thoughts|analysis)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
-    text = itemRefs ? ITEMXCodex.requestView(ITEMXCore.requestView(text)) : text.replace(ITEMXCore.MARKER_RE, '').replace(ITEMXCodex.MARKER_RE, '');
+    text = itemRefs
+      ? ITEMXCodex.requestView(ITEMXCore.requestView(text))
+      : text.replace(ITEMXCore.MARKER_RE, '').replace(ITEMXCodex.MARKER_RE, '');
     text = text.replace(ITEMX_REF_RE, '').replace(ITEMX_CODEX_REF_RE, '');
     return text.replace(/\n{3,}/g, '\n\n').trim();
   }
@@ -1240,7 +1816,8 @@ ${codexPageStyle()}
   function clipAuxiliaryText(value, max) {
     const text = String(value || '').trim();
     if (text.length <= max) return text;
-    const head = Math.floor(max * 0.42), tail = max - head;
+    const head = Math.floor(max * 0.42),
+      tail = max - head;
     return `${text.slice(0, head)}\n…[middle omitted for bounded auxiliary context]…\n${text.slice(-tail)}`;
   }
 
@@ -1253,9 +1830,10 @@ ${codexPageStyle()}
         break;
       }
     }
-    const triggeringUser = userIndex >= 0
-      ? clipAuxiliaryText(auxiliaryVisibleText(messageData(messages[userIndex])), 3000)
-      : '(triggering user turn unavailable)';
+    const triggeringUser =
+      userIndex >= 0
+        ? clipAuxiliaryText(auxiliaryVisibleText(messageData(messages[userIndex])), 3000)
+        : '(triggering user turn unavailable)';
     const rows = [];
     let consumed = 0;
     const historyEnd = userIndex >= 0 ? userIndex : targetIndex;
@@ -1324,35 +1902,64 @@ ${codexPageStyle()}
       const lookup = buildMessageEventLookup(current);
       const snapshot = rebuildWithManual(current, lookup);
       const codexSnapshot = rebuildCodexWithLedger(current, lookup, { rarityMode: settings.rarityMode });
-      const committedNarrative = clipAuxiliaryText(auxiliaryVisibleText(messageData(current.message[index]), { itemRefs: false }), 14000);
+      const committedNarrative = clipAuxiliaryText(
+        auxiliaryVisibleText(messageData(current.message[index]), { itemRefs: false }),
+        14000
+      );
       if (!committedNarrative && !force) return null;
       const conversation = auxiliaryConversationContext(current, index);
       const domains = enabledCodexDomains(settings);
-      const requested = [settings.itemsEnabled && 'items', settings.skillsEnabled && 'skills', settings.encountersEnabled && 'encounters'].filter(Boolean).join(', ');
-      const moduleAssets = await modulePortraitAssets(settings, ctx.character, current);
-      const protocolOptions = { narrative: [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n'), entities: encounterEntities(codexSnapshot) };
-      const itemRecoveryRules = settings.itemsEnabled ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.` : '';
-      const codexRecoveryRules = domains.length ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.` : '';
+      const requested = [
+        settings.itemsEnabled && 'items',
+        settings.skillsEnabled && 'skills',
+        settings.encountersEnabled && 'encounters'
+      ]
+        .filter(Boolean)
+        .join(', ');
+      const moduleAssets = settings.encountersEnabled
+        ? await modulePortraitAssets(settings, ctx.character, current)
+        : [];
+      const protocolOptions = {
+        narrative: [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n'),
+        entities: encounterEntities(codexSnapshot)
+      };
+      const itemRecoveryRules = settings.itemsEnabled
+        ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.`
+        : '';
+      const codexRecoveryRules = domains.length
+        ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.`
+        : '';
       const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
       runtime.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
       const raw = modelText(response);
       if (!raw) throw new Error('보조 출력이 비어 있습니다.');
-      const parsed = settings.itemsEnabled ? ITEMXCore.extractResponse(raw, snapshot.registry) : { content: stripItemTransport(raw), events: [], errors: [] };
+      const parsed = settings.itemsEnabled
+        ? ITEMXCore.extractResponse(raw, snapshot.registry)
+        : { content: stripItemTransport(raw), events: [], errors: [] };
       const validationRegistry = ITEMXCore.clone(snapshot.registry);
-      const validItems = [], partials = [], rejectedIds = [];
+      const validItems = [],
+        partials = [],
+        rejectedIds = [];
       const itemSiblings = parsed.events.filter((event) => event.kind === 'exam').map((event) => event.item);
-      const itemEvidenceContext = [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n\n');
+      const itemEvidenceContext = [conversation.triggeringUser, conversation.recent, committedNarrative]
+        .filter(Boolean)
+        .join('\n\n');
       for (const event of parsed.events) {
         if (event.kind !== 'exam') {
           if (ITEMXCore.applyEvent(validationRegistry, event) != null) validItems.push(event);
           continue;
         }
         let evidence = ITEMXQuality.detectItemEvidence(committedNarrative, event.item, itemSiblings);
-        if (!evidence.segment) evidence = ITEMXQuality.detectItemEvidence(itemEvidenceContext, event.item, itemSiblings);
+        if (!evidence.segment)
+          evidence = ITEMXQuality.detectItemEvidence(itemEvidenceContext, event.item, itemSiblings);
         const quality = ITEMXQuality.validateRecoveredItem(event, evidence);
-        if (quality.status === 'rejected') { rejectedIds.push(event.item.id); continue; }
-        const accepted = quality.status === 'partial' ? ITEMXQuality.projectSafePartial(event, quality, validationRegistry) : event;
+        if (quality.status === 'rejected') {
+          rejectedIds.push(event.item.id);
+          continue;
+        }
+        const accepted =
+          quality.status === 'partial' ? ITEMXQuality.projectSafePartial(event, quality, validationRegistry) : event;
         if (ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
         validItems.push(accepted);
         if (quality.status === 'partial') partials.push({ ...quality, event: accepted, sourceEvent: event });
@@ -1362,7 +1969,10 @@ ${codexPageStyle()}
         const partialMap = new Map(partials.map((one) => [one.event.item.id, one]));
         const repaired = new Map();
         try {
-          const repairResponse = await runAuxModel(ITEMXQuality.repairPrompt(partials, committedNarrative), '아이템 상세정보 보완 중');
+          const repairResponse = await runAuxModel(
+            ITEMXQuality.repairPrompt(partials, committedNarrative),
+            '아이템 상세정보 보완 중'
+          );
           const repairRaw = modelText(repairResponse);
           const repairParsed = repairRaw ? ITEMXCore.extractResponse(repairRaw, validationRegistry) : { events: [] };
           for (const event of repairParsed.events) {
@@ -1373,15 +1983,33 @@ ${codexPageStyle()}
             Object.keys(accepted.patch.fields || {}).forEach((key) => fields.add(key));
             repaired.set(accepted.patch.id, fields);
           }
-        } catch (error) { fail('auxiliary partial repair', error); }
-        unresolvedPartials = partials.filter((one) => one.missing.some((key) => !repaired.get(one.event.item.id)?.has(key)));
+        } catch (error) {
+          fail('auxiliary partial repair', error);
+        }
+        unresolvedPartials = partials.filter((one) =>
+          one.missing.some((key) => !repaired.get(one.event.item.id)?.has(key))
+        );
       }
-      const skillEvidenceText = [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n\n');
-      const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, { enabledDomains: domains, rarityMode: settings.rarityMode, skillEvidenceText });
+      const skillEvidenceText = [conversation.triggeringUser, conversation.recent, committedNarrative]
+        .filter(Boolean)
+        .join('\n\n');
+      const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, {
+        enabledDomains: domains,
+        rarityMode: settings.rarityMode,
+        skillEvidenceText
+      });
       const validationCodex = ITEMXCodex.clone(codexSnapshot);
       const validCodex = codexParsed.events.filter((event) => ITEMXCodex.applyEvent(validationCodex, event) != null);
       const valid = [...validItems, ...validCodex];
-      debugRecord('auxiliary', { requested, events: valid.length, itemEvents: validItems.length, codexEvents: validCodex.length, partials: partials.length, partialFinal: unresolvedPartials.length, rejected: rejectedIds.length });
+      debugRecord('auxiliary', {
+        requested,
+        events: valid.length,
+        itemEvents: validItems.length,
+        codexEvents: validCodex.length,
+        partials: partials.length,
+        partialFinal: unresolvedPartials.length,
+        rejected: rejectedIds.length
+      });
       const allErrors = [...parsed.errors, ...codexParsed.errors];
       if (!valid.length && allErrors.length) throw new Error(`보조 출력 검증 실패 (${allErrors[0]})`);
 
@@ -1389,11 +2017,24 @@ ${codexPageStyle()}
       if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return null;
       if (!valid.length) {
         if (rejectedIds.length) {
-          const next = ITEMXCore.clone(latest), history = auxiliaryHistory(next);
-          history[guardKey] = { at: Date.now(), qualityRevision: ITEMXQuality.REVISION, state: 'rejected', events: 0, rejectedIds };
-          next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64))) };
+          const next = ITEMXCore.clone(latest),
+            history = auxiliaryHistory(next);
+          history[guardKey] = {
+            at: Date.now(),
+            qualityRevision: ITEMXQuality.REVISION,
+            state: 'rejected',
+            events: 0,
+            rejectedIds
+          };
+          next.scriptstate = {
+            ...(next.scriptstate || {}),
+            [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64)))
+          };
           await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, next);
-          if (runtime.activeContextKey === ctx.key) { runtime.status = '보조 출력 · 근거 불충분'; await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0); }
+          if (runtime.activeContextKey === ctx.key) {
+            runtime.status = '보조 출력 · 근거 불충분';
+            await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0);
+          }
           return [];
         }
         await rememberAuxiliaryZero(ctx, guardKey);
@@ -1417,12 +2058,23 @@ ${codexPageStyle()}
       }
       const markerText = markers.join('\n');
       const message = next.message[index];
-      if (typeof message?.data === 'string') message.data = positionMarkersByNarrative(`${message.data.trimEnd()}\n\n${markerText}`);
-      else if (typeof message?.content === 'string') message.content = positionMarkersByNarrative(`${message.content.trimEnd()}\n\n${markerText}`);
+      if (typeof message?.data === 'string')
+        message.data = positionMarkersByNarrative(`${message.data.trimEnd()}\n\n${markerText}`);
+      else if (typeof message?.content === 'string')
+        message.content = positionMarkersByNarrative(`${message.content.trimEnd()}\n\n${markerText}`);
       else return null;
-      const record = { at: Date.now(), qualityRevision: ITEMXQuality.REVISION, state: unresolvedPartials.length || rejectedIds.length ? 'partial_final' : 'complete', events: valid.length, partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds] };
+      const record = {
+        at: Date.now(),
+        qualityRevision: ITEMXQuality.REVISION,
+        state: unresolvedPartials.length || rejectedIds.length ? 'partial_final' : 'complete',
+        events: valid.length,
+        partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds]
+      };
       history[guardKey] = record;
-      next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64))) };
+      next.scriptstate = {
+        ...(next.scriptstate || {}),
+        [ITEMX_AUX_KEY]: JSON.stringify(Object.fromEntries(Object.entries(history).slice(-64)))
+      };
       const compacted = compactMessageTransports(next, index).chat;
       const compactedLookup = buildMessageEventLookup(compacted);
       const rebuilt = rebuildWithManual(compacted, compactedLookup);
@@ -1460,14 +2112,22 @@ ${codexPageStyle()}
     const raw = modelText(response);
     if (!raw) throw new Error('보조 모델이 빈 응답을 반환했습니다.');
     const parsed = ITEMXCore.extractResponse(raw, loaded.snapshot.registry);
-    if (parsed.errors.length || parsed.events.length !== 1 || parsed.events[0].kind !== 'exam') throw new Error(`감정 결과 검증 실패 (${parsed.errors[0] || `events=${parsed.events.length}`})`);
+    if (parsed.errors.length || parsed.events.length !== 1 || parsed.events[0].kind !== 'exam')
+      throw new Error(`감정 결과 검증 실패 (${parsed.errors[0] || `events=${parsed.events.length}`})`);
     const event = parsed.events[0];
     if (task === 'create') {
-      if (loaded.snapshot.registry.items[event.item.id]) throw new Error('신규 생성이 기존 아이템 id를 덮으려 했습니다.');
-      event.item.possession = 'owned'; event.item.location = 'inventory'; event.item.slot = null; event.item.count = Math.max(1, Number(event.item.count) || 1);
+      if (loaded.snapshot.registry.items[event.item.id])
+        throw new Error('신규 생성이 기존 아이템 id를 덮으려 했습니다.');
+      event.item.possession = 'owned';
+      event.item.location = 'inventory';
+      event.item.slot = null;
+      event.item.count = Math.max(1, Number(event.item.count) || 1);
     } else {
       if (!target || event.item.id !== target.id) throw new Error('재감정 결과가 대상 id를 보존하지 않았습니다.');
-      event.item.possession = target.possession; event.item.location = target.location; event.item.slot = target.slot || null; event.item.count = target.count;
+      event.item.possession = target.possession;
+      event.item.location = target.location;
+      event.item.slot = target.slot || null;
+      event.item.count = target.count;
     }
     return event;
   }
@@ -1497,7 +2157,9 @@ ${codexPageStyle()}
   }
 
   function anchorText(value) {
-    return String(value || '').toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+    return String(value || '')
+      .toLocaleLowerCase()
+      .replace(/[\s\p{P}\p{S}]+/gu, '');
   }
 
   function positionMarkersByNarrative(content) {
@@ -1519,16 +2181,25 @@ ${codexPageStyle()}
     const narrative = source.replace(ITEMXCore.MARKER_RE, '').replace(ITEMXCodex.MARKER_RE, '').trimEnd();
     const pieces = narrative.split(/(\n{2,})/);
     const placements = new Map();
-    const trailerIndex = pieces.findIndex((piece, index) => index % 2 === 0 && /^\s*(?:\[(?:status|state|route)\b|<(?:state|status|route|risu[-_]))/i.test(piece));
+    const trailerIndex = pieces.findIndex(
+      (piece, index) =>
+        index % 2 === 0 && /^\s*(?:\[(?:status|state|route)\b|<(?:state|status|route|risu[-_]))/i.test(piece)
+    );
     for (const marker of markers) {
-      const item = marker.prefix === 'ITEMX2'
-        ? (marker.payload?.event?.kind === 'exam' ? marker.payload.event.item : marker.payload?.view)
-        : (marker.payload?.view || marker.payload?.event?.entity);
+      const item =
+        marker.prefix === 'ITEMX2'
+          ? marker.payload?.event?.kind === 'exam'
+            ? marker.payload.event.item
+            : marker.payload?.view
+          : marker.payload?.view || marker.payload?.event?.entity;
       const name = String(item?.name || '').trim();
       const exact = anchorText(name);
-      const terms = name.split(/[\s·:()\[\]{}〈〉《》「」『』/\\,_-]+/u)
-        .map(anchorText).filter((term) => term.length >= 2);
-      let bestIndex = -1, bestScore = 0;
+      const terms = name
+        .split(/[\s·:()\[\]{}〈〉《》「」『』/\\,_-]+/u)
+        .map(anchorText)
+        .filter((term) => term.length >= 2);
+      let bestIndex = -1,
+        bestScore = 0;
       for (let index = 0; index < pieces.length; index += 2) {
         const paragraph = anchorText(pieces[index]);
         if (!paragraph) continue;
@@ -1537,10 +2208,16 @@ ${codexPageStyle()}
         const enoughTerms = terms.length > 1 ? hits >= Math.min(2, terms.length) : hits === 1;
         if (!exactHit && !enoughTerms) continue;
         const score = (exactHit ? 10000 : 0) + hits * 100;
-        if (score > bestScore) { bestScore = score; bestIndex = index; }
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
       }
       if (bestIndex < 0) {
-        const prefixText = source.slice(0, marker.index).replace(ITEMXCore.MARKER_RE, '').replace(ITEMXCodex.MARKER_RE, '');
+        const prefixText = source
+          .slice(0, marker.index)
+          .replace(ITEMXCore.MARKER_RE, '')
+          .replace(ITEMXCodex.MARKER_RE, '');
         bestIndex = Math.min(Math.max(0, (prefixText.split(/\n{2,}/).length - 1) * 2), Math.max(0, pieces.length - 1));
         if (bestIndex % 2) bestIndex -= 1;
         if (trailerIndex >= 0 && bestIndex >= trailerIndex) bestIndex = Math.max(0, trailerIndex - 2);
@@ -1551,7 +2228,8 @@ ${codexPageStyle()}
       placements.set(bestIndex, list);
     }
     for (const [index, rows] of placements) {
-      pieces[index] = `${pieces[index].trimEnd()}\n\n${rows.map((row) => `<!--${row.prefix}:${row.code}-->`).join('\n')}`;
+      pieces[index] =
+        `${pieces[index].trimEnd()}\n\n${rows.map((row) => `<!--${row.prefix}:${row.code}-->`).join('\n')}`;
     }
     let positioned = pieces.join('').trimEnd();
     return positioned;
@@ -1563,12 +2241,15 @@ ${codexPageStyle()}
     runtime.legacyCommitTimer = globalThis.setTimeout(async () => {
       runtime.legacyCommitTimer = null;
       try {
-        const loaded = await rebuildCurrent();
-        if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
         await catchUpLatestOutput({ syncUi: false });
+        const loaded = await rebuildCurrent();
+        if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled)
+          await scanLorebookEncounters({ silent: true });
         await ensureRootInventory();
         if (!confirm && runtime.auxActive === 0 && !runtime.auxRecoveryPromise) scheduleLegacyCommitRecovery(true);
-      } catch (error) { fail('legacy commit recovery', error); }
+      } catch (error) {
+        fail('legacy commit recovery', error);
+      }
     }, 1800);
   }
 
@@ -1576,12 +2257,19 @@ ${codexPageStyle()}
     const settings = await outputSettings(ctx.character);
     const lookup = buildMessageEventLookup(ctx.chat);
     const base = rebuildWithManual(ctx.chat, lookup).registry;
-    const parsed = settings.itemsEnabled ? ITEMXCore.extractResponse(source, base) : { content: stripItemTransport(source), events: [], errors: [] };
+    const parsed = settings.itemsEnabled
+      ? ITEMXCore.extractResponse(source, base)
+      : { content: stripItemTransport(source), events: [], errors: [] };
     const codexBase = rebuildCodexWithLedger(ctx.chat, lookup, { rarityMode: settings.rarityMode });
-    const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexBase, { enabledDomains: enabledCodexDomains(settings), rarityMode: settings.rarityMode, skillEvidenceText: source });
+    const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexBase, {
+      enabledDomains: enabledCodexDomains(settings),
+      rarityMode: settings.rarityMode,
+      skillEvidenceText: source
+    });
     const positioned = positionMarkersByNarrative(codexParsed.content);
     const needsCompaction = ITEMXCore.MARKER_RE.test(positioned) || ITEMXCodex.MARKER_RE.test(positioned);
-    ITEMXCore.MARKER_RE.lastIndex = 0; ITEMXCodex.MARKER_RE.lastIndex = 0;
+    ITEMXCore.MARKER_RE.lastIndex = 0;
+    ITEMXCodex.MARKER_RE.lastIndex = 0;
     if (positioned === source && !needsCompaction) return { ctx, source };
     const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
     if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== ITEMXCore.fnv1a(source)) return null;
@@ -1603,13 +2291,15 @@ ${codexPageStyle()}
       runtime.uiRemountAfter = Date.now() + 1200;
     }
     await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot));
-    const errors = parsed.errors.length + codexParsed.errors.length, events = parsed.events.length + codexParsed.events.length;
+    const errors = parsed.errors.length + codexParsed.errors.length,
+      events = parsed.events.length + codexParsed.events.length;
     if (stillActive) runtime.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
     return { ctx: { ...ctx, chat: compacted }, source: compactedSource };
   }
 
   async function catchUpLatestOutput({ syncUi = true } = {}) {
-    if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.auxRecoveryPromise || runtime.bodyFxScrollActive) return;
+    if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.auxRecoveryPromise || runtime.bodyFxScrollActive)
+      return;
     let ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return;
     const index = assistantMessageIndex(ctx.chat);
@@ -1634,9 +2324,13 @@ ${codexPageStyle()}
     } else {
       runtime.catchUpFailedFingerprint = fingerprint;
       runtime.catchUpFailures = Math.min(runtime.catchUpFailures + 1, 6);
-      runtime.catchUpRetryAt = Date.now() + Math.min(120000, 5000 * (2 ** runtime.catchUpFailures));
+      runtime.catchUpRetryAt = Date.now() + Math.min(120000, 5000 * 2 ** runtime.catchUpFailures);
     }
-    if (syncUi) await ensureRootInventory();
+    if (syncUi) {
+      const loaded = await rebuildCurrent();
+      if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
+      await ensureRootInventory();
+    }
   }
 
   function scheduleCommittedOutputSync() {
@@ -1651,14 +2345,18 @@ ${codexPageStyle()}
     const pending = (async () => {
       do {
         runtime.outputSyncPending = false;
-        const loaded = await rebuildCurrent();
-        if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
         await catchUpLatestOutput({ syncUi: false });
+        const loaded = await rebuildCurrent();
+        if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) {
+          await scanLorebookEncounters({ silent: true });
+        }
         await ensureRootInventory();
       } while (runtime.outputSyncPending && !runtime.unloading);
-    })().catch((error) => fail('chat listener', error)).finally(() => {
-      if (runtime.outputSyncPromise === pending) runtime.outputSyncPromise = null;
-    });
+    })()
+      .catch((error) => fail('chat listener', error))
+      .finally(() => {
+        if (runtime.outputSyncPromise === pending) runtime.outputSyncPromise = null;
+      });
     runtime.outputSyncPromise = pending;
     return pending;
   }
@@ -1673,7 +2371,10 @@ ${codexPageStyle()}
   }
 
   const beforeRequest = async (messages, type) => {
-    const safeMessages = (messages || []).map((message) => ({ ...message, content: processTransportStripper(message.content) }));
+    const safeMessages = (messages || []).map((message) => ({
+      ...message,
+      content: processTransportStripper(message.content)
+    }));
     if (!mainRequestType(type)) return safeMessages;
     try {
       const loaded = await cachedRequestState();
@@ -1682,13 +2383,26 @@ ${codexPageStyle()}
       runtime.debugEnabled = settings.debugEnabled;
       if (!settings.mainOutput) return safeMessages;
       if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return safeMessages;
-      const recent = safeMessages.slice(-4).map((message) => message.content || '').join('\n');
+      const recent = safeMessages
+        .slice(-4)
+        .map((message) => message.content || '')
+        .join('\n');
       const domains = enabledCodexDomains(settings);
-      const moduleAssets = await modulePortraitAssets(settings, loaded.character, loaded.chat);
+      const moduleAssets = settings.encountersEnabled
+        ? await modulePortraitAssets(settings, loaded.character, loaded.chat)
+        : [];
       const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets, { narrative: recent, entities: encounterEntities(loaded.codexSnapshot) })}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
-      debugRecord('beforeRequest', { items: settings.itemsEnabled, skills: settings.skillsEnabled, encounters: settings.encountersEnabled, messages: safeMessages.length });
+      debugRecord('beforeRequest', {
+        items: settings.itemsEnabled,
+        skills: settings.skillsEnabled,
+        encounters: settings.encountersEnabled,
+        messages: safeMessages.length
+      });
       return injectRequestProtocol(safeMessages, instruction);
-    } catch (error) { fail('beforeRequest', error); return safeMessages; }
+    } catch (error) {
+      fail('beforeRequest', error);
+      return safeMessages;
+    }
   };
 
   const processHandler = async (content) => processTransportStripper(content);
@@ -1704,18 +2418,35 @@ ${codexPageStyle()}
       if (!enabled || !settings.mainOutput) return stripAllTransport(content);
       const lookup = buildMessageEventLookup(ctx.chat);
       const base = rebuildWithManual(ctx.chat, lookup).registry;
-      const result = settings.itemsEnabled ? ITEMXCore.extractResponse(content, base) : { content: stripItemTransport(content), events: [], errors: [] };
-      const codexResult = ITEMXCodex.extractResponse(result.content, rebuildCodexWithLedger(ctx.chat, lookup, { rarityMode: settings.rarityMode }), { enabledDomains: enabledCodexDomains(settings), rarityMode: settings.rarityMode, skillEvidenceText: content });
+      const result = settings.itemsEnabled
+        ? ITEMXCore.extractResponse(content, base)
+        : { content: stripItemTransport(content), events: [], errors: [] };
+      const codexResult = ITEMXCodex.extractResponse(
+        result.content,
+        rebuildCodexWithLedger(ctx.chat, lookup, { rarityMode: settings.rarityMode }),
+        { enabledDomains: enabledCodexDomains(settings), rarityMode: settings.rarityMode, skillEvidenceText: content }
+      );
       const positioned = positionMarkersByNarrative(codexResult.content);
-      if (result.events.length || result.errors.length || codexResult.events.length || codexResult.errors.length || codexResult.content !== content) {
+      if (
+        result.events.length ||
+        result.errors.length ||
+        codexResult.events.length ||
+        codexResult.errors.length ||
+        codexResult.content !== content
+      ) {
         runtime.latestOutput = positioned;
         runtime.latestMarkers = markerCodes(positioned);
         runtime.pendingMarkers = new Set(runtime.latestMarkers);
         runtime.pendingMarkersAt = Date.now();
-        const errors = result.errors.length + codexResult.errors.length, events = result.events.length + codexResult.events.length;
+        const errors = result.errors.length + codexResult.errors.length,
+          events = result.events.length + codexResult.events.length;
         runtime.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
         runtime.generation += 1;
-        debugRecord('processOutput', { itemEvents: result.events.length, codexEvents: codexResult.events.length, errors });
+        debugRecord('processOutput', {
+          itemEvents: result.events.length,
+          codexEvents: codexResult.events.length,
+          errors
+        });
       }
       return positioned;
     } catch (error) {
@@ -1727,7 +2458,8 @@ ${codexPageStyle()}
   const afterRequest = async (content, type) => processOutput(content, type);
   const outputFallback = async (content) => {
     const processed = await processOutput(content, 'main');
-    if (runtime.hooks.listener === 'unsupported' && runtime.auxActive === 0 && !runtime.auxRecoveryPromise) scheduleLegacyCommitRecovery();
+    if (runtime.hooks.listener === 'unsupported' && runtime.auxActive === 0 && !runtime.auxRecoveryPromise)
+      scheduleLegacyCommitRecovery();
     return processed;
   };
 
@@ -1738,9 +2470,23 @@ ${codexPageStyle()}
     if (event.kind !== 'patch') return false;
     if (event.patch?.action || ['remove', 'restore'].includes(event.patch?.op)) return true;
     const keys = new Set(Object.keys(event.patch?.fields || {}));
-    const important = event.domain === 'skill'
-      ? ['name', 'rank', 'school', 'type', 'status', 'level', 'mastery', 'cost', 'cooldown', 'affinity', 'effects', 'growth']
-      : ['name', 'kind', 'threat', 'relation', 'status', 'outcome', 'moves', 'weaknesses', 'resistances'];
+    const important =
+      event.domain === 'skill'
+        ? [
+            'name',
+            'rank',
+            'school',
+            'type',
+            'status',
+            'level',
+            'mastery',
+            'cost',
+            'cooldown',
+            'affinity',
+            'effects',
+            'growth'
+          ]
+        : ['name', 'kind', 'threat', 'relation', 'status', 'outcome', 'moves', 'weaknesses', 'resistances'];
     return important.some((key) => keys.has(key));
   }
 
@@ -1756,57 +2502,110 @@ ${codexPageStyle()}
     const level = encounterThreatLevel(entity?.threat);
     const tier = ['normal', 'rare', 'epic', 'legendary'][level] || 'normal';
     const relation = themeText(entity?.relation);
-    const affinity = /hostile|적대|enemy/.test(relation) ? 'dark' : (/spar|대련/.test(relation) ? 'light' : 'arcane');
+    const affinity = /hostile|적대|enemy/.test(relation) ? 'dark' : /spar|대련/.test(relation) ? 'light' : 'arcane';
     return {
       tier,
       style: ITEMXRenderer.itemVars({ id: entity?.id, name: entity?.name, theme: 'forged', rarity: tier, affinity })
     };
   }
 
-  const codexInlineStat = (label, value) => `<i><b>${ITEMXCore.esc(label)}</b><span>${ITEMXCore.esc(value || '미상')}</span></i>`;
+  const codexInlineStat = (label, value) =>
+    `<i><b>${ITEMXCore.esc(label)}</b><span>${ITEMXCore.esc(value || '미상')}</span></i>`;
 
   function codexInlineEventHtml(payload, motion = 'full') {
     if (!codexInlineEventSignificant(payload)) return '';
-    const event = payload.event, entity = payload.view || event.entity;
+    const event = payload.event,
+      entity = payload.view || event.entity;
     if (!entity) return '';
-    const previous = payload.previous || {}, action = event.patch?.action || '', op = event.patch?.op || '';
+    const previous = payload.previous || {},
+      action = event.patch?.action || '',
+      op = event.patch?.op || '';
     const ended = event.domain === 'monster' && /ended|escaped|defeated|dead/i.test(String(entity.status || ''));
     if (event.domain === 'skill') {
       const appraisal = codexInlineAppraisalStyle(entity, 'skill');
       const labels = {
-        learn: ['SKILL LEARNED', '습득'], equip: ['SKILL EQUIPPED', '장착'], unequip: ['SKILL UPDATED', '장착 해제'], mastery: ['SKILL MASTERY UPDATED', '숙련 상승'],
-        seal: ['SKILL SEALED', '봉인'], unseal: ['SKILL UNSEALED', '봉인 해제'], forget: ['SKILL LOST', '상실']
+        learn: ['SKILL LEARNED', '습득'],
+        equip: ['SKILL EQUIPPED', '장착'],
+        unequip: ['SKILL UPDATED', '장착 해제'],
+        mastery: ['SKILL MASTERY UPDATED', '숙련 상승'],
+        seal: ['SKILL SEALED', '봉인'],
+        unseal: ['SKILL UNSEALED', '봉인 해제'],
+        forget: ['SKILL LOST', '상실']
       };
-      const [kicker, state] = event.kind === 'exam' ? ['NEW SKILL ARCHIVED', '최초 등록'] : (labels[action] || (op === 'remove' ? ['SKILL LOST', '상실'] : op === 'restore' ? ['SKILL RESTORED', '복원'] : ['SKILL RECORD UPDATED', '큰 변화']));
+      const [kicker, state] =
+        event.kind === 'exam'
+          ? ['NEW SKILL ARCHIVED', '최초 등록']
+          : labels[action] ||
+            (op === 'remove'
+              ? ['SKILL LOST', '상실']
+              : op === 'restore'
+                ? ['SKILL RESTORED', '복원']
+                : ['SKILL RECORD UPDATED', '큰 변화']);
       const mastery = Number.isFinite(Number(entity.mastery)) ? Number(entity.mastery) : null;
       const priorMastery = Number.isFinite(Number(previous.mastery)) ? Number(previous.mastery) : null;
-      const masteryText = mastery != null && priorMastery != null && mastery !== priorMastery
-        ? `${priorMastery}%→${mastery}%` : mastery != null ? `${mastery}%` : '미상';
+      const masteryText =
+        mastery != null && priorMastery != null && mastery !== priorMastery
+          ? `${priorMastery}%→${mastery}%`
+          : mastery != null
+            ? `${mastery}%`
+            : '미상';
       const quick = [
         ['LEVEL', entity.level == null ? '미상' : `Lv.${entity.level}`],
         ['숙련도', masteryText],
         ['소모', entity.cost || '미상'],
         ['재사용', entity.cooldown || '미상']
-      ].map(([label, value]) => codexInlineStat(label, value)).join('');
-      const effect = (entity.effects || []).slice(0, 2).join(' · ') || entity.description || entity.growth || '스킬 정보가 CODEX에 기록되었습니다.';
-      const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motion === 'off' ? 'motion-off' : (motion === 'lite' ? 'motion-lite' : '')}`;
-      const meta = [entity.school || '미분류', entity.type || 'active', entity.status || 'learned', entity.target ? `대상 ${entity.target}` : ''].filter(Boolean).join(' · ');
+      ]
+        .map(([label, value]) => codexInlineStat(label, value))
+        .join('');
+      const effect =
+        (entity.effects || []).slice(0, 2).join(' · ') ||
+        entity.description ||
+        entity.growth ||
+        '스킬 정보가 CODEX에 기록되었습니다.';
+      const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
+      const meta = [
+        entity.school || '미분류',
+        entity.type || 'active',
+        entity.status || 'learned',
+        entity.target ? `대상 ${entity.target}` : ''
+      ]
+        .filter(Boolean)
+        .join(' · ');
       return `<section class="${classes}" style="${appraisal.style}"><div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.rank || '미분류')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(meta)}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? '성장 기록' : '발현 효과'}</b><span>${ITEMXCore.esc(effect)}</span></footer></section>`;
     }
     const appraisal = codexInlineAppraisalStyle(entity, 'monster');
     const labels = {
-      encounter: ['ENCOUNTER RESUMED', '교전 개시'], end: ['ENCOUNTER RESOLVED', '종료'], escape: ['ENCOUNTER RESOLVED', '도주'], defeat: ['ENCOUNTER RESOLVED', '격파'], kill: ['ENCOUNTER RESOLVED', '사망'], ally: ['ENCOUNTER UPDATED', '아군화']
+      encounter: ['ENCOUNTER RESUMED', '교전 개시'],
+      end: ['ENCOUNTER RESOLVED', '종료'],
+      escape: ['ENCOUNTER RESOLVED', '도주'],
+      defeat: ['ENCOUNTER RESOLVED', '격파'],
+      kill: ['ENCOUNTER RESOLVED', '사망'],
+      ally: ['ENCOUNTER UPDATED', '아군화']
     };
-    const [kicker, state] = event.kind === 'exam' ? ['ENCOUNTER REGISTERED', entity.status === 'active' ? '교전 중' : '최초 등록'] : (labels[action] || (op === 'remove' ? ['ENCOUNTER LOST', '기록 소실'] : op === 'restore' ? ['ENCOUNTER RESTORED', '복원'] : ['ENCOUNTER UPDATED', '큰 변화']));
-    const detail = entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || '조우 정보가 전투 도감에 기록되었습니다.';
-    const warning = entity.active && ['hostile', 'sparring'].includes(String(entity.relation || '')) ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>' : '';
+    const [kicker, state] =
+      event.kind === 'exam'
+        ? ['ENCOUNTER REGISTERED', entity.status === 'active' ? '교전 중' : '최초 등록']
+        : labels[action] ||
+          (op === 'remove'
+            ? ['ENCOUNTER LOST', '기록 소실']
+            : op === 'restore'
+              ? ['ENCOUNTER RESTORED', '복원']
+              : ['ENCOUNTER UPDATED', '큰 변화']);
+    const detail =
+      entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || '조우 정보가 전투 도감에 기록되었습니다.';
+    const warning =
+      entity.active && ['hostile', 'sparring'].includes(String(entity.relation || ''))
+        ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>'
+        : '';
     const quick = [
       ['분류', entity.kind || '미분류'],
       ['위협도', entity.threat || '미상'],
       ['관계', entity.relation || 'unknown'],
       ['상태', entity.status || 'unknown']
-    ].map(([label, value]) => codexInlineStat(label, value)).join('');
-    const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : (motion === 'lite' ? 'motion-lite' : '')}`;
+    ]
+      .map(([label, value]) => codexInlineStat(label, value))
+      .join('');
+    const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
     const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
     return `<section class="${classes}" style="${appraisal.style}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(encounterEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.threat || '위협 미상')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(aliases || entity.description || '전투 도감 기록')}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${ended ? '최근 전투 결과' : '관측 기록'}</b><span>${ITEMXCore.esc(detail)}</span></footer></section>`;
   }
@@ -1814,15 +2613,19 @@ ${codexPageStyle()}
   const displayHandler = (content) => {
     const raw = String(content || '');
     if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return content;
-    const positioned = raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
+    const positioned =
+      raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
     const source = coalesceAdjacentItemMarkers(positioned);
-    let found = false, hasFullCard = false, hasCodexCard = false;
+    let found = false,
+      hasFullCard = false,
+      hasCodexCard = false;
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;
       if (runtime.markerHtmlCache.has(key)) return runtime.markerHtmlCache.get(key);
       const html = ITEMXRenderer.renderMarkerPayload(payload, { inline: true, motion });
       runtime.markerHtmlCache.set(key, html);
-      while (runtime.markerHtmlCache.size > 64) runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
+      while (runtime.markerHtmlCache.size > 64)
+        runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
       return html;
     };
     const markerMotion = (key) => {
@@ -1830,40 +2633,60 @@ ${codexPageStyle()}
       if (!runtime.latestMarkers.size) return 'lite';
       return runtime.latestMarkers.has(key) ? 'lite' : 'off';
     };
-    const rendered = source.replace(ITEMXCore.MARKER_RE, (_, code) => {
-      found = true;
-      const payload = ITEMXCore.decodePayload(code);
-      if (!payload || payload.error) return '';
-      const motion = markerMotion(`ITEMX2:${code}`);
-      const html = renderPayload(`item:${code}`, payload, motion);
-      if (html) { hasFullCard = true; return html; }
-      const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
-      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : '';
-    }).replace(ITEMXCodex.MARKER_RE, (_, code) => {
-      found = true;
-      const payload = ITEMXCodex.decodePayload(code);
-      if (!payload || payload.error) return '';
-      const html = codexInlineEventHtml(payload, markerMotion(`CODEX2:${code}`));
-      if (html) { hasCodexCard = true; return html; }
-      return '';
-    }).replace(ITEMX_REF_RE, (_, ref, inline) => {
-      found = true;
-      const payload = runtime.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
-      if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
-      const motion = markerMotion(`ITEMX2@${ref}`);
-      const html = renderPayload(`item-ref:${ref}`, payload, motion);
-      if (html) { hasFullCard = true; return html; }
-      const item = payload.view || payload.event?.item;
-      return item ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>` : `<span class="itemx-event-chip">📦 ITEMX CODEX · ${ITEMXCore.esc(ref)}</span>`;
-    }).replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
-      found = true;
-      if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
-      const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
-      if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
-      const html = codexInlineEventHtml(payload, markerMotion(`CODEX2@${ref}`));
-      if (html) { hasCodexCard = true; return html; }
-      return '';
-    });
+    const rendered = source
+      .replace(ITEMXCore.MARKER_RE, (_, code) => {
+        found = true;
+        const payload = ITEMXCore.decodePayload(code);
+        if (!payload || payload.error) return '';
+        const motion = markerMotion(`ITEMX2:${code}`);
+        const html = renderPayload(`item:${code}`, payload, motion);
+        if (html) {
+          hasFullCard = true;
+          return html;
+        }
+        const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
+        return item
+          ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>`
+          : '';
+      })
+      .replace(ITEMXCodex.MARKER_RE, (_, code) => {
+        found = true;
+        const payload = ITEMXCodex.decodePayload(code);
+        if (!payload || payload.error) return '';
+        const html = codexInlineEventHtml(payload, markerMotion(`CODEX2:${code}`));
+        if (html) {
+          hasCodexCard = true;
+          return html;
+        }
+        return '';
+      })
+      .replace(ITEMX_REF_RE, (_, ref, inline) => {
+        found = true;
+        const payload = runtime.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
+        if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
+        const motion = markerMotion(`ITEMX2@${ref}`);
+        const html = renderPayload(`item-ref:${ref}`, payload, motion);
+        if (html) {
+          hasFullCard = true;
+          return html;
+        }
+        const item = payload.view || payload.event?.item;
+        return item
+          ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>`
+          : `<span class="itemx-event-chip">📦 ITEMX CODEX · ${ITEMXCore.esc(ref)}</span>`;
+      })
+      .replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
+        found = true;
+        if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
+        const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
+        if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
+        const html = codexInlineEventHtml(payload, markerMotion(`CODEX2@${ref}`));
+        if (html) {
+          hasCodexCard = true;
+          return html;
+        }
+        return '';
+      });
     if (!found) return content;
     if (runtime.mainStyle) return rendered;
     return `<style>${ITEMX_CHIP_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
@@ -1900,7 +2723,8 @@ ${codexPageStyle()}
       runtime.bodyFxScrollTimer = null;
       if (!runtime.bodyFxScrollActive) return;
       runtime.bodyFxScrollActive = false;
-      if (runtime.bodyFxClassOwner) void runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+      if (runtime.bodyFxClassOwner)
+        void runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
       runtime.hostSyncDeferred = false;
       scheduleHostDomSync(180);
       if (runtime.outputSyncDeferred) {
@@ -1912,10 +2736,14 @@ ${codexPageStyle()}
 
   async function removeBodyEffectGovernor() {
     const owner = runtime.bodyFxEventOwner;
-    if (owner) for (const binding of runtime.bodyFxEventIds) {
-      try { await owner.removeEventListener(binding.type, binding.id, true); }
-      catch (error) { debugRecord('body effect listener remove', error?.message || String(error)); }
-    }
+    if (owner)
+      for (const binding of runtime.bodyFxEventIds) {
+        try {
+          await owner.removeEventListener(binding.type, binding.id, true);
+        } catch (error) {
+          debugRecord('body effect listener remove', error?.message || String(error));
+        }
+      }
     runtime.bodyFxEventIds = [];
     runtime.bodyFxEventOwner = null;
   }
@@ -1923,10 +2751,11 @@ ${codexPageStyle()}
   async function installBodyEffectGovernor() {
     if (!runtime.mainDoc) return;
     try {
-      runtime.bodyFxClassOwner = await runtime.mainDoc.querySelector('.chattext') || runtime.bodyFxClassOwner;
+      runtime.bodyFxClassOwner = (await runtime.mainDoc.querySelector('.chattext')) || runtime.bodyFxClassOwner;
       if (runtime.bodyFxEventOwner) {
-        try { if (await runtime.bodyFxEventOwner.getParent()) return; }
-        catch {}
+        try {
+          if (await runtime.bodyFxEventOwner.getParent()) return;
+        } catch {}
         await removeBodyEffectGovernor();
       }
       const body = await runtime.mainDoc.querySelector('body');
@@ -1943,7 +2772,9 @@ ${codexPageStyle()}
         const id = await body.addEventListener(type, handler, true);
         runtime.bodyFxEventIds.push({ type, id });
       }
-    } catch (error) { debugRecord('body effect governor install', error?.message || String(error)); }
+    } catch (error) {
+      debugRecord('body effect governor install', error?.message || String(error));
+    }
   }
 
   async function syncMainEffectsState() {
@@ -1953,16 +2784,22 @@ ${codexPageStyle()}
       if (!body) return;
       if (runtime.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
       else await body.addClass('x-risu-itemx2-effects-off');
-    } catch (error) { debugRecord('effect setting sync', error?.message || String(error)); }
+    } catch (error) {
+      debugRecord('effect setting sync', error?.message || String(error));
+    }
   }
 
   async function syncRootFontScale(value) {
     const root = runtime.rootDrawer;
     if (!root) return;
     for (const scale of ['small', 'medium', 'large']) {
-      try { await root.removeClass(`x-risu-itemx2-font-${scale}`); } catch {}
+      try {
+        await root.removeClass(`x-risu-itemx2-font-${scale}`);
+      } catch {}
     }
-    try { await root.addClass(`x-risu-itemx2-font-${['small', 'medium', 'large'].includes(value) ? value : 'small'}`); } catch {}
+    try {
+      await root.addClass(`x-risu-itemx2-font-${['small', 'medium', 'large'].includes(value) ? value : 'small'}`);
+    } catch {}
   }
 
   async function installMainStyle() {
@@ -1991,12 +2828,21 @@ ${codexPageStyle()}
       runtime.mainDoc = doc;
       runtime.permissions.mainDom = true;
       const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
-      if (existing) { runtime.mainStyle = existing; await existing.setTextContent(mainStyleText()); runtime.mainStylePosition = runtime.badgePosition; await installBodyEffectGovernor(); await syncMainEffectsState(); await installHostObserver(); return true; }
+      if (existing) {
+        runtime.mainStyle = existing;
+        await existing.setTextContent(mainStyleText());
+        runtime.mainStylePosition = runtime.badgePosition;
+        await installBodyEffectGovernor();
+        await syncMainEffectsState();
+        await installHostObserver();
+        return true;
+      }
       const style = await doc.createElement('style');
       await style.setAttribute('x-itemx2-style', 'owner');
       await style.setTextContent(mainStyleText());
       const head = await doc.querySelector('head');
-      if (head) await head.appendChild(style); else await doc.appendChild(style);
+      if (head) await head.appendChild(style);
+      else await doc.appendChild(style);
       runtime.mainStyle = style;
       runtime.mainStylePosition = runtime.badgePosition;
       runtime.lastDomError = '';
@@ -2034,7 +2880,8 @@ ${codexPageStyle()}
     if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
     const html = ITEMXRenderer.renderCard(item, { motion });
     runtime.detailHtmlCache.set(key, html);
-    while (runtime.detailHtmlCache.size > 60) runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    while (runtime.detailHtmlCache.size > 60)
+      runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
     return html;
   }
 
@@ -2053,39 +2900,52 @@ ${codexPageStyle()}
 
   function codexEntries(loaded, domain) {
     const registry = domain === 'skill' ? loaded?.codexSnapshot?.skills : loaded?.codexSnapshot?.monsters;
-    return (registry?.order || []).map((id) => registry.entries[id]).filter(Boolean).slice(0, 60);
+    return (registry?.order || [])
+      .map((id) => registry.entries[id])
+      .filter(Boolean)
+      .slice(0, 60);
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
     if (!runtime.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
-    const marker = await runtime.mainDoc.querySelector(`.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`);
+    const marker = await runtime.mainDoc.querySelector(
+      `.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`
+    );
     if (!marker) return false;
     const index = Number(await marker.textContent());
     const entity = codexEntries(loaded, domain)[index];
     if (!entity) return false;
-    const portrait = domain === 'monster' ? (loaded.portraits?.[entity.id] || '') : '';
+    const portrait = domain === 'monster' ? loaded.portraits?.[entity.id] || '' : '';
     const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
     if (runtime.rootHydratedDetail === detailKey) return true;
     const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
     if (!detail) return false;
-    await detail.setInnerHTML(`<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}`);
+    await detail.setInnerHTML(
+      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}`
+    );
     runtime.rootHydratedDetail = detailKey;
     return true;
   }
 
   async function queryMainClass(className) {
     if (!runtime.mainDoc) return null;
-    return await runtime.mainDoc.querySelector(`.x-risu-${className}`)
-      || await runtime.mainDoc.querySelector(`.${className}`);
+    return (
+      (await runtime.mainDoc.querySelector(`.x-risu-${className}`)) ||
+      (await runtime.mainDoc.querySelector(`.${className}`))
+    );
   }
 
   async function removeRootClickRouter() {
     const owner = runtime.rootClickOwner;
     const bindings = runtime.rootClickBindings.slice();
-    if (owner) for (const binding of bindings) {
-      try { await owner.removeEventListener(binding.type, binding.id, binding.capture); }
-      catch (error) { debugRecord('root click remove', error?.message || String(error)); }
-    }
+    if (owner)
+      for (const binding of bindings) {
+        try {
+          await owner.removeEventListener(binding.type, binding.id, binding.capture);
+        } catch (error) {
+          debugRecord('root click remove', error?.message || String(error));
+        }
+      }
     runtime.rootClickBindings = [];
     runtime.rootClickOwner = null;
     runtime.rootClickBusy = false;
@@ -2095,15 +2955,24 @@ ${codexPageStyle()}
     if (runtime.feedbackTimer) globalThis.clearTimeout(runtime.feedbackTimer);
     runtime.feedbackTimer = null;
     await removeRootClickRouter();
-    try { if (runtime.rootDrawer) await runtime.rootDrawer.remove(); } catch {}
+    try {
+      if (runtime.rootDrawer) await runtime.rootDrawer.remove();
+    } catch {}
     if (runtime.mainDoc) {
       try {
         const safeRoots = await runtime.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
         const roots = await Risuai.unwarpSafeArray(safeRoots);
-        for (const root of roots) { try { await root.remove(); } catch {} }
-      } catch (error) { fail('remove duplicate root drawers', error); }
+        for (const root of roots) {
+          try {
+            await root.remove();
+          } catch {}
+        }
+      } catch (error) {
+        fail('remove duplicate root drawers', error);
+      }
     }
     runtime.rootDrawer = null;
+    runtime.rootOpen = false;
     runtime.rootFingerprint = '';
     runtime.rootContentReady = false;
   }
@@ -2114,7 +2983,9 @@ ${codexPageStyle()}
     const root = await runtime.mainDoc.createElement('div');
     await root.setAttribute('x-itemx2-drawer', 'owner');
     await root.setClassName('x-risu-itemx2-root-drawer x-risu-itemx2-booting');
-    await root.setInnerHTML(`<div class="itemx2-boot-card" role="status" aria-live="polite"><i></i><span><strong>${ITEMXCore.esc(label)}</strong><small>화면과 모델 연결을 준비하고 있습니다.</small></span></div>`);
+    await root.setInnerHTML(
+      `<div class="itemx2-boot-card" role="status" aria-live="polite"><i></i><span><strong>${ITEMXCore.esc(label)}</strong><small>화면과 모델 연결을 준비하고 있습니다.</small></span></div>`
+    );
     const body = await runtime.mainDoc.querySelector('body');
     if (!body) return false;
     await body.appendChild(root);
@@ -2128,7 +2999,9 @@ ${codexPageStyle()}
     try {
       const target = await runtime.mainDoc.querySelector('.x-risu-itemx2-boot-card strong');
       if (target) await target.setTextContent(label);
-    } catch (error) { fail('loading label', error); }
+    } catch (error) {
+      fail('loading label', error);
+    }
   }
 
   async function showRootFeedback(message, tone = 'success', timeoutMs = 2600) {
@@ -2169,16 +3042,26 @@ ${codexPageStyle()}
   }
 
   async function lorebookEntries(contextKey, { refresh = false } = {}) {
-    if (!refresh && runtime.lorebookCache.key === contextKey && runtime.lorebookCache.at && Date.now() - runtime.lorebookCache.at < 10000) return runtime.lorebookCache.rows;
+    if (
+      !refresh &&
+      runtime.lorebookCache.key === contextKey &&
+      runtime.lorebookCache.at &&
+      Date.now() - runtime.lorebookCache.at < 10000
+    )
+      return runtime.lorebookCache.rows;
     const response = await callOptionalRisuApi('getCurrentLorebookEntries');
     if (!response.available) {
       const error = new Error('현재 RisuAI에서 로어북 조회 API를 지원하지 않습니다.');
       error.code = 'LOREBOOK_API_UNAVAILABLE';
       throw error;
     }
-    const rows = Array.isArray(response.value) ? response.value
-      : Array.isArray(response.value?.entries) ? response.value.entries
-        : Array.isArray(response.value?.lorebook) ? response.value.lorebook : [];
+    const rows = Array.isArray(response.value)
+      ? response.value
+      : Array.isArray(response.value?.entries)
+        ? response.value.entries
+        : Array.isArray(response.value?.lorebook)
+          ? response.value.lorebook
+          : [];
     runtime.lorebookCache = { key: contextKey, at: Date.now(), rows };
     return rows;
   }
@@ -2194,19 +3077,32 @@ ${codexPageStyle()}
       const scanResult = await enqueue(ctx.key, async () => {
         const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
         if (!latest) throw new Error('현재 채팅을 다시 불러오지 못했습니다.');
-        if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
+        if (
+          latest.isStreaming ||
+          (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)
+        ) {
           throw new Error('출력 스트리밍이 끝난 뒤 로어북을 스캔할 수 있습니다.');
         }
         const lookup = buildMessageEventLookup(latest);
         const base = rebuildCodexWithLedger(latest, lookup);
         const previous = ITEMXLorebook.read(latest);
+        const sourceFingerprint = `${ctx.key}:${encounterRegistryFingerprint(base)}:${ITEMXCore.fnv1a(JSON.stringify(entries))}:${ITEMXCore.fnv1a(JSON.stringify(previous.rows))}`;
+        if (!refresh && silent && runtime.lorebookAutoFingerprint === sourceFingerprint)
+          return { changed: false, sourceFingerprint, result: { enriched: 0, removed: 0, matched: 0, ambiguous: 0 } };
         const scanned = ITEMXLorebook.scan(base, entries, previous);
-        if (!scanned.result.enriched && !scanned.result.removed) return { ...scanned, changed: false };
+        if (!scanned.result.enriched && !scanned.result.removed)
+          return { ...scanned, changed: false, sourceFingerprint };
         const next = ITEMXCore.clone(latest);
         next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) };
         await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, next);
-        return { ...scanned, changed: true };
+        return {
+          ...scanned,
+          changed: true,
+          sourceFingerprint: `${ctx.key}:${encounterRegistryFingerprint(base)}:${ITEMXCore.fnv1a(JSON.stringify(entries))}:${ITEMXCore.fnv1a(JSON.stringify(scanned.ledger.rows))}`
+        };
       });
+      const current = await context();
+      if (runtime.unloading || current?.key !== ctx.key) return scanResult;
       if (scanResult.changed) {
         runtime.cachedLoaded = null;
         runtime.detailHtmlCache.clear();
@@ -2215,24 +3111,34 @@ ${codexPageStyle()}
         await rebuildCurrent();
       }
       const summary = scanResult.result;
-      if (!silent || summary.enriched || summary.removed) runtime.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
+      runtime.lorebookAutoFingerprint = scanResult.sourceFingerprint;
+      if (!silent || summary.enriched || summary.removed)
+        runtime.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
       debugRecord('lorebook scan', summary);
-      if (!silent) await notifyUser(`조우 로어북 스캔 완료 · 보완 ${summary.enriched}건 · 정리 ${summary.removed}건 · 일치 ${summary.matched}건${summary.ambiguous ? ` · 모호하여 제외 ${summary.ambiguous}건` : ''}`, 'success');
+      if (!silent)
+        await notifyUser(
+          `조우 로어북 스캔 완료 · 보완 ${summary.enriched}건 · 정리 ${summary.removed}건 · 일치 ${summary.matched}건${summary.ambiguous ? ` · 모호하여 제외 ${summary.ambiguous}건` : ''}`,
+          'success'
+        );
       return scanResult;
-    })().catch(async (error) => {
-      if (!silent) await notifyUser(`조우 로어북 스캔 실패: ${error.message || error}`, 'error');
-      else debugRecord('automatic lorebook scan skipped', error?.message || String(error));
-      return null;
-    }).finally(() => {
-      if (runtime.lorebookScanPromise === pending) runtime.lorebookScanPromise = null;
-    });
+    })()
+      .catch(async (error) => {
+        if (!silent) await notifyUser(`조우 로어북 스캔 실패: ${error.message || error}`, 'error');
+        else debugRecord('automatic lorebook scan skipped', error?.message || String(error));
+        return null;
+      })
+      .finally(() => {
+        if (runtime.lorebookScanPromise === pending) runtime.lorebookScanPromise = null;
+      });
     runtime.lorebookScanPromise = pending;
     return pending;
   }
 
   async function notifyUser(message, tone = 'error') {
     if (await showRootFeedback(message, tone, tone === 'error' ? 4200 : 2600)) return true;
-    for (const name of tone === 'error' ? ['alertError', 'alertNormal', 'alert'] : ['alertNormal', 'alert', 'alertError']) {
+    for (const name of tone === 'error'
+      ? ['alertError', 'alertNormal', 'alert']
+      : ['alertNormal', 'alert', 'alertError']) {
       try {
         const result = await callOptionalRisuApi(name, message);
         if (result.available) return true;
@@ -2269,15 +3175,21 @@ ${codexPageStyle()}
     if (runtime.hostSyncTimer) globalThis.clearTimeout(runtime.hostSyncTimer);
     runtime.hostSyncTimer = globalThis.setTimeout(async () => {
       runtime.hostSyncTimer = null;
-      if (runtime.bodyFxScrollActive) { runtime.hostSyncDeferred = true; return; }
+      if (runtime.bodyFxScrollActive) {
+        runtime.hostSyncDeferred = true;
+        return;
+      }
       if (runtime.hostSyncBusy) return;
       runtime.hostSyncBusy = true;
       try {
         await installBodyEffectGovernor();
         await ensureRootInventory();
         await syncHostSettingsVisibility();
-      } catch (error) { debugRecord('host DOM sync', error?.message || String(error)); }
-      finally { runtime.hostSyncBusy = false; }
+      } catch (error) {
+        debugRecord('host DOM sync', error?.message || String(error));
+      } finally {
+        runtime.hostSyncBusy = false;
+      }
     }, delayMs);
   }
 
@@ -2294,7 +3206,10 @@ ${codexPageStyle()}
         void (async () => {
           try {
             const records = await Risuai.unwarpSafeArray(recordsSafe);
-            if (!records.length) { scheduleHostDomSync(); return; }
+            if (!records.length) {
+              scheduleHostDomSync();
+              return;
+            }
             for (const record of records) {
               const target = await record.getTarget();
               if (!target || !(await target.matches('[x-itemx2-drawer="owner"], [x-itemx2-drawer="owner"] *'))) {
@@ -2308,14 +3223,22 @@ ${codexPageStyle()}
           }
         })();
       });
-      if (runtime.hostObserver?.observe) await runtime.hostObserver.observe(body, { childList: true, subtree: true });
+      if (!runtime.hostObserver?.observe) throw new Error('Mutation observer unavailable');
+      await runtime.hostObserver.observe(body, { childList: true, subtree: true });
+      armRemountWatchdog();
     } catch (error) {
+      try {
+        await runtime.hostObserver?.disconnect();
+      } catch {}
       runtime.hostObserver = null;
+      armRemountWatchdog();
       debugRecord('host observer install', error?.message || String(error));
     }
   }
 
-  function invalidateHostSettingsVisibility() { runtime.hostSettingsCache.at = 0; }
+  function invalidateHostSettingsVisibility() {
+    runtime.hostSettingsCache.at = 0;
+  }
 
   async function hostPluginSettingsVisible() {
     if (!runtime.mainDoc || runtime.allowDrawerOverSettings) return false;
@@ -2325,7 +3248,9 @@ ${codexPageStyle()}
       const safeTargets = await runtime.mainDoc.querySelectorAll('button,[role="button"]');
       const targets = await Risuai.unwarpSafeArray(safeTargets);
       for (const target of targets.slice(0, 96)) {
-        const text = String(await target.textContent() || '').replace(/\s+/g, ' ').trim();
+        const text = String((await target.textContent()) || '')
+          .replace(/\s+/g, ' ')
+          .trim();
         if (!text.includes('ITEMX CODEX · 권한 및 설정')) continue;
         const rect = await target.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
@@ -2333,7 +3258,9 @@ ${codexPageStyle()}
           return true;
         }
       }
-    } catch (error) { fail('host settings visibility', error); }
+    } catch (error) {
+      fail('host settings visibility', error);
+    }
     runtime.hostSettingsCache = { at: now, visible: false };
     return false;
   }
@@ -2346,28 +3273,38 @@ ${codexPageStyle()}
     try {
       if (visible) await runtime.rootDrawer.addClass('x-risu-itemx2-host-settings');
       else await runtime.rootDrawer.removeClass('x-risu-itemx2-host-settings');
-    } catch (error) { fail('host settings badge visibility', error); }
+    } catch (error) {
+      fail('host settings badge visibility', error);
+    }
   }
 
   async function setRootOpen(open) {
     if (!runtime.rootDrawer) return false;
     try {
-      if (!(await runtime.rootDrawer.getParent())) return false;
+      if (!(await runtime.rootDrawer.getParent())) {
+        runtime.rootOpen = false;
+        return false;
+      }
       if (open) await runtime.rootDrawer.addClass('x-risu-itemx2-is-open');
       else {
         await runtime.rootDrawer.removeClass('x-risu-itemx2-is-open');
+        runtime.rootOpen = false;
         runtime.allowDrawerOverSettings = false;
         invalidateHostSettingsVisibility();
         await syncHostSettingsVisibility();
       }
+      runtime.rootOpen = Boolean(open);
       return true;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }
 
   async function resetRuntimeForContext(active) {
     const nextKey = active?.key || '';
     if (runtime.activeContextKey === nextKey) return false;
     runtime.activeContextKey = nextKey;
+    armRemountWatchdog();
     runtime.rootItemPage = 0;
     runtime.rootHydratedDetail = '';
     invalidateHostSettingsVisibility();
@@ -2382,6 +3319,7 @@ ${codexPageStyle()}
     runtime.catchUpFailures = 0;
     runtime.catchUpRetryAt = 0;
     runtime.auxCandidateFingerprint = '';
+    runtime.lorebookAutoFingerprint = '';
     runtime.cleanupArmedUntil = 0;
     runtime.uiRemountAfter = 0;
     if (runtime.legacyCommitTimer) globalThis.clearTimeout(runtime.legacyCommitTimer);
@@ -2391,7 +3329,9 @@ ${codexPageStyle()}
     if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
     runtime.bodyFxScrollTimer = null;
     if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
-      try { await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
+      try {
+        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+      } catch {}
     }
     runtime.bodyFxScrollActive = false;
     runtime.bodyFxSawScroll = false;
@@ -2403,7 +3343,18 @@ ${codexPageStyle()}
     return true;
   }
 
-  async function ensureRootInventory() {
+  let rootEnsurePromise = null;
+  function ensureRootInventory() {
+    if (runtime.unloading || runtime.bodyFxScrollActive) return Promise.resolve();
+    if (rootEnsurePromise) return rootEnsurePromise;
+    const pending = ensureRootInventoryNow().finally(() => {
+      if (rootEnsurePromise === pending) rootEnsurePromise = null;
+    });
+    rootEnsurePromise = pending;
+    return pending;
+  }
+
+  async function ensureRootInventoryNow() {
     if (runtime.bodyFxScrollActive) return;
     runtime.remountFallbackAt = Date.now();
     const active = await context();
@@ -2413,13 +3364,17 @@ ${codexPageStyle()}
       return;
     }
     const cached = runtime.cachedLoaded;
-    const replayChanged = !contextChanged && cached?.key === active.key
-      && cached.replayFingerprint !== replaySourceFingerprint(active.chat);
+    const replayChanged =
+      !contextChanged &&
+      cached?.key === active.key &&
+      cached.replayFingerprint !== replaySourceFingerprint(active.chat);
     if (runtime.remounting) return;
-    if (!contextChanged && (runtime.auxActive > 0 || runtime.auxRecoveryPromise || Date.now() < runtime.uiRemountAfter)) return;
+    if (!contextChanged && (runtime.auxActive > 0 || runtime.auxRecoveryPromise || Date.now() < runtime.uiRemountAfter))
+      return;
     runtime.remounting = true;
     try {
-      if (!runtime.hooks.output || !runtime.hooks.display || !runtime.hooks.before || !runtime.hooks.after) await installPipelineHooks();
+      if (!runtime.hooks.output || !runtime.hooks.display || !runtime.hooks.before || !runtime.hooks.after)
+        await installPipelineHooks();
       if (contextChanged) {
         if (!runtime.mainDoc && !(await installMainStyle())) return;
         const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
@@ -2430,14 +3385,18 @@ ${codexPageStyle()}
       if (!runtime.mainDoc && !(await installMainStyle())) return;
       let drawerAttached = false;
       if (runtime.rootDrawer) {
-        try { drawerAttached = Boolean(await runtime.rootDrawer.getParent()); }
-        catch { runtime.rootDrawer = null; }
+        try {
+          drawerAttached = Boolean(await runtime.rootDrawer.getParent());
+        } catch {
+          runtime.rootDrawer = null;
+        }
       }
       if (!drawerAttached) {
         const safeMounted = await runtime.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
         const mounted = await Risuai.unwarpSafeArray(safeMounted);
         if (mounted.length === 1) {
           runtime.rootDrawer = mounted[0];
+          runtime.rootOpen = Boolean(await runtime.rootDrawer.matches('.x-risu-itemx2-is-open'));
           await installRootClickRouter(runtime.rootDrawer);
         } else {
           await removeRootClickRouter();
@@ -2448,31 +3407,48 @@ ${codexPageStyle()}
       }
       let styleAttached = false;
       if (runtime.mainStyle) {
-        try { styleAttached = Boolean(await runtime.mainStyle.getParent()); }
-        catch { runtime.mainStyle = null; }
+        try {
+          styleAttached = Boolean(await runtime.mainStyle.getParent());
+        } catch {
+          runtime.mainStyle = null;
+        }
       }
       if (!styleAttached) {
         const style = await runtime.mainDoc.querySelector('style[x-itemx2-style="owner"]');
         if (style) runtime.mainStyle = style;
-        else { runtime.mainStyle = null; await installMainStyle(); }
+        else {
+          runtime.mainStyle = null;
+          await installMainStyle();
+        }
       }
       if (replayChanged) {
         const loaded = await rebuildCurrent();
         if (loaded) {
           let open = false;
-          try { open = Boolean(await runtime.rootDrawer?.matches('.x-risu-itemx2-is-open')); } catch {}
+          try {
+            open = Boolean(await runtime.rootDrawer?.matches('.x-risu-itemx2-is-open'));
+          } catch {}
           await openRootInventory({ open, loaded, tab: runtime.activeRootTab });
         }
       }
-    } catch (error) { fail('root remount', error); }
-    finally { runtime.remounting = false; }
+    } catch (error) {
+      fail('root remount', error);
+    } finally {
+      runtime.remounting = false;
+    }
   }
 
   async function loadCodexPortraits(character, chat, codexSnapshot, settings) {
-    const result = {}, catalog = combinedPortraitAssets(character, await modulePortraitAssets(settings, character, chat), ITEMXCodex.ASSET_CATALOG_MAX);
+    const result = {},
+      catalog = combinedPortraitAssets(
+        character,
+        await modulePortraitAssets(settings, character, chat),
+        ITEMXCodex.ASSET_CATALOG_MAX
+      );
     if (typeof Risuai.readImage !== 'function') return result;
     const asDataUrl = (value, ext = '') => {
-      if (typeof value === 'string') return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
+      if (typeof value === 'string')
+        return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
       let bytes = null;
       if (value instanceof Uint8Array) bytes = value;
       else if (value instanceof ArrayBuffer) bytes = new Uint8Array(value);
@@ -2480,27 +3456,59 @@ ${codexPageStyle()}
       else if (value?.data instanceof Uint8Array) bytes = value.data;
       if (!bytes?.length || bytes.length > 12 * 1024 * 1024) return '';
       const lower = String(ext || '').toLowerCase();
-      const isoBrand = bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
-        ? String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]) : '';
-      const mime = bytes[0] === 0x89 && bytes[1] === 0x50 ? 'image/png'
-        : bytes[0] === 0xff && bytes[1] === 0xd8 ? 'image/jpeg'
-          : bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50 ? 'image/webp'
-            : bytes[0] === 0x47 && bytes[1] === 0x49 ? 'image/gif'
-              : ['avif', 'avis', 'mif1', 'miaf'].includes(isoBrand) ? 'image/avif'
-                : ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' }[lower] || '');
+      const isoBrand =
+        bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+          ? String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11])
+          : '';
+      const mime =
+        bytes[0] === 0x89 && bytes[1] === 0x50
+          ? 'image/png'
+          : bytes[0] === 0xff && bytes[1] === 0xd8
+            ? 'image/jpeg'
+            : bytes[0] === 0x52 &&
+                bytes[1] === 0x49 &&
+                bytes[8] === 0x57 &&
+                bytes[9] === 0x45 &&
+                bytes[10] === 0x42 &&
+                bytes[11] === 0x50
+              ? 'image/webp'
+              : bytes[0] === 0x47 && bytes[1] === 0x49
+                ? 'image/gif'
+                : ['avif', 'avis', 'mif1', 'miaf'].includes(isoBrand)
+                  ? 'image/avif'
+                  : {
+                      png: 'image/png',
+                      jpg: 'image/jpeg',
+                      jpeg: 'image/jpeg',
+                      webp: 'image/webp',
+                      gif: 'image/gif',
+                      avif: 'image/avif'
+                    }[lower] || '';
       if (!mime) return '';
-      let binary = ''; for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+      let binary = '';
+      for (let offset = 0; offset < bytes.length; offset += 0x8000)
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
       return `data:${mime};base64,${btoa(binary)}`;
     };
-    const monsters = (codexSnapshot?.monsters?.order || []).map((id) => codexSnapshot.monsters.entries[id]).filter(Boolean).slice(0, 20);
-    const narrative = (chat?.message || []).slice(-8).map((message) => ITEMXCore.messageText(message)).join('\n');
+    const monsters = (codexSnapshot?.monsters?.order || [])
+      .map((id) => codexSnapshot.monsters.entries[id])
+      .filter(Boolean)
+      .slice(0, 20);
+    const narrative = (chat?.message || [])
+      .slice(-8)
+      .map((message) => ITEMXCore.messageText(message))
+      .join('\n');
     let portraitCursor = 0;
     const loadNextPortrait = async () => {
       while (portraitCursor < monsters.length) {
         const monster = monsters[portraitCursor++];
-        const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative); if (!asset) continue;
+        const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
+        if (!asset) continue;
         const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
-        if (runtime.portraitCache.has(cacheKey)) { result[monster.id] = runtime.portraitCache.get(cacheKey); continue; }
+        if (runtime.portraitCache.has(cacheKey)) {
+          result[monster.id] = runtime.portraitCache.get(cacheKey);
+          continue;
+        }
         try {
           let raw = null;
           for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -2519,8 +3527,10 @@ ${codexPageStyle()}
               runtime.portraitCache.set(cacheKey, image);
               runtime.portraitCacheBytes += image.length;
               while (runtime.portraitCache.size > 24 || runtime.portraitCacheBytes > 16 * 1024 * 1024) {
-                const oldest = runtime.portraitCache.keys().next().value, removed = runtime.portraitCache.get(oldest) || '';
-                runtime.portraitCache.delete(oldest); runtime.portraitCacheBytes = Math.max(0, runtime.portraitCacheBytes - removed.length);
+                const oldest = runtime.portraitCache.keys().next().value,
+                  removed = runtime.portraitCache.get(oldest) || '';
+                runtime.portraitCache.delete(oldest);
+                runtime.portraitCacheBytes = Math.max(0, runtime.portraitCacheBytes - removed.length);
               }
             }
           }
@@ -2534,7 +3544,10 @@ ${codexPageStyle()}
   const skillEmoji = (skill) => ITEMXCore.resolveSkillGlyph(skill);
   const encounterEmoji = (monster) => ITEMXCore.resolveMonsterGlyph(monster);
 
-  const themeText = (value) => String(value || '').trim().toLowerCase();
+  const themeText = (value) =>
+    String(value || '')
+      .trim()
+      .toLowerCase();
   function skillTheme(skill) {
     const value = themeText(`${skill.affinity || ''} ${skill.school || ''}`);
     if (/화염|불|fire|flame|ember/.test(value)) return 'fire';
@@ -2562,7 +3575,9 @@ ${codexPageStyle()}
   }
   function skillFxClasses(skill, rarityMode = 'world') {
     const type = ['active', 'passive', 'sealed'].includes(themeText(skill.type)) ? themeText(skill.type) : 'active';
-    const status = ['learned', 'equipped', 'sealed', 'lost'].includes(themeText(skill.status)) ? themeText(skill.status) : 'learned';
+    const status = ['learned', 'equipped', 'sealed', 'lost'].includes(themeText(skill.status))
+      ? themeText(skill.status)
+      : 'learned';
     const tier = skillRankTier(skill.rank, rarityMode);
     return `itemx2-skill-theme-${skillTheme(skill)} itemx2-skill-rank-${tier} rarity-${tier} itemx2-skill-type-${type} itemx2-skill-status-${status}`;
   }
@@ -2585,14 +3600,19 @@ ${codexPageStyle()}
     return 0;
   }
   function encounterFxClasses(monster) {
-    const relation = themeText(monster.relation), status = themeText(monster.status);
+    const relation = themeText(monster.relation),
+      status = themeText(monster.status);
     const warning = monster.active || /hostile|적대|enemy|전투/.test(relation) ? 'itemx2-encounter-warning' : '';
     const sparring = /대련|spar|rival|friendly/.test(relation) ? 'itemx2-encounter-sparring' : '';
-    const ended = /ended|defeated|escaped|dead|lost|종료|격퇴|패배|도주|사망|소실/.test(status) ? 'itemx2-encounter-ended' : '';
+    const ended = /ended|defeated|escaped|dead|lost|종료|격퇴|패배|도주|사망|소실/.test(status)
+      ? 'itemx2-encounter-ended'
+      : '';
     return `itemx2-encounter-theme-${encounterTheme(monster)} itemx2-threat-${encounterThreatLevel(monster.threat)} ${warning} ${sparring} ${ended}`.trim();
   }
-  const codexListFx = (domain, classes) => `<span class="itemx2-codex-fx itemx2-codex-list-fx itemx2-${domain}-list-fx ${classes}" aria-hidden="true"></span>`;
-  const codexHeroFx = (domain) => `<span class="itemx2-codex-fx itemx2-codex-hero-fx itemx2-${domain}-hero-fx" aria-hidden="true"><i></i><b></b><em></em></span>`;
+  const codexListFx = (domain, classes) =>
+    `<span class="itemx2-codex-fx itemx2-codex-list-fx itemx2-${domain}-list-fx ${classes}" aria-hidden="true"></span>`;
+  const codexHeroFx = (domain) =>
+    `<span class="itemx2-codex-fx itemx2-codex-hero-fx itemx2-${domain}-hero-fx" aria-hidden="true"><i></i><b></b><em></em></span>`;
 
   function skillSummaryHtml(skill, rarityMode = 'world') {
     const knownMastery = skill.mastery != null && Number.isFinite(Number(skill.mastery));
@@ -2608,28 +3628,46 @@ ${codexPageStyle()}
     const levelLabel = skill.level == null ? '미상' : `Lv.${Number(skill.level)}`;
     const masteryLabel = knownMastery ? `${Number(skill.mastery)}%` : '미상';
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
-    const affinity = skillTheme(skill), tier = skillRankTier(skill.rank, rarityMode);
+    const affinity = skillTheme(skill),
+      tier = skillRankTier(skill.rank, rarityMode);
     const fx = ITEMXRenderer.renderSkillFx({ id: skill.id, name: skill.name, affinity }, tier, 'full');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section></div>`;
   }
 
   function monsterSummaryHtml(monster, portrait = '') {
-    const visual = portrait ? `<img src="${ITEMXCore.esc(portrait)}" alt="">` : `<span class="itemx2-codex-glyph">${ITEMXCore.esc(encounterEmoji(monster))}</span>`;
-    return `${codexListFx('encounter', encounterFxClasses(monster))}${visual}<span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(monster.name)}</strong><small>${ITEMXCore.esc(monster.kind)} · 위협 ${ITEMXCore.esc(monster.threat)} · ${ITEMXCore.esc(monster.status)}</small><span class="itemx2-codex-tags"><i>⚔️ ${ITEMXCore.esc(monster.relation)}</i>${(monster.weaknesses || []).slice(0, 2).map((one) => `<i>🎯 약점 ${ITEMXCore.esc(one)}</i>`).join('')}</span></span><span class="itemx2-codex-glyph">${monster.active ? '⚔️' : '📖'}</span>`;
+    const visual = portrait
+      ? `<img src="${ITEMXCore.esc(portrait)}" alt="">`
+      : `<span class="itemx2-codex-glyph">${ITEMXCore.esc(encounterEmoji(monster))}</span>`;
+    return `${codexListFx('encounter', encounterFxClasses(monster))}${visual}<span class="itemx2-codex-copy"><strong>${ITEMXCore.esc(monster.name)}</strong><small>${ITEMXCore.esc(monster.kind)} · 위협 ${ITEMXCore.esc(monster.threat)} · ${ITEMXCore.esc(monster.status)}</small><span class="itemx2-codex-tags"><i>⚔️ ${ITEMXCore.esc(monster.relation)}</i>${(
+      monster.weaknesses || []
+    )
+      .slice(0, 2)
+      .map((one) => `<i>🎯 약점 ${ITEMXCore.esc(one)}</i>`)
+      .join('')}</span></span><span class="itemx2-codex-glyph">${monster.active ? '⚔️' : '📖'}</span>`;
   }
 
   function monsterPageHtml(monster, portrait, back) {
-    const visual = portrait ? `<img class="itemx-monster-portrait" src="${ITEMXCore.esc(portrait)}" alt="">` : `<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(encounterEmoji(monster))}</span>`;
-    const chips = (label, values, fallback) => `<section class="itemx-codex-section"><h4>${label}</h4><span class="itemx-codex-chip-row">${(values || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || `<i>${fallback}</i>`}</span></section>`;
+    const visual = portrait
+      ? `<img class="itemx-monster-portrait" src="${ITEMXCore.esc(portrait)}" alt="">`
+      : `<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(encounterEmoji(monster))}</span>`;
+    const chips = (label, values, fallback) =>
+      `<section class="itemx-codex-section"><h4>${label}</h4><span class="itemx-codex-chip-row">${(values || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || `<i>${fallback}</i>`}</span></section>`;
     const outcomeLabels = { ended: '교전 종료', escaped: '도주', defeated: '토벌', dead: '사망', unknown: '결말 기록' };
     const outcomeStatus = themeText(monster.outcomeStatus || monster.status);
-    const outcome = monster.outcome ? `<section class="itemx-codex-section itemx2-encounter-outcome"><span class="itemx2-encounter-outcome-head"><h4>⚔️ 최근 전투 결과</h4><i>${ITEMXCore.esc(outcomeLabels[outcomeStatus] || '결말 기록')}${monster.outcomeEncounter ? ` · ${Number(monster.outcomeEncounter)}번째 조우` : ''}</i></span><p>${ITEMXCore.esc(monster.outcome)}</p></section>` : '';
-    const lore = monster._lore ? '<section class="itemx-codex-section"><small>📚 로어북 공개 정보로 보완된 기록</small></section>' : '';
+    const outcome = monster.outcome
+      ? `<section class="itemx-codex-section itemx2-encounter-outcome"><span class="itemx2-encounter-outcome-head"><h4>⚔️ 최근 전투 결과</h4><i>${ITEMXCore.esc(outcomeLabels[outcomeStatus] || '결말 기록')}${monster.outcomeEncounter ? ` · ${Number(monster.outcomeEncounter)}번째 조우` : ''}</i></span><p>${ITEMXCore.esc(monster.outcome)}</p></section>`
+      : '';
+    const lore = monster._lore
+      ? '<section class="itemx-codex-section"><small>📚 로어북 공개 정보로 보완된 기록</small></section>'
+      : '';
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}${lore}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
   }
 
-  const unwrapCodexPage = (html) => String(html || '').replace(/^<div class="itemx-codex-page itemx2-codex-page">/, '').replace(/<\/div>$/, '');
+  const unwrapCodexPage = (html) =>
+    String(html || '')
+      .replace(/^<div class="itemx-codex-page itemx2-codex-page">/, '')
+      .replace(/<\/div>$/, '');
   const portraitRevision = (portrait) => {
     const source = String(portrait || '');
     if (!source) return 'none';
@@ -2645,69 +3683,196 @@ ${codexPageStyle()}
   function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 'world') {
     const key = codexDetailCacheKey(domain, entity, portrait, rarityMode);
     if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
-    const back = domain === 'skill'
-      ? '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>'
-      : '<label class="itemx-codex-back" for="itemx2-monster-none">‹ 조우 목록</label>';
-    const html = unwrapCodexPage(domain === 'skill' ? skillPageHtml(entity, back, rarityMode) : monsterPageHtml(entity, portrait, back));
+    const back =
+      domain === 'skill'
+        ? '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>'
+        : '<label class="itemx-codex-back" for="itemx2-monster-none">‹ 조우 목록</label>';
+    const html = unwrapCodexPage(
+      domain === 'skill' ? skillPageHtml(entity, back, rarityMode) : monsterPageHtml(entity, portrait, back)
+    );
     runtime.detailHtmlCache.set(key, html);
-    while (runtime.detailHtmlCache.size > 60) runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    while (runtime.detailHtmlCache.size > 60)
+      runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
     return html;
   }
 
   function rootBadgeHtml() {
-    const update = runtime.update.available ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>` : '';
+    const update = runtime.update.available
+      ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>`
+      : '';
     return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(runtime.auxLabel)}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
-  const updateLabelHtml = () => runtime.update.available ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>` : '';
+  const updateLabelHtml = () =>
+    runtime.update.available
+      ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>`
+      : '';
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
-    if (!open) return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
+    if (!open)
+      return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
     const all = itemsOf(loaded.snapshot).slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
     const pageStart = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
     const inventoryPage = tab === 'inventory' ? all.slice(pageStart, pageStart + ITEMX_ROOT_PAGE_SIZE) : [];
-    const skills = (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean).slice(0, 60);
-    const monsters = (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean).slice(0, 60);
+    const skills = (loaded.codexSnapshot?.skills?.order || [])
+      .map((id) => loaded.codexSnapshot.skills.entries[id])
+      .filter(Boolean)
+      .slice(0, 60);
+    const monsters = (loaded.codexSnapshot?.monsters?.order || [])
+      .map((id) => loaded.codexSnapshot.monsters.entries[id])
+      .filter(Boolean)
+      .slice(0, 60);
     const counts = {
-      all: all.length, owned: all.filter((item) => item.possession === 'owned').length,
+      all: all.length,
+      owned: all.filter((item) => item.possession === 'owned').length,
       equipped: all.filter((item) => item.location === 'equipped').length,
       observed: all.filter((item) => item.possession === 'observed').length,
       removed: all.filter((item) => item.possession === 'removed').length
     };
-    const filters = [['all', '전체'], ['owned', '보유'], ['equipped', '장착'], ['observed', '관찰'], ['removed', '소실']];
-    const controls = filters.map(([key]) => `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`).join('');
-    const skillList = tab === 'skills' ? (skills.map((skill, index) => `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-skill-entry-choice" id="itemx2-skill-${index}" name="itemx2-skill-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-skill-card" for="itemx2-skill-${index}">${skillSummaryHtml(skill, loaded.rarityMode)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-skill-detail itemx2-root-skill-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div>`).join('') || '<div class="itemx2-codex-empty">아직 확정된 스킬이 없답니다.</div>') : '';
-    const monsterList = tab === 'bestiary' ? (monsters.map((monster, index) => {
-      const portrait = loaded.portraits?.[monster.id] || '';
-      return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-monster-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-monster-detail itemx2-root-monster-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div>`;
-    }).join('') || '<div class="itemx2-codex-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>') : '';
-    const list = tab === 'inventory' ? (inventoryPage.map((item, index) => {
-      const detailId = `itemx2-detail-${index}`;
-      const tile = ITEMXRenderer.renderTile(item).replace(/^<button\b/, '<span').replace(/<\/button>$/, '</span>');
-      const classes = [item.possession === 'owned' && 'itemx2-match-owned', item.location === 'equipped' && 'itemx2-match-equipped', item.possession === 'observed' && 'itemx2-match-observed', item.possession === 'removed' && 'itemx2-match-removed'].filter(Boolean).join(' ');
-      return `<div class="itemx2-root-item ${classes}"><input class="itemx2-root-control itemx2-root-detail-choice" id="${detailId}" name="itemx2-detail" type="radio"><label class="itemx2-root-tile-label itemx2-root-tile-${index}" for="${detailId}">${tile}</label><div class="itemx2-root-detail itemx-body"><label class="itemx-back itemx2-root-back" for="itemx2-detail-none">‹ 목록으로</label><div class="itemx-detail itemx2-root-detail-body-${index}"><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div></div>`;
-    }).join('') || '<div class="itemx2-root-empty">표시할 아이템이 없답니다.</div>') : '';
+    const filters = [
+      ['all', '전체'],
+      ['owned', '보유'],
+      ['equipped', '장착'],
+      ['observed', '관찰'],
+      ['removed', '소실']
+    ];
+    const controls = filters
+      .map(
+        ([key]) =>
+          `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`
+      )
+      .join('');
+    const skillList =
+      tab === 'skills'
+        ? skills
+            .map(
+              (skill, index) =>
+                `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-skill-entry-choice" id="itemx2-skill-${index}" name="itemx2-skill-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-skill-card" for="itemx2-skill-${index}">${skillSummaryHtml(skill, loaded.rarityMode)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-skill-detail itemx2-root-skill-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div>`
+            )
+            .join('') || '<div class="itemx2-codex-empty">아직 확정된 스킬이 없답니다.</div>'
+        : '';
+    const monsterList =
+      tab === 'bestiary'
+        ? monsters
+            .map((monster, index) => {
+              const portrait = loaded.portraits?.[monster.id] || '';
+              return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-monster-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-monster-detail itemx2-root-monster-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div>`;
+            })
+            .join('') || '<div class="itemx2-codex-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'
+        : '';
+    const list =
+      tab === 'inventory'
+        ? inventoryPage
+            .map((item, index) => {
+              const detailId = `itemx2-detail-${index}`;
+              const tile = ITEMXRenderer.renderTile(item)
+                .replace(/^<button\b/, '<span')
+                .replace(/<\/button>$/, '</span>');
+              const classes = [
+                item.possession === 'owned' && 'itemx2-match-owned',
+                item.location === 'equipped' && 'itemx2-match-equipped',
+                item.possession === 'observed' && 'itemx2-match-observed',
+                item.possession === 'removed' && 'itemx2-match-removed'
+              ]
+                .filter(Boolean)
+                .join(' ');
+              return `<div class="itemx2-root-item ${classes}"><input class="itemx2-root-control itemx2-root-detail-choice" id="${detailId}" name="itemx2-detail" type="radio"><label class="itemx2-root-tile-label itemx2-root-tile-${index}" for="${detailId}">${tile}</label><div class="itemx2-root-detail itemx-body"><label class="itemx-back itemx2-root-back" for="itemx2-detail-none">‹ 목록으로</label><div class="itemx-detail itemx2-root-detail-body-${index}"><span class="itemx2-detail-loading">상세 정보를 불러오는 중…</span></div></div></div>`;
+            })
+            .join('') || '<div class="itemx2-root-empty">표시할 아이템이 없답니다.</div>'
+        : '';
     const enabled = loaded.enabled === true;
-    const positionChoices = tab === 'settings' ? BADGE_POSITIONS.map(([key, label]) => `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button">${label}</button>`).join('') : '';
-    const fontChoices = tab === 'settings' ? [['small', '소'], ['medium', '중'], ['large', '대']].map(([value, label]) => `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button">${label}</button>`).join('') : '';
-    const managerRows = tab === 'settings' ? (all.map((item, index) => `<div class="itemx2-manager-row itemx2-manager-row-${index}"><span class="itemx2-manager-name"><strong>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)}</strong><small>${ITEMXCore.esc(item.displayRarity || item.rarity)} · ${ITEMXCore.esc(item.possession)} / ${ITEMXCore.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">재감정</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>제거</button></span></div>`).join('') || '<div class="itemx2-root-empty">관리할 아이템이 없습니다.</div>') : '';
+    const positionChoices =
+      tab === 'settings'
+        ? BADGE_POSITIONS.map(
+            ([key, label]) =>
+              `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button">${label}</button>`
+          ).join('')
+        : '';
+    const fontChoices =
+      tab === 'settings'
+        ? [
+            ['small', '소'],
+            ['medium', '중'],
+            ['large', '대']
+          ]
+            .map(
+              ([value, label]) =>
+                `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button">${label}</button>`
+            )
+            .join('')
+        : '';
+    const managerRows =
+      tab === 'settings'
+        ? all
+            .map(
+              (item, index) =>
+                `<div class="itemx2-manager-row itemx2-manager-row-${index}"><span class="itemx2-manager-name"><strong>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)}</strong><small>${ITEMXCore.esc(item.displayRarity || item.rarity)} · ${ITEMXCore.esc(item.possession)} / ${ITEMXCore.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">재감정</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>제거</button></span></div>`
+            )
+            .join('') || '<div class="itemx2-root-empty">관리할 아이템이 없습니다.</div>'
+        : '';
     const manager = `<details class="itemx2-manager-fold"><summary>아이템 관리 <small>현재 화면에서 접기·펼치기</small></summary><div class="itemx2-manager-body"><label class="itemx2-manager-label">수정 지시 · 비워두면 순수 재감정<div class="itemx2-manager-editor itemx2-manager-note" contenteditable="true" role="textbox" aria-label="아이템 수정 지시"></div></label><div class="itemx2-manager-list">${managerRows}</div><div class="itemx2-manager-create"><label class="itemx2-manager-label">신규 아이템 생성 지시<div class="itemx2-manager-editor itemx2-manager-create-note" contenteditable="true" role="textbox" aria-label="신규 아이템 생성 지시"></div></label><button class="itemx2-root-setting-button itemx2-manager-create-button" type="button">＋ 신규 아이템 생성</button></div></div></details>`;
     const connection = connectionSummary();
-    const chips = [['hook', connection.hook], ['dom', connection.dom], ['listener', connection.listener]].map(([key, [label, tone]]) => `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`).join('');
-    const domainControls = [['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'], ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'], ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']].map(([key, label, value, note]) => `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label} · ${value ? 'ON' : 'OFF'}</strong><small>${note}</small></button>`).join('');
-    const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
+    const chips = [
+      ['hook', connection.hook],
+      ['dom', connection.dom],
+      ['listener', connection.listener]
+    ]
+      .map(
+        ([key, [label, tone]]) =>
+          `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
+      )
+      .join('');
+    const domainControls = [
+      ['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'],
+      ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'],
+      ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']
+    ]
+      .map(
+        ([key, label, value, note]) =>
+          `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label} · ${value ? 'ON' : 'OFF'}</strong><small>${note}</small></button>`
+      )
+      .join('');
+    const debugLog =
+      runtime.debugEntries
+        .slice(-12)
+        .reverse()
+        .map(
+          (entry) =>
+            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
+        )
+        .join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
     const cleanupArmed = runtime.cleanupArmedUntil > Date.now();
     const settings = `<div class="itemx2-root-settings"><section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 누락 복구 또는 항상 검사를 직접 선택하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈의 캐릭터 에셋을 조우 초상화 후보에 더합니다. 권한·탐색·이미지 로드 실패 시 이모지로 표시합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 실제 등록된 조우만 정확 일치로 보완합니다. 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우의 주요 글자만 즉시 조절합니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${counts.all}개 · ${ITEMXCore.esc(runtime.status)}</small></span><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
-    const pager = pageCount > 1 ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>` : '';
+    const pager =
+      pageCount > 1
+        ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
+        : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
     const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
     const skillsContent = `<div class="itemx2-root-skills itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-skill-none" name="itemx2-skill-detail" type="radio" checked><div class="itemx2-codex-note">장착·봉인·본문에서 다시 언급된 스킬만 모델 문맥에 제한적으로 전달됩니다.</div>${skillList}</div>`;
     const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>${monsterList}</div>`;
-    const activeContent = tab === 'skills' ? skillsContent : tab === 'bestiary' ? bestiaryContent : tab === 'settings' ? settings : inventoryContent;
-    const tabs = [['inventory', '📦 인벤'], ['skills', '✨ 스킬'], ['bestiary', '⚔️ 조우'], ['settings', '⚙️ 설정']].map(([key, label]) => `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`).join('');
+    const activeContent =
+      tab === 'skills'
+        ? skillsContent
+        : tab === 'bestiary'
+          ? bestiaryContent
+          : tab === 'settings'
+            ? settings
+            : inventoryContent;
+    const tabs = [
+      ['inventory', '📦 인벤'],
+      ['skills', '✨ 스킬'],
+      ['bestiary', '⚔️ 조우'],
+      ['settings', '⚙️ 설정']
+    ]
+      .map(
+        ([key, label]) =>
+          `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`
+      )
+      .join('');
     const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
     return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
@@ -2715,7 +3880,8 @@ ${codexPageStyle()}
   function rootInventoryRegions(html) {
     const source = String(html || '');
     const between = (start, end) => {
-      const from = source.indexOf(start), to = source.indexOf(end, from + start.length);
+      const from = source.indexOf(start),
+        to = source.indexOf(end, from + start.length);
       return from >= 0 && to >= 0 ? source.slice(from + start.length, to) : null;
     };
     return {
@@ -2745,10 +3911,25 @@ ${codexPageStyle()}
     }
   }
 
-  const rootStateFingerprint = (loaded) => [loaded.snapshot?.fingerprint, loaded.codexSnapshot?.fingerprint, Number(loaded.enabled), Number(loaded.itemsEnabled), Number(loaded.skillsEnabled), Number(loaded.encountersEnabled), Number(loaded.mainOutput), loaded.auxOutput, loaded.rarityMode, Number(loaded.moduleAssetsEnabled), Number(loaded.lorebookEncounterEnabled), Number(loaded.debugEnabled)].join(':');
+  const rootStateFingerprint = (loaded) =>
+    [
+      loaded.snapshot?.fingerprint,
+      loaded.codexSnapshot?.fingerprint,
+      Number(loaded.enabled),
+      Number(loaded.itemsEnabled),
+      Number(loaded.skillsEnabled),
+      Number(loaded.encountersEnabled),
+      Number(loaded.mainOutput),
+      loaded.auxOutput,
+      loaded.rarityMode,
+      Number(loaded.moduleAssetsEnabled),
+      Number(loaded.lorebookEncounterEnabled),
+      Number(loaded.debugEnabled)
+    ].join(':');
 
   async function managerRowIndexAtY(count, clientY) {
-    let low = 0, high = count - 1;
+    let low = 0,
+      high = count - 1;
     while (low <= high) {
       const index = (low + high) >> 1;
       const row = await queryMainClass(`itemx2-manager-row-${index}`);
@@ -2765,7 +3946,14 @@ ${codexPageStyle()}
     const element = await queryMainClass(className);
     if (!element) return false;
     const rect = await element.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    return (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    );
   }
 
   async function installRootClickRouter(owner) {
@@ -2773,69 +3961,121 @@ ${codexPageStyle()}
     await removeRootClickRouter();
     const routeBadge = async (event) => {
       try {
-        const badge = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge');
+        const badge = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge'));
         if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0 || event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return false;
+        if (
+          rect.width <= 0 ||
+          rect.height <= 0 ||
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        )
+          return false;
         await setRootOpen(true);
         const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return true;
         const cacheReady = loaded.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
-        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(loaded)) return true;
+        if (runtime.rootContentReady && cacheReady && runtime.rootFingerprint === rootStateFingerprint(loaded))
+          return true;
         await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
         return true;
-      } catch (error) { fail('native badge click', error); return true; }
+      } catch (error) {
+        fail('native badge click', error);
+        return true;
+      }
     };
     const routeControls = async (event) => {
       try {
-        const close = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-root-close');
+        if (!runtime.rootOpen) return;
+        const close = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-close'));
         if (close) {
           const closeRect = await close.getBoundingClientRect();
-          if (event.clientX >= closeRect.left && event.clientX <= closeRect.right && event.clientY >= closeRect.top && event.clientY <= closeRect.bottom) {
+          if (
+            event.clientX >= closeRect.left &&
+            event.clientX <= closeRect.right &&
+            event.clientY >= closeRect.top &&
+            event.clientY <= closeRect.bottom
+          ) {
             await setRootOpen(false);
             return;
           }
         }
-        for (const [tab, label] of [['inventory', '인벤토리'], ['skills', '스킬'], ['bestiary', '조우 도감'], ['settings', '설정']]) {
-          const button = runtime.mainDoc && await runtime.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`);
+        for (const [tab, label] of [
+          ['inventory', '인벤토리'],
+          ['skills', '스킬'],
+          ['bestiary', '조우 도감'],
+          ['settings', '설정']
+        ]) {
+          const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
-          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            continue;
           if (runtime.rootTabBusy || runtime.activeRootTab === tab) return;
           runtime.rootTabBusy = true;
           try {
             if (tab === 'inventory') runtime.rootItemPage = 0;
-            const body = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
-            if (body) await body.setInnerHTML(`<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>${label} 불러오는 중</strong><small>선택한 탭만 준비하고 있답니다.</small></div>`);
+            const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            if (body)
+              await body.setInnerHTML(
+                `<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>${label} 불러오는 중</strong><small>선택한 탭만 준비하고 있답니다.</small></div>`
+              );
             await delay(24);
             await openRootInventory({ open: true, tab });
-          } finally { runtime.rootTabBusy = false; }
+          } finally {
+            runtime.rootTabBusy = false;
+          }
           return;
         }
-        for (const [direction, selector] of [[-1, '.x-risu-itemx2-root-page-prev'], [1, '.x-risu-itemx2-root-page-next']]) {
-          const button = runtime.mainDoc && await runtime.mainDoc.querySelector(selector);
+        for (const [direction, selector] of [
+          [-1, '.x-risu-itemx2-root-page-prev'],
+          [1, '.x-risu-itemx2-root-page-next']
+        ]) {
+          const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(selector));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
-          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            continue;
           if (runtime.rootTabBusy) return;
           const loaded = await cachedOrRebuildCurrent();
           if (!loaded) return;
-          const pageCount = Math.max(1, Math.ceil(Math.min(60, itemsOf(loaded.snapshot).length) / ITEMX_ROOT_PAGE_SIZE));
+          const pageCount = Math.max(
+            1,
+            Math.ceil(Math.min(60, itemsOf(loaded.snapshot).length) / ITEMX_ROOT_PAGE_SIZE)
+          );
           const nextPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage + direction));
           if (nextPage === runtime.rootItemPage) return;
           runtime.rootItemPage = nextPage;
           runtime.rootTabBusy = true;
           try {
-            const body = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
-            if (body) await body.setInnerHTML('<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>');
+            const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            if (body)
+              await body.setInnerHTML(
+                '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>'
+              );
             await delay(24);
             await openRootInventory({ open: true, tab: 'inventory', loaded });
-          } finally { runtime.rootTabBusy = false; }
+          } finally {
+            runtime.rootTabBusy = false;
+          }
           return;
         }
         if (runtime.activeRootTab === 'inventory') {
           const cached = runtime.cachedLoaded;
-          const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+          const cacheReady =
+            cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
           if (loaded && loaded.key === runtime.activeContextKey) {
             // SafeElement listeners are document-level. While this async
@@ -2850,7 +4090,15 @@ ${codexPageStyle()}
               const tile = await queryMainClass(`itemx2-root-tile-${index}`);
               if (!tile) continue;
               const rect = await tile.getBoundingClientRect();
-              if (rect.width <= 0 || rect.height <= 0 || event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+              if (
+                rect.width <= 0 ||
+                rect.height <= 0 ||
+                event.clientX < rect.left ||
+                event.clientX > rect.right ||
+                event.clientY < rect.top ||
+                event.clientY > rect.bottom
+              )
+                continue;
               const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
               if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
               return;
@@ -2859,7 +4107,8 @@ ${codexPageStyle()}
         }
         if (runtime.activeRootTab === 'skills' || runtime.activeRootTab === 'bestiary') {
           const cached = runtime.cachedLoaded;
-          const cacheReady = cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
+          const cacheReady =
+            cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
           if (loaded && loaded.key === runtime.activeContextKey) {
             await delay(0);
@@ -2869,10 +4118,14 @@ ${codexPageStyle()}
           return;
         }
         if (runtime.activeRootTab !== 'settings') return;
-        const managerFold = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-fold');
+        const managerFold = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-fold'));
         if (managerFold) {
           const foldRect = await managerFold.getBoundingClientRect();
-          const insideManager = event.clientX >= foldRect.left && event.clientX <= foldRect.right && event.clientY >= foldRect.top && event.clientY <= foldRect.bottom;
+          const insideManager =
+            event.clientX >= foldRect.left &&
+            event.clientX <= foldRect.right &&
+            event.clientY >= foldRect.top &&
+            event.clientY <= foldRect.bottom;
           if (insideManager) {
             const loaded = await cachedOrRebuildCurrent();
             if (loaded) {
@@ -2897,20 +4150,50 @@ ${codexPageStyle()}
                 if (await eventHitsMainClass(event, `itemx2-manager-remove-${index}`)) {
                   if (target.possession === 'removed') return;
                   if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
-                  const itemEvent = { kind: 'patch', patch: { id: target.id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null } };
-                  try { await commitManualEvents(loaded, [itemEvent], '수동 제거'); }
-                  catch (error) { runtime.status = '수동 제거 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); }
+                  const itemEvent = {
+                    kind: 'patch',
+                    patch: {
+                      id: target.id,
+                      action: null,
+                      op: 'remove',
+                      fields: {},
+                      quantity: null,
+                      destination: '',
+                      reason: 'manual_remove',
+                      slot: null,
+                      inputs: null,
+                      outputs: null,
+                      equip: null,
+                      unequip: null
+                    }
+                  };
+                  try {
+                    await commitManualEvents(loaded, [itemEvent], '수동 제거');
+                  } catch (error) {
+                    runtime.status = '수동 제거 실패';
+                    await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+                  }
                   await openRootInventory({ open: true, tab: 'settings' });
                   return;
                 }
               }
-              const create = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-button');
+              const create =
+                runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-button'));
               if (create) {
                 const rect = await create.getBoundingClientRect();
-                if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
-                  const createNoteElement = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-note');
+                if (
+                  event.clientX >= rect.left &&
+                  event.clientX <= rect.right &&
+                  event.clientY >= rect.top &&
+                  event.clientY <= rect.bottom
+                ) {
+                  const createNoteElement =
+                    runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-note'));
                   const createNote = (await createNoteElement?.textContent())?.trim() || '';
-                  if (!createNote) { await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error'); return; }
+                  if (!createNote) {
+                    await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error');
+                    return;
+                  }
                   runtime.status = '신규 아이템 생성 중';
                   try {
                     const itemEvent = await runItemModel('create', loaded, null, createNote);
@@ -2926,10 +4209,15 @@ ${codexPageStyle()}
             }
           }
         }
-        const connect = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-connect');
+        const connect = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-connect'));
         if (connect) {
           const rect = await connect.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             if (runtime.connectionBusy) return;
             runtime.connectionBusy = true;
             runtime.status = '연결 및 권한 확인 중';
@@ -2938,13 +4226,22 @@ ${codexPageStyle()}
             try {
               const connected = await installPipelineHooks({ prompt: true });
               const styled = await installMainStyle();
-              runtime.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
+              runtime.status =
+                connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
               if (connected && styled) {
                 await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
               } else {
-                await showRootFeedback(`연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`, 'error', 3600);
+                await showRootFeedback(
+                  `연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                  'error',
+                  3600
+                );
               }
-              if (!connected || !styled) await notifyUser(`ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`, 'error');
+              if (!connected || !styled)
+                await notifyUser(
+                  `ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                  'error'
+                );
             } finally {
               runtime.connectionBusy = false;
               await updateConnectionUi();
@@ -2952,10 +4249,15 @@ ${codexPageStyle()}
             return;
           }
         }
-        const auxRun = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run');
+        const auxRun = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run'));
         if (auxRun) {
           const rect = await auxRun.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             if (runtime.auxActive > 0) return;
             runtime.status = '보조 모델 수동 검사 중';
             await recoverAuxiliaryOutput({ force: true });
@@ -2963,10 +4265,16 @@ ${codexPageStyle()}
           }
         }
         for (const [key, label] of BADGE_POSITIONS) {
-          const choice = runtime.mainDoc && await runtime.mainDoc.querySelector(`.x-risu-itemx2-position-${key}`);
+          const choice = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-position-${key}`));
           if (!choice) continue;
           const rect = await choice.getBoundingClientRect();
-          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            continue;
           runtime.badgePosition = key;
           await Risuai.pluginStorage.setItem('badgePosition', key);
           runtime.status = `배지 위치 · ${label}`;
@@ -2976,17 +4284,22 @@ ${codexPageStyle()}
           }
           await installMainStyle();
           for (const [other] of BADGE_POSITIONS) {
-            const button = runtime.mainDoc && await runtime.mainDoc.querySelector(`.x-risu-itemx2-position-${other}`);
+            const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-position-${other}`));
             if (!button) continue;
             if (other === key) await button.addClass('x-risu-itemx2-position-on');
             else await button.removeClass('x-risu-itemx2-position-on');
           }
           return;
         }
-        const toggle = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-toggle');
+        const toggle = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-toggle'));
         if (toggle) {
           const rect = await toggle.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
               const loaded = await rebuildCurrent();
               if (!loaded) return;
@@ -2998,45 +4311,80 @@ ${codexPageStyle()}
             return;
           }
         }
-        const main = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-main');
-        for (const [domain, key, label] of [['items', 'itemsEnabled', '무기·아이템'], ['skills', 'skillsEnabled', '스킬'], ['encounters', 'encountersEnabled', '전투 도감']]) {
-          const button = runtime.mainDoc && await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-domain-${domain}`);
+        const main = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-main'));
+        for (const [domain, key, label] of [
+          ['items', 'itemsEnabled', '무기·아이템'],
+          ['skills', 'skillsEnabled', '스킬'],
+          ['encounters', 'encountersEnabled', '전투 도감']
+        ]) {
+          const button =
+            runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-domain-${domain}`));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
-          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            continue;
           await applyRootSetting(async () => {
-            const loaded = await rebuildCurrent(); if (!loaded) return;
-            const current = await outputSettings(loaded.character), value = !current[key];
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const current = await outputSettings(loaded.character),
+              value = !current[key];
             await setDomainEnabled(loaded.character, domain, value);
-            runtime.cachedLoaded = null; runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+            runtime.cachedLoaded = null;
+            runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
             await openRootInventory({ open: true, tab: 'settings' });
           });
           return;
         }
-        const debug = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-debug');
+        const debug = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-debug'));
         if (debug) {
           const rect = await debug.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
-              const loaded = await rebuildCurrent(); if (!loaded) return;
+              const loaded = await rebuildCurrent();
+              if (!loaded) return;
               const value = !(await outputSettings(loaded.character)).debugEnabled;
-              await setDebugEnabled(loaded.character, value); runtime.cachedLoaded = null; runtime.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
+              await setDebugEnabled(loaded.character, value);
+              runtime.cachedLoaded = null;
+              runtime.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
               await openRootInventory({ open: true, tab: 'settings' });
             });
             return;
           }
         }
-        const debugClear = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-debug-clear');
+        const debugClear =
+          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-debug-clear'));
         if (debugClear) {
           const rect = await debugClear.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
-            runtime.debugEntries = []; runtime.status = '디버그 로그 비움';
-            await openRootInventory({ open: true, tab: 'settings' }); return;
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
+            runtime.debugEntries = [];
+            runtime.status = '디버그 로그 비움';
+            await openRootInventory({ open: true, tab: 'settings' });
+            return;
           }
         }
         if (main) {
           const rect = await main.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
               const loaded = await rebuildCurrent();
               if (!loaded) return;
@@ -3048,10 +4396,15 @@ ${codexPageStyle()}
             return;
           }
         }
-        const aux = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux');
+        const aux = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux'));
         if (aux) {
           const rect = await aux.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
               const loaded = await rebuildCurrent();
               if (!loaded) return;
@@ -3064,10 +4417,15 @@ ${codexPageStyle()}
             return;
           }
         }
-        const rarity = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rarity');
+        const rarity = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rarity'));
         if (rarity) {
           const rect = await rarity.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
               const loaded = await rebuildCurrent();
               if (!loaded) return;
@@ -3082,14 +4440,20 @@ ${codexPageStyle()}
             return;
           }
         }
-        const effects = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-effects');
+        const effects = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-effects'));
         if (effects) {
           const rect = await effects.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
               const loaded = await cachedOrRebuildCurrent();
               if (!loaded) return;
-              const value = !(cachedSettings(loaded.character) || await outputSettings(loaded.character)).effectsEnabled;
+              const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
+                .effectsEnabled;
               await setEffectsEnabled(loaded.character, value);
               loaded.effectsEnabled = value;
               runtime.status = `시각 이펙트 · ${value ? 'ON' : 'OFF'}`;
@@ -3098,14 +4462,23 @@ ${codexPageStyle()}
             return;
           }
         }
-        const moduleAssets = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-module-assets');
-        const lorebookToggle = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook');
+        const moduleAssets =
+          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-module-assets'));
+        const lorebookToggle =
+          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook'));
         if (lorebookToggle) {
           const rect = await lorebookToggle.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent(); if (!loaded) return;
-              const value = !(cachedSettings(loaded.character) || await outputSettings(loaded.character)).lorebookEncounterEnabled;
+              const loaded = await cachedOrRebuildCurrent();
+              if (!loaded) return;
+              const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
+                .lorebookEncounterEnabled;
               await setLorebookEncounterEnabled(loaded.character, value);
               loaded.lorebookEncounterEnabled = value;
               runtime.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
@@ -3115,10 +4488,16 @@ ${codexPageStyle()}
             return;
           }
         }
-        const lorebookScan = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook-scan');
+        const lorebookScan =
+          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook-scan'));
         if (lorebookScan) {
           const rect = await lorebookScan.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await scanLorebookEncounters({ refresh: true });
             await openRootInventory({ open: true, tab: 'settings' });
             return;
@@ -3126,30 +4505,51 @@ ${codexPageStyle()}
         }
         if (moduleAssets) {
           const rect = await moduleAssets.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             await applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent(); if (!loaded) return;
-              const current = cachedSettings(loaded.character) || await outputSettings(loaded.character);
+              const loaded = await cachedOrRebuildCurrent();
+              if (!loaded) return;
+              const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
               let value = false;
               if (current.moduleAssetsEnabled) {
                 await setModuleAssetsEnabled(loaded.character, false);
               } else {
                 value = await enableModuleAssets(loaded.character, loaded.chat);
-                if (!value) await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
+                if (!value)
+                  await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
               }
               loaded.moduleAssetsEnabled = value;
-              runtime.status = value ? '모듈 에셋 초상화 · ON' : current.moduleAssetsEnabled ? '모듈 에셋 초상화 · OFF' : '모듈 에셋 권한 없음 · 이모지 폴백';
+              runtime.status = value
+                ? '모듈 에셋 초상화 · ON'
+                : current.moduleAssetsEnabled
+                  ? '모듈 에셋 초상화 · OFF'
+                  : '모듈 에셋 권한 없음 · 이모지 폴백';
               runtime.rootFingerprint = '';
               await openRootInventory({ open: true, tab: 'settings', loaded });
             });
             return;
           }
         }
-        for (const [value, label] of [['small', '소'], ['medium', '중'], ['large', '대']]) {
-          const font = runtime.mainDoc && await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-font-${value}`);
+        for (const [value, label] of [
+          ['small', '소'],
+          ['medium', '중'],
+          ['large', '대']
+        ]) {
+          const font = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-font-${value}`));
           if (!font) continue;
           const rect = await font.getBoundingClientRect();
-          if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) continue;
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            continue;
           await applyRootSetting(async () => {
             const loaded = await cachedOrRebuildCurrent();
             if (!loaded) return;
@@ -3165,14 +4565,23 @@ ${codexPageStyle()}
           });
           return;
         }
-        const cleanup = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-cleanup');
+        const cleanup = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-cleanup'));
         if (cleanup) {
           const rect = await cleanup.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             if (runtime.cleanupArmedUntil <= Date.now()) {
               runtime.cleanupArmedUntil = Date.now() + 7000;
               runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
-              await showRootFeedback('되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 제거합니다.', 'error', 6500);
+              await showRootFeedback(
+                '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 제거합니다.',
+                'error',
+                6500
+              );
               await openRootInventory({ open: true, tab: 'settings' });
               return;
             }
@@ -3180,7 +4589,11 @@ ${codexPageStyle()}
             await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await cleanCurrentChatItemx();
-              await showRootFeedback(`정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`, 'success', 3600);
+              await showRootFeedback(
+                `정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`,
+                'success',
+                3600
+              );
               if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
             } catch (error) {
               runtime.cleanupArmedUntil = 0;
@@ -3191,26 +4604,40 @@ ${codexPageStyle()}
             return;
           }
         }
-        const rebuild = runtime.mainDoc && await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rebuild');
+        const rebuild = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rebuild'));
         if (rebuild) {
           const rect = await rebuild.getBoundingClientRect();
-          if (event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom) {
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
             runtime.cachedLoaded = null;
             const loaded = await rebuildCurrent();
             if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
           }
         }
-      } catch (error) { fail('native setting click', error); }
+      } catch (error) {
+        fail('native setting click', error);
+      }
     };
-    const id = await owner.addEventListener('click', async (event) => {
-      if (runtime.rootClickBusy) return;
-      runtime.rootClickBusy = true;
-      try {
-        if (await routeBadge(event)) return;
-        await routeControls(event);
-      } catch (error) { fail('root click router', error); }
-      finally { runtime.rootClickBusy = false; }
-    }, true);
+    const id = await owner.addEventListener(
+      'click',
+      async (event) => {
+        if (runtime.rootClickBusy) return;
+        runtime.rootClickBusy = true;
+        try {
+          if (await routeBadge(event)) return;
+          await routeControls(event);
+        } catch (error) {
+          fail('root click router', error);
+        } finally {
+          runtime.rootClickBusy = false;
+        }
+      },
+      true
+    );
     runtime.rootClickOwner = owner;
     runtime.rootClickBindings = [{ type: 'click', id, capture: true }];
   }
@@ -3222,33 +4649,44 @@ ${codexPageStyle()}
   async function openRootInventoryNow({ open = true, tab = 'inventory', loaded: suppliedLoaded = null } = {}) {
     try {
       runtime.panelOpen = false;
-      try { await Risuai.hideContainer(); } catch {}
-      const loaded = suppliedLoaded || await cachedOrRebuildCurrent();
+      try {
+        await Risuai.hideContainer();
+      } catch {}
+      const loaded = suppliedLoaded || (await cachedOrRebuildCurrent());
       if (!loaded) throw new Error('No active chat context');
       if (runtime.activeContextKey && runtime.activeContextKey !== loaded.key) return;
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
       runtime.debugEnabled = loaded.debugEnabled;
-      loaded.portraits = tab === 'bestiary' && loaded.encountersEnabled ? await loadCodexPortraits(loaded.character, loaded.chat, loaded.codexSnapshot, loaded) : {};
+      loaded.portraits =
+        tab === 'bestiary' && loaded.encountersEnabled
+          ? await loadCodexPortraits(loaded.character, loaded.chat, loaded.codexSnapshot, loaded)
+          : {};
       const styled = await installMainStyle({ prompt: true });
       if (!styled || !runtime.mainDoc) {
         runtime.status = '메인 화면 권한 필요';
         await notifyUser('ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.', 'error');
         return;
       }
-      let root = runtime.rootDrawer, attached = false;
+      let root = runtime.rootDrawer,
+        attached = false;
       if (root) {
-        try { attached = Boolean(await root.getParent()); }
-        catch { root = null; }
+        try {
+          attached = Boolean(await root.getParent());
+        } catch {
+          root = null;
+        }
       }
       if (!attached) {
         await removeRootDrawer();
         root = await runtime.mainDoc.createElement('div');
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
-      await root.setClassName(`x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}`);
+      await root.setClassName(
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}`
+      );
       const html = rootInventoryHtml(loaded, open, tab);
-      const regionUpdated = attached && open && runtime.rootContentReady && await updateRootRegions(html);
+      const regionUpdated = attached && open && runtime.rootContentReady && (await updateRootRegions(html));
       if (!regionUpdated) {
         await root.setInnerHTML(html);
         runtime.rootHydratedDetail = '';
@@ -3258,9 +4696,13 @@ ${codexPageStyle()}
         if (!body) throw new Error('Main document body unavailable');
         if (runtime.activeContextKey !== loaded.key) return;
         await body.appendChild(root);
-        if (runtime.activeContextKey !== loaded.key) { await root.remove(); return; }
+        if (runtime.activeContextKey !== loaded.key) {
+          await root.remove();
+          return;
+        }
       }
       runtime.rootDrawer = root;
+      runtime.rootOpen = Boolean(open);
       runtime.rootFingerprint = rootStateFingerprint(loaded);
       runtime.rootContentReady = open;
       runtime.activeRootTab = tab;
@@ -3278,69 +4720,220 @@ ${codexPageStyle()}
     if (ui.filter === 'observed' && item.possession !== 'observed') return false;
     if (ui.filter === 'removed' && item.possession !== 'removed') return false;
     const q = ui.query.trim().toLowerCase();
-    return !q || [item.name, item.id, item.itemType, item.displayRarity, item.affinity, item.affinity2].some((value) => String(value || '').toLowerCase().includes(q));
+    return (
+      !q ||
+      [item.name, item.id, item.itemType, item.displayRarity, item.affinity, item.affinity2].some((value) =>
+        String(value || '')
+          .toLowerCase()
+          .includes(q)
+      )
+    );
   }
 
   function drawInventory(loaded) {
     const root = document.querySelector('#itemx2-root');
     if (!root) return;
-    const all = itemsOf(loaded.snapshot), selected = ui.selected && all.find((item) => item.id === ui.selected);
+    const all = itemsOf(loaded.snapshot),
+      selected = ui.selected && all.find((item) => item.id === ui.selected);
     const counts = {
-      all: all.length, owned: all.filter((item) => item.possession === 'owned').length,
+      all: all.length,
+      owned: all.filter((item) => item.possession === 'owned').length,
       equipped: all.filter((item) => item.location === 'equipped').length,
       observed: all.filter((item) => item.possession === 'observed').length,
       removed: all.filter((item) => item.possession === 'removed').length
     };
     const visible = ui.tab === 'inventory' ? all.filter(matches).slice(0, 60) : [];
-    if (ui.tab === 'settings' && (!ui.manageId || !all.some((item) => item.id === ui.manageId))) ui.manageId = all.find((item) => item.possession !== 'removed')?.id || all[0]?.id || null;
+    if (ui.tab === 'settings' && (!ui.manageId || !all.some((item) => item.id === ui.manageId)))
+      ui.manageId = all.find((item) => item.possession !== 'removed')?.id || all[0]?.id || null;
     const managed = ui.tab === 'settings' && ui.manageId ? all.find((item) => item.id === ui.manageId) : null;
-    const manageOptions = ui.tab === 'settings' ? all.map((item) => `<option value="${ITEMXCore.esc(item.id)}" ${item.id === ui.manageId ? 'selected' : ''}>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)} · ${ITEMXCore.esc(item.id)}</option>`).join('') : '';
+    const manageOptions =
+      ui.tab === 'settings'
+        ? all
+            .map(
+              (item) =>
+                `<option value="${ITEMXCore.esc(item.id)}" ${item.id === ui.manageId ? 'selected' : ''}>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)} · ${ITEMXCore.esc(item.id)}</option>`
+            )
+            .join('')
+        : '';
     const enabled = loaded.enabled === true;
     const inventoryContent = !enabled
       ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX CODEX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
-      : (selected ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion ? 'full' : 'off' })}</div></div>` : `<nav class="itemx-seg">${[['all', '전체'], ['owned', '보유'], ['equipped', '장착'], ['observed', '관찰'], ['removed', '소실']].map(([key, label]) => `<button class="itemx-seg-i ${ui.filter === key ? 'itemx-seg-on' : ''}" data-filter="${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></button>`).join('')}</nav><div class="itemx-tools"><button class="itemx-tool" data-action="motion">${ui.motion ? '✦ 모션' : '◇ 정지'}</button><input class="itemx-search itemx-search-input" value="${ITEMXCore.esc(ui.query)}" placeholder="검색" aria-label="검색"><button class="itemx-tool" data-action="rebuild">↻</button></div><div class="itemx-body"><div class="itemx-grid">${visible.map(ITEMXRenderer.renderTile).join('') || '<div class="itemx-empty">표시할 아이템이 없답니다.</div>'}</div></div><footer class="itemx-pf">${visible.length}점 표시${all.filter(matches).length > 60 ? ' · 첫 60점' : ''}</footer>`);
-    const permissionLabel = runtime.permissions.replacer === true ? '연결됨' : runtime.permissions.replacer === false ? '권한 필요' : '확인 중';
-    const styleLabel = runtime.permissions.mainDom === true ? '고정 스타일' : runtime.permissions.mainDom === false ? '본문 폴백' : '확인 중';
-    const positionOptions = BADGE_POSITIONS.map(([value, label]) => `<option value="${value}" ${runtime.badgePosition === value ? 'selected' : ''}>${label}</option>`).join('');
+      : selected
+        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion ? 'full' : 'off' })}</div></div>`
+        : `<nav class="itemx-seg">${[
+            ['all', '전체'],
+            ['owned', '보유'],
+            ['equipped', '장착'],
+            ['observed', '관찰'],
+            ['removed', '소실']
+          ]
+            .map(
+              ([key, label]) =>
+                `<button class="itemx-seg-i ${ui.filter === key ? 'itemx-seg-on' : ''}" data-filter="${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></button>`
+            )
+            .join(
+              ''
+            )}</nav><div class="itemx-tools"><button class="itemx-tool" data-action="motion">${ui.motion ? '✦ 모션' : '◇ 정지'}</button><input class="itemx-search itemx-search-input" value="${ITEMXCore.esc(ui.query)}" placeholder="검색" aria-label="검색"><button class="itemx-tool" data-action="rebuild">↻</button></div><div class="itemx-body"><div class="itemx-grid">${visible.map(ITEMXRenderer.renderTile).join('') || '<div class="itemx-empty">표시할 아이템이 없답니다.</div>'}</div></div><footer class="itemx-pf">${visible.length}점 표시${all.filter(matches).length > 60 ? ' · 첫 60점' : ''}</footer>`;
+    const permissionLabel =
+      runtime.permissions.replacer === true
+        ? '연결됨'
+        : runtime.permissions.replacer === false
+          ? '권한 필요'
+          : '확인 중';
+    const styleLabel =
+      runtime.permissions.mainDom === true
+        ? '고정 스타일'
+        : runtime.permissions.mainDom === false
+          ? '본문 폴백'
+          : '확인 중';
+    const positionOptions = BADGE_POSITIONS.map(
+      ([value, label]) =>
+        `<option value="${value}" ${runtime.badgePosition === value ? 'selected' : ''}>${label}</option>`
+    ).join('');
     const managerContent = `<section class="itemx-manager"><div class="itemx-manager-title">아이템 운영 도구</div><label class="itemx-manager-field"><span>대상 아이템</span><select data-action="manage-select" ${all.length ? '' : 'disabled'}>${manageOptions || '<option>아이템 없음</option>'}</select></label><label class="itemx-manager-field"><span>수정 지시 · 비워두면 순수 재감정</span><textarea data-action="manage-note" placeholder="예: 이름은 그대로 두고 내구도를 31/100으로, 화염 속성은 제거"></textarea></label><div class="itemx-manager-actions"><button class="itemx-tool" data-action="manage-reroll" ${managed ? '' : 'disabled'}>🔄 정보 수정·재감정</button><button class="itemx-tool itemx-manager-danger" data-action="manage-remove" ${managed && managed.possession !== 'removed' ? '' : 'disabled'}>🗑 수동 제거</button></div><div class="itemx-manager-current">${managed ? `${ITEMXCore.esc(managed.name)} · ${ITEMXCore.esc(managed.displayRarity || managed.rarity)} · ${ITEMXCore.esc(managed.possession)} / ${ITEMXCore.esc(managed.location)}` : '선택 가능한 아이템이 없습니다.'}</div><label class="itemx-manager-field"><span>신규 아이템 생성 지시</span><textarea data-action="create-note" placeholder="예: 주인공이 획득한 번개 속성의 희귀 장검"></textarea></label><button class="itemx-tool" data-action="manage-create">＋ 신규 아이템 생성 시도</button><small class="itemx-manager-help">보조 모델 결과는 ITEMX 엄격 파서와 id 검증을 통과한 경우에만 채팅별 사건 원장에 반영됩니다.</small></section>`;
-    const domainControls = [['items', '무기·아이템', loaded.itemsEnabled], ['skills', '스킬', loaded.skillsEnabled], ['encounters', '전투 도감', loaded.encountersEnabled]].map(([key, label, value]) => `<button class="itemx-tool ${value ? 'itemx-setting-on' : ''}" data-action="domain-${key}">${label} ${value ? 'ON' : 'OFF'}</button>`).join('');
-    const debugLog = runtime.debugEntries.slice(-12).reverse().map((entry) => `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`).join('\n\n') || '기록 없음';
+    const domainControls = [
+      ['items', '무기·아이템', loaded.itemsEnabled],
+      ['skills', '스킬', loaded.skillsEnabled],
+      ['encounters', '전투 도감', loaded.encountersEnabled]
+    ]
+      .map(
+        ([key, label, value]) =>
+          `<button class="itemx-tool ${value ? 'itemx-setting-on' : ''}" data-action="domain-${key}">${label} ${value ? 'ON' : 'OFF'}</button>`
+      )
+      .join('');
+    const debugLog =
+      runtime.debugEntries
+        .slice(-12)
+        .reverse()
+        .map(
+          (entry) =>
+            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
+        )
+        .join('\n\n') || '기록 없음';
     const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
     const cleanupArmed = runtime.cleanupArmedUntil > Date.now();
     const settingsContent = `<div class="itemx-settings">${managerContent}<section class="itemx-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '모든 모델 규약과 처리를 멈춥니다.'}</small></span><button class="itemx-tool ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>메인 출력</strong><small>활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx-tool ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 직접 켜세요.</small></span><button class="itemx-tool" data-action="aux-output">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx-tool ${loaded.rarityMode === 'itemx' ? 'itemx-setting-on' : ''}" data-action="rarity-mode">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우 효과를 한 번에 제어합니다.</small></span><button class="itemx-tool ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈 에셋을 사용하며 실패하면 이모지로 표시합니다.</small></span><button class="itemx-tool ${loaded.moduleAssetsEnabled ? 'itemx-setting-on' : ''}" data-action="module-assets">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 등록된 조우만 정확 일치로 보완하며 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx-manager-actions"><button class="itemx-tool ${loaded.lorebookEncounterEnabled ? 'itemx-setting-on' : ''}" data-action="lorebook-toggle">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx-tool" data-action="lorebook-scan">지금 스캔</button></span></section><section class="itemx-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우 UI에 적용합니다.</small></span><select class="itemx-position-select" data-action="font-scale"><option value="small" ${loaded.fontScale === 'small' ? 'selected' : ''}>소</option><option value="medium" ${loaded.fontScale === 'medium' ? 'selected' : ''}>중</option><option value="large" ${loaded.fontScale === 'large' ? 'selected' : ''}>대</option></select></section><section class="itemx-setting-card"><span><strong>사이드 배지 위치</strong><small>기존 ITEMX 모듈과 같은 여섯 방향 배치입니다.</small></span><select class="itemx-position-select" data-action="badge-position">${positionOptions}</select></section><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 요청 주입과 원시 태그 정리에 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><section class="itemx-setting-card"><span><strong>채팅 저장소 재구축</strong><small>본문 사건과 수동 사건 원장을 시간순으로 다시 읽습니다.</small></span><button class="itemx-tool" data-action="rebuild">재구축</button></section><section class="itemx-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다.</small></span><button class="itemx-tool itemx-manager-danger" data-action="cleanup-chat">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
-    const iframeSkills = ui.tab === 'skills' ? (loaded.codexSnapshot?.skills?.order || []).map((id) => loaded.codexSnapshot.skills.entries[id]).filter(Boolean) : [];
-    const iframeMonsters = ui.tab === 'bestiary' ? (loaded.codexSnapshot?.monsters?.order || []).map((id) => loaded.codexSnapshot.monsters.entries[id]).filter(Boolean) : [];
+    const iframeSkills =
+      ui.tab === 'skills'
+        ? (loaded.codexSnapshot?.skills?.order || [])
+            .map((id) => loaded.codexSnapshot.skills.entries[id])
+            .filter(Boolean)
+        : [];
+    const iframeMonsters =
+      ui.tab === 'bestiary'
+        ? (loaded.codexSnapshot?.monsters?.order || [])
+            .map((id) => loaded.codexSnapshot.monsters.entries[id])
+            .filter(Boolean)
+        : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
     const selectedMonster = ui.selectedMonster && iframeMonsters.find((one) => one.id === ui.selectedMonster);
-    const skillRows = iframeSkills.map((one) => `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary" data-skill-id="${ITEMXCore.esc(one.id)}">${skillSummaryHtml(one, loaded.rarityMode)}</button>`).join('');
-    const monsterRows = iframeMonsters.map((one) => `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${one.active ? 'active' : ''}" data-monster-id="${ITEMXCore.esc(one.id)}">${monsterSummaryHtml(one, loaded.portraits?.[one.id] || '')}</button>`).join('');
+    const skillRows = iframeSkills
+      .map(
+        (one) =>
+          `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary" data-skill-id="${ITEMXCore.esc(one.id)}">${skillSummaryHtml(one, loaded.rarityMode)}</button>`
+      )
+      .join('');
+    const monsterRows = iframeMonsters
+      .map(
+        (one) =>
+          `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${one.active ? 'active' : ''}" data-monster-id="${ITEMXCore.esc(one.id)}">${monsterSummaryHtml(one, loaded.portraits?.[one.id] || '')}</button>`
+      )
+      .join('');
     const skillsContent = `<div class="itemx-settings">${selectedSkill ? skillPageHtml(selectedSkill, '<button class="itemx-codex-back" data-action="back-skill">‹ 스킬 목록</button>', loaded.rarityMode).replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${skillRows || '<div class="itemx-empty">아직 확정된 스킬이 없답니다.</div>'}</div>`}</div>`;
     const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.id] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
-    const content = ui.tab === 'settings' ? settingsContent : ui.tab === 'skills' ? skillsContent : ui.tab === 'bestiary' ? bestiaryContent : inventoryContent;
+    const content =
+      ui.tab === 'settings'
+        ? settingsContent
+        : ui.tab === 'skills'
+          ? skillsContent
+          : ui.tab === 'bestiary'
+            ? bestiaryContent
+            : inventoryContent;
     root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${content}</section></main></div>`;
-    root.querySelector('[data-action="close"]')?.addEventListener('click', () => { void closeInventory(); });
-    root.querySelector('[data-action="back"]')?.addEventListener('click', () => { ui.selected = null; drawInventory(loaded); });
-    root.querySelector('[data-action="back-skill"]')?.addEventListener('click', () => { ui.selectedSkill = null; drawInventory(loaded); });
-    root.querySelector('[data-action="back-monster"]')?.addEventListener('click', () => { ui.selectedMonster = null; drawInventory(loaded); });
-    root.querySelector('[data-action="motion"]')?.addEventListener('click', () => { ui.motion = !ui.motion; drawInventory(loaded); });
-    root.querySelector('[data-action="toggle"]')?.addEventListener('click', async () => { loaded.enabled = !enabled; await setEnabled(loaded.character, loaded.enabled); runtime.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화'; drawInventory(loaded); });
-    for (const [domain, key, label] of [['items', 'itemsEnabled', '무기·아이템'], ['skills', 'skillsEnabled', '스킬'], ['encounters', 'encountersEnabled', '전투 도감']]) root.querySelector(`[data-action="domain-${domain}"]`)?.addEventListener('click', async () => {
-      loaded[key] = !loaded[key]; await setDomainEnabled(loaded.character, domain, loaded[key]); runtime.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`; drawInventory(loaded);
+    root.querySelector('[data-action="close"]')?.addEventListener('click', () => {
+      void closeInventory();
     });
-    root.querySelector('[data-action="debug-toggle"]')?.addEventListener('click', async () => { loaded.debugEnabled = !loaded.debugEnabled; await setDebugEnabled(loaded.character, loaded.debugEnabled); runtime.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`; drawInventory(loaded); });
-    root.querySelector('[data-action="debug-clear"]')?.addEventListener('click', () => { runtime.debugEntries = []; runtime.status = '디버그 로그 비움'; drawInventory(loaded); });
-    root.querySelector('[data-action="main-output"]')?.addEventListener('click', async () => { loaded.mainOutput = !loaded.mainOutput; await setMainOutput(loaded.character, loaded.mainOutput); runtime.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`; drawInventory(loaded); });
-    root.querySelector('[data-action="aux-output"]')?.addEventListener('click', async () => { loaded.auxOutput = loaded.auxOutput === 'missing' ? 'always' : loaded.auxOutput === 'always' ? 'off' : 'missing'; await setAuxOutput(loaded.character, loaded.auxOutput); runtime.status = `보조 출력 · ${AUX_LABELS[loaded.auxOutput]}`; drawInventory(loaded); });
-    root.querySelector('[data-action="rarity-mode"]')?.addEventListener('click', async () => { loaded.rarityMode = loaded.rarityMode === 'itemx' ? 'world' : 'itemx'; await setRarityMode(loaded.character, loaded.rarityMode); runtime.status = `등급 기준 · ${RARITY_MODE_LABELS[loaded.rarityMode]}`; drawInventory(loaded); });
-    root.querySelector('[data-action="effects"]')?.addEventListener('click', async () => { loaded.effectsEnabled = !loaded.effectsEnabled; await setEffectsEnabled(loaded.character, loaded.effectsEnabled); runtime.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`; drawInventory(loaded); });
+    root.querySelector('[data-action="back"]')?.addEventListener('click', () => {
+      ui.selected = null;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="back-skill"]')?.addEventListener('click', () => {
+      ui.selectedSkill = null;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="back-monster"]')?.addEventListener('click', () => {
+      ui.selectedMonster = null;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="motion"]')?.addEventListener('click', () => {
+      ui.motion = !ui.motion;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="toggle"]')?.addEventListener('click', async () => {
+      loaded.enabled = !enabled;
+      await setEnabled(loaded.character, loaded.enabled);
+      runtime.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화';
+      drawInventory(loaded);
+    });
+    for (const [domain, key, label] of [
+      ['items', 'itemsEnabled', '무기·아이템'],
+      ['skills', 'skillsEnabled', '스킬'],
+      ['encounters', 'encountersEnabled', '전투 도감']
+    ])
+      root.querySelector(`[data-action="domain-${domain}"]`)?.addEventListener('click', async () => {
+        loaded[key] = !loaded[key];
+        await setDomainEnabled(loaded.character, domain, loaded[key]);
+        runtime.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`;
+        drawInventory(loaded);
+      });
+    root.querySelector('[data-action="debug-toggle"]')?.addEventListener('click', async () => {
+      loaded.debugEnabled = !loaded.debugEnabled;
+      await setDebugEnabled(loaded.character, loaded.debugEnabled);
+      runtime.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="debug-clear"]')?.addEventListener('click', () => {
+      runtime.debugEntries = [];
+      runtime.status = '디버그 로그 비움';
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="main-output"]')?.addEventListener('click', async () => {
+      loaded.mainOutput = !loaded.mainOutput;
+      await setMainOutput(loaded.character, loaded.mainOutput);
+      runtime.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="aux-output"]')?.addEventListener('click', async () => {
+      loaded.auxOutput = loaded.auxOutput === 'missing' ? 'always' : loaded.auxOutput === 'always' ? 'off' : 'missing';
+      await setAuxOutput(loaded.character, loaded.auxOutput);
+      runtime.status = `보조 출력 · ${AUX_LABELS[loaded.auxOutput]}`;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="rarity-mode"]')?.addEventListener('click', async () => {
+      loaded.rarityMode = loaded.rarityMode === 'itemx' ? 'world' : 'itemx';
+      await setRarityMode(loaded.character, loaded.rarityMode);
+      runtime.status = `등급 기준 · ${RARITY_MODE_LABELS[loaded.rarityMode]}`;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="effects"]')?.addEventListener('click', async () => {
+      loaded.effectsEnabled = !loaded.effectsEnabled;
+      await setEffectsEnabled(loaded.character, loaded.effectsEnabled);
+      runtime.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`;
+      drawInventory(loaded);
+    });
     root.querySelector('[data-action="module-assets"]')?.addEventListener('click', async () => {
       if (loaded.moduleAssetsEnabled) {
-        loaded.moduleAssetsEnabled = false; await setModuleAssetsEnabled(loaded.character, false); runtime.status = '모듈 에셋 초상화 · OFF'; drawInventory(loaded); return;
+        loaded.moduleAssetsEnabled = false;
+        await setModuleAssetsEnabled(loaded.character, false);
+        runtime.status = '모듈 에셋 초상화 · OFF';
+        drawInventory(loaded);
+        return;
       }
       const enabled = await enableModuleAssets(loaded.character, loaded.chat);
       loaded.moduleAssetsEnabled = enabled;
       runtime.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
-      if (!enabled) await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
+      if (!enabled)
+        await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
       drawInventory(loaded);
     });
     root.querySelector('[data-action="lorebook-toggle"]')?.addEventListener('click', async () => {
@@ -3349,92 +4942,215 @@ ${codexPageStyle()}
       runtime.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
       if (loaded.lorebookEncounterEnabled) await scanLorebookEncounters({ refresh: true, silent: true });
       const next = await rebuildCurrent();
-      if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      else drawInventory(loaded);
+      if (next) {
+        next.enabled = await isEnabled(next.character);
+        drawInventory(next);
+      } else drawInventory(loaded);
     });
     root.querySelector('[data-action="lorebook-scan"]')?.addEventListener('click', async () => {
-      runtime.status = '조우 로어북 스캔 중'; drawInventory(loaded);
+      runtime.status = '조우 로어북 스캔 중';
+      drawInventory(loaded);
       await scanLorebookEncounters({ refresh: true });
       const next = await rebuildCurrent();
-      if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      else drawInventory(loaded);
+      if (next) {
+        next.enabled = await isEnabled(next.character);
+        drawInventory(next);
+      } else drawInventory(loaded);
     });
-    root.querySelector('[data-action="font-scale"]')?.addEventListener('change', async (event) => { const value = event.target.value; await setFontScale(loaded.character, value); loaded.fontScale = value; runtime.status = `글자 크기 · ${{small:'소',medium:'중',large:'대'}[value]}`; drawInventory(loaded); });
-    root.querySelector('[data-action="rebuild"]')?.addEventListener('click', async () => { const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); } });
+    root.querySelector('[data-action="font-scale"]')?.addEventListener('change', async (event) => {
+      const value = event.target.value;
+      await setFontScale(loaded.character, value);
+      loaded.fontScale = value;
+      runtime.status = `글자 크기 · ${{ small: '소', medium: '중', large: '대' }[value]}`;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="rebuild"]')?.addEventListener('click', async () => {
+      const next = await rebuildCurrent();
+      if (next) {
+        next.enabled = await isEnabled(next.character);
+        drawInventory(next);
+      }
+    });
     root.querySelector('[data-action="cleanup-chat"]')?.addEventListener('click', async () => {
       if (runtime.cleanupArmedUntil <= Date.now()) {
         runtime.cleanupArmedUntil = Date.now() + 7000;
         runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
-        drawInventory(loaded); return;
+        drawInventory(loaded);
+        return;
       }
-      runtime.status = '현재 채팅 ITEMX 기록 정리 중'; drawInventory(loaded);
+      runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+      drawInventory(loaded);
       try {
         const result = await cleanCurrentChatItemx();
         if (result.loaded) drawInventory(result.loaded);
       } catch (error) {
-        runtime.cleanupArmedUntil = 0; runtime.status = '현재 채팅 정리 실패';
+        runtime.cleanupArmedUntil = 0;
+        runtime.status = '현재 채팅 정리 실패';
         await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
         drawInventory(loaded);
       }
     });
     root.querySelector('[data-action="permissions"]')?.addEventListener('click', async () => {
-      runtime.status = '모델 처리 권한 확인 중'; drawInventory(loaded);
+      runtime.status = '모델 처리 권한 확인 중';
+      drawInventory(loaded);
       const connected = await installPipelineHooks({ prompt: true });
       if (connected) await notifyUser('ITEMX CODEX 모델 처리 권한이 연결되었습니다.', 'success');
       else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`, 'error');
-      const next = await rebuildCurrent(); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
+      const next = await rebuildCurrent();
+      if (next) {
+        next.enabled = await isEnabled(next.character);
+        drawInventory(next);
+      }
     });
     root.querySelector('[data-action="style"]')?.addEventListener('click', async () => {
-      runtime.status = '본문 화면 연결 중'; drawInventory(loaded);
+      runtime.status = '본문 화면 연결 중';
+      drawInventory(loaded);
       const styled = await installMainStyle({ prompt: true });
       if (styled) await notifyUser('ITEMX CODEX 본문 화면 연결이 완료되었습니다.', 'success');
       else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`, 'error');
       drawInventory(loaded);
     });
-    root.querySelector('[data-action="badge-position"]')?.addEventListener('change', async (event) => { const value = event.target.value; if (!BADGE_POSITIONS.some(([key]) => key === value)) return; runtime.badgePosition = value; await Risuai.pluginStorage.setItem('badgePosition', value); if (runtime.rootDrawer) { for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`); await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`); } await installMainStyle(); runtime.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`; drawInventory(loaded); });
-    root.querySelector('[data-action="manage-select"]')?.addEventListener('change', (event) => { ui.manageId = event.target.value; drawInventory(loaded); });
+    root.querySelector('[data-action="badge-position"]')?.addEventListener('change', async (event) => {
+      const value = event.target.value;
+      if (!BADGE_POSITIONS.some(([key]) => key === value)) return;
+      runtime.badgePosition = value;
+      await Risuai.pluginStorage.setItem('badgePosition', value);
+      if (runtime.rootDrawer) {
+        for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+        await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);
+      }
+      await installMainStyle();
+      runtime.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`;
+      drawInventory(loaded);
+    });
+    root.querySelector('[data-action="manage-select"]')?.addEventListener('change', (event) => {
+      ui.manageId = event.target.value;
+      drawInventory(loaded);
+    });
     root.querySelector('[data-action="manage-remove"]')?.addEventListener('click', async () => {
       try {
-        const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId); if (!target) throw new Error('대상 아이템이 없습니다.');
+        const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
+        if (!target) throw new Error('대상 아이템이 없습니다.');
         if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
-        runtime.status = '수동 제거 처리 중'; drawInventory(loaded);
-        const event = { kind: 'patch', patch: { id: target.id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null } };
-        const next = await commitManualEvents(loaded, [event], '수동 제거'); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '수동 제거 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); drawInventory(loaded); }
+        runtime.status = '수동 제거 처리 중';
+        drawInventory(loaded);
+        const event = {
+          kind: 'patch',
+          patch: {
+            id: target.id,
+            action: null,
+            op: 'remove',
+            fields: {},
+            quantity: null,
+            destination: '',
+            reason: 'manual_remove',
+            slot: null,
+            inputs: null,
+            outputs: null,
+            equip: null,
+            unequip: null
+          }
+        };
+        const next = await commitManualEvents(loaded, [event], '수동 제거');
+        if (next) {
+          next.enabled = await isEnabled(next.character);
+          drawInventory(next);
+        }
+      } catch (error) {
+        runtime.status = '수동 제거 실패';
+        await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+        drawInventory(loaded);
+      }
     });
     root.querySelector('[data-action="manage-reroll"]')?.addEventListener('click', async () => {
       try {
-        const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId); if (!target) throw new Error('대상 아이템이 없습니다.');
+        const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
+        if (!target) throw new Error('대상 아이템이 없습니다.');
         const note = root.querySelector('[data-action="manage-note"]')?.value?.trim() || '';
-        runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중'; drawInventory(loaded);
+        runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
+        drawInventory(loaded);
         const event = await runItemModel('reroll', loaded, target, note);
-        const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정'); if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '재감정 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); drawInventory(loaded); }
+        const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정');
+        if (next) {
+          next.enabled = await isEnabled(next.character);
+          drawInventory(next);
+        }
+      } catch (error) {
+        runtime.status = '재감정 실패';
+        await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+        drawInventory(loaded);
+      }
     });
     root.querySelector('[data-action="manage-create"]')?.addEventListener('click', async () => {
       try {
-        const note = root.querySelector('[data-action="create-note"]')?.value?.trim() || ''; if (!note) throw new Error('생성할 아이템 설명을 입력하세요.');
-        runtime.status = '신규 아이템 생성 중'; drawInventory(loaded);
+        const note = root.querySelector('[data-action="create-note"]')?.value?.trim() || '';
+        if (!note) throw new Error('생성할 아이템 설명을 입력하세요.');
+        runtime.status = '신규 아이템 생성 중';
+        drawInventory(loaded);
         const event = await runItemModel('create', loaded, null, note);
-        const next = await commitManualEvents(loaded, [event], '신규 생성'); ui.manageId = event.item.id; if (next) { next.enabled = await isEnabled(next.character); drawInventory(next); }
-      } catch (error) { runtime.status = '아이템 생성 실패'; await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error'); drawInventory(loaded); }
+        const next = await commitManualEvents(loaded, [event], '신규 생성');
+        ui.manageId = event.item.id;
+        if (next) {
+          next.enabled = await isEnabled(next.character);
+          drawInventory(next);
+        }
+      } catch (error) {
+        runtime.status = '아이템 생성 실패';
+        await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+        drawInventory(loaded);
+      }
     });
-    root.querySelectorAll('[data-tab]').forEach((el) => el.addEventListener('click', () => {
-      if (ui.tab === el.dataset.tab) return;
-      ui.tab = el.dataset.tab; ui.selected = null; ui.selectedSkill = null; ui.selectedMonster = null;
-      const current = root.querySelector('.itemx-main-tabs')?.nextElementSibling;
-      if (current) current.innerHTML = '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>탭 불러오는 중</strong><small>선택한 화면만 준비하고 있답니다.</small></div>';
-      setTimeout(() => drawInventory(loaded), 24);
-    }));
-    root.querySelectorAll('[data-filter]').forEach((el) => el.addEventListener('click', () => { ui.filter = el.dataset.filter; drawInventory(loaded); }));
-    root.querySelectorAll('[data-item-id]').forEach((el) => el.addEventListener('click', () => { ui.selected = el.dataset.itemId; drawInventory(loaded); }));
-    root.querySelectorAll('[data-skill-id]').forEach((el) => el.addEventListener('click', () => { ui.selectedSkill = el.dataset.skillId; drawInventory(loaded); }));
-    root.querySelectorAll('[data-monster-id]').forEach((el) => el.addEventListener('click', () => { ui.selectedMonster = el.dataset.monsterId; drawInventory(loaded); }));
-    root.querySelector('.itemx-search-input')?.addEventListener('input', (event) => { ui.query = event.target.value; drawInventory(loaded); const input = root.querySelector('.itemx-search-input'); input?.focus(); input?.setSelectionRange(ui.query.length, ui.query.length); });
+    root.querySelectorAll('[data-tab]').forEach((el) =>
+      el.addEventListener('click', () => {
+        if (ui.tab === el.dataset.tab) return;
+        ui.tab = el.dataset.tab;
+        ui.selected = null;
+        ui.selectedSkill = null;
+        ui.selectedMonster = null;
+        const current = root.querySelector('.itemx-main-tabs')?.nextElementSibling;
+        if (current)
+          current.innerHTML =
+            '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>탭 불러오는 중</strong><small>선택한 화면만 준비하고 있답니다.</small></div>';
+        setTimeout(() => drawInventory(loaded), 24);
+      })
+    );
+    root.querySelectorAll('[data-filter]').forEach((el) =>
+      el.addEventListener('click', () => {
+        ui.filter = el.dataset.filter;
+        drawInventory(loaded);
+      })
+    );
+    root.querySelectorAll('[data-item-id]').forEach((el) =>
+      el.addEventListener('click', () => {
+        ui.selected = el.dataset.itemId;
+        drawInventory(loaded);
+      })
+    );
+    root.querySelectorAll('[data-skill-id]').forEach((el) =>
+      el.addEventListener('click', () => {
+        ui.selectedSkill = el.dataset.skillId;
+        drawInventory(loaded);
+      })
+    );
+    root.querySelectorAll('[data-monster-id]').forEach((el) =>
+      el.addEventListener('click', () => {
+        ui.selectedMonster = el.dataset.monsterId;
+        drawInventory(loaded);
+      })
+    );
+    root.querySelector('.itemx-search-input')?.addEventListener('input', (event) => {
+      ui.query = event.target.value;
+      drawInventory(loaded);
+      const input = root.querySelector('.itemx-search-input');
+      input?.focus();
+      input?.setSelectionRange(ui.query.length, ui.query.length);
+    });
   }
 
   function reducedMotion() {
-    return typeof globalThis.matchMedia === 'function' && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return (
+      typeof globalThis.matchMedia === 'function' && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
   }
 
   async function closeInventory({ immediate = false } = {}) {
@@ -3483,18 +5199,23 @@ ${codexPageStyle()}
       drawInventory(loaded);
       await Risuai.showContainer(runtime.compactContainer ? 'floating' : 'fullscreen');
       const panel = document.querySelector('.itemx-panel');
-      if (panel && transition === runtime.panelTransition && runtime.panelOpen && !reducedMotion()) panel.classList.add('itemx-plugin-panel-in');
+      if (panel && transition === runtime.panelTransition && runtime.panelOpen && !reducedMotion())
+        panel.classList.add('itemx-plugin-panel-in');
     } catch (error) {
       if (transition === runtime.panelTransition) runtime.panelOpen = false;
       runtime.status = '인벤토리 열기 오류';
-      try { await Risuai.hideContainer(); } catch {}
+      try {
+        await Risuai.hideContainer();
+      } catch {}
       fail('openInventory', error);
     }
   }
 
   async function toggleCurrentBot() {
-    const ctx = await context(); if (!ctx) return;
-    const next = !(await isEnabled(ctx.character)); await setEnabled(ctx.character, next);
+    const ctx = await context();
+    if (!ctx) return;
+    const next = !(await isEnabled(ctx.character));
+    await setEnabled(ctx.character, next);
     runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
     await openRootInventory({ open: true, tab: 'settings' });
   }
@@ -3512,7 +5233,7 @@ ${codexPageStyle()}
     runtime.activeContextKey = active.key;
     runtime.allowDrawerOverSettings = true;
     invalidateHostSettingsVisibility();
-    let styled = Boolean(runtime.mainDoc) || await installMainStyle();
+    let styled = Boolean(runtime.mainDoc) || (await installMainStyle());
     const loadingStarted = styled ? Date.now() : 0;
     if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     await updateRootLoading('연결과 권한 확인 중…');
@@ -3539,42 +5260,67 @@ ${codexPageStyle()}
   }
 
   async function installDisplayHooks() {
-    if (!runtime.hooks.process) { await Risuai.addRisuScriptHandler('process', processHandler); runtime.hooks.process = true; }
-    if (!runtime.hooks.output) { await Risuai.addRisuScriptHandler('output', outputFallback); runtime.hooks.output = true; }
-    if (!runtime.hooks.display) { await Risuai.addRisuScriptHandler('display', displayHandler); runtime.hooks.display = true; }
+    if (!runtime.hooks.process) {
+      await Risuai.addRisuScriptHandler('process', processHandler);
+      runtime.hooks.process = true;
+    }
+    if (!runtime.hooks.output) {
+      await Risuai.addRisuScriptHandler('output', outputFallback);
+      runtime.hooks.output = true;
+    }
+    if (!runtime.hooks.display) {
+      await Risuai.addRisuScriptHandler('display', displayHandler);
+      runtime.hooks.display = true;
+    }
   }
 
   async function installPipelineHooksNow({ prompt = false } = {}) {
     try {
       await installDisplayHooks();
-      const permission = typeof Risuai.requestPluginPermission === 'function'
-        ? await Risuai.requestPluginPermission('replacer')
-        : true;
+      const permission =
+        typeof Risuai.requestPluginPermission === 'function' ? await Risuai.requestPluginPermission('replacer') : true;
       runtime.permissions.replacer = permission === true;
       if (!runtime.permissions.replacer) {
-        if (runtime.hooks.before) { try { await Risuai.removeRisuReplacer('beforeRequest', beforeRequest); } catch {} }
-        if (runtime.hooks.after) { try { await Risuai.removeRisuReplacer('afterRequest', afterRequest); } catch {} }
+        if (runtime.hooks.before) {
+          try {
+            await Risuai.removeRisuReplacer('beforeRequest', beforeRequest);
+          } catch {}
+        }
+        if (runtime.hooks.after) {
+          try {
+            await Risuai.removeRisuReplacer('afterRequest', afterRequest);
+          } catch {}
+        }
         runtime.hooks.before = false;
         runtime.hooks.after = false;
         runtime.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
         runtime.status = '모델 처리 권한 필요';
       } else {
-        if (!runtime.hooks.before) { await Risuai.addRisuReplacer('beforeRequest', beforeRequest); runtime.hooks.before = true; }
-        if (!runtime.hooks.after) { await Risuai.addRisuReplacer('afterRequest', afterRequest); runtime.hooks.after = true; }
+        if (!runtime.hooks.before) {
+          await Risuai.addRisuReplacer('beforeRequest', beforeRequest);
+          runtime.hooks.before = true;
+        }
+        if (!runtime.hooks.after) {
+          await Risuai.addRisuReplacer('afterRequest', afterRequest);
+          runtime.hooks.after = true;
+        }
       }
       if (!runtime.hooks.listener) {
         if (typeof Risuai.addRisuChatListener !== 'function') {
           runtime.hooks.listener = 'unsupported';
           log('chat listener unavailable; continuing with core request/output hooks');
-        } else try {
-          await Risuai.addRisuChatListener('output', () => { void scheduleCommittedOutputSync(); });
-          runtime.hooks.listener = true;
-        } catch (error) {
-          const message = String(error?.message || error || '');
-          if (!/API method addRisuChatListener not found/i.test(message)) throw error;
-          runtime.hooks.listener = 'unsupported';
-          log('chat listener unavailable; continuing with core request/output hooks');
-        }
+        } else
+          try {
+            await Risuai.addRisuChatListener('output', () => {
+              void scheduleCommittedOutputSync();
+            });
+            runtime.hooks.listener = true;
+          } catch (error) {
+            const message = String(error?.message || error || '');
+            if (!/API method addRisuChatListener not found/i.test(message)) throw error;
+            runtime.hooks.listener = 'unsupported';
+            log('chat listener unavailable; continuing with core request/output hooks');
+          }
       }
       if (runtime.permissions.replacer) {
         runtime.lastHookError = '';
@@ -3591,13 +5337,39 @@ ${codexPageStyle()}
     }
   }
 
+  function armRemountWatchdog() {
+    if (runtime.unloading) return;
+    const interval = runtime.hostObserver || !runtime.activeContextKey ? 10000 : 1200;
+    if (runtime.remountTimer && runtime.remountInterval === interval) return;
+    if (runtime.remountTimer) globalThis.clearInterval(runtime.remountTimer);
+    runtime.remountInterval = interval;
+    runtime.remountTimer = globalThis.setInterval(() => {
+      if (!runtime.bodyFxScrollActive) {
+        const now = Date.now();
+        if (!runtime.activeContextKey) {
+          runtime.homeProbeAt = now;
+          void ensureRootInventory();
+        } else if (!runtime.hostObserver || now - runtime.remountFallbackAt >= 10000) {
+          void ensureRootInventory();
+        }
+      }
+    }, interval);
+  }
+
   try {
     await loadBadgePosition();
-    const setting = await Risuai.registerSetting('ITEMX CODEX · 권한 및 설정', openSettingsFromRisuMenu, '💎', 'html', 'itemx2-current-bot');
+    const setting = await Risuai.registerSetting(
+      'ITEMX CODEX · 권한 및 설정',
+      openSettingsFromRisuMenu,
+      '💎',
+      'html',
+      'itemx2-current-bot'
+    );
     if (setting?.id) runtime.uiParts.push(setting.id);
     await installDisplayHooks();
     const initial = await context();
-    let connected = false, styled = false;
+    let connected = false,
+      styled = false;
     if (initial) {
       runtime.activeContextKey = initial.key;
       runtime.status = '초기 화면 연결 중';
@@ -3615,19 +5387,11 @@ ${codexPageStyle()}
     } else {
       runtime.status = '채팅 진입 대기';
     }
-    runtime.remountTimer = globalThis.setInterval(() => {
-      if (runtime.bodyFxScrollActive) return;
-      const now = Date.now();
-      if (!runtime.activeContextKey) {
-        if (now - runtime.homeProbeAt < 10000) return;
-        runtime.homeProbeAt = now;
-        void ensureRootInventory();
-        return;
-      }
-      if (!runtime.hostObserver || now - runtime.remountFallbackAt >= 10000) void ensureRootInventory();
-    }, 1200);
+    armRemountWatchdog();
     armCatchUpWatchdog();
-    runtime.updateTimer = globalThis.setInterval(() => { void checkForUpdate(); }, ITEMX_UPDATE_CHECK_MS);
+    runtime.updateTimer = globalThis.setInterval(() => {
+      void checkForUpdate();
+    }, ITEMX_UPDATE_CHECK_MS);
     if (initial) void catchUpLatestOutput().catch((error) => fail('initial output catch-up', error));
     if (connected && styled) runtime.status = '정상';
     log(`v${ITEMX_PLUGIN_VERSION} ready`);
@@ -3644,6 +5408,7 @@ ${codexPageStyle()}
     runtime.panelTransition += 1;
     if (runtime.remountTimer) globalThis.clearInterval(runtime.remountTimer);
     runtime.remountTimer = null;
+    runtime.remountInterval = 0;
     if (runtime.catchUpTimer) globalThis.clearInterval(runtime.catchUpTimer);
     runtime.catchUpTimer = null;
     if (runtime.updateTimer) globalThis.clearInterval(runtime.updateTimer);
@@ -3661,23 +5426,45 @@ ${codexPageStyle()}
     if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
     runtime.bodyFxScrollTimer = null;
     if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
-      try { await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling'); } catch {}
+      try {
+        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+      } catch {}
     }
     runtime.bodyFxScrollActive = false;
     runtime.bodyFxSawScroll = false;
     runtime.outputSyncDeferred = false;
     runtime.hostSyncDeferred = false;
-    try { await Risuai.hideContainer(); } catch {}
+    try {
+      await Risuai.hideContainer();
+    } catch {}
     await removeRootDrawer();
     await removeBodyEffectGovernor();
-    try { if (runtime.hostObserver?.disconnect) await runtime.hostObserver.disconnect(); } catch {}
+    try {
+      if (runtime.hostObserver?.disconnect) await runtime.hostObserver.disconnect();
+    } catch {}
     runtime.hostObserver = null;
-    try { await Risuai.removeRisuScriptHandler('output', outputFallback); } catch {}
-    try { await Risuai.removeRisuScriptHandler('display', displayHandler); } catch {}
-    try { await Risuai.removeRisuScriptHandler('process', processHandler); } catch {}
-    try { await Risuai.removeRisuReplacer('beforeRequest', beforeRequest); } catch {}
-    try { await Risuai.removeRisuReplacer('afterRequest', afterRequest); } catch {}
-    for (const id of runtime.uiParts) { try { await Risuai.unregisterUIPart(id); } catch {} }
-    try { if (runtime.mainStyle) await runtime.mainStyle.remove(); } catch {}
+    try {
+      await Risuai.removeRisuScriptHandler('output', outputFallback);
+    } catch {}
+    try {
+      await Risuai.removeRisuScriptHandler('display', displayHandler);
+    } catch {}
+    try {
+      await Risuai.removeRisuScriptHandler('process', processHandler);
+    } catch {}
+    try {
+      await Risuai.removeRisuReplacer('beforeRequest', beforeRequest);
+    } catch {}
+    try {
+      await Risuai.removeRisuReplacer('afterRequest', afterRequest);
+    } catch {}
+    for (const id of runtime.uiParts) {
+      try {
+        await Risuai.unregisterUIPart(id);
+      } catch {}
+    }
+    try {
+      if (runtime.mainStyle) await runtime.mainStyle.remove();
+    } catch {}
   });
 })();

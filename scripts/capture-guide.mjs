@@ -24,7 +24,9 @@ async function open(file, viewport = { width: 430, height: 920 }) {
   await page.goto(pathToFileURL(resolve(root, file)).href);
   if (process.env.ITEMX_EMOJI_FONT) {
     const fontUrl = pathToFileURL(resolve(process.env.ITEMX_EMOJI_FONT)).href;
-    await page.addStyleTag({ content: `@font-face{font-family:ItemxCaptureEmoji;src:url('${fontUrl}') format('truetype')} .avatar,.event-icon,.tile-icon,.main-tab span,.itemx-emoji,.itemx-tile-em,.itemx-codex-glyph,.detail-icon,.x-risu-itemx2-inline-icon>span,.x-risu-itemx-main-tab,.x-risu-itemx-ph-btn{font-family:ItemxCaptureEmoji,"Noto Color Emoji",sans-serif!important}` });
+    await page.addStyleTag({
+      content: `@font-face{font-family:ItemxCaptureEmoji;src:url('${fontUrl}') format('truetype')} .avatar,.event-icon,.tile-icon,.main-tab span,.itemx-emoji,.itemx-tile-em,.itemx-codex-glyph,.detail-icon,.x-risu-itemx2-inline-icon>span,.x-risu-itemx-main-tab,.x-risu-itemx-ph-btn{font-family:ItemxCaptureEmoji,"Noto Color Emoji",sans-serif!important}`
+    });
   }
   await page.emulateMedia({ reducedMotion: 'no-preference', colorScheme: 'dark' });
   return page;
@@ -98,7 +100,8 @@ for (const preview of [
     viewport: document.documentElement.clientWidth,
     brokenImages: [...document.images].filter((image) => !image.complete || image.naturalWidth === 0).length
   }));
-  if (metrics.brokenImages || metrics.width > metrics.viewport) throw new Error(`${preview.name} layout failed: ${JSON.stringify(metrics)}`);
+  if (metrics.brokenImages || metrics.width > metrics.viewport)
+    throw new Error(`${preview.name} layout failed: ${JSON.stringify(metrics)}`);
   console.log(`${preview.name}: width=${metrics.width} brokenImages=${metrics.brokenImages}`);
   await page.close();
 }

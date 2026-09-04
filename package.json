@@ -1,14 +1,19 @@
 {
   "name": "itemx2",
   "private": true,
-  "version": "2.0.4",
+  "version": "2.0.5",
   "itemxUpdateUrl": "https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "format": "prettier --write package.json src tests scripts/*.mjs",
+    "format:check": "prettier --check package.json src tests scripts/*.mjs",
     "test": "node --test tests/*.test.mjs",
     "preview:screenshot": "node scripts/screenshot.mjs",
     "verify:risu-browser": "node scripts/verify-risu-browser.mjs",
     "verify:plugin-ui": "node scripts/verify-plugin-ui-browser.mjs"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6"
   }
 }

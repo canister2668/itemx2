@@ -1,0 +1,6 @@
+dist/
+design/
+docs/
+node_modules/
+scripts/bench-portraits.mjs
+scripts/build-arca-body.mjs

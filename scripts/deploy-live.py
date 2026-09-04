@@ -89,14 +89,22 @@ try:
     ).rowcount
     if changed != 1:
         raise RuntimeError('settings compare-and-swap failed')
-    con.commit()
+    stored = json.loads(con.execute('SELECT data FROM settings WHERE id=1').fetchone()[0])
+    if stored != settings:
+        raise RuntimeError('stored settings differ from intended deployment')
+    untouched = json.loads(json.dumps(stored))
+    untouched['plugins'][index] = plugin
+    if untouched != json.loads(raw):
+        raise RuntimeError('deployment modified non-ITEMX settings')
     quick = con.execute('PRAGMA quick_check').fetchone()[0]
     if quick != 'ok':
         raise RuntimeError(f'quick_check failed: {quick}')
+    con.commit()
     action = 'metadata-repaired' if old_script == bundle else 'updated'
     print(f'{action} index={index} {old_version}->{new_version_value}')
     print(f'bundle_sha256={hashlib.sha256(bundle.encode()).hexdigest()}')
     print(f'backup={backup_path} bytes={backup_path.stat().st_size}')
     print('quick_check=ok')
+    print('non_itemx_settings_unchanged=true')
 finally:
     con.close()
