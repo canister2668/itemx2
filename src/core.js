@@ -784,7 +784,7 @@ const ITEMXCore = (() => {
     return out;
   }
 
-  function extractResponse(content, baseRegistry = newRegistry()) {
+  function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);
@@ -800,6 +800,18 @@ const ITEMXCore = (() => {
         part.kind === 'xml'
           ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
           : parseBracket(part.body, `${part.raw}:${index}`);
+      if (options.prepareEvent && (parsed.item || parsed.patch)) {
+        const prepared = options.prepareEvent(
+          parsed.item ? { kind: 'exam', item: parsed.item } : { kind: 'patch', patch: parsed.patch },
+          reg
+        );
+        if (!prepared) {
+          cursor = part.end;
+          return;
+        }
+        if (prepared.kind === 'exam') parsed.item = prepared.item;
+        else parsed.patch = prepared.patch;
+      }
       if (parsed.item) {
         const previous = comparisonView(reg.items[parsed.item.id]);
         const event = { kind: 'exam', item: parsed.item },

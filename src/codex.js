@@ -666,6 +666,13 @@ const ITEMXCodex = (() => {
         return;
       }
       const parsed = parseTransport(part.tag, part.attrs, part.body, `${part.raw}:${index}`);
+      if (parsed.event && options.prepareEvent) {
+        parsed.event = options.prepareEvent(parsed.event, state);
+        if (!parsed.event) {
+          cursor = part.end;
+          return;
+        }
+      }
       if (options.reconcileExistingSkills && parsed.event?.domain === 'skill') {
         const event = parsed.event;
         if (event.kind === 'exam' && !state.skills.entries[event.entity.id]) {
@@ -714,8 +721,7 @@ const ITEMXCodex = (() => {
           if (options.reconcileExistingSkills && parsed.event.domain === 'skill') indexSkill(view);
           // A repeated inspection is not a new skill event or a new inline card.
           const unchangedSkill =
-            options.reconcileExistingSkills &&
-            parsed.event.domain === 'skill' &&
+            (options.suppressUnchanged || (options.reconcileExistingSkills && parsed.event.domain === 'skill')) &&
             previous &&
             JSON.stringify(previous) === JSON.stringify(view);
           if (!unchangedSkill) {

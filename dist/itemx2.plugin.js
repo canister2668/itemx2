@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.0.6
+//@version 2.0.7
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX CODEX · v2.0.6
+//@display-name ITEMX CODEX · v2.0.7
 //@description World Inventory & Encounter Archive
 
 
@@ -786,7 +786,7 @@ const ITEMXCore = (() => {
     return out;
   }
 
-  function extractResponse(content, baseRegistry = newRegistry()) {
+  function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);
@@ -802,6 +802,18 @@ const ITEMXCore = (() => {
         part.kind === 'xml'
           ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
           : parseBracket(part.body, `${part.raw}:${index}`);
+      if (options.prepareEvent && (parsed.item || parsed.patch)) {
+        const prepared = options.prepareEvent(
+          parsed.item ? { kind: 'exam', item: parsed.item } : { kind: 'patch', patch: parsed.patch },
+          reg
+        );
+        if (!prepared) {
+          cursor = part.end;
+          return;
+        }
+        if (prepared.kind === 'exam') parsed.item = prepared.item;
+        else parsed.patch = prepared.patch;
+      }
       if (parsed.item) {
         const previous = comparisonView(reg.items[parsed.item.id]);
         const event = { kind: 'exam', item: parsed.item },
@@ -1861,6 +1873,13 @@ const ITEMXCodex = (() => {
         return;
       }
       const parsed = parseTransport(part.tag, part.attrs, part.body, `${part.raw}:${index}`);
+      if (parsed.event && options.prepareEvent) {
+        parsed.event = options.prepareEvent(parsed.event, state);
+        if (!parsed.event) {
+          cursor = part.end;
+          return;
+        }
+      }
       if (options.reconcileExistingSkills && parsed.event?.domain === 'skill') {
         const event = parsed.event;
         if (event.kind === 'exam' && !state.skills.entries[event.entity.id]) {
@@ -1908,8 +1927,7 @@ const ITEMXCodex = (() => {
         if (view) {
           if (options.reconcileExistingSkills && parsed.event.domain === 'skill') indexSkill(view);
           const unchangedSkill =
-            options.reconcileExistingSkills &&
-            parsed.event.domain === 'skill' &&
+            (options.suppressUnchanged || (options.reconcileExistingSkills && parsed.event.domain === 'skill')) &&
             previous &&
             JSON.stringify(previous) === JSON.stringify(view);
           if (!unchangedSkill) {
@@ -3071,8 +3089,8 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 @media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
 `;
 const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.0.6";
-const ITEMX_VERSION_LABEL = "2.0.6";
+const ITEMX_PLUGIN_VERSION = "2.0.7";
+const ITEMX_VERSION_LABEL = "2.0.7";
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -4932,6 +4950,121 @@ ${codexPageStyle()}
     return pending;
   }
 
+  function stableEventValue(value) {
+    if (Array.isArray(value)) return value.map(stableEventValue);
+    if (value && typeof value === 'object')
+      return Object.fromEntries(
+        Object.keys(value)
+          .sort()
+          .map((key) => [key, stableEventValue(value[key])])
+      );
+    return value;
+  }
+  function eventValueKey(value) {
+    return JSON.stringify(stableEventValue(value));
+  }
+
+  function auxiliaryEventReconciler(domain, initial, represented, narrative) {
+    const names = new Map(),
+      aliases = new Map();
+    const normalize = (value) =>
+      String(value || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/\s+/g, '');
+    const entries = (state) => (domain === 'item' ? state.items : state.monsters.entries);
+    const index = (entity) => {
+      const name = normalize(entity?.name);
+      if (!name) return;
+      if (!names.has(name)) names.set(name, new Set());
+      names.get(name).add(entity.id);
+    };
+    Object.values(entries(initial)).forEach(index);
+    const repeatedActions = new Set(represented.filter((event) => event.kind === 'patch').map(eventValueKey));
+    const lastBatchAction = new Map();
+    const known = (value) => value != null && !/^(?:|none|unknown|미상|미분류)$/i.test(String(value).trim());
+    const separateMention = (name) => {
+      const text = String(narrative || '').normalize('NFKC');
+      const at = text.indexOf(name);
+      if (at < 0) return false;
+      return /또\s*다른|별개|두\s*번째|세\s*번째|한\s*(?:자루|개|마리)\s*더|\b(?:another|different|second|third)\b/i.test(
+        text.slice(Math.max(0, at - 65), at + name.length + 65)
+      );
+    };
+    return (source, state) => {
+      const event = ITEMXCore.clone(source),
+        registry = entries(state);
+      if (event.kind === 'exam') {
+        const entity = domain === 'item' ? event.item : event.entity;
+        if (!registry[entity.id] && !separateMention(entity.name)) {
+          const provided = new Set(entity._provided || []);
+          const keys =
+            domain === 'item'
+              ? [
+                  ['itemType', 'type'],
+                  ['rarity', 'internalrarity'],
+                  ['affinity', 'affinity'],
+                  ['affinity2', 'affinity2'],
+                  ['power', 'power'],
+                  ['durability', 'durability'],
+                  ['condition', 'condition'],
+                  ['possession', 'possession'],
+                  ['location', 'location']
+                ]
+              : [
+                  ['kind', 'type'],
+                  ['portrait', 'portrait']
+                ];
+          const candidates = [...(names.get(normalize(entity.name)) || [])]
+            .map((id) => registry[id])
+            .filter(
+              (prior) =>
+                prior &&
+                normalize(prior.name) === normalize(entity.name) &&
+                keys.every(
+                  ([key, raw]) =>
+                    !provided.has(raw) ||
+                    !known(entity[key]) ||
+                    !known(prior[key]) ||
+                    normalize(entity[key]) === normalize(prior[key])
+                )
+            );
+          if (candidates.length === 1) {
+            aliases.set(entity.id, candidates[0].id);
+            entity.id = candidates[0].id;
+            entity.name = candidates[0].name;
+          } else if (candidates.length > 1) {
+            return null;
+          }
+        }
+        index(entity);
+      } else {
+        const patch = event.patch;
+        for (const key of ['id', 'equip', 'unequip'])
+          if (aliases.has(patch[key]) && !registry[patch[key]]) patch[key] = aliases.get(patch[key]);
+        for (const key of ['inputs', 'outputs'])
+          for (const row of patch[key] || [])
+            if (aliases.has(row.id) && !registry[row.id]) row.id = aliases.get(row.id);
+        const signature = eventValueKey(event);
+        const target = patch.id || eventValueKey([patch.equip, patch.unequip, patch.inputs, patch.outputs]);
+        if (repeatedActions.has(signature) || lastBatchAction.get(target) === signature) return null;
+        lastBatchAction.set(target, signature);
+      }
+      return event;
+    };
+  }
+  function itemEventState(reg, event) {
+    const patch = event.patch || {};
+    const ids = [
+      event.item?.id,
+      patch.id,
+      patch.equip,
+      patch.unequip,
+      ...(patch.inputs || []).map((x) => x.id),
+      ...(patch.outputs || []).map((x) => x.id)
+    ].filter(Boolean);
+    return eventValueKey(ids.map((id) => reg.items[id] || null));
+  }
   async function recoverAuxiliaryOutputNow({ messageIndex = null, force = false } = {}) {
     const ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return null;
@@ -4991,21 +5124,39 @@ ${codexPageStyle()}
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
       const raw = modelText(response);
       if (!raw) throw new Error('보조 출력이 비어 있습니다.');
+      const itemReconciler = auxiliaryEventReconciler(
+        'item',
+        snapshot.registry,
+        messageEvents(source, 'item', lookup),
+        committedNarrative
+      );
+      const monsterReconciler = auxiliaryEventReconciler(
+        'monster',
+        codexSnapshot,
+        messageEvents(source, 'codex', lookup).filter((event) => event.domain === 'monster'),
+        committedNarrative
+      );
       const parsed = settings.itemsEnabled
-        ? ITEMXCore.extractResponse(raw, snapshot.registry)
+        ? ITEMXCore.extractResponse(raw, snapshot.registry, { prepareEvent: itemReconciler })
         : { content: stripItemTransport(raw), events: [], errors: [] };
       const validationRegistry = ITEMXCore.clone(snapshot.registry);
       const validItems = [],
         partials = [],
         rejectedIds = [];
       const checkedIds = new Set();
+      const acceptItemEvent = (event) => {
+        const before = itemEventState(validationRegistry, event);
+        if (ITEMXCore.applyEvent(validationRegistry, event) == null) return false;
+        if (before !== itemEventState(validationRegistry, event)) validItems.push(event);
+        return true;
+      };
       const itemSiblings = parsed.events.filter((event) => event.kind === 'exam').map((event) => event.item);
       const itemEvidenceContext = [conversation.triggeringUser, conversation.recent, committedNarrative]
         .filter(Boolean)
         .join('\n\n');
       for (const event of parsed.events) {
         if (event.kind !== 'exam') {
-          if (ITEMXCore.applyEvent(validationRegistry, event) != null) validItems.push(event);
+          acceptItemEvent(event);
           continue;
         }
         let evidence = ITEMXQuality.detectItemEvidence(committedNarrative, event.item, itemSiblings);
@@ -5018,9 +5169,8 @@ ${codexPageStyle()}
         }
         const accepted =
           quality.status === 'partial' ? ITEMXQuality.projectSafePartial(event, quality, validationRegistry) : event;
-        if (ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
+        if (!acceptItemEvent(accepted)) continue;
         checkedIds.add(event.item.id);
-        validItems.push(accepted);
         if (quality.status === 'partial') partials.push({ ...quality, event: accepted, sourceEvent: event });
       }
       let unresolvedPartials = partials;
@@ -5036,8 +5186,7 @@ ${codexPageStyle()}
           const repairParsed = repairRaw ? ITEMXCore.extractResponse(repairRaw, validationRegistry) : { events: [] };
           for (const event of repairParsed.events) {
             const accepted = ITEMXQuality.acceptRepair(event, partialMap, validationRegistry);
-            if (!accepted || ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
-            validItems.push(accepted);
+            if (!accepted || !acceptItemEvent(accepted)) continue;
             const fields = repaired.get(accepted.patch.id) || new Set();
             Object.keys(accepted.patch.fields || {}).forEach((key) => fields.add(key));
             repaired.set(accepted.patch.id, fields);
@@ -5055,6 +5204,8 @@ ${codexPageStyle()}
       const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, {
         enabledDomains: domains,
         reconcileExistingSkills: true,
+        suppressUnchanged: true,
+        prepareEvent: (event, state) => (event.domain === 'monster' ? monsterReconciler(event, state) : event),
         rarityMode: settings.rarityMode,
         skillEvidenceText
       });
@@ -5878,12 +6029,32 @@ ${codexPageStyle()}
     runtime.eventBurstOwners.clear();
   }
 
+  function suppressRepeatedDisplayStates(content) {
+    const last = new Map();
+    return String(content || '').replace(
+      /<!--(ITEMX2|CODEX2)([:@])([A-Za-z0-9_-]+)(?::([A-Za-z0-9_-]+))?-->/g,
+      (raw, prefix, mode, code, inline) => {
+        const domain = prefix === 'ITEMX2' ? 'item' : 'codex';
+        const payload =
+          mode === ':'
+            ? ITEMXCore.decodePayload(code)
+            : runtime.eventPayloads.get(`${domain}:${code}`) || inlineViewPayload(inline, domain);
+        const view = payload?.view;
+        if (!view?.id || payload.error) return raw;
+        const key = `${domain}:${payload.event?.domain || 'item'}:${view.id}`;
+        const signature = eventValueKey(view);
+        const duplicate = last.get(key) === signature;
+        last.set(key, signature);
+        return duplicate ? '' : raw;
+      }
+    );
+  }
   const displayHandler = (content) => {
     const raw = String(content || '');
     if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return content;
     const positioned =
       raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
-    const source = coalesceAdjacentItemMarkers(positioned);
+    const source = coalesceAdjacentItemMarkers(suppressRepeatedDisplayStates(positioned));
     let found = false,
       hasFullCard = false,
       hasCodexCard = false;
