@@ -665,13 +665,13 @@ const ITEMXCore = (() => {
         item.location = 'inventory';
         item.removedReason = null;
       } else if (patch.action === 'equip') {
-        if (
-          !patch.slot ||
-          item.possession !== 'owned' ||
-          available(item) < 1 ||
-          slotConflict(reg, item.id, patch.slot)
-        ) {
-          diagnostic(reg, 'action_invalid_equip', item.id);
+        const conflict = slotConflict(reg, item.id, patch.slot);
+        const failure = !patch.slot ? 'action_slot_required'
+          : item.possession !== 'owned' ? 'action_acquire_required'
+          : available(item) < 1 ? 'action_insufficient_quantity'
+          : conflict ? 'action_slot_occupied' : null;
+        if (failure) {
+          diagnostic(reg, failure, conflict ? conflict.id : item.id);
           return null;
         }
         item.possession = 'owned';
@@ -785,6 +785,18 @@ const ITEMXCore = (() => {
   }
 
   function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
+    // Planning text is not an instruction source. Fail closed on an unclosed block.
+    const original = String(content || '');
+    if (/<(?:Thoughts|Thought|think|thinking|DSThink)\b[^>]*>/i.test(original)) {
+      const blocks = [];
+      let prefix = '__ITEMX_PROTECTED__';
+      while (original.includes(prefix)) prefix += '_';
+      const masked = original.replace(/<(Thoughts|Thought|think|thinking|DSThink)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+        (block) => { const key = prefix + blocks.length + '__'; blocks.push([key, block]); return key; });
+      const result = extractResponse(masked, baseRegistry, options);
+      for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
+      return result;
+    }
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);

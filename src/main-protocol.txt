@@ -18,6 +18,7 @@ Existing ids in the `[ITEMX v2]` state are authoritative. Never appraise them ag
 [itemx: id=sword | op=merge | durability=61/100]
 
 Actions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.
+Before equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.
 
 Enums:
 - rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean

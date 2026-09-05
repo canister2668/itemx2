@@ -494,7 +494,7 @@
     animation: none !important;
   }
 }
-.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.7</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
+.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.8</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 const ITEMXCore = (() => {
   'use strict';
 
@@ -1161,13 +1161,13 @@ const ITEMXCore = (() => {
         item.location = 'inventory';
         item.removedReason = null;
       } else if (patch.action === 'equip') {
-        if (
-          !patch.slot ||
-          item.possession !== 'owned' ||
-          available(item) < 1 ||
-          slotConflict(reg, item.id, patch.slot)
-        ) {
-          diagnostic(reg, 'action_invalid_equip', item.id);
+        const conflict = slotConflict(reg, item.id, patch.slot);
+        const failure = !patch.slot ? 'action_slot_required'
+          : item.possession !== 'owned' ? 'action_acquire_required'
+          : available(item) < 1 ? 'action_insufficient_quantity'
+          : conflict ? 'action_slot_occupied' : null;
+        if (failure) {
+          diagnostic(reg, failure, conflict ? conflict.id : item.id);
           return null;
         }
         item.possession = 'owned';
@@ -1281,6 +1281,18 @@ const ITEMXCore = (() => {
   }
 
   function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
+    // Planning text is not an instruction source. Fail closed on an unclosed block.
+    const original = String(content || '');
+    if (/<(?:Thoughts|Thought|think|thinking|DSThink)\b[^>]*>/i.test(original)) {
+      const blocks = [];
+      let prefix = '__ITEMX_PROTECTED__';
+      while (original.includes(prefix)) prefix += '_';
+      const masked = original.replace(/<(Thoughts|Thought|think|thinking|DSThink)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+        (block) => { const key = prefix + blocks.length + '__'; blocks.push([key, block]); return key; });
+      const result = extractResponse(masked, baseRegistry, options);
+      for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
+      return result;
+    }
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);
@@ -1947,4 +1959,4 @@ const ITEMXRenderer = (() => {
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
 
-const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.7</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
+const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.8</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>

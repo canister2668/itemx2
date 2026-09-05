@@ -345,3 +345,19 @@ test('inline lite motion preserves the theme while bounding animated particle DO
   assert.equal(off.includes('itemx-fx'), false);
   assert.equal(off.includes('itemx-cond'), false);
 });
+test('moxie observed acquisition precedes equip and planning never executes', () => {
+  const reg = core.extractResponse(exam('moxie_sword', '막야').replace('<possession>owned</possession>', '<possession>observed</possession>'), core.newRegistry()).registry;
+  const equip = '[itemx: id=moxie_sword | action=equip | slot=main_hand]';
+  const rejected = core.extractResponse(equip, reg);
+  assert.equal(rejected.registry.items.moxie_sword.possession, 'observed');
+  assert.ok(rejected.errors.includes('action_acquire_required'));
+  for (const end of ['</Thoughts>', '']) {
+    const result = core.extractResponse('<Thoughts>Plan: '+equip+end, reg);
+    assert.equal(result.events.length, 0);
+    assert.equal(result.registry.items.moxie_sword.possession, 'observed');
+  }
+  const result = core.extractResponse('<Thoughts>'+equip+'</Thoughts>\n막야를 받아 장착한다.\n[itemx: id=moxie_sword | action=acquire | quantity=1]\n'+equip, reg);
+  assert.equal(result.registry.items.moxie_sword.location, 'equipped');
+  assert.equal(result.registry.items.moxie_sword.count, 1);
+  assert.equal(result.registry.items.moxie_sword.slot, 'main_hand');
+});
