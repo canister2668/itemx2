@@ -25,6 +25,7 @@ if (updateUrl && !/^https:\/\//i.test(updateUrl)) throw new Error('ITEMX update 
 const rawCss = demo.match(/<style>([\s\S]*?)<\/style>/i)?.[1];
 if (!rawCss) throw new Error(`style block not found: ${demoPath}`);
 const presentationCss = await readFile(resolve(root, 'src/presentation.css'), 'utf8');
+const history = await readFile(resolve(root, 'src/history.js'), 'utf8');
 const css = `${rawCss.replace(/[ \t]+$/gm, '').trim()}\n${presentationCss.trim()}`;
 const cardStart = css.indexOf('    .itemx-panel');
 if (cardStart < 0) throw new Error('ITEMX design selectors not found');
@@ -91,7 +92,7 @@ const builtRuntime = productionSource(
 if (/__ITEMX_[A-Z_]+__/.test(builtRuntime)) throw new Error('unreplaced build placeholder');
 
 await mkdir(resolve(root, 'dist'), { recursive: true });
-const plugin = `${metadata}${productionSource(core).trimEnd()}\n${productionSource(quality).trimEnd()}\n${productionSource(codex).trimEnd()}\n${productionSource(lorebook).trimEnd()}\n${productionSource(renderer).trimEnd()}\n${builtRuntime.trimEnd()}\n`;
+const plugin = `${metadata}${productionSource(core).trimEnd()}\n${productionSource(quality).trimEnd()}\n${productionSource(codex).trimEnd()}\n${productionSource(lorebook).trimEnd()}\n${productionSource(renderer).trimEnd()}\n${productionSource(history).trimEnd()}\n${builtRuntime.trimEnd()}\n`;
 await writeFile(resolve(root, 'dist/itemx2.plugin.js'), plugin);
 await writeFile(resolve(root, 'dist/itemx2-ui.css'), `${css}\n`);
 await writeFile(resolve(root, 'dist/itemx2-main-scoped.css'), `${mainCss.trimEnd()}\n`);

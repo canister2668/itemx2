@@ -174,6 +174,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     debugEntries: [],
     cleanupArmedUntil: 0
   };
+  runtime.historyView = { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 };
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
   const debugRecord = (where, detail = '') => {
@@ -1216,16 +1217,33 @@ ${codexPageStyle()}
 
   function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
     const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
+    state.history ||= { skill: {}, monster: {} };
     const messages = chat?.message || [],
       start = Math.max(0, options.start || 0),
       end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
     let transport = options.transport || '';
     for (let index = start; index <= end; index += 1) {
       const narrative = messageData(messages[index]);
+      let occurrence = 0;
       for (const event of messageEvents(narrative, 'codex', lookup)) {
         // Events are reconciled exactly once when committed. Replay is a pure
         // fold over stored facts, never a second interpretation of prose.
-        ITEMXCodex.applyEvent(state, event);
+        const domain = event.domain,
+          id = event.entity?.id || event.patch?.id;
+        const registry = domain === 'skill' ? state.skills : state.monsters;
+        const before = registry.entries[id] ? { ...registry.entries[id] } : null;
+        const applied = ITEMXCodex.applyEvent(state, event);
+        if (applied != null)
+          ITEMXHistory.observe(
+            state.history[domain],
+            domain,
+            before,
+            registry.entries[id],
+            event,
+            index,
+            () => `${messages[index]?.chatId || index}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`
+          );
+        occurrence++;
         transport += JSON.stringify(event);
       }
     }
@@ -1345,17 +1363,47 @@ ${codexPageStyle()}
         manualByIndex.set(row.afterIndex, rows);
       }
     }
+    const history = ITEMXCore.clone(options.history || {});
+    const occurrences = new Map();
     let transport = options.transport || '';
-    const apply = (event) => {
-      ITEMXCore.applyEvent(reg, event);
+    const apply = (event, at) => {
+      const occurrence = occurrences.get(at) || 0;
+      occurrences.set(at, occurrence + 1);
+      const patch = event.patch || {};
+      const ids = [
+        ...new Set(
+          [
+            event.item?.id,
+            patch.id,
+            patch.equip,
+            patch.unequip,
+            ...(patch.inputs || []).map((x) => x.id),
+            ...(patch.outputs || []).map((x) => x.id)
+          ].filter(Boolean)
+        )
+      ];
+      const prior = new Map(ids.map((id) => [id, reg.items[id] ? { ...reg.items[id] } : null]));
+      const applied = ITEMXCore.applyEvent(reg, event);
+      if (applied != null)
+        for (const id of ids)
+          ITEMXHistory.observe(
+            history,
+            'item',
+            prior.get(id),
+            reg.items[id],
+            event,
+            at,
+            () => `${messages[at]?.chatId || at}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`
+          );
       transport += ITEMXCore.marker({ v: ITEMXCore.VERSION, event });
     };
     for (let index = start; index <= end; index += 1) {
-      for (const event of messageEvents(messageData(messages[index]), 'item', lookup)) apply(event);
-      for (const row of manualByIndex.get(index) || []) apply(row.event);
+      for (const event of messageEvents(messageData(messages[index]), 'item', lookup)) apply(event, index);
+      for (const row of manualByIndex.get(index) || []) apply(row.event, index);
     }
-    for (const row of manualTail) apply(row.event);
+    for (const row of manualTail) apply(row.event, Math.min(row.afterIndex, messages.length - 1));
     return {
+      history,
       schema: ITEMXCore.VERSION,
       rev: 2,
       fingerprint: ITEMXCore.fnv1a(transport),
@@ -1384,13 +1432,16 @@ ${codexPageStyle()}
       }
       const lookup = buildMessageEventLookup(latestChat);
       const checkpoint = checkpointStatus(latestChat);
-      const manual = checkpoint.valid
+      const usableCheckpoint =
+        checkpoint.valid && checkpoint.checkpoint.item.history && checkpoint.checkpoint.codex.history;
+      const manual = usableCheckpoint
         ? manualLedger(latestChat)
         : [...(checkpoint.checkpoint?.manual || []), ...manualLedger(latestChat)];
-      const replay = checkpoint.valid
+      const replay = usableCheckpoint
         ? {
             start: checkpoint.checkpoint.boundary + 1,
             registry: checkpoint.checkpoint.item.registry,
+            history: checkpoint.checkpoint.item.history,
             base: checkpoint.checkpoint.codex
           }
         : {};
@@ -1427,7 +1478,8 @@ ${codexPageStyle()}
     ITEMX_MESSAGE_EVENT_KEY,
     ITEMX_CHECKPOINT_KEY,
     ITEMX_AUX_KEY,
-    ITEMX_LORE_KEY
+    ITEMX_LORE_KEY,
+    ITEMXHistory.KEY
   ];
 
   function cleanChatPluginData(chat) {
@@ -1512,7 +1564,7 @@ ${codexPageStyle()}
       runtime.cachedGeneration === runtime.generation &&
       cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
-      return cached;
+      return { ...cached, chat: active.chat };
     return rebuildCurrent();
   }
 
@@ -1525,7 +1577,7 @@ ${codexPageStyle()}
       runtime.cachedGeneration === runtime.generation &&
       cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
-      return cached;
+      return { ...cached, chat: active.chat };
     return rebuildCurrent();
   }
 
@@ -2653,7 +2705,7 @@ ${codexPageStyle()}
       const moduleAssets = settings.encountersEnabled
         ? await modulePortraitAssets(settings, loaded.character, loaded.chat)
         : [];
-      const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets, { narrative: recent, entities: encounterEntities(loaded.codexSnapshot) })}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(loaded.snapshot)}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
+      const instruction = `${protocolForSettings(settings, loaded.character, moduleAssets, { narrative: recent, entities: encounterEntities(loaded.codexSnapshot) })}${settings.itemsEnabled ? `\n\n${ITEMXCore.anchor(ITEMXHistory.requestSnapshot(loaded, recent))}` : ''}${domains.length ? `\n\n${ITEMXCodex.anchor(loaded.codexSnapshot, recent, 9000, { enabledDomains: domains })}` : ''}`;
       debugRecord('beforeRequest', {
         items: settings.itemsEnabled,
         skills: settings.skillsEnabled,
@@ -3291,7 +3343,9 @@ ${codexPageStyle()}
   }
 
   function rootPageItems(loaded) {
-    const all = itemsOf(loaded?.snapshot).slice(0, 60);
+    const all = itemsOf(loaded?.snapshot)
+      .filter((item) => !ITEMXHistory.terminal('item', item))
+      .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
     const start = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
@@ -3384,6 +3438,7 @@ ${codexPageStyle()}
     return (registry?.order || [])
       .map((id) => registry.entries[id])
       .filter(Boolean)
+      .filter((entity) => !ITEMXHistory.terminal(domain, entity))
       .slice(0, 60);
   }
 
@@ -3433,6 +3488,7 @@ ${codexPageStyle()}
   }
 
   async function removeRootDrawer() {
+    runtime.historyView.open = false;
     if (runtime.feedbackTimer) globalThis.clearTimeout(runtime.feedbackTimer);
     runtime.feedbackTimer = null;
     await removeRootClickRouter();
@@ -3786,6 +3842,7 @@ ${codexPageStyle()}
     const nextKey = active?.key || '';
     if (runtime.activeContextKey === nextKey) return false;
     runtime.activeContextKey = nextKey;
+    runtime.historyView = { open: false, key: nextKey, domain: 'item', filter: 'recent', selected: null, page: 0 };
     clearEventBursts();
     armRemountWatchdog();
     runtime.rootItemPage = 0;
@@ -4194,10 +4251,236 @@ ${codexPageStyle()}
       ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>`
       : '';
 
+  function panelMenuHtml(native = true) {
+    return `<details class="itemx2-panel-menu"><summary class="itemx-ph-btn" aria-label="패널 메뉴">⋯</summary><div class="itemx2-panel-menu-popup"><button class="itemx2-history-open" data-action="history-open" type="button">기록 보기</button><button class="${native ? 'itemx2-root-close' : ''}" data-action="close" type="button">닫기 ✕</button></div></details>`;
+  }
+
+  function historyDomain(tab) {
+    return tab === 'skills' ? 'skill' : tab === 'bestiary' ? 'monster' : 'item';
+  }
+
+  function historyHtml(loaded) {
+    const view = runtime.historyView;
+    const rows = ITEMXHistory.entries(loaded, view.domain).filter((row) => row.closed);
+    const selected = rows.find((row) => row.entity.id === view.selected);
+    const prefs = ITEMXHistory.preferences(loaded.chat);
+    const filters = [
+      ['recent', '최근 기록'],
+      ...(view.domain === 'item'
+        ? [
+            ['consume', '소모'],
+            ['loss', '파손·소실']
+          ]
+        : []),
+      ['kept', '보존'],
+      ['archived', '보관됨']
+    ];
+    const visible = rows.filter((row) =>
+      view.filter === 'kept'
+        ? row.kept
+        : view.filter === 'archived'
+          ? row.archived
+          : !row.kept &&
+            !row.archived &&
+            (view.filter === 'consume' ? row.automatic : view.filter === 'loss' ? !row.automatic : true)
+    );
+    const pages = Math.max(1, Math.ceil(visible.length / 16));
+    view.page = Math.max(0, Math.min(pages - 1, view.page));
+    runtime.historyRows = selected ? [selected] : visible.slice(view.page * 16, view.page * 16 + 16);
+    const buttons = (row, index) =>
+      `<div class="itemx2-history-actions"><button class="itemx2-history-keep-${index}" type="button">${row.kept ? '보존 해제' : '보존'}</button>${!row.kept && !row.archived && row.cycle ? `<button class="itemx2-history-archive-${index}" type="button">지금 보관</button>` : ''}</div>`;
+    const label = (row) =>
+      row.kept
+        ? '보존 중 · 자동 정리 제외'
+        : row.archived
+          ? '보관된 기록 · 보존으로 꺼내기'
+          : row.automatic && row.remaining !== null
+            ? `소모 완료 · ${row.remaining}회 입력 뒤 자동 보관`
+            : row.domain === 'item'
+              ? '소실·양도 기록 · 자동 정리 안 함'
+              : row.domain === 'skill'
+                ? '상실·망각 기록'
+                : '종료된 조우';
+    const cards = runtime.historyRows
+      .map(
+        (row, index) =>
+          `<section class="itemx2-history-row itemx2-history-row-${index}"><button class="itemx2-history-detail-${index}" type="button"><strong>${ITEMXCore.esc(row.domain === 'item' ? ITEMXCore.resolveItemEmoji(row.entity) : row.entity.glyph || '📖')} ${ITEMXCore.esc(row.entity.name)}</strong><small>${label(row)}</small></button>${buttons(row, index)}</section>`
+      )
+      .join('');
+    const detail = selected
+      ? `${buttons(selected, 0)}${
+          selected.domain === 'item'
+            ? itemDetailHtml(selected.entity)
+            : unwrapCodexPage(
+                selected.domain === 'skill'
+                  ? skillPageHtml(selected.entity, '', loaded.rarityMode)
+                  : monsterPageHtml(selected.entity, loaded.portraits?.[selected.entity.id] || '', '')
+              )
+        }`
+      : '';
+    return `<header class="itemx2-history-heading"><button class="itemx2-history-back" type="button">‹ ${selected ? '기록 목록' : '현재 목록'}</button><strong>${{ item: '아이템', skill: '스킬', monster: '조우' }[view.domain]} 기록</strong></header><nav class="itemx2-history-filters">${filters.map(([key, label]) => `<button class="itemx2-history-filter-${key} ${view.filter === key ? 'itemx2-history-filter-on' : ''}" type="button">${label}</button>`).join('')}</nav><div class="itemx2-history-policy"><span>소모품 자동 보관</span><button class="itemx2-history-retention" type="button">${prefs.after ? `${prefs.after}회 입력 후` : 'OFF'}</button><small>정상 응답이 완료된 새 입력만 계산합니다. 무기·스킬·조우는 자동 보관하지 않습니다. 원본 사건은 삭제하지 않습니다.</small></div><div class="itemx2-history-list">${selected ? detail : cards || '<p>해당 기록이 없습니다.</p>'}</div>${!selected && pages > 1 ? `<footer class="itemx2-history-actions"><button class="itemx2-history-prev" type="button">‹</button><span>${view.page + 1} / ${pages}</span><button class="itemx2-history-next" type="button">›</button></footer>` : ''}`;
+  }
+
+  async function saveHistoryPreference(loaded, update) {
+    await enqueue(loaded.key, async () => {
+      const active = await context();
+      if (!active || active.key !== loaded.key) throw new Error('채팅이 변경되었습니다.');
+      const latest = await Risuai.getChatFromIndex(active.characterIndex, active.chatIndex);
+      if (!latest) throw new Error('현재 채팅을 찾을 수 없습니다.');
+      if (latest?.isStreaming || latest?.message?.some((message) => message.isStreaming))
+        throw new Error('응답이 끝난 뒤 기록 설정을 변경해 주세요.');
+      const prefs = ITEMXHistory.preferences(latest);
+      update(prefs);
+      const next = { ...latest, scriptstate: { ...latest.scriptstate, [ITEMXHistory.KEY]: JSON.stringify(prefs) } };
+      await Risuai.setChatToIndex(active.characterIndex, active.chatIndex, next);
+      loaded.chat = next;
+      if (runtime.cachedLoaded?.key === loaded.key) runtime.cachedLoaded.chat = next;
+    });
+  }
+
+  async function historyAction(action, loaded, native) {
+    const view = runtime.historyView;
+    if (view.key !== loaded.key) return;
+    if (action === 'back') {
+      if (view.selected) view.selected = null;
+      else view.open = false;
+    } else if (action.startsWith('filter-')) {
+      view.filter = action.slice(7);
+      view.page = 0;
+      view.selected = null;
+    } else if (action === 'prev' || action === 'next') view.page += action === 'prev' ? -1 : 1;
+    else if (action === 'retention')
+      await saveHistoryPreference(loaded, (prefs) => {
+        prefs.after = ITEMXHistory.LIMITS[(ITEMXHistory.LIMITS.indexOf(prefs.after) + 1) % ITEMXHistory.LIMITS.length];
+      });
+    else {
+      const [operation, rawIndex] = action.split('-');
+      const row = runtime.historyRows?.[Number(rawIndex)];
+      if (!row) return;
+      if (operation === 'detail') view.selected = row.entity.id;
+      else if (operation === 'keep')
+        await saveHistoryPreference(loaded, (prefs) => {
+          if (prefs.keep[row.key] === true) delete prefs.keep[row.key];
+          else {
+            prefs.keep[row.key] = true;
+            delete prefs.archived[row.key];
+          }
+        });
+      else if (operation === 'archive' && row.cycle)
+        await saveHistoryPreference(loaded, (prefs) => {
+          if (!prefs.keep[row.key]) prefs.archived[row.key] = row.cycle;
+        });
+    }
+    if (native) await drawRootHistory(loaded);
+    else drawIframeHistory(loaded);
+  }
+
+  async function drawRootHistory(loaded) {
+    const body = await queryMainClass('itemx2-root-tab-body');
+    if (!body) return;
+    let pane = await queryMainClass('itemx2-history-pane');
+    if (!runtime.historyView.open || runtime.historyView.key !== loaded.key) {
+      await pane?.remove();
+      await body.removeClass('x-risu-itemx2-history-opened');
+      return;
+    }
+    if (!pane) {
+      pane = await runtime.mainDoc.createElement('section');
+      await pane.addClass('x-risu-itemx2-history-pane');
+      await body.appendChild(pane);
+    }
+    await pane.setInnerHTML(historyHtml(loaded));
+    await body.addClass('x-risu-itemx2-history-opened');
+  }
+
+  function drawIframeHistory(loaded) {
+    const body = document.querySelector('.itemx2-iframe-content');
+    if (!body) return;
+    let pane = body.querySelector('.itemx2-history-pane');
+    if (!runtime.historyView.open || runtime.historyView.key !== loaded.key) {
+      pane?.remove();
+      body.classList.remove('itemx2-history-opened');
+      return;
+    }
+    if (!pane) {
+      pane = document.createElement('section');
+      pane.className = 'itemx2-history-pane';
+      body.appendChild(pane);
+    }
+    pane.innerHTML = historyHtml(loaded);
+    body.classList.add('itemx2-history-opened');
+    pane.onclick = async (event) => {
+      const button = event.target.closest('button');
+      const token = button && [...button.classList].find((name) => name.startsWith('itemx2-history-'));
+      if (!token || runtime.historyBusy) return;
+      runtime.historyBusy = true;
+      try {
+        await historyAction(token.slice('itemx2-history-'.length), loaded, false);
+      } catch (error) {
+        await notifyUser(error.message, 'error');
+      } finally {
+        runtime.historyBusy = false;
+      }
+    };
+  }
+
+  async function routeHistoryControls(event) {
+    if (await eventHitsMainClass(event, 'itemx2-history-open')) {
+      const loaded = await cachedOrRebuildCurrent();
+      if (!loaded) return true;
+      runtime.historyView = {
+        open: true,
+        key: loaded.key,
+        domain: historyDomain(runtime.activeRootTab),
+        filter: 'recent',
+        selected: null,
+        page: 0
+      };
+      const menu = await queryMainClass('itemx2-panel-menu');
+      await menu?.setOuterHTML(panelMenuHtml(true));
+      await drawRootHistory(loaded);
+      return true;
+    }
+    if (!runtime.historyView.open) return false;
+    const loaded = await cachedOrRebuildCurrent();
+    if (!loaded) return true;
+    const actions = [
+      'back',
+      'retention',
+      'prev',
+      'next',
+      ...['recent', 'consume', 'loss', 'kept', 'archived'].map((key) => `filter-${key}`)
+    ];
+    for (const action of actions)
+      if (await eventHitsMainClass(event, `itemx2-history-${action}`)) {
+        await historyAction(action, loaded, true);
+        return true;
+      }
+    if (runtime.historyView.selected) {
+      for (const action of ['keep-0', 'archive-0'])
+        if (await eventHitsMainClass(event, `itemx2-history-${action}`)) {
+          await historyAction(action, loaded, true);
+          return true;
+        }
+    } else
+      for (let index = 0; index < (runtime.historyRows?.length || 0); index++) {
+        if (!(await eventHitsMainClass(event, `itemx2-history-row-${index}`))) continue;
+        for (const operation of ['keep', 'archive', 'detail'])
+          if (await eventHitsMainClass(event, `itemx2-history-${operation}-${index}`)) {
+            await historyAction(`${operation}-${index}`, loaded, true);
+            return true;
+          }
+        break;
+      }
+    return true;
+  }
+
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open)
       return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
-    const all = itemsOf(loaded.snapshot).slice(0, 60);
+    const all = itemsOf(loaded.snapshot)
+      .filter((item) => tab === 'settings' || !ITEMXHistory.terminal('item', item))
+      .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
     const pageStart = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
@@ -4205,10 +4488,12 @@ ${codexPageStyle()}
     const skills = (loaded.codexSnapshot?.skills?.order || [])
       .map((id) => loaded.codexSnapshot.skills.entries[id])
       .filter(Boolean)
+      .filter((entity) => !ITEMXHistory.terminal('skill', entity))
       .slice(0, 60);
     const monsters = (loaded.codexSnapshot?.monsters?.order || [])
       .map((id) => loaded.codexSnapshot.monsters.entries[id])
       .filter(Boolean)
+      .filter((entity) => !ITEMXHistory.terminal('monster', entity))
       .slice(0, 60);
     const counts = {
       all: all.length,
@@ -4221,8 +4506,7 @@ ${codexPageStyle()}
       ['all', '전체'],
       ['owned', '보유'],
       ['equipped', '장착'],
-      ['observed', '관찰'],
-      ['removed', '소실']
+      ['observed', '관찰']
     ];
     const controls = filters
       .map(
@@ -4360,7 +4644,7 @@ ${codexPageStyle()}
       )
       .join('');
     const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
-    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span><button class="itemx-ph-btn itemx2-root-close" type="button" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
   function rootInventoryRegions(html) {
@@ -4410,7 +4694,9 @@ ${codexPageStyle()}
       loaded.rarityMode,
       Number(loaded.moduleAssetsEnabled),
       Number(loaded.lorebookEncounterEnabled),
-      Number(loaded.debugEnabled)
+      Number(loaded.debugEnabled),
+      JSON.stringify(ITEMXHistory.preferences(loaded.chat)),
+      ITEMXHistory.completedTurns(loaded.chat).total
     ].join(':');
 
   async function managerRowIndexAtY(count, clientY) {
@@ -4484,9 +4770,18 @@ ${codexPageStyle()}
             event.clientY >= closeRect.top &&
             event.clientY <= closeRect.bottom
           ) {
+            if (runtime.historyView.open && runtime.cachedLoaded) {
+              runtime.historyView.open = false;
+              await drawRootHistory(runtime.cachedLoaded);
+            }
             await setRootOpen(false);
             return;
           }
+        }
+        // The menu floats over the tabs; resolve its action before underlying tab rectangles.
+        if (await eventHitsMainClass(event, 'itemx2-history-open')) {
+          await routeHistoryControls(event);
+          return;
         }
         for (const [tab, label] of [
           ['inventory', '인벤토리'],
@@ -4505,6 +4800,7 @@ ${codexPageStyle()}
           )
             continue;
           if (runtime.rootTabBusy || runtime.activeRootTab === tab) return;
+          runtime.historyView.open = false;
           runtime.rootTabBusy = true;
           try {
             if (tab === 'inventory') runtime.rootItemPage = 0;
@@ -4520,6 +4816,7 @@ ${codexPageStyle()}
           }
           return;
         }
+        if (await routeHistoryControls(event)) return;
         for (const [direction, selector] of [
           [-1, '.x-risu-itemx2-root-page-prev'],
           [1, '.x-risu-itemx2-root-page-next']
@@ -4539,7 +4836,10 @@ ${codexPageStyle()}
           if (!loaded) return;
           const pageCount = Math.max(
             1,
-            Math.ceil(Math.min(60, itemsOf(loaded.snapshot).length) / ITEMX_ROOT_PAGE_SIZE)
+            Math.ceil(
+              Math.min(60, itemsOf(loaded.snapshot).filter((item) => !ITEMXHistory.terminal('item', item)).length) /
+                ITEMX_ROOT_PAGE_SIZE
+            )
           );
           const nextPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage + direction));
           if (nextPage === runtime.rootItemPage) return;
@@ -5208,6 +5508,7 @@ ${codexPageStyle()}
       runtime.rootFingerprint = rootStateFingerprint(loaded);
       runtime.rootContentReady = open;
       runtime.activeRootTab = tab;
+      if (runtime.historyView.open) await drawRootHistory(loaded);
       await installRootClickRouter(root);
     } catch (error) {
       runtime.status = '인벤토리 열기 오류';
@@ -5236,15 +5537,21 @@ ${codexPageStyle()}
     const root = document.querySelector('#itemx2-root');
     if (!root) return;
     const all = itemsOf(loaded.snapshot),
-      selected = ui.selected && all.find((item) => item.id === ui.selected);
+      selected = ui.selected && all.find((item) => item.id === ui.selected && !ITEMXHistory.terminal('item', item));
     const counts = {
-      all: all.length,
+      all: all.filter((item) => !ITEMXHistory.terminal('item', item)).length,
       owned: all.filter((item) => item.possession === 'owned').length,
       equipped: all.filter((item) => item.location === 'equipped').length,
       observed: all.filter((item) => item.possession === 'observed').length,
       removed: all.filter((item) => item.possession === 'removed').length
     };
-    const visible = ui.tab === 'inventory' ? all.filter(matches).slice(0, 60) : [];
+    const visible =
+      ui.tab === 'inventory'
+        ? all
+            .filter((item) => !ITEMXHistory.terminal('item', item))
+            .filter(matches)
+            .slice(0, 60)
+        : [];
     if (ui.tab === 'settings' && (!ui.manageId || !all.some((item) => item.id === ui.manageId)))
       ui.manageId = all.find((item) => item.possession !== 'removed')?.id || all[0]?.id || null;
     const managed = ui.tab === 'settings' && ui.manageId ? all.find((item) => item.id === ui.manageId) : null;
@@ -5266,8 +5573,7 @@ ${codexPageStyle()}
             ['all', '전체'],
             ['owned', '보유'],
             ['equipped', '장착'],
-            ['observed', '관찰'],
-            ['removed', '소실']
+            ['observed', '관찰']
           ]
             .map(
               ([key, label]) =>
@@ -5320,12 +5626,14 @@ ${codexPageStyle()}
         ? (loaded.codexSnapshot?.skills?.order || [])
             .map((id) => loaded.codexSnapshot.skills.entries[id])
             .filter(Boolean)
+            .filter((entity) => !ITEMXHistory.terminal('skill', entity))
         : [];
     const iframeMonsters =
       ui.tab === 'bestiary'
         ? (loaded.codexSnapshot?.monsters?.order || [])
             .map((id) => loaded.codexSnapshot.monsters.entries[id])
             .filter(Boolean)
+            .filter((entity) => !ITEMXHistory.terminal('monster', entity))
         : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
     const selectedMonster = ui.selectedMonster && iframeMonsters.find((one) => one.id === ui.selectedMonster);
@@ -5351,10 +5659,24 @@ ${codexPageStyle()}
           : ui.tab === 'bestiary'
             ? bestiaryContent
             : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span><button class="itemx-ph-btn" data-action="close" aria-label="닫기">✕</button></header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${content}</section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav><div class="itemx2-iframe-content">${content}</div></section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => {
+      runtime.historyView.open = false;
       void closeInventory();
     });
+    root.querySelector('[data-action="history-open"]')?.addEventListener('click', () => {
+      runtime.historyView = {
+        open: true,
+        key: loaded.key,
+        domain: historyDomain(ui.tab),
+        filter: 'recent',
+        selected: null,
+        page: 0
+      };
+      root.querySelector('.itemx2-panel-menu')?.removeAttribute('open');
+      drawIframeHistory(loaded);
+    });
+    if (runtime.historyView.open) drawIframeHistory(loaded);
     root.querySelector('[data-action="back"]')?.addEventListener('click', () => {
       ui.selected = null;
       drawInventory(loaded);
@@ -5614,6 +5936,7 @@ ${codexPageStyle()}
       el.addEventListener('click', () => {
         if (ui.tab === el.dataset.tab) return;
         ui.tab = el.dataset.tab;
+        runtime.historyView.open = false;
         ui.selected = null;
         ui.selectedSkill = null;
         ui.selectedMonster = null;

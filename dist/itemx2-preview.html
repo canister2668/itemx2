@@ -210,6 +210,166 @@
     @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }
     @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion) * { animation:none!important; } }
     @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }
+.itemx2-panel-menu {
+  position: relative;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  z-index: 20;
+}
+.itemx2-panel-menu > summary {
+  box-sizing: border-box;
+  list-style: none;
+  cursor: pointer;
+  font-size: 20px;
+}
+.itemx2-panel-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.itemx2-panel-menu-popup {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  display: grid;
+  width: 128px;
+  padding: 6px;
+  border: 1px solid #39445a;
+  border-radius: 10px;
+  background: #101722;
+  box-shadow: 0 10px 24px #0008;
+}
+.itemx2-panel-menu-popup button,
+.itemx2-history-pane button {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #344159;
+  border-radius: 7px;
+  background: #172131;
+  color: #dde6f2;
+  font: inherit;
+  cursor: pointer;
+}
+.itemx2-root-tab-body,
+.itemx2-iframe-content {
+  position: relative;
+}
+.itemx2-iframe-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.itemx2-iframe-content > .itemx-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.itemx2-history-opened > :not(.itemx2-history-pane),
+.itemx2-history-opened > :not(.itemx2-history-pane) * {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  animation-play-state: paused !important;
+}
+.itemx2-history-opened > :not(.itemx2-history-pane) *::before,
+.itemx2-history-opened > :not(.itemx2-history-pane) *::after {
+  animation-play-state: paused !important;
+}
+.itemx2-root-tab-body > .itemx2-history-pane,
+.itemx2-iframe-content > .itemx2-history-pane {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 12px;
+  gap: 10px;
+  background: #0b111b;
+  color: #cbd6e4;
+  font-size: var(--itemx-text-sm, 0.75rem);
+}
+.itemx2-history-heading,
+.itemx2-history-filters,
+.itemx2-history-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.itemx2-history-pane .itemx2-history-filter-on {
+  border-color: #b69961;
+  color: #f0d79d;
+}
+.itemx2-history-policy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.itemx2-history-policy small {
+  flex-basis: 100%;
+  color: #98a8bc;
+  line-height: 1.6;
+}
+.itemx2-history-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.itemx2-history-row {
+  padding: 10px;
+  border: 1px solid #29354a;
+  border-radius: 10px;
+}
+.itemx2-history-row > button {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.itemx2-history-row small {
+  color: #a9b6c8;
+}
+.itemx2-history-row .itemx2-history-actions {
+  margin-top: 7px;
+}
+
+.itemx2-root-settings > .itemx2-root-setting-card,
+.itemx-settings > .itemx-setting-card {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.itemx2-root-setting-card > span:first-child,
+.itemx-setting-card > span:first-child {
+  flex: 1 1 180px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* Grouped actions belong below the copy, not in a shrinking side column. */
+.itemx2-root-setting-card > .itemx2-manager-actions,
+.itemx-setting-card > .itemx-manager-actions {
+  display: flex;
+  flex: 0 0 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.itemx2-root-setting-card .itemx2-root-setting-button,
+.itemx-setting-card .itemx-tool,
+.itemx-setting-card > .itemx-position-select {
+  flex-shrink: 0;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.itemx2-root-setting-card > .itemx2-manager-actions > button,
+.itemx-setting-card > .itemx-manager-actions > button {
+  flex: 0 0 auto;
+  min-height: 38px;
+}
+
 .itemx2-detail-stack {
   display: flex;
   flex-direction: column;
@@ -1162,10 +1322,15 @@ const ITEMXCore = (() => {
         item.removedReason = null;
       } else if (patch.action === 'equip') {
         const conflict = slotConflict(reg, item.id, patch.slot);
-        const failure = !patch.slot ? 'action_slot_required'
-          : item.possession !== 'owned' ? 'action_acquire_required'
-          : available(item) < 1 ? 'action_insufficient_quantity'
-          : conflict ? 'action_slot_occupied' : null;
+        const failure = !patch.slot
+          ? 'action_slot_required'
+          : item.possession !== 'owned'
+            ? 'action_acquire_required'
+            : available(item) < 1
+              ? 'action_insufficient_quantity'
+              : conflict
+                ? 'action_slot_occupied'
+                : null;
         if (failure) {
           diagnostic(reg, failure, conflict ? conflict.id : item.id);
           return null;
@@ -1287,8 +1452,14 @@ const ITEMXCore = (() => {
       const blocks = [];
       let prefix = '__ITEMX_PROTECTED__';
       while (original.includes(prefix)) prefix += '_';
-      const masked = original.replace(/<(Thoughts|Thought|think|thinking|DSThink)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
-        (block) => { const key = prefix + blocks.length + '__'; blocks.push([key, block]); return key; });
+      const masked = original.replace(
+        /<(Thoughts|Thought|think|thinking|DSThink)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+        (block) => {
+          const key = prefix + blocks.length + '__';
+          blocks.push([key, block]);
+          return key;
+        }
+      );
       const result = extractResponse(masked, baseRegistry, options);
       for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
       return result;
