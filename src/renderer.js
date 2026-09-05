@@ -255,7 +255,135 @@ const ITEMXRenderer = (() => {
       rarity: rarityLabels[rarity] ? rarity : 'normal',
       affinity
     };
-    return `<div class="itemx-fx itemx2-skill-weapon-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div></div>`;
+    const form = skillForm(skill);
+    return `<div class="itemx-fx itemx2-skill-weapon-fx itemx2-skill-form-${form}">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div>${motion !== 'off' && form !== 'default' ? `<span class="itemx2-codex-fx itemx2-technique-material" aria-hidden="true"></span>` : ''}</div>`;
+  }
+
+  function skillForm(skill) {
+    const classify = (value) => {
+      const text = String(value || '').toLowerCase();
+      const groups = [
+        ['slash', /검술|참격|발도|베기|도법|검법|swordplay|slash|swordsmanship/],
+        ['ward', /방어술|결계|방벽|보호막|shield|barrier|ward/],
+        ['heal', /치유|회복술|치료술|회복 마법|healing|restoration/],
+        ['shadow', /은신|잠행|저주|stealth|concealment|curse/]
+      ].filter(([, pattern]) => pattern.test(text));
+      return groups.length === 1 ? groups[0][0] : 'default';
+    };
+    const named = classify(skill?.name);
+    return named !== 'default' ? named : classify(`${skill?.school || ''} ${skill?.description || ''}`);
+  }
+
+  const reviewLabels = {
+    power: '위력',
+    required: '요구 조건',
+    durability: '내구도',
+    cost: '소모·가치',
+    effects: '특수 효과',
+    augments: '증강',
+    level: '레벨',
+    mastery: '숙련',
+    cooldown: '재사용'
+  };
+  const known = (value) =>
+    value != null && String(value).trim() !== '' && !/^(?:미상|미분류|unknown|none)$/i.test(String(value));
+  function changes(previous, current, domain = 'item') {
+    if (!previous || !current) return [];
+    const keys =
+      domain === 'item'
+        ? [
+            ['power', '위력'],
+            ['durability', '내구도'],
+            ['displayRarity', '등급'],
+            ['count', '수량'],
+            ['required', '요구 조건'],
+            ['cost', '가치']
+          ]
+        : domain === 'skill'
+          ? [
+              ['level', '레벨'],
+              ['mastery', '숙련'],
+              ['rank', '등급'],
+              ['cost', '소모'],
+              ['cooldown', '재사용'],
+              ['status', '상태']
+            ]
+          : [
+              ['status', '전투 상태'],
+              ['relation', '관계'],
+              ['threat', '위협도']
+            ];
+    const out = keys
+      .filter(([key]) => known(previous[key]) && known(current[key]) && String(previous[key]) !== String(current[key]))
+      .map(([key, label]) => ({ key, label, before: String(previous[key]), after: String(current[key]) }));
+    const effects = (entity) =>
+      (Array.isArray(entity.effects) ? entity.effects : [])
+        .map((one) => (typeof one === 'string' ? one : one?.name))
+        .filter(Boolean);
+    if (Array.isArray(previous.effects) && Array.isArray(current.effects)) {
+      const before = effects(previous),
+        after = effects(current);
+      for (const name of after.filter((name) => !before.includes(name)))
+        out.push({ key: 'effects', label: '효과 추가', before: '', after: name });
+      for (const name of before.filter((name) => !after.includes(name)))
+        out.push({ key: 'effects', label: '효과 소실', before: name, after: '' });
+    }
+    return out.slice(0, 6);
+  }
+  function changesHtml(previous, current, domain = 'item') {
+    const rows = changes(previous, current, domain);
+    if (!rows.length) return '';
+    return `<section class="itemx2-change-note" aria-label="이번 기록의 변경점"><strong>이번 기록의 변경점</strong>${rows.map((row) => `<span><small>${esc(row.label)}</small>${row.before ? `<del>${esc(row.before)}</del>` : ''}${row.before && row.after ? '<b aria-hidden="true">→</b>' : ''}${row.after ? `<em>${esc(row.after)}</em>` : ''}</span>`).join('')}</section>`;
+  }
+  function reviewHtml(review, entity) {
+    const source =
+      { main: '메인 모델 기록 · 자동 확정 아님', auxiliary: '보조 모델 보완', manual: '수동 작업 기록' }[
+        review?.source
+      ] || '';
+    const missing = (Array.isArray(review?.missing) ? review.missing : []).filter((key) =>
+      Object.prototype.hasOwnProperty.call(reviewLabels, key)
+    );
+    const inferred = (Array.isArray(entity?._inferred) ? entity._inferred : []).filter((key) =>
+      Object.prototype.hasOwnProperty.call(reviewLabels, key)
+    );
+    if (!source && !review?.checked && !missing.length && !inferred.length) return '';
+    return `<section class="itemx2-review-note ${missing.length ? 'itemx2-review-partial' : ''}">${source ? `<small>${esc(source)}</small>` : ''}${review?.checked ? '<small>아이템 수치·효과의 명시 근거 검사</small>' : ''}${inferred.length ? `<span>추정값 · ${esc(inferred.map((key) => reviewLabels[key]).join(', '))}</span>` : ''}${missing.length ? `<strong>일부 정보 보완 실패</strong><span>미해결 · ${esc(missing.map((key) => reviewLabels[key]).join(', '))}</span><small>기존 정보는 보존되었습니다. 아래에서 이 항목만 다시 보완할 수 있습니다.</small>` : ''}</section>`;
+  }
+  function eventKind(payload, domain = 'item') {
+    const current = payload?.view,
+      previous = payload?.previous;
+    if (!current) return '';
+    if (domain === 'monster')
+      return previous &&
+        !['defeated', 'dead', 'ended', 'escaped'].includes(previous.status) &&
+        ['defeated', 'dead', 'ended', 'escaped'].includes(current.status)
+        ? 'resolved'
+        : '';
+    if (domain === 'skill') return !previous && payload.event?.kind === 'exam' ? 'learned' : '';
+    const numerator = (value) => {
+      const found = String(value || '').match(/^\s*(\d+(?:\.\d+)?)\s*\//);
+      return found ? Number(found[1]) : null;
+    };
+    const before = numerator(previous?.durability),
+      after = numerator(current.durability);
+    if (before != null && after != null && after < before) return 'damage';
+    const power = (value) => {
+      const match = String(value || '')
+        .replace(/,/g, '')
+        .match(/^\s*(\d+(?:\.\d+)?)/);
+      return match ? Number(match[1]) : null;
+    };
+    const from = power(previous?.power),
+      to = power(current.power);
+    const ranks = Object.keys(rarityLabels);
+    const upgraded =
+      previous &&
+      ((from != null && to != null && to > from) ||
+        (ranks.includes(previous.rarity) && ranks.indexOf(current.rarity) > ranks.indexOf(previous.rarity)));
+    // A generic stat change is not necessarily a successful enhancement.
+    return upgraded && /강화|제련|enhanc|upgrad/i.test(`${payload.event?.patch?.reason || ''} ${current.name || ''}`)
+      ? 'enhanced'
+      : '';
   }
 
   function stats(item) {
@@ -296,7 +424,10 @@ const ITEMXRenderer = (() => {
       `rarity-${rarity}`,
       item.condition ? `condition-${item.condition}` : '',
       motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
-      options.inline ? 'itemx-inline-card' : ''
+      options.inline ? 'itemx-inline-card' : '',
+      item.affinity && item.affinity2 && item.affinity !== item.affinity2
+        ? `itemx2-blend-${keyFor(item.affinity, item.affinity2).replace('+', '-')}`
+        : ''
     ]
       .filter(Boolean)
       .join(' ');
@@ -318,7 +449,11 @@ const ITEMXRenderer = (() => {
 
   function renderMarkerPayload(payload, options = {}) {
     if (!payload || payload.error) return '';
-    if (payload.view) return renderCard(payload.view, options);
+    if (payload.view)
+      return renderCard(payload.view, options).replace(
+        '</article>',
+        `${changesHtml(payload.previous, payload.view)}</article>`
+      );
     const id = payload.event?.patch?.id;
     return id ? `<span class="itemx-event-chip">ITEMX CODEX · ${esc(id)} 변경</span>` : '';
   }
@@ -333,6 +468,11 @@ const ITEMXRenderer = (() => {
     renderTile,
     renderMarkerPayload,
     renderSkillFx,
+    skillForm,
+    changes,
+    changesHtml,
+    reviewHtml,
+    eventKind,
     itemVars
   };
 })();

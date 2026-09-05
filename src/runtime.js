@@ -39,6 +39,7 @@ const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
 const ITEMX_MANUAL_KEY = '$__itemx2_manual_events';
+const ITEMX_PRESENTATION_STYLE = __ITEMX_PRESENTATION_STYLE_JSON__;
 const ITEMX_MESSAGE_EVENT_KEY = '$__itemx2_message_events';
 const ITEMX_CHECKPOINT_KEY = '$__itemx2_checkpoint';
 const ITEMX_AUX_KEY = '$__itemx2_aux_processed';
@@ -73,6 +74,13 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     pendingMarkers: new Set(),
     pendingMarkersAt: 0,
     eventPayloads: new Map(),
+    presentationRecords: null,
+    eventBursts: new Map(),
+    eventBurstSeen: new Set(),
+    eventBurstTimers: new Set(),
+    eventBurstOwners: new Set(),
+    eventBurstBusy: false,
+    itemRepairBusy: false,
     markerHtmlCache: new Map(),
     detailHtmlCache: new Map(),
     settingsCache: new Map(),
@@ -916,6 +924,7 @@ ${codexPageStyle()}
 
   function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
     runtime.eventPayloads = new Map(lookup.payloads);
+    runtime.presentationRecords = null;
   }
 
   function embeddedViewCode(payload, domain) {
@@ -940,7 +949,8 @@ ${codexPageStyle()}
             x: view.target,
             w: view.growth,
             z: view.description,
-            f: (view.effects || []).slice(0, 2)
+            f: (view.effects || []).slice(0, 2),
+            j: view._inferred
           }
         : {
             i: view.id,
@@ -955,7 +965,9 @@ ${codexPageStyle()}
             c: view.encounterCount,
             f: (view.moves || []).slice(0, 3)
           };
-    const previous = payload?.previous ? { m: payload.previous.mastery, s: payload.previous.status } : undefined;
+    const previous = payload?.previous
+      ? { m: payload.previous.mastery, s: payload.previous.status, v: ITEMXCore.comparisonView(payload.previous) }
+      : undefined;
     const envelope =
       domain === 'codex'
         ? {
@@ -966,10 +978,13 @@ ${codexPageStyle()}
             o: codexEvent.patch?.op,
             q: Object.keys(codexEvent.patch?.fields || {}),
             e: codexView,
+            r: payload.review,
             p: previous
           }
         : {
             v: ITEMXCore.VERSION,
+            p: ITEMXCore.comparisonView(payload.previous),
+            r: payload.review,
             i: {
               i: view.id,
               n: view.name,
@@ -1030,7 +1045,8 @@ ${codexPageStyle()}
             target: item.x,
             growth: item.w,
             description: item.z,
-            effects: item.f || []
+            effects: item.f || [],
+            _inferred: item.j
           }
         : {
             id: item.i,
@@ -1053,12 +1069,20 @@ ${codexPageStyle()}
           op: payload.o || null,
           fields: Object.fromEntries((payload.q || []).map((key) => [key, true]))
         };
-      return { v: payload.v, event, view, previous: payload.p ? { mastery: payload.p.m, status: payload.p.s } : null };
+      return {
+        v: payload.v,
+        event,
+        view,
+        review: payload.r,
+        previous: payload.p?.v || (payload.p ? { mastery: payload.p.m, status: payload.p.s } : null)
+      };
     }
     if (domain !== 'item' || !payload?.i) return null;
     const item = payload.i;
     return {
       v: payload.v,
+      previous: payload.p,
+      review: payload.r,
       view: {
         id: item.i,
         name: item.n,
@@ -1505,13 +1529,27 @@ ${codexPageStyle()}
     return rebuildCurrent();
   }
 
-  async function commitManualEvents(loaded, events, label) {
+  async function commitManualEvents(loaded, events, label, review = { source: 'manual' }, refresh = true) {
     if (!loaded || !Array.isArray(events) || !events.length) throw new Error('No manual events to commit');
     const latest = await Risuai.getChatFromIndex(loaded.characterIndex, loaded.chatIndex);
     if (!latest) throw new Error('Chat disappeared during manual operation');
+    if (loaded.expectedChat && JSON.stringify(latest) !== JSON.stringify(loaded.expectedChat))
+      throw new Error('저장 직전 대화가 변경되어 보완을 취소했습니다.');
     const ledger = manualLedger(latest);
     const afterIndex = Math.max(-1, (latest.message || []).length - 1);
-    for (const event of events) ledger.push({ at: Date.now(), afterIndex, label, event: ITEMXCore.clone(event) });
+    const scratch = rebuildWithManual(latest).registry;
+    for (const event of events) {
+      const previous = ITEMXCore.comparisonView(scratch.items[event.item?.id || event.patch?.id]);
+      const view = ITEMXCore.clone(ITEMXCore.applyEvent(scratch, event));
+      if (!view) throw new Error('수동 변경을 적용할 수 없습니다.');
+      ledger.push({
+        at: Date.now(),
+        afterIndex,
+        label,
+        event: ITEMXCore.clone(event),
+        presentation: { previous, view: ITEMXCore.comparisonView(view), review }
+      });
+    }
     let next = ITEMXCore.clone(latest);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger) };
     next = checkpointReplay(next);
@@ -1528,7 +1566,7 @@ ${codexPageStyle()}
     );
     await Risuai.setChatToIndex(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
     runtime.status = `${label} · ${events.length}건`;
-    return rebuildCurrent();
+    return refresh ? rebuildCurrent() : null;
   }
 
   function modelText(result) {
@@ -1941,6 +1979,7 @@ ${codexPageStyle()}
       const validItems = [],
         partials = [],
         rejectedIds = [];
+      const checkedIds = new Set();
       const itemSiblings = parsed.events.filter((event) => event.kind === 'exam').map((event) => event.item);
       const itemEvidenceContext = [conversation.triggeringUser, conversation.recent, committedNarrative]
         .filter(Boolean)
@@ -1961,6 +2000,7 @@ ${codexPageStyle()}
         const accepted =
           quality.status === 'partial' ? ITEMXQuality.projectSafePartial(event, quality, validationRegistry) : event;
         if (ITEMXCore.applyEvent(validationRegistry, accepted) == null) continue;
+        checkedIds.add(event.item.id);
         validItems.push(accepted);
         if (quality.status === 'partial') partials.push({ ...quality, event: accepted, sourceEvent: event });
       }
@@ -1986,15 +2026,16 @@ ${codexPageStyle()}
         } catch (error) {
           fail('auxiliary partial repair', error);
         }
-        unresolvedPartials = partials.filter((one) =>
-          one.missing.some((key) => !repaired.get(one.event.item.id)?.has(key))
-        );
+        unresolvedPartials = partials
+          .map((one) => ({ ...one, missing: one.missing.filter((key) => !repaired.get(one.event.item.id)?.has(key)) }))
+          .filter((one) => one.missing.length);
       }
       const skillEvidenceText = [conversation.triggeringUser, conversation.recent, committedNarrative]
         .filter(Boolean)
         .join('\n\n');
       const codexParsed = ITEMXCodex.extractResponse(parsed.content, codexSnapshot, {
         enabledDomains: domains,
+        reconcileExistingSkills: true,
         rarityMode: settings.rarityMode,
         skillEvidenceText
       });
@@ -2048,13 +2089,21 @@ ${codexPageStyle()}
       const history = auxiliaryHistory(next);
       const reg = ITEMXCore.clone(snapshot.registry);
       const markers = validItems.map((event) => {
+        const id = event.item?.id || event.patch?.id;
+        const previous = ITEMXCore.comparisonView(reg.items[id]);
         const view = ITEMXCore.clone(ITEMXCore.applyEvent(reg, event));
-        return ITEMXCore.marker({ v: ITEMXCore.VERSION, event, view });
+        const partial = unresolvedPartials.find((one) => one.event.item.id === id);
+        const review = { source: 'auxiliary', checked: checkedIds.has(id), missing: partial?.missing || [] };
+        return ITEMXCore.marker({ v: ITEMXCore.VERSION, event, view, previous, review });
       });
       const codexReg = ITEMXCodex.clone(codexSnapshot);
       for (const event of validCodex) {
+        const priorRegistry = event.domain === 'skill' ? codexReg.skills : codexReg.monsters;
+        const previous = ITEMXCodex.clone(priorRegistry.entries[event.entity?.id || event.patch?.id] || null);
         const view = ITEMXCodex.clone(ITEMXCodex.applyEvent(codexReg, event));
-        markers.push(ITEMXCodex.marker({ v: ITEMXCodex.VERSION, event, view }));
+        markers.push(
+          ITEMXCodex.marker({ v: ITEMXCodex.VERSION, event, view, previous, review: { source: 'auxiliary' } })
+        );
       }
       const markerText = markers.join('\n');
       const message = next.message[index];
@@ -2085,12 +2134,21 @@ ${codexPageStyle()}
       }
       await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt));
       if (stillActive) {
+        armEventBursts(markerText);
+        commitEventBursts(compacted);
         runtime.cachedLoaded = null;
         runtime.generation += 1;
         runtime.uiRemountAfter = Date.now() + 1200;
         runtime.status = `보조 출력 · ${valid.length}건 복구`;
       }
-      if (stillActive) await setAuxOutcome('done', `보조 복구 완료 · ${valid.length}건`, valid.length);
+      if (stillActive)
+        await setAuxOutcome(
+          unresolvedPartials.length || rejectedIds.length ? 'failed' : 'done',
+          unresolvedPartials.length || rejectedIds.length
+            ? `일부 보완 실패 · ${unresolvedPartials.length + rejectedIds.length}건 · 기존 정보 보존`
+            : `보조 복구 완료 · ${valid.length}건`,
+          valid.length
+        );
       return valid;
     }).catch(async (error) => {
       fail('auxiliary recovery', error);
@@ -2130,6 +2188,72 @@ ${codexPageStyle()}
       event.item.count = target.count;
     }
     return event;
+  }
+
+  async function repairOneItem(loaded, id) {
+    if (!loaded?.itemsEnabled) throw new Error('아이템 기능을 먼저 활성화하세요.');
+    if (!loaded || runtime.itemRepairBusy || runtime.auxActive || runtime.auxRecoveryPromise)
+      throw new Error('이미 보조 모델이 처리 중입니다.');
+    const record = presentationRecord('item', id);
+    const missing = record.review?.missing || [];
+    if (!missing.length) throw new Error('이 아이템에 기록된 미해결 필드가 없습니다.');
+    runtime.itemRepairBusy = true;
+    return enqueue(loaded.key, async () => {
+      const active = await context();
+      if (!active || active.key !== loaded.key) throw new Error('채팅이 변경되었습니다.');
+      const chat = active.chat;
+      if (chat.isStreaming || (chat.message || []).some((one) => one.isStreaming || one.bgContinue))
+        throw new Error('출력 완료 후 다시 시도하세요.');
+      const sourceIndex = record.review?.evidenceIndex ?? record.messageIndex;
+      const source = messageData(chat.message?.[sourceIndex]);
+      const reg = rebuildWithManual(chat).registry,
+        item = reg.items[id];
+      if (!item || item.possession === 'removed') throw new Error('현재 아이템을 찾을 수 없습니다.');
+      const conversation = auxiliaryConversationContext(chat, sourceIndex);
+      const narrative = [
+        conversation.triggeringUser,
+        conversation.recent,
+        auxiliaryVisibleText(source, { itemRefs: false })
+      ].join('\n\n');
+      const evidence = ITEMXQuality.detectItemEvidence(narrative, item, Object.values(reg.items));
+      if (!evidence.segment) throw new Error('원문 근거를 찾지 못했습니다. 아이템은 변경하지 않았습니다.');
+      const partial = { event: { kind: 'exam', item }, missing, evidence };
+      const raw = modelText(
+        await runAuxModel(ITEMXQuality.repairPrompt([partial], narrative), `${item.name} · 누락 정보 보완 중`)
+      );
+      const parsed = ITEMXCore.extractResponse(raw, reg);
+      const partialMap = new Map([[id, partial]]);
+      const events = parsed.events.map((event) => ITEMXQuality.acceptRepair(event, partialMap, reg)).filter(Boolean);
+      if (events.length !== 1 || parsed.events.length !== 1 || parsed.errors.length)
+        throw new Error('근거와 일치하는 단일 보완 결과가 없습니다. 기존 정보는 보존됩니다.');
+      const latest = await context();
+      if (!latest || latest.key !== loaded.key || JSON.stringify(latest.chat) !== JSON.stringify(chat))
+        throw new Error('처리 중 대화가 변경되어 보완을 적용하지 않았습니다.');
+      const remaining = missing.filter((key) => !Object.prototype.hasOwnProperty.call(events[0].patch.fields, key));
+      // This transaction already owns the queue; commitManualEvents only writes.
+      await commitManualEvents(
+        { ...loaded, chat: latest.chat, expectedChat: latest.chat },
+        events,
+        '누락 정보 보완',
+        { source: 'auxiliary', checked: true, missing: remaining, evidenceIndex: sourceIndex },
+        false
+      );
+      if (runtime.activeContextKey === loaded.key)
+        await setAuxOutcome(
+          remaining.length ? 'failed' : 'done',
+          remaining.length ? `일부 보완 완료 · 미해결 ${remaining.length}개 필드` : '누락 정보 보완 완료',
+          events.length
+        );
+    })
+      .then(() => rebuildCurrent())
+      .catch(async (error) => {
+        if (runtime.activeContextKey === loaded.key && !runtime.unloading)
+          await setAuxOutcome('failed', '누락 정보 보완 실패 · 기존 정보 보존', 0);
+        throw error;
+      })
+      .finally(() => {
+        runtime.itemRepairBusy = false;
+      });
   }
 
   function mainRequestType(type) {
@@ -2243,6 +2367,7 @@ ${codexPageStyle()}
       try {
         await catchUpLatestOutput({ syncUi: false });
         const loaded = await rebuildCurrent();
+        if (loaded) commitEventBursts(loaded.chat);
         if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled)
           await scanLorebookEncounters({ silent: true });
         await ensureRootInventory();
@@ -2328,6 +2453,7 @@ ${codexPageStyle()}
     }
     if (syncUi) {
       const loaded = await rebuildCurrent();
+      if (loaded) commitEventBursts(loaded.chat);
       if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
       await ensureRootInventory();
     }
@@ -2347,6 +2473,7 @@ ${codexPageStyle()}
         runtime.outputSyncPending = false;
         await catchUpLatestOutput({ syncUi: false });
         const loaded = await rebuildCurrent();
+        if (loaded) commitEventBursts(loaded.chat);
         if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) {
           await scanLorebookEncounters({ silent: true });
         }
@@ -2426,7 +2553,15 @@ ${codexPageStyle()}
         rebuildCodexWithLedger(ctx.chat, lookup, { rarityMode: settings.rarityMode }),
         { enabledDomains: enabledCodexDomains(settings), rarityMode: settings.rarityMode, skillEvidenceText: content }
       );
-      const positioned = positionMarkersByNarrative(codexResult.content);
+      const reviewed = codexResult.content.replace(/<!--(ITEMX2|CODEX2):([A-Za-z0-9_-]+)-->/g, (raw, prefix, code) => {
+        const core = prefix === 'ITEMX2' ? ITEMXCore : ITEMXCodex;
+        const payload = core.decodePayload(code);
+        return payload?.event
+          ? core.marker({ ...payload, review: payload.review || { source: 'main', checked: false } })
+          : raw;
+      });
+      const positioned = positionMarkersByNarrative(reviewed);
+      armEventBursts(positioned);
       if (
         result.events.length ||
         result.errors.length ||
@@ -2541,8 +2676,9 @@ ${codexPageStyle()}
               : op === 'restore'
                 ? ['SKILL RESTORED', '복원']
                 : ['SKILL RECORD UPDATED', '큰 변화']);
-      const mastery = Number.isFinite(Number(entity.mastery)) ? Number(entity.mastery) : null;
-      const priorMastery = Number.isFinite(Number(previous.mastery)) ? Number(previous.mastery) : null;
+      const mastery = entity.mastery != null && Number.isFinite(Number(entity.mastery)) ? Number(entity.mastery) : null;
+      const priorMastery =
+        previous.mastery != null && Number.isFinite(Number(previous.mastery)) ? Number(previous.mastery) : null;
       const masteryText =
         mastery != null && priorMastery != null && mastery !== priorMastery
           ? `${priorMastery}%→${mastery}%`
@@ -2571,7 +2707,7 @@ ${codexPageStyle()}
       ]
         .filter(Boolean)
         .join(' · ');
-      return `<section class="${classes}" style="${appraisal.style}"><div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.rank || '미분류')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(meta)}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? '성장 기록' : '발현 효과'}</b><span>${ITEMXCore.esc(effect)}</span></footer></section>`;
+      return `<section class="${classes}" style="${appraisal.style}"><div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.rank || '미분류')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(meta)}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? '성장 기록' : '발현 효과'}</b><span>${ITEMXCore.esc(effect)}</span></footer>${ITEMXRenderer.changesHtml(payload.previous, entity, 'skill')}</section>`;
     }
     const appraisal = codexInlineAppraisalStyle(entity, 'monster');
     const labels = {
@@ -2607,7 +2743,127 @@ ${codexPageStyle()}
       .join('');
     const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
     const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
-    return `<section class="${classes}" style="${appraisal.style}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(encounterEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.threat || '위협 미상')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(aliases || entity.description || '전투 도감 기록')}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${ended ? '최근 전투 결과' : '관측 기록'}</b><span>${ITEMXCore.esc(detail)}</span></footer></section>`;
+    return `<section class="${classes}" style="${appraisal.style}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(encounterEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.threat || '위협 미상')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(aliases || entity.description || '전투 도감 기록')}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${ended ? '최근 전투 결과' : '관측 기록'}</b><span>${ITEMXCore.esc(detail)}</span></footer>${ITEMXRenderer.changesHtml(payload.previous, entity, 'monster')}</section>`;
+  }
+
+  function presentationPayloads(text) {
+    const rows = [];
+    String(text || '').replace(
+      /<!--(ITEMX2|CODEX2)(?::([A-Za-z0-9_-]+)|@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?)-->/g,
+      (raw, prefix, code, ref, inline, at) => {
+        const domain = prefix === 'ITEMX2' ? 'item' : 'codex';
+        const payload = code
+          ? (domain === 'item' ? ITEMXCore : ITEMXCodex).decodePayload(code)
+          : runtime.eventPayloads.get(`${domain}:${ref}`) || inlineViewPayload(inline, domain);
+        if (payload?.view && !payload.error)
+          rows.push({ payload, domain: domain === 'codex' ? payload.event?.domain : 'item', at });
+        return raw;
+      }
+    );
+    return rows;
+  }
+
+  function eventBurstKey(payload) {
+    return `e${ITEMXCore.fnv1a(runtime.activeContextKey)}_${ITEMXCore.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
+  }
+  function decorateInlineEvent(html, payload, domain) {
+    const kind = ITEMXRenderer.eventKind(payload, domain);
+    if (!kind || !html) return html;
+    return html.replace(/^<(article|section)([^>]*)>/, (opening) =>
+      opening.replace(
+        />$/,
+        ` x-itemx2-event="${eventBurstKey(payload)}"><span class="itemx2-event-burst itemx2-burst-${kind}" aria-hidden="true"></span>`
+      )
+    );
+  }
+  function armEventBursts(text) {
+    if (!runtime.visualEffectsEnabled || runtime.unloading) return;
+    for (const [key, candidate] of runtime.eventBursts)
+      if (candidate.expires < Date.now()) runtime.eventBursts.delete(key);
+    for (const { payload, domain } of presentationPayloads(text)) {
+      if (!ITEMXRenderer.eventKind(payload, domain)) continue;
+      const key = eventBurstKey(payload);
+      if (runtime.eventBurstSeen.has(key) || runtime.eventBursts.has(key)) continue;
+      if (runtime.eventBursts.size >= 8) break;
+      runtime.eventBursts.set(key, { expires: Date.now() + 30000, committed: false });
+    }
+  }
+  function burstTimer(fn, ms) {
+    const timer = globalThis.setTimeout(() => {
+      runtime.eventBurstTimers.delete(timer);
+      void fn();
+    }, ms);
+    runtime.eventBurstTimers.add(timer);
+  }
+  function commitEventBursts(chat) {
+    if (!runtime.eventBursts.size || chat?.isStreaming) return;
+    const message = chat?.message?.[assistantMessageIndex(chat)];
+    if (!message || message.isStreaming || message.bgContinue) return;
+    let activated = false;
+    for (const { payload } of presentationPayloads(messageData(message))) {
+      const candidate = runtime.eventBursts.get(eventBurstKey(payload));
+      if (!candidate || candidate.committed || candidate.expires < Date.now()) continue;
+      candidate.committed = true;
+      candidate.expires = Date.now() + 3000;
+      activated = true;
+    }
+    if (activated) for (const delayMs of [0, 350, 1000]) burstTimer(flushEventBursts, delayMs);
+  }
+  async function flushEventBursts() {
+    if (
+      runtime.unloading ||
+      !runtime.mainDoc ||
+      runtime.eventBurstBusy ||
+      runtime.bodyFxScrollActive ||
+      !runtime.eventBursts.size
+    )
+      return;
+    runtime.eventBurstBusy = true;
+    const key = runtime.activeContextKey;
+    try {
+      let played = 0;
+      for (const [id, candidate] of runtime.eventBursts) {
+        if (candidate.expires < Date.now() || !runtime.visualEffectsEnabled) {
+          runtime.eventBursts.delete(id);
+          continue;
+        }
+        if (!candidate.committed || played >= 2) continue;
+        const element = await runtime.mainDoc.querySelector(`[x-itemx2-event="${id}"]`);
+        if (runtime.unloading || key !== runtime.activeContextKey) return;
+        if (!element) continue;
+        // Consume before mutating DOM. Re-rendered markup never contains this class.
+        runtime.eventBursts.delete(id);
+        runtime.eventBurstSeen.add(id);
+        while (runtime.eventBurstSeen.size > 256)
+          runtime.eventBurstSeen.delete(runtime.eventBurstSeen.values().next().value);
+        runtime.eventBurstOwners.add(element);
+        await element.addClass('x-risu-itemx2-burst-active');
+        if (runtime.unloading || key !== runtime.activeContextKey) {
+          await element.removeClass('x-risu-itemx2-burst-active');
+          runtime.eventBurstOwners.delete(element);
+          return;
+        }
+        played++;
+        burstTimer(async () => {
+          try {
+            await element.removeClass('x-risu-itemx2-burst-active');
+          } catch {}
+          runtime.eventBurstOwners.delete(element);
+        }, 1350);
+      }
+    } catch (error) {
+      debugRecord('event burst', error?.message || String(error));
+    } finally {
+      runtime.eventBurstBusy = false;
+    }
+  }
+  function clearEventBursts() {
+    for (const timer of runtime.eventBurstTimers) globalThis.clearTimeout(timer);
+    runtime.eventBurstTimers.clear();
+    runtime.eventBursts.clear();
+    for (const element of runtime.eventBurstOwners)
+      void element.removeClass('x-risu-itemx2-burst-active').catch(() => {});
+    runtime.eventBurstOwners.clear();
   }
 
   const displayHandler = (content) => {
@@ -2622,7 +2878,11 @@ ${codexPageStyle()}
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;
       if (runtime.markerHtmlCache.has(key)) return runtime.markerHtmlCache.get(key);
-      const html = ITEMXRenderer.renderMarkerPayload(payload, { inline: true, motion });
+      const html = decorateInlineEvent(
+        ITEMXRenderer.renderMarkerPayload(payload, { inline: true, motion }),
+        payload,
+        'item'
+      );
       runtime.markerHtmlCache.set(key, html);
       while (runtime.markerHtmlCache.size > 64)
         runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
@@ -2653,7 +2913,11 @@ ${codexPageStyle()}
         found = true;
         const payload = ITEMXCodex.decodePayload(code);
         if (!payload || payload.error) return '';
-        const html = codexInlineEventHtml(payload, markerMotion(`CODEX2:${code}`));
+        const html = decorateInlineEvent(
+          codexInlineEventHtml(payload, markerMotion(`CODEX2:${code}`)),
+          payload,
+          payload.event?.domain
+        );
         if (html) {
           hasCodexCard = true;
           return html;
@@ -2680,7 +2944,11 @@ ${codexPageStyle()}
         if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
         const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
         if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
-        const html = codexInlineEventHtml(payload, markerMotion(`CODEX2@${ref}`));
+        const html = decorateInlineEvent(
+          codexInlineEventHtml(payload, markerMotion(`CODEX2@${ref}`)),
+          payload,
+          payload.event?.domain
+        );
         if (html) {
           hasCodexCard = true;
           return html;
@@ -2689,7 +2957,7 @@ ${codexPageStyle()}
       });
     if (!found) return content;
     if (runtime.mainStyle) return rendered;
-    return `<style>${ITEMX_CHIP_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
+    return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
   };
 
   function beginBodyScrollEffects() {
@@ -2874,11 +3142,68 @@ ${codexPageStyle()}
     return all.slice(start, start + ITEMX_ROOT_PAGE_SIZE);
   }
 
+  function presentationRecord(domain, id) {
+    if (!runtime.presentationRecords) {
+      const records = new Map(),
+        chat = runtime.cachedLoaded?.chat;
+      const manual = [...(replayCheckpoint(chat)?.manual || []), ...manualLedger(chat)];
+      const manualByIndex = new Map();
+      for (const row of manual) {
+        const index = Math.min(Math.max(-1, row.afterIndex), (chat?.message?.length || 0) - 1);
+        const rows = manualByIndex.get(index) || [];
+        rows.push(row);
+        manualByIndex.set(index, rows);
+      }
+      const put = (payload, domain, index) => {
+        const id = payload.view?.id || payload.event?.item?.id || payload.event?.patch?.id;
+        if (id) {
+          const prior = records.get(`${domain}:${id}`),
+            review = { ...payload.review };
+          if (prior?.review?.missing?.length && !payload.review?.checked && payload.review?.source !== 'manual') {
+            review.missing = prior.review.missing;
+            review.evidenceIndex = prior.review.evidenceIndex ?? prior.messageIndex;
+          }
+          if (payload.review?.source === 'manual') {
+            review.missing = [];
+            review.checked = false;
+          }
+          records.set(`${domain}:${id}`, { ...payload, review, messageIndex: index });
+        }
+      };
+      const putManual = (index) => {
+        for (const row of manualByIndex.get(index) || [])
+          put(
+            { ...row.presentation, event: row.event, review: row.presentation?.review || { source: 'manual' } },
+            'item',
+            index
+          );
+      };
+      putManual(-1);
+      for (let index = 0; index < (chat?.message?.length || 0); index++) {
+        for (const row of presentationPayloads(messageData(chat.message[index]))) put(row.payload, row.domain, index);
+        putManual(index);
+      }
+      runtime.presentationRecords = records;
+    }
+    return runtime.presentationRecords.get(`${domain}:${id}`) || {};
+  }
+  function detailAnnotations(domain, entity) {
+    const record = presentationRecord(domain, entity.id);
+    const changes = ITEMXRenderer.changesHtml(record.previous, entity, domain);
+    const review = ITEMXRenderer.reviewHtml(record.review, entity);
+    const repair =
+      domain === 'item' && record.review?.missing?.length
+        ? `<button class="itemx2-repair-one" data-action="repair-one" data-item-id="${ITEMXCore.esc(entity.id)}">이 항목의 누락 정보만 보완</button>`
+        : '';
+    return `${changes}${review}${repair}`;
+  }
+
   function itemDetailHtml(item) {
     const motion = runtime.visualEffectsEnabled ? 'full' : 'off';
-    const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify(item))}:${motion}`;
+    const record = presentationRecord('item', item.id);
+    const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
     if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
-    const html = ITEMXRenderer.renderCard(item, { motion });
+    const html = `<div class="itemx2-detail-stack">${ITEMXRenderer.renderCard(item, { motion })}${detailAnnotations('item', item)}</div>`;
     runtime.detailHtmlCache.set(key, html);
     while (runtime.detailHtmlCache.size > 60)
       runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
@@ -3185,6 +3510,7 @@ ${codexPageStyle()}
         await installBodyEffectGovernor();
         await ensureRootInventory();
         await syncHostSettingsVisibility();
+        await flushEventBursts();
       } catch (error) {
         debugRecord('host DOM sync', error?.message || String(error));
       } finally {
@@ -3304,6 +3630,7 @@ ${codexPageStyle()}
     const nextKey = active?.key || '';
     if (runtime.activeContextKey === nextKey) return false;
     runtime.activeContextKey = nextKey;
+    clearEventBursts();
     armRemountWatchdog();
     runtime.rootItemPage = 0;
     runtime.rootHydratedDetail = '';
@@ -3630,9 +3957,9 @@ ${codexPageStyle()}
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ id: skill.id, name: skill.name, affinity }, tier, 'full');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, runtime.visualEffectsEnabled ? 'full' : 'off');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
-    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section></div>`;
+    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
   }
 
   function monsterSummaryHtml(monster, portrait = '') {
@@ -3661,7 +3988,7 @@ ${codexPageStyle()}
     const lore = monster._lore
       ? '<section class="itemx-codex-section"><small>📚 로어북 공개 정보로 보완된 기록</small></section>'
       : '';
-    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}${lore}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section></div>`;
+    return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${ITEMXCore.esc(monster.threat || '미상')}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${ITEMXCore.esc(monster.name)}</strong><span>${ITEMXCore.esc(monster.kind || '미분류')} · ${ITEMXCore.esc(monster.relation)} · ${ITEMXCore.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}회</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? '🔥 현재 교전 기록' : '📖 보관 기록'}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>👁️ 관찰 기록</h4><p>${ITEMXCore.esc(monster.description)}</p></section>` : ''}${chips('🏷️ 별칭', monster.aliases, '없음')}${chips('🎯 확인된 약점', monster.weaknesses, '미상')}${chips('🛡️ 확인된 내성', monster.resistances, '미상')}${chips('💥 관측 행동', monster.moves, '미상')}${lore}<section class="itemx-codex-section"><small>ID · ${ITEMXCore.esc(monster.id)}</small></section>${detailAnnotations('monster', monster)}</div>`;
   }
 
   const unwrapCodexPage = (html) =>
@@ -3675,7 +4002,10 @@ ${codexPageStyle()}
     return `${source.length}:${ITEMXCore.fnv1a(sample)}`;
   };
   function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
-    const fingerprint = ITEMXCore.fnv1a(JSON.stringify(entity || {}));
+    const record = presentationRecord(domain, entity?.id);
+    const fingerprint = ITEMXCore.fnv1a(
+      JSON.stringify([entity || {}, record.previous, record.review, runtime.visualEffectsEnabled])
+    );
     return domain === 'skill'
       ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`
       : `monster:${entity?.id || ''}:${fingerprint}:${portraitRevision(portrait)}`;
@@ -4077,6 +4407,22 @@ ${codexPageStyle()}
           const cacheReady =
             cached && cached.key === runtime.activeContextKey && runtime.cachedGeneration === runtime.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
+          if (loaded && (await eventHitsMainClass(event, 'itemx2-repair-one'))) {
+            const items = rootPageItems(loaded);
+            for (let index = 0; index < items.length; index++) {
+              if (!(await runtime.mainDoc.querySelector(`#itemx2-detail-${index}:checked`))) continue;
+              try {
+                const refreshed = await repairOneItem(loaded, items[index].id);
+                const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
+                const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
+                if (runtime.activeContextKey === loaded.key && detail && item)
+                  await detail.setInnerHTML(itemDetailHtml(item));
+              } catch (error) {
+                await notifyUser(error.message || String(error), 'error');
+              }
+              return;
+            }
+          }
           if (loaded && loaded.key === runtime.activeContextKey) {
             // SafeElement listeners are document-level. While this async
             // callback awaits, the label's native radio action can already
@@ -4759,7 +5105,7 @@ ${codexPageStyle()}
     const inventoryContent = !enabled
       ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX CODEX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
       : selected
-        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion ? 'full' : 'off' })}</div></div>`
+        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion && runtime.visualEffectsEnabled ? 'full' : 'off' })}${detailAnnotations('item', selected)}</div></div>`
         : `<nav class="itemx-seg">${[
             ['all', '전체'],
             ['owned', '보유'],
@@ -4868,6 +5214,14 @@ ${codexPageStyle()}
     root.querySelector('[data-action="motion"]')?.addEventListener('click', () => {
       ui.motion = !ui.motion;
       drawInventory(loaded);
+    });
+    root.querySelector('[data-action="repair-one"]')?.addEventListener('click', async () => {
+      if (!selected) return;
+      try {
+        drawInventory(await repairOneItem(loaded, selected.id));
+      } catch (error) {
+        await notifyUser(error.message || String(error), 'error');
+      }
     });
     root.querySelector('[data-action="toggle"]')?.addEventListener('click', async () => {
       loaded.enabled = !enabled;
@@ -5311,7 +5665,15 @@ ${codexPageStyle()}
           log('chat listener unavailable; continuing with core request/output hooks');
         } else
           try {
-            await Risuai.addRisuChatListener('output', () => {
+            await Risuai.addRisuChatListener('output', (output) => {
+              const loaded = runtime.cachedLoaded;
+              if (
+                output?.chat &&
+                loaded?.key === runtime.activeContextKey &&
+                output.characterIndex === loaded.characterIndex &&
+                output.chatIndex === loaded.chatIndex
+              )
+                commitEventBursts(output.chat);
               void scheduleCommittedOutputSync();
             });
             runtime.hooks.listener = true;
@@ -5404,6 +5766,7 @@ ${codexPageStyle()}
 
   await Risuai.onUnload(async () => {
     runtime.unloading = true;
+    clearEventBursts();
     runtime.panelOpen = false;
     runtime.panelTransition += 1;
     if (runtime.remountTimer) globalThis.clearInterval(runtime.remountTimer);

@@ -639,6 +639,22 @@ const ITEMXCodex = (() => {
       events = [],
       errors = [],
       enabled = new Set(options.enabledDomains || ['skill', 'monster']);
+    // Auxiliary output is untrusted about identity. Resolve against the full registry,
+    // not the deliberately bounded model anchor. Keep this out of historical replay.
+    const skillNames = new Map(),
+      skillAliases = new Map();
+    const identityText = (value) =>
+      String(value || '')
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/\s+/g, '');
+    const indexSkill = (entity) => {
+      const name = identityText(entity?.name);
+      if (!name) return;
+      if (!skillNames.has(name)) skillNames.set(name, new Set());
+      skillNames.get(name).add(entity.id);
+    };
+    if (options.reconcileExistingSkills) Object.values(state.skills.entries).forEach(indexSkill);
     let cursor = 0;
     if (!parts.length && !/<\/?(?:skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(text))
       return { content: text, snapshot: state, events, errors };
@@ -650,6 +666,40 @@ const ITEMXCodex = (() => {
         return;
       }
       const parsed = parseTransport(part.tag, part.attrs, part.body, `${part.raw}:${index}`);
+      if (options.reconcileExistingSkills && parsed.event?.domain === 'skill') {
+        const event = parsed.event;
+        if (event.kind === 'exam' && !state.skills.entries[event.entity.id]) {
+          const incoming = event.entity;
+          const provided = new Set(incoming._provided || []);
+          const known = (value) => value && !/^(?:none|unknown|미상|미분류)$/i.test(String(value).trim());
+          const candidates = [...(skillNames.get(identityText(incoming.name)) || [])]
+            .map((id) => state.skills.entries[id])
+            .filter((prior) => prior && identityText(prior.name) === identityText(incoming.name))
+            .filter((prior) =>
+              ['school', 'type', 'affinity'].every(
+                (key) =>
+                  !provided.has(key) ||
+                  !known(incoming[key]) ||
+                  !known(prior[key]) ||
+                  identityText(incoming[key]) === identityText(prior[key])
+              )
+            );
+          if (candidates.length === 1) {
+            skillAliases.set(incoming.id, candidates[0].id);
+            incoming.id = candidates[0].id;
+            incoming.name = candidates[0].name;
+          } else if (candidates.length > 1) {
+            parsed.event = null;
+            parsed.error = 'skill_identity_ambiguous';
+          }
+        } else if (
+          event.kind === 'patch' &&
+          !state.skills.entries[event.patch.id] &&
+          skillAliases.has(event.patch.id)
+        ) {
+          event.patch.id = skillAliases.get(event.patch.id);
+        }
+      }
       if (parsed.event?.domain === 'skill')
         parsed.event = reconcileSkillEvent(parsed.event, options.skillEvidenceText ?? text, {
           ...options,
@@ -661,8 +711,17 @@ const ITEMXCodex = (() => {
         const previous = id && reg.entries[id] ? clone(reg.entries[id]) : null;
         const view = clone(applyEvent(state, parsed.event));
         if (view) {
-          events.push(parsed.event);
-          output.push(marker({ v: VERSION, event: parsed.event, view, previous }));
+          if (options.reconcileExistingSkills && parsed.event.domain === 'skill') indexSkill(view);
+          // A repeated inspection is not a new skill event or a new inline card.
+          const unchangedSkill =
+            options.reconcileExistingSkills &&
+            parsed.event.domain === 'skill' &&
+            previous &&
+            JSON.stringify(previous) === JSON.stringify(view);
+          if (!unchangedSkill) {
+            events.push(parsed.event);
+            output.push(marker({ v: VERSION, event: parsed.event, view, previous }));
+          }
         } else {
           const error = reg.diagnostics.at(-1)?.code || 'codex_apply_failed';
           errors.push(error);

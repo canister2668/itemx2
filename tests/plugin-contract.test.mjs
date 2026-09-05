@@ -10,14 +10,14 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 2\.0\.5$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v2\.0\.5$/m);
+  assert.match(source, /^\/\/@version 2\.0\.6$/m);
+  assert.match(source, /^\/\/@display-name ITEMX CODEX · v2\.0\.6$/m);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(
     source,
     /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/refs\/heads\/main\/dist\/itemx2\.plugin\.js$/m
   );
-  assert.match(source, /const ITEMX_VERSION_LABEL = "2\.0\.5"/);
+  assert.match(source, /const ITEMX_VERSION_LABEL = "2\.0\.6"/);
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
@@ -240,7 +240,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /Array\.from\(\{ length: Math\.min\(4, monsters\.length\) \}, \(\) => loadNextPortrait\(\)\)/);
   assert.equal(source.includes('Promise.all(monsters.map'), false);
   assert.match(source, /runtime\.hooks\.listener === true \? 45000 : 4500/);
-  assert.match(source, /addRisuChatListener\('output',\s*\(\) => \{\s*void scheduleCommittedOutputSync\(\);\s*\}\)/);
+  assert.match(
+    source,
+    /addRisuChatListener\('output',\s*\(output\) => \{[\s\S]{0,700}void scheduleCommittedOutputSync\(\);\s*\}\)/
+  );
   const outputSync = source.slice(
     source.indexOf('function scheduleCommittedOutputSync'),
     source.indexOf('function armCatchUpWatchdog')
@@ -345,7 +348,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(source.includes('persist: true'), false);
   assert.match(
     source,
-    /await catchUpLatestOutput\(\{ syncUi: false \}\);\s*const loaded = await rebuildCurrent\(\);\s*if \(loaded\?\.encountersEnabled && loaded\?\.lorebookEncounterEnabled\)\s*await scanLorebookEncounters\(\{ silent: true \}\);/
+    /await catchUpLatestOutput\(\{ syncUi: false \}\);\s*const loaded = await rebuildCurrent\(\);\s*if \(loaded\) commitEventBursts\(loaded.chat\);\s*if \(loaded\?\.encountersEnabled && loaded\?\.lorebookEncounterEnabled\)\s*await scanLorebookEncounters\(\{ silent: true \}\);/
   );
   assert.match(source, /getCurrentLorebookEntries/);
   assert.match(source, /lorebookEncounterEnabled:\$\{id\}/);
@@ -420,7 +423,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /state: unresolvedPartials\.length \|\| rejectedIds\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /state: 'rejected'/);
   assert.match(source, /아이템 상세정보 보완 중/);
-  assert.ok(source.length < 550000, 'formatted plugin bundle must stay below the explicit release size budget');
+  assert.ok(
+    source.length < 610000,
+    'presentation metadata and bounded event FX must stay below the release size budget'
+  );
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /function armRemountWatchdog\(\)/);
   assert.match(source, /runtime\.hostObserver \|\| !runtime\.activeContextKey \? 10000 : 1200/);

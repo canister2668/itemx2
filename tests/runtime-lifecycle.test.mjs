@@ -109,6 +109,7 @@ test('committed sync enriches encounters after auxiliary recovery and syncs UI o
         return { encountersEnabled: true, lorebookEncounterEnabled: true };
       },
       scanLorebookEncounters: async () => calls.push('lore'),
+      commitEventBursts: () => {},
       ensureRootInventory: async () => calls.push('ui'),
       fail: (where, error) => {
         throw error;

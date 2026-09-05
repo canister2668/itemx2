@@ -12,6 +12,70 @@ vm.runInContext(await readFile(resolve(root, 'src/core.js'), 'utf8'), context);
 vm.runInContext(await readFile(resolve(root, 'src/codex.js'), 'utf8'), context);
 const codex = context.ITEMXCodex;
 
+const auxSkillOptions = { reconcileExistingSkills: true, skillEvidenceText: '' };
+const skillExam = (id, name = '월영참', extra = '') =>
+  `<skillExam><id>${id}</id><name>${name}</name>${extra}</skillExam>`;
+
+test('auxiliary repeated inspection reuses full-registry identity without duplicate events', () => {
+  const first = codex.extractResponse(skillExam('main_skill'));
+  let state = first.snapshot;
+  // Learned, unmentioned skills are deliberately absent from the small prompt anchor.
+  assert.ok(!codex.anchor(state, '').includes('main_skill'));
+  for (const id of ['aux_skill', 'aux_skill_2', 'main_skill']) {
+    const next = codex.extractResponse(skillExam(id), state, auxSkillOptions);
+    assert.equal(next.events.length, 0);
+    assert.equal(next.snapshot.skills.order.join(','), 'main_skill');
+    assert.equal(next.content, '');
+    state = next.snapshot;
+  }
+});
+
+test('auxiliary duplicate IDs in one batch collapse and subsequent alias patches target original skill', () => {
+  const raw =
+    skillExam('first') +
+    skillExam('second') +
+    '<skillPatch><id>second</id><action>mastery</action><mastery>88</mastery></skillPatch>';
+  const next = codex.extractResponse(raw, codex.snapshot(), auxSkillOptions);
+  assert.equal(next.snapshot.skills.order.join(','), 'first');
+  assert.equal(next.events.length, 2);
+  assert.equal(next.events[1].patch.id, 'first');
+  assert.equal(next.snapshot.skills.entries.first.mastery, 88);
+  const replay = codex.rebuild([{ role: 'char', data: next.content }]);
+  assert.equal(replay.skills.order.join(','), 'first');
+  assert.equal(replay.skills.entries.first.mastery, 88);
+});
+
+test('auxiliary identity matching preserves real updates and does not merge variants or ambiguous records', () => {
+  const base = codex.extractResponse(skillExam('old', '월 영참', '<school>검술</school><affinity>ice</affinity>'));
+  const update = codex.extractResponse(
+    skillExam('new', '월영참', '<mastery>88</mastery>'),
+    base.snapshot,
+    auxSkillOptions
+  );
+  assert.equal(update.events.length, 1);
+  assert.equal(update.events[0].entity.id, 'old');
+  assert.equal(update.snapshot.skills.entries.old.mastery, 88);
+  for (const extra of ['<school>도술</school>', '<affinity>fire</affinity>', '<type>passive</type>']) {
+    const variant = codex.extractResponse(skillExam('distinct', '월영참', extra), base.snapshot, auxSkillOptions);
+    assert.equal(variant.snapshot.skills.order.length, 2);
+  }
+  const ambiguous = codex.extractResponse(skillExam('a') + skillExam('b'));
+  const result = codex.extractResponse(
+    skillExam('c') + skillExam('other', '치유'),
+    ambiguous.snapshot,
+    auxSkillOptions
+  );
+  assert.ok(result.errors.includes('skill_identity_ambiguous'));
+  assert.equal(result.snapshot.skills.order.join(','), 'a,b,other');
+  assert.equal(result.events.length, 1);
+});
+
+test('ordinary extraction and historical replay do not silently merge existing IDs', () => {
+  const first = codex.extractResponse(skillExam('a') + skillExam('b'));
+  assert.equal(first.events.length, 2);
+  assert.equal(codex.rebuild([{ role: 'char', data: first.content }]).skills.order.join(','), 'a,b');
+});
+
 test('multiple skill and encounter transports are hidden and replayed in order', () => {
   const raw = `검결을 깨우쳤다.<skillExam><id>moon_slash</id><name>월영참</name><rank>절정</rank><type>active</type><status>equipped</status><mastery>47</mastery><effects>달빛 참격 ;; 출혈</effects></skillExam> 늑대왕이 덮쳤다.<monsterExam><id>wolf_king</id><name>흑랑왕</name><type>요수</type><threat>상</threat><relation>hostile</relation><status>active</status><portrait>wolf_king.webp</portrait><weaknesses>화염 ;; 성광</weaknesses></monsterExam>`;
   const result = codex.extractResponse(raw, codex.snapshot());

@@ -24,7 +24,8 @@ if (updateUrl && !/^https:\/\//i.test(updateUrl)) throw new Error('ITEMX update 
 
 const rawCss = demo.match(/<style>([\s\S]*?)<\/style>/i)?.[1];
 if (!rawCss) throw new Error(`style block not found: ${demoPath}`);
-const css = rawCss.replace(/[ \t]+$/gm, '').trim();
+const presentationCss = await readFile(resolve(root, 'src/presentation.css'), 'utf8');
+const css = `${rawCss.replace(/[ \t]+$/gm, '').trim()}\n${presentationCss.trim()}`;
 const cardStart = css.indexOf('    .itemx-panel');
 if (cardStart < 0) throw new Error('ITEMX design selectors not found');
 const chatCss = css
@@ -82,6 +83,7 @@ const builtRuntime = productionSource(
     .replace('__ITEMX_PLUGIN_VERSION_JSON__', JSON.stringify(packageVersion))
     .replace('__ITEMX_VERSION_LABEL_JSON__', JSON.stringify(displayVersion))
     .replace('__ITEMX_STYLE_JSON__', JSON.stringify(css))
+    .replace('__ITEMX_PRESENTATION_STYLE_JSON__', JSON.stringify(presentationCss))
     .replace('__ITEMX_CHAT_STYLE_JSON__', JSON.stringify(chatCss))
     .replace('__ITEMX_MAIN_STYLE_JSON__', JSON.stringify(mainCss))
     .replace('__ITEMX_PROTOCOL_JSON__', JSON.stringify(protocol))

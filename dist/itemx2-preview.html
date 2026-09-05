@@ -210,7 +210,291 @@
     @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }
     @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion) * { animation:none!important; } }
     @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }
-.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.5</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
+.itemx2-detail-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+.itemx2-detail-stack > * {
+  flex-shrink: 0;
+}
+.itemx2-change-note,
+.itemx2-review-note {
+  position: relative;
+  z-index: 2;
+  margin: 12px;
+  padding: 11px 13px;
+  border: 1px solid rgba(166, 180, 200, 0.17);
+  border-radius: 9px;
+  background: rgba(8, 13, 21, 0.88);
+  color: #cbd6e4;
+  font-size: var(--itemx-text-sm, 0.72rem);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.itemx2-change-note > strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #e1c68b;
+  font-size: var(--itemx-text-sm, 0.72rem);
+}
+.itemx2-change-note > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 9px;
+  margin-top: 4px;
+}
+.itemx2-change-note small {
+  color: #9eacbf;
+  min-width: 48px;
+}
+.itemx2-change-note del {
+  color: #a0a9b8;
+  text-decoration-color: rgba(160, 169, 184, 0.45);
+}
+.itemx2-change-note em {
+  font-style: normal;
+  color: #f1e0b6;
+}
+.itemx2-change-note b {
+  color: #8494aa;
+}
+.itemx2-review-note {
+  display: grid;
+  gap: 3px;
+  background: rgba(13, 20, 30, 0.92);
+  color: #a4b3c6;
+}
+.itemx2-review-note small {
+  font-size: inherit;
+}
+.itemx2-review-partial {
+  border-left: 3px solid #bf9461;
+}
+.itemx2-review-partial strong {
+  color: #ecc99a;
+}
+.itemx2-repair-one {
+  display: block;
+  margin: 8px 12px 16px;
+  padding: 9px 14px;
+  border: 1px solid #7c684a;
+  border-radius: 8px;
+  background: #211e19;
+  color: #f0d7a7;
+  font: inherit;
+  cursor: pointer;
+}
+.itemx2-technique-material {
+  position: absolute;
+  inset: 9% 5%;
+  pointer-events: none;
+  opacity: 0.64;
+  contain: paint;
+}
+.itemx2-skill-form-slash .itemx2-technique-material {
+  background: linear-gradient(
+    147deg,
+    transparent 43%,
+    color-mix(in srgb, var(--p) 35%, transparent) 46%,
+    rgba(250, 247, 224, 0.9) 46.4%,
+    transparent 47.3% 56%,
+    color-mix(in srgb, var(--p) 35%, transparent) 57%,
+    transparent 59%
+  );
+  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);
+  animation: itemx2-technique-shear 6s ease-in-out infinite;
+}
+.itemx2-skill-form-ward .itemx2-technique-material {
+  inset: 8% 12%;
+  background:
+    linear-gradient(
+      124deg,
+      transparent 20%,
+      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,
+      rgba(235, 248, 255, 0.45) 50%,
+      transparent 51%
+    ),
+    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);
+  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);
+  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;
+}
+.itemx2-skill-form-heal .itemx2-technique-material {
+  inset: 0 9%;
+  background:
+    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),
+    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);
+  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);
+  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;
+}
+.itemx2-skill-form-shadow .itemx2-technique-material {
+  background:
+    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),
+    linear-gradient(
+      114deg,
+      transparent 25%,
+      color-mix(in srgb, var(--p) 36%, transparent) 27%,
+      transparent 29% 69%,
+      rgba(204, 176, 238, 0.22) 71%,
+      transparent 73%
+    );
+  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);
+  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;
+}
+@keyframes itemx2-technique-shear {
+  0%,
+  72%,
+  100% {
+    opacity: 0.32;
+    transform: translate(-3px, 2px);
+  }
+  80% {
+    opacity: 0.8;
+    transform: translate(4px, -3px);
+  }
+}
+@keyframes itemx2-technique-ward {
+  from {
+    opacity: 0.32;
+    transform: translate(-2px, 2px);
+  }
+  to {
+    opacity: 0.62;
+    transform: translate(3px, -2px);
+  }
+}
+@keyframes itemx2-technique-rise {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 0.65;
+    transform: translateY(-6px);
+  }
+}
+@keyframes itemx2-technique-shadow {
+  from {
+    opacity: 0.48;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 0.78;
+    transform: translateX(4px);
+  }
+}
+.itemx2-skill-type-passive .itemx2-technique-material {
+  animation-duration: 16s;
+}
+.itemx2-skill-type-sealed .itemx2-technique-material,
+.itemx2-skill-status-sealed .itemx2-technique-material {
+  animation: none;
+  opacity: 0.22;
+}
+.itemx2-skill-status-lost .itemx2-technique-material {
+  animation: none;
+  opacity: 0.1;
+}
+.itemx2-blend-fire-ice .affinity-fx::after {
+  content: '';
+  position: absolute;
+  inset: 18% 8%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),
+    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);
+}
+.itemx2-blend-dark-lightning .lightning-field {
+  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);
+}
+.itemx2-blend-fire-wind .sig-fire {
+  transform-origin: 30% 85%;
+  rotate: -13deg;
+}
+.itemx2-blend-ice-light .ice-cracks {
+  background-color: rgba(235, 240, 216, 0.025);
+}
+.itemx2-event-burst {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  contain: paint;
+}
+.itemx2-burst-active > .itemx2-event-burst {
+  display: block;
+  animation: itemx2-event-reveal 1.25s ease-out both;
+}
+.itemx2-burst-enhanced {
+  background: linear-gradient(
+    125deg,
+    transparent 25%,
+    rgba(230, 190, 108, 0.16) 40%,
+    rgba(255, 238, 172, 0.6) 44%,
+    transparent 49%
+  );
+}
+.itemx2-burst-damage {
+  background: linear-gradient(
+    120deg,
+    transparent 37%,
+    rgba(236, 151, 131, 0.5) 38%,
+    transparent 39% 62%,
+    rgba(189, 118, 107, 0.3) 63%,
+    transparent 64%
+  );
+  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);
+}
+.itemx2-burst-learned {
+  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);
+}
+.itemx2-burst-resolved {
+  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);
+  animation-name: itemx2-event-resolve !important;
+}
+@keyframes itemx2-event-reveal {
+  0% {
+    opacity: 0;
+    transform: translateX(-9%);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(9%);
+  }
+}
+@keyframes itemx2-event-resolve {
+  0% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.motion-off .itemx2-event-burst,
+.itemx2-effects-off .itemx2-event-burst,
+.itemx2-effects-off .itemx2-technique-material,
+.itemx-body-scrolling .itemx2-event-burst {
+  display: none !important;
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .itemx2-technique-material {
+    animation: none !important;
+  }
+  .itemx2-event-burst {
+    display: none !important;
+    animation: none !important;
+  }
+}
+.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.6</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 const ITEMXCore = (() => {
   'use strict';
 
@@ -970,6 +1254,32 @@ const ITEMXCore = (() => {
       .trim();
   }
 
+  function comparisonView(item) {
+    if (!item) return null;
+    const keys = [
+      'id',
+      'name',
+      'power',
+      'durability',
+      'rarity',
+      'displayRarity',
+      'count',
+      'required',
+      'cost',
+      'status',
+      'level',
+      'mastery',
+      'rank',
+      'cooldown',
+      'relation',
+      'threat'
+    ];
+    const out = Object.fromEntries(keys.filter((key) => item[key] != null).map((key) => [key, item[key]]));
+    if (Array.isArray(item.effects))
+      out.effects = item.effects.map((one) => (typeof one === 'string' ? one : { name: one.name }));
+    return out;
+  }
+
   function extractResponse(content, baseRegistry = newRegistry()) {
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
@@ -987,22 +1297,24 @@ const ITEMXCore = (() => {
           ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
           : parseBracket(part.body, `${part.raw}:${index}`);
       if (parsed.item) {
+        const previous = comparisonView(reg.items[parsed.item.id]);
         const event = { kind: 'exam', item: parsed.item },
           view = clone(applyEvent(reg, event));
         if (view) {
           events.push(event);
-          out.push(marker({ v: VERSION, event, view }));
+          out.push(marker({ v: VERSION, event, view, previous }));
         } else {
           const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
           errors.push(error);
           out.push(marker({ v: VERSION, error }));
         }
       } else if (parsed.patch) {
+        const previous = comparisonView(reg.items[parsed.patch.id]);
         const event = { kind: 'patch', patch: parsed.patch },
           view = clone(applyEvent(reg, event));
         if (view) {
           events.push(event);
-          out.push(marker({ v: VERSION, event, view }));
+          out.push(marker({ v: VERSION, event, view, previous }));
         } else {
           const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
           errors.push(error);
@@ -1123,6 +1435,7 @@ const ITEMXCore = (() => {
     newRegistry,
     applyEvent,
     extractResponse,
+    comparisonView,
     eventsFromText,
     rebuild,
     readSnapshot,
@@ -1398,7 +1711,135 @@ const ITEMXRenderer = (() => {
       rarity: rarityLabels[rarity] ? rarity : 'normal',
       affinity
     };
-    return `<div class="itemx-fx itemx2-skill-weapon-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div></div>`;
+    const form = skillForm(skill);
+    return `<div class="itemx-fx itemx2-skill-weapon-fx itemx2-skill-form-${form}">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div>${motion !== 'off' && form !== 'default' ? `<span class="itemx2-codex-fx itemx2-technique-material" aria-hidden="true"></span>` : ''}</div>`;
+  }
+
+  function skillForm(skill) {
+    const classify = (value) => {
+      const text = String(value || '').toLowerCase();
+      const groups = [
+        ['slash', /검술|참격|발도|베기|도법|검법|swordplay|slash|swordsmanship/],
+        ['ward', /방어술|결계|방벽|보호막|shield|barrier|ward/],
+        ['heal', /치유|회복술|치료술|회복 마법|healing|restoration/],
+        ['shadow', /은신|잠행|저주|stealth|concealment|curse/]
+      ].filter(([, pattern]) => pattern.test(text));
+      return groups.length === 1 ? groups[0][0] : 'default';
+    };
+    const named = classify(skill?.name);
+    return named !== 'default' ? named : classify(`${skill?.school || ''} ${skill?.description || ''}`);
+  }
+
+  const reviewLabels = {
+    power: '위력',
+    required: '요구 조건',
+    durability: '내구도',
+    cost: '소모·가치',
+    effects: '특수 효과',
+    augments: '증강',
+    level: '레벨',
+    mastery: '숙련',
+    cooldown: '재사용'
+  };
+  const known = (value) =>
+    value != null && String(value).trim() !== '' && !/^(?:미상|미분류|unknown|none)$/i.test(String(value));
+  function changes(previous, current, domain = 'item') {
+    if (!previous || !current) return [];
+    const keys =
+      domain === 'item'
+        ? [
+            ['power', '위력'],
+            ['durability', '내구도'],
+            ['displayRarity', '등급'],
+            ['count', '수량'],
+            ['required', '요구 조건'],
+            ['cost', '가치']
+          ]
+        : domain === 'skill'
+          ? [
+              ['level', '레벨'],
+              ['mastery', '숙련'],
+              ['rank', '등급'],
+              ['cost', '소모'],
+              ['cooldown', '재사용'],
+              ['status', '상태']
+            ]
+          : [
+              ['status', '전투 상태'],
+              ['relation', '관계'],
+              ['threat', '위협도']
+            ];
+    const out = keys
+      .filter(([key]) => known(previous[key]) && known(current[key]) && String(previous[key]) !== String(current[key]))
+      .map(([key, label]) => ({ key, label, before: String(previous[key]), after: String(current[key]) }));
+    const effects = (entity) =>
+      (Array.isArray(entity.effects) ? entity.effects : [])
+        .map((one) => (typeof one === 'string' ? one : one?.name))
+        .filter(Boolean);
+    if (Array.isArray(previous.effects) && Array.isArray(current.effects)) {
+      const before = effects(previous),
+        after = effects(current);
+      for (const name of after.filter((name) => !before.includes(name)))
+        out.push({ key: 'effects', label: '효과 추가', before: '', after: name });
+      for (const name of before.filter((name) => !after.includes(name)))
+        out.push({ key: 'effects', label: '효과 소실', before: name, after: '' });
+    }
+    return out.slice(0, 6);
+  }
+  function changesHtml(previous, current, domain = 'item') {
+    const rows = changes(previous, current, domain);
+    if (!rows.length) return '';
+    return `<section class="itemx2-change-note" aria-label="이번 기록의 변경점"><strong>이번 기록의 변경점</strong>${rows.map((row) => `<span><small>${esc(row.label)}</small>${row.before ? `<del>${esc(row.before)}</del>` : ''}${row.before && row.after ? '<b aria-hidden="true">→</b>' : ''}${row.after ? `<em>${esc(row.after)}</em>` : ''}</span>`).join('')}</section>`;
+  }
+  function reviewHtml(review, entity) {
+    const source =
+      { main: '메인 모델 기록 · 자동 확정 아님', auxiliary: '보조 모델 보완', manual: '수동 작업 기록' }[
+        review?.source
+      ] || '';
+    const missing = (Array.isArray(review?.missing) ? review.missing : []).filter((key) =>
+      Object.prototype.hasOwnProperty.call(reviewLabels, key)
+    );
+    const inferred = (Array.isArray(entity?._inferred) ? entity._inferred : []).filter((key) =>
+      Object.prototype.hasOwnProperty.call(reviewLabels, key)
+    );
+    if (!source && !review?.checked && !missing.length && !inferred.length) return '';
+    return `<section class="itemx2-review-note ${missing.length ? 'itemx2-review-partial' : ''}">${source ? `<small>${esc(source)}</small>` : ''}${review?.checked ? '<small>아이템 수치·효과의 명시 근거 검사</small>' : ''}${inferred.length ? `<span>추정값 · ${esc(inferred.map((key) => reviewLabels[key]).join(', '))}</span>` : ''}${missing.length ? `<strong>일부 정보 보완 실패</strong><span>미해결 · ${esc(missing.map((key) => reviewLabels[key]).join(', '))}</span><small>기존 정보는 보존되었습니다. 아래에서 이 항목만 다시 보완할 수 있습니다.</small>` : ''}</section>`;
+  }
+  function eventKind(payload, domain = 'item') {
+    const current = payload?.view,
+      previous = payload?.previous;
+    if (!current) return '';
+    if (domain === 'monster')
+      return previous &&
+        !['defeated', 'dead', 'ended', 'escaped'].includes(previous.status) &&
+        ['defeated', 'dead', 'ended', 'escaped'].includes(current.status)
+        ? 'resolved'
+        : '';
+    if (domain === 'skill') return !previous && payload.event?.kind === 'exam' ? 'learned' : '';
+    const numerator = (value) => {
+      const found = String(value || '').match(/^\s*(\d+(?:\.\d+)?)\s*\//);
+      return found ? Number(found[1]) : null;
+    };
+    const before = numerator(previous?.durability),
+      after = numerator(current.durability);
+    if (before != null && after != null && after < before) return 'damage';
+    const power = (value) => {
+      const match = String(value || '')
+        .replace(/,/g, '')
+        .match(/^\s*(\d+(?:\.\d+)?)/);
+      return match ? Number(match[1]) : null;
+    };
+    const from = power(previous?.power),
+      to = power(current.power);
+    const ranks = Object.keys(rarityLabels);
+    const upgraded =
+      previous &&
+      ((from != null && to != null && to > from) ||
+        (ranks.includes(previous.rarity) && ranks.indexOf(current.rarity) > ranks.indexOf(previous.rarity)));
+    // A generic stat change is not necessarily a successful enhancement.
+    return upgraded && /강화|제련|enhanc|upgrad/i.test(`${payload.event?.patch?.reason || ''} ${current.name || ''}`)
+      ? 'enhanced'
+      : '';
   }
 
   function stats(item) {
@@ -1439,7 +1880,10 @@ const ITEMXRenderer = (() => {
       `rarity-${rarity}`,
       item.condition ? `condition-${item.condition}` : '',
       motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
-      options.inline ? 'itemx-inline-card' : ''
+      options.inline ? 'itemx-inline-card' : '',
+      item.affinity && item.affinity2 && item.affinity !== item.affinity2
+        ? `itemx2-blend-${keyFor(item.affinity, item.affinity2).replace('+', '-')}`
+        : ''
     ]
       .filter(Boolean)
       .join(' ');
@@ -1461,7 +1905,11 @@ const ITEMXRenderer = (() => {
 
   function renderMarkerPayload(payload, options = {}) {
     if (!payload || payload.error) return '';
-    if (payload.view) return renderCard(payload.view, options);
+    if (payload.view)
+      return renderCard(payload.view, options).replace(
+        '</article>',
+        `${changesHtml(payload.previous, payload.view)}</article>`
+      );
     const id = payload.event?.patch?.id;
     return id ? `<span class="itemx-event-chip">ITEMX CODEX · ${esc(id)} 변경</span>` : '';
   }
@@ -1476,10 +1924,15 @@ const ITEMXRenderer = (() => {
     renderTile,
     renderMarkerPayload,
     renderSkillFx,
+    skillForm,
+    changes,
+    changesHtml,
+    reviewHtml,
+    eventKind,
     itemVars
   };
 })();
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
 
-const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.5</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
+const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.6</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>

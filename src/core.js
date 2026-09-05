@@ -758,6 +758,32 @@ const ITEMXCore = (() => {
       .trim();
   }
 
+  function comparisonView(item) {
+    if (!item) return null;
+    const keys = [
+      'id',
+      'name',
+      'power',
+      'durability',
+      'rarity',
+      'displayRarity',
+      'count',
+      'required',
+      'cost',
+      'status',
+      'level',
+      'mastery',
+      'rank',
+      'cooldown',
+      'relation',
+      'threat'
+    ];
+    const out = Object.fromEntries(keys.filter((key) => item[key] != null).map((key) => [key, item[key]]));
+    if (Array.isArray(item.effects))
+      out.effects = item.effects.map((one) => (typeof one === 'string' ? one : { name: one.name }));
+    return out;
+  }
+
   function extractResponse(content, baseRegistry = newRegistry()) {
     const text = String(content || '');
     const reg = clone(baseRegistry || newRegistry());
@@ -775,22 +801,24 @@ const ITEMXCore = (() => {
           ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
           : parseBracket(part.body, `${part.raw}:${index}`);
       if (parsed.item) {
+        const previous = comparisonView(reg.items[parsed.item.id]);
         const event = { kind: 'exam', item: parsed.item },
           view = clone(applyEvent(reg, event));
         if (view) {
           events.push(event);
-          out.push(marker({ v: VERSION, event, view }));
+          out.push(marker({ v: VERSION, event, view, previous }));
         } else {
           const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
           errors.push(error);
           out.push(marker({ v: VERSION, error }));
         }
       } else if (parsed.patch) {
+        const previous = comparisonView(reg.items[parsed.patch.id]);
         const event = { kind: 'patch', patch: parsed.patch },
           view = clone(applyEvent(reg, event));
         if (view) {
           events.push(event);
-          out.push(marker({ v: VERSION, event, view }));
+          out.push(marker({ v: VERSION, event, view, previous }));
         } else {
           const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
           errors.push(error);
@@ -911,6 +939,7 @@ const ITEMXCore = (() => {
     newRegistry,
     applyEvent,
     extractResponse,
+    comparisonView,
     eventsFromText,
     rebuild,
     readSnapshot,
