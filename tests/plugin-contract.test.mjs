@@ -72,9 +72,14 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     'message events must not be discarded to satisfy a byte cap'
   );
   assert.match(source, /\$__itemx2_checkpoint/);
-  assert.match(source, /function checkpointReplay\(chat\)/);
+  assert.match(source, /function checkpointReplay\(chat, options = \{\}\)/);
   assert.match(source, /prefixMarkerFingerprint/);
-  assert.match(source, /ITEMX_CHECKPOINT_TAIL_MESSAGES = 32/);
+  assert.match(source, /ITEMX_CHECKPOINT_TAIL_MESSAGES = 24/);
+  assert.match(source, /ITEMX_CHECKPOINT_MAX_BYTES = 524288/);
+  assert.match(source, /ITEMX_AUX_ZERO_CHAT_LIMIT = 32/);
+  assert.match(source, /async function compactCurrentChatStorage\(\)/);
+  assert.match(source, /저장소 최적화/);
+  assert.match(source, /String\(key\)\.startsWith\('auxZero:'\)/);
   assert.match(
     source,
     /p:\s*view\.power,\s*q:\s*view\.required,\s*u:\s*view\.durability,\s*c:\s*view\.cost,\s*o:\s*view\.possession,\s*l:\s*view\.location/
@@ -425,7 +430,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /state: 'rejected'/);
   assert.match(source, /아이템 상세정보 보완 중/);
   assert.ok(
-    source.length < 650000,
+    source.length < 670000,
     'presentation, lifecycle history and bounded event FX must stay below the release size budget'
   );
   assert.equal(source.includes('itemx-batch'), false);

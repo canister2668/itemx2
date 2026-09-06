@@ -34,12 +34,24 @@ function chatOf(events) {
   };
 }
 function loaded(chat) {
+  const checkpoint = h.checkpointStatus(chat),
+    usable = checkpoint.valid && checkpoint.checkpoint.item.history && checkpoint.checkpoint.codex.history,
+    lookup = h.buildMessageEventLookup(chat),
+    replay = usable
+      ? {
+          start: checkpoint.checkpoint.boundary + 1,
+          registry: checkpoint.checkpoint.item.registry,
+          history: checkpoint.checkpoint.item.history,
+          base: checkpoint.checkpoint.codex
+        }
+      : {},
+    manual = usable ? [] : checkpoint.checkpoint?.manual || [];
   return {
     key: 'test:history-chat',
     character: { name: '검증' },
     chat,
-    snapshot: h.rebuildWithManual(chat),
-    codexSnapshot: h.rebuildCodexWithLedger(chat),
+    snapshot: h.rebuildWithManual(chat, lookup, { ...replay, manual }),
+    codexSnapshot: h.rebuildCodexWithLedger(chat, lookup, replay),
     enabled: true,
     effectsEnabled: true,
     rarityMode: 'world'
@@ -157,7 +169,7 @@ test('sealed skills stay in the active list while lost skills and resolved encou
   assert.equal(h.policy.entries(value, 'monster')[0].archived, false);
 });
 
-test('checkpoint tail retains lifecycle metadata and a prefix edit rebuilds from facts', () => {
+test('sealed checkpoint retains lifecycle metadata without keeping an unbounded prefix ledger', () => {
   const chat = chatOf([
     [exam('pill')],
     [patch('pill', 'consume', { quantity: 1 })],
@@ -175,9 +187,10 @@ test('checkpoint tail retains lifecycle metadata and a prefix edit rebuilds from
   });
   const value = loaded(chat);
   assert.deepEqual(JSON.parse(JSON.stringify(snapshot.history)), JSON.parse(JSON.stringify(value.snapshot.history)));
+  assert.doesNotMatch(compact.message[0].data + compact.message[1].data, /ITEMX2/);
   compact.message[3].data = '소모하지 않았다';
-  assert.equal(h.checkpointStatus(compact).valid, false);
-  assert.equal(row(loaded(compact)).closed, false);
+  assert.equal(h.checkpointStatus(compact).valid, true);
+  assert.equal(row(loaded(compact)).closed, true);
 });
 
 test('old tombstones stay out of ordinary model anchors even when pinned and never erase original markers', () => {

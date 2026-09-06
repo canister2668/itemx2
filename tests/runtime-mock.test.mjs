@@ -733,7 +733,7 @@ test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated
   assert.equal(JSON.stringify(cleaned.chat.scriptstate), JSON.stringify({ unrelated: 'keep' }));
 });
 
-test('checkpoint folds old replay state while preserving old refs and rebuilding after prefix edits', async () => {
+test('checkpoint seals old replay state and retains only a bounded recent event tail', async () => {
   const handlers = {};
   const Risuai = {
     pluginStorage: { getItem: async () => null, setItem: async () => {} },
@@ -778,7 +778,7 @@ test('checkpoint folds old replay state while preserving old refs and rebuilding
       const codexReplay = status.valid ? { start: status.checkpoint.boundary + 1, base: status.checkpoint.codex } : {};
       const codex = rebuildCodexWithLedger(next, lookup, codexReplay);
       loadMessageEventLedger(next, lookup);
-      return { chat: next, valid: status.valid, boundary: status.checkpoint?.boundary, tailRows: messageEventLedger(next).length, tailManual: manualLedger(next).length, itemIds: snapshot.registry.order, skillIds: codex.skills.order };
+      return { chat: next, valid: status.valid, version: status.checkpoint?.v, boundary: status.checkpoint?.boundary, checkpointBytes: new TextEncoder().encode(next.scriptstate?.$__itemx2_checkpoint || '').length, tailRows: messageEventLedger(next).length, tailManual: manualLedger(next).length, itemIds: snapshot.registry.order, skillIds: codex.skills.order };
     };
   async function cachedOrRebuildCurrent() {`
   );
@@ -855,17 +855,19 @@ test('checkpoint folds old replay state while preserving old refs and rebuilding
   };
   const folded = sandbox.__itemxCheckpointForTest(source);
   assert.equal(folded.valid, true);
-  assert.equal(folded.boundary, 107);
-  assert.equal(folded.tailRows, 32);
+  assert.equal(folded.version, 2);
+  assert.ok(folded.checkpointBytes <= 524288);
+  assert.equal(folded.boundary, 115);
+  assert.equal(folded.tailRows, 24);
   assert.equal(folded.tailManual, 1);
   assert.equal(folded.itemIds.length, 142);
   assert.deepEqual(Array.from(folded.skillIds), ['checkpoint_skill']);
-  assert.match(handlers.display(folded.chat.message[0].data), /기록 0/);
+  assert.doesNotMatch(folded.chat.message[0].data, /ITEMX2/);
   folded.chat.message[0].data = '첫 기록을 삭제했다.';
   const rebuilt = sandbox.__itemxCheckpointForTest(folded.chat);
   assert.equal(rebuilt.valid, true);
-  assert.equal(rebuilt.itemIds.includes('checkpoint_item_0'), false);
-  assert.equal(rebuilt.itemIds.length, 141);
+  assert.equal(rebuilt.itemIds.includes('checkpoint_item_0'), true);
+  assert.equal(rebuilt.itemIds.length, 142);
   assert.equal(rebuilt.itemIds.includes('manual_prefix'), true);
   assert.deepEqual(Array.from(rebuilt.skillIds), ['checkpoint_skill']);
 
@@ -884,4 +886,28 @@ test('checkpoint folds old replay state while preserving old refs and rebuilding
   assert.equal(manualFolded.boundary, 9);
   assert.equal(manualFolded.tailManual, 0);
   assert.equal(manualFolded.itemIds.length, 140);
+
+  const manyRows = [],
+    manyMessages = [];
+  for (let index = 0; index < 400; index += 1) {
+    const id = `bounded_${index}`,
+      ref = `i${index.toString(36)}_0_bounded`,
+      item = manualItem(id).item;
+    manyRows.push({ ref, domain: 'item', payload: { v: 2, event: { kind: 'exam', item }, view: item } });
+    manyMessages.push({
+      role: 'char',
+      chatId: `bounded-message-${index}`,
+      data: `기록 ${index}\n<!--ITEMX2@${ref}-->`
+    });
+  }
+  const bounded = sandbox.__itemxCheckpointForTest({
+    id: 'bounded-chat',
+    message: manyMessages,
+    scriptstate: { $__itemx2_message_events: JSON.stringify(manyRows), $__itemx2_manual_events: '[]' }
+  });
+  assert.equal(bounded.version, 2);
+  assert.ok(bounded.checkpointBytes <= 524288);
+  assert.equal(bounded.tailRows, 24);
+  assert.ok(bounded.itemIds.length <= 192 + 24);
+  assert.doesNotMatch(bounded.chat.message[0].data, /ITEMX2/);
 });

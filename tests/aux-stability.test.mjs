@@ -267,7 +267,10 @@ test('zero-event automatic auxiliary remembers the guard without rewriting chat'
   const result = await bootWithOutput('완결된 서술이지만 새 아이템 사건은 없다.');
   assert.equal(result.modelCalls, 1);
   assert.equal(result.chatWrites, 0);
-  assert.ok([...result.storage.keys()].some((key) => key.startsWith('auxZero:')));
+  assert.ok(result.storage.has('auxZeroRing:v1'));
+  const ring = JSON.parse(result.storage.get('auxZeroRing:v1'));
+  assert.equal(Object.keys(ring).length, 1);
+  assert.equal(Object.keys(ring['char-guard:chat-guard'].history).length, 1);
 });
 
 test('auxiliary regeneration receives the triggering turn and recent visible narrative, not hidden thoughts or legacy ITEMX state', async () => {
