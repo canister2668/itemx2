@@ -27,6 +27,23 @@ const snapshot = (monster = {}) => ({
   }
 });
 
+test('explicit literal index preserves regex-lore identity without executing its regex', () => {
+  const key = '/(?invalid regex)/iu'; // Deliberately not executable.
+  let digest = 2166136261;
+  for (let i = 0; i < key.length; i++) digest = Math.imul(digest ^ key.charCodeAt(i), 16777619);
+  const entry = {key, useRegex: true, comment: 'Hakurei Reimu', content: 'Private backstory stays private.',
+    loreCache: {literalKeyIndex: {v: 1, keyDigest: (digest >>> 0).toString(16).padStart(8, '0'), keys: ['하쿠레이 레이무', '레이무']}}};
+  assert.equal(lore.eligible(entry), true);
+  const scanned = lore.scan(snapshot(), [entry], lore.emptyLedger());
+  assert.equal(scanned.result.enriched, 1);
+  assert.equal(JSON.stringify(scanned.ledger).includes('Private backstory'), false);
+  assert.equal(lore.eligible({...entry, key: key + 'm'}), false, 'stale identity hint');
+  assert.equal(lore.eligible({...entry, loreCache: {}}), false, 'arbitrary regex');
+  assert.equal(lore.eligible({...entry, selective: true, secondkey: 'secret'}), false);
+  assert.equal(lore.eligible({...entry, activationPercent: 50}), false);
+  assert.equal(lore.eligible({...entry, loreCache: {literalKeyIndex: {...entry.loreCache.literalKeyIndex, keys: [null]}}}), false);
+});
+
 test('lorebook scan enriches only an exact unambiguous encounter match', () => {
   const entries = [
     {

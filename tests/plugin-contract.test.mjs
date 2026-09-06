@@ -10,14 +10,15 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const source = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   assert.match(source, /^\/\/@name itemx2$/m);
   assert.match(source, /^\/\/@api 3\.0/m);
-  assert.match(source, /^\/\/@version 2\.0\.8$/m);
-  assert.match(source, /^\/\/@display-name ITEMX CODEX · v2\.0\.8$/m);
+  const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(source.match(/^\/\/@version (.+)$/m)?.[1], version);
+  assert.equal(source.match(/^\/\/@display-name (.+)$/m)?.[1], `ITEMX CODEX · v${version}`);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(
     source,
     /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/refs\/heads\/main\/dist\/itemx2\.plugin\.js$/m
   );
-  assert.match(source, /const ITEMX_VERSION_LABEL = "2\.0\.8"/);
+  assert.ok(source.includes(`const ITEMX_VERSION_LABEL = ${JSON.stringify(version)}`));
   assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);

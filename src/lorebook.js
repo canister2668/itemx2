@@ -28,7 +28,24 @@ const ITEMXLorebook = (() => {
     return text(entry?.id || entry?.uid || entry?.identifier || entry?.comment || entry?.name || `entry-${index}`, 160);
   }
 
+  // Explicit literal identity hints for authored regex lore. Never execute a
+  // lore regex in the enrichment index; arbitrary regex entries remain ignored.
+  // The digest binds the hint to its current key so edits fail closed instead
+  // of silently reusing stale aliases. This is consistency, not authentication.
+  function literalRegexKeys(entry) {
+    const hint = entry?.loreCache?.literalKeyIndex;
+    const key = entry?.key;
+    if (hint?.v !== 1 || typeof key !== 'string' || key.length > 4096 || !key.startsWith('/') || !Array.isArray(hint.keys) ||
+        hint.keys.length < 1 || hint.keys.length > 64 ||
+        hint.keys.some((one) => typeof one !== 'string' || !one.trim() || one.length > 120)) return null;
+    let hash = 2166136261;
+    for (let i = 0; i < key.length; i++) hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
+    if (hint.keyDigest !== (hash >>> 0).toString(16).padStart(8, '0')) return null;
+    return split(hint.keys, 32);
+  }
+
   function entryKeys(entry) {
+    if (bool(entry?.useRegex) || bool(entry?.regex)) return literalRegexKeys(entry) || [];
     return split(entry?.key ?? entry?.keys ?? entry?.keyword ?? entry?.keywords, 32);
   }
 
@@ -39,7 +56,8 @@ const ITEMXLorebook = (() => {
   function eligible(entry) {
     if (!entry || typeof entry !== 'object') return false;
     const mode = text(entry.mode || entry.type || entry.activationMode, 40).toLowerCase();
-    if (/^(?:folder|child)$/.test(mode) || bool(entry.useRegex) || bool(entry.regex)) return false;
+    if (/^(?:folder|child)$/.test(mode)) return false;
+    if ((bool(entry.useRegex) || bool(entry.regex)) && !literalRegexKeys(entry)) return false;
     if (bool(entry.selective) && text(entry.secondkey || entry.secondaryKey || entry.secondary_key, 160)) return false;
     const chance = entry.activationPercent ?? entry.activation_probability ?? entry.probability;
     if (chance !== undefined && chance !== null && String(chance).trim() !== '') {

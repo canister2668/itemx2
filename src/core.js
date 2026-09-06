@@ -789,6 +789,83 @@ const ITEMXCore = (() => {
     return out;
   }
 
+  // A model may echo its read-only inventory context. This is NOT an event:
+  // never replay possession/count from these rows or synthesize item exams.
+  function stripInventoryEcho(content) {
+    const source = String(content || '');
+    if (!source.includes('[ITEMX')) return source;
+    const lines = source.match(/[^\n]*\n|[^\n]+$/g) || [];
+    const header = /^\s*\[ITEMX(?: v2| 2 · CURRENT INVENTORY · authoritative)\]\s*$/;
+    const row = (line) => {
+      const cells = line
+        .trim()
+        .replace(/^[-*]\s+/, '')
+        .split('|')
+        .map((x) => x.trim());
+      if (
+        cells.length >= 10 &&
+        ID_RE.test(cells[0]) &&
+        cells[1] &&
+        RARITIES.has(cells[4]) &&
+        THEMES.has(cells[6]) &&
+        /^(observed|owned|removed)$/.test(cells[7]) &&
+        /^(inventory|equipped|storage|unknown)$/.test(cells[8]) &&
+        /^\d+$/.test(cells[9])
+      )
+        return true;
+      const fields = Object.fromEntries(
+        cells.map((cell) => {
+          const i = cell.indexOf('=');
+          return i < 0 ? ['', ''] : [cell.slice(0, i), cell.slice(i + 1)];
+        })
+      );
+      return (
+        ID_RE.test(fields.id || '') &&
+        !!fields.name &&
+        RARITIES.has(fields.rarity) &&
+        /^(observed|owned|removed)$/.test(fields.possession || '') &&
+        /^(inventory|equipped|storage|unknown)$/.test(fields.location || '') &&
+        /^\d+$/.test(fields.count || '')
+      );
+    };
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (!header.test(lines[i])) {
+        out.push(lines[i]);
+        continue;
+      }
+      let end = i + 1,
+        rows = 0;
+      while (end < lines.length) {
+        if (!lines[end].trim()) {
+          end++;
+          continue;
+        }
+        if (!row(lines[end])) break;
+        rows++;
+        end++;
+      }
+      if (!rows) {
+        out.push(lines[i]);
+        continue;
+      }
+      if (lines[end]?.trim() === 'Use existing ids. Emit events only for settled item creation or change.') end++;
+      if (
+        lines[end]?.trim() ===
+        'Read-only context: never copy this inventory table or its header into the response. Output only settled event transports beside the narrative.'
+      )
+        end++;
+      // Remove a fence only when this entire fenced block was the owned table.
+      const fence = out[out.length - 1]?.trim().match(/^(`{3,}|~{3,})(?:text|plaintext)?$/);
+      if (fence && lines[end]?.trim() === fence[1]) {
+        out.pop();
+        end++;
+      }
+      i = end - 1;
+    }
+    return out.join('');
+  }
+
   function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
     // Planning text is not an instruction source. Fail closed on an unclosed block.
     const original = String(content || '');
@@ -808,7 +885,7 @@ const ITEMXCore = (() => {
       for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
       return result;
     }
-    const text = String(content || '');
+    const text = stripInventoryEcho(content);
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);
     if (!transports.length && !/(?:<\/?(?:itemExam|itemPatch|itemx)\b|\[(?:itemx|아이템)\s*:)/i.test(text))
@@ -954,6 +1031,9 @@ const ITEMXCore = (() => {
       lines.push(line);
     }
     lines.push('Use existing ids. Emit events only for settled item creation or change.');
+    lines.push(
+      'Read-only context: never copy this inventory table or its header into the response. Output only settled event transports beside the narrative.'
+    );
     return lines.join('\n');
   }
 
@@ -974,6 +1054,7 @@ const ITEMXCore = (() => {
     newRegistry,
     applyEvent,
     extractResponse,
+    stripInventoryEcho,
     comparisonView,
     eventsFromText,
     rebuild,

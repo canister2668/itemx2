@@ -520,7 +520,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   const OWNED_TRANSPORT_HINT_RE =
     /<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
   function processTransportStripper(content) {
-    const source = String(content || '');
+    const source = ITEMXCore.stripInventoryEcho(content);
     if (!OWNED_TRANSPORT_HINT_RE.test(source)) return source;
     return stripAllTransport(source)
       .replace(ITEMX_REF_RE, '')
@@ -2723,6 +2723,7 @@ ${codexPageStyle()}
 
   async function processOutput(content, type) {
     if (!mainRequestType(type)) return content;
+    content = ITEMXCore.stripInventoryEcho(content);
     try {
       const ctx = await context();
       if (!ctx) return content;
@@ -3075,8 +3076,8 @@ ${codexPageStyle()}
     );
   }
   const displayHandler = (content) => {
-    const raw = String(content || '');
-    if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return content;
+    const raw = ITEMXCore.stripInventoryEcho(content);
+    if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return raw;
     const positioned =
       raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
     const source = coalesceAdjacentItemMarkers(suppressRepeatedDisplayStates(positioned));
@@ -3163,7 +3164,7 @@ ${codexPageStyle()}
         }
         return '';
       });
-    if (!found) return content;
+    if (!found) return source;
     if (runtime.mainStyle) return rendered;
     return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
   };
@@ -4252,7 +4253,7 @@ ${codexPageStyle()}
       : '';
 
   function panelMenuHtml(native = true) {
-    return `<details class="itemx2-panel-menu"><summary class="itemx-ph-btn" aria-label="패널 메뉴">⋯</summary><div class="itemx2-panel-menu-popup"><button class="itemx2-history-open" data-action="history-open" type="button">기록 보기</button><button class="${native ? 'itemx2-root-close' : ''}" data-action="close" type="button">닫기 ✕</button></div></details>`;
+    return `<div class="itemx2-panel-actions"><button class="itemx-ph-btn itemx2-history-open" data-action="history-open" type="button" aria-label="기록 보기" title="기록 보기">기록</button><button class="itemx-ph-btn ${native ? 'itemx2-root-close' : ''}" data-action="close" type="button" aria-label="닫기" title="닫기">✕</button></div>`;
   }
 
   function historyDomain(tab) {
@@ -4436,8 +4437,6 @@ ${codexPageStyle()}
         selected: null,
         page: 0
       };
-      const menu = await queryMainClass('itemx2-panel-menu');
-      await menu?.setOuterHTML(panelMenuHtml(true));
       await drawRootHistory(loaded);
       return true;
     }
@@ -4778,7 +4777,7 @@ ${codexPageStyle()}
             return;
           }
         }
-        // The menu floats over the tabs; resolve its action before underlying tab rectangles.
+        // Header actions are handled before tab and body controls.
         if (await eventHitsMainClass(event, 'itemx2-history-open')) {
           await routeHistoryControls(event);
           return;
@@ -4799,16 +4798,18 @@ ${codexPageStyle()}
             event.clientY > rect.bottom
           )
             continue;
-          if (runtime.rootTabBusy || runtime.activeRootTab === tab) return;
+          if (runtime.rootTabBusy || (runtime.activeRootTab === tab && !runtime.historyView.open)) return;
           runtime.historyView.open = false;
           runtime.rootTabBusy = true;
           try {
             if (tab === 'inventory') runtime.rootItemPage = 0;
             const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
-            if (body)
+            if (body) {
+              await body.removeClass('x-risu-itemx2-history-opened');
               await body.setInnerHTML(
                 `<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>${label} 불러오는 중</strong><small>선택한 탭만 준비하고 있답니다.</small></div>`
               );
+            }
             await delay(24);
             await openRootInventory({ open: true, tab });
           } finally {
@@ -5450,6 +5451,7 @@ ${codexPageStyle()}
 
   async function openRootInventoryNow({ open = true, tab = 'inventory', loaded: suppliedLoaded = null } = {}) {
     try {
+      if (runtime.activeRootTab !== tab) runtime.historyView.open = false;
       runtime.panelOpen = false;
       try {
         await Risuai.hideContainer();
@@ -5508,7 +5510,9 @@ ${codexPageStyle()}
       runtime.rootFingerprint = rootStateFingerprint(loaded);
       runtime.rootContentReady = open;
       runtime.activeRootTab = tab;
-      if (runtime.historyView.open) await drawRootHistory(loaded);
+      // Region updates retain the body element, including its classes. Reconcile
+      // the closed state too, or a former history overlay hides the new tab.
+      await drawRootHistory(loaded);
       await installRootClickRouter(root);
     } catch (error) {
       runtime.status = '인벤토리 열기 오류';
@@ -5673,7 +5677,6 @@ ${codexPageStyle()}
         selected: null,
         page: 0
       };
-      root.querySelector('.itemx2-panel-menu')?.removeAttribute('open');
       drawIframeHistory(loaded);
     });
     if (runtime.historyView.open) drawIframeHistory(loaded);
@@ -5934,9 +5937,10 @@ ${codexPageStyle()}
     });
     root.querySelectorAll('[data-tab]').forEach((el) =>
       el.addEventListener('click', () => {
-        if (ui.tab === el.dataset.tab) return;
+        if (ui.tab === el.dataset.tab && !runtime.historyView.open) return;
         ui.tab = el.dataset.tab;
         runtime.historyView.open = false;
+        drawIframeHistory(loaded);
         ui.selected = null;
         ui.selectedSkill = null;
         ui.selectedMonster = null;

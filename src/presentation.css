@@ -1,32 +1,27 @@
-.itemx2-panel-menu {
-  position: relative;
-  flex: 0 0 36px;
-  width: 36px;
+.itemx2-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 78px;
+  width: 78px;
   height: 36px;
-  z-index: 20;
 }
-.itemx2-panel-menu > summary {
+.itemx2-panel-actions > button {
   box-sizing: border-box;
-  list-style: none;
+  flex: 0 0 36px;
+  padding: 0;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 16px;
 }
-.itemx2-panel-menu > summary::-webkit-details-marker {
-  display: none;
+.itemx2-panel-actions > .itemx2-history-open {
+  font-size: 11px;
+  color: #b7c4d8;
 }
-.itemx2-panel-menu-popup {
-  position: absolute;
-  right: 0;
-  top: 40px;
-  display: grid;
-  width: 128px;
-  padding: 6px;
-  border: 1px solid #39445a;
-  border-radius: 10px;
-  background: #101722;
-  box-shadow: 0 10px 24px #0008;
+.itemx-ph-text > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.itemx2-panel-menu-popup button,
 .itemx2-history-pane button {
   min-height: 38px;
   padding: 7px 10px;
