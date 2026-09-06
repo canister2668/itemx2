@@ -117,6 +117,10 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     remountInterval: 0,
     remountFallbackAt: 0,
     homeProbeAt: 0,
+    backgrounded: false,
+    resumeTimer: null,
+    resumePromise: null,
+    resumeBindings: [],
     catchUpTimer: null,
     updateTimer: null,
     hostObserver: null,
@@ -6111,6 +6115,19 @@ ${codexPageStyle()}
     }
   }
 
+  async function refreshPipelineBindingsAfterResume() {
+    // Host-side hook sets can be rebuilt independently of a still-alive plugin
+    // iframe. Re-adding the same callback is idempotent because RisuAI stores
+    // handlers in Sets and the v3 bridge preserves callback identity.
+    await Risuai.addRisuScriptHandler('process', processHandler);
+    await Risuai.addRisuScriptHandler('output', outputFallback);
+    await Risuai.addRisuScriptHandler('display', displayHandler);
+    if (runtime.permissions.replacer) {
+      await Risuai.addRisuReplacer('beforeRequest', beforeRequest);
+      await Risuai.addRisuReplacer('afterRequest', afterRequest);
+    }
+  }
+
   async function installPipelineHooksNow({ prompt = false } = {}) {
     try {
       await installDisplayHooks();
@@ -6201,6 +6218,72 @@ ${codexPageStyle()}
     }, interval);
   }
 
+  async function recoverAfterBrowserResume() {
+    if (runtime.unloading) return;
+    if (runtime.resumePromise) return runtime.resumePromise;
+    const pending = (async () => {
+      if (runtime.bodyFxStartTimer) globalThis.clearTimeout(runtime.bodyFxStartTimer);
+      if (runtime.bodyFxScrollTimer) globalThis.clearTimeout(runtime.bodyFxScrollTimer);
+      runtime.bodyFxStartTimer = null;
+      runtime.bodyFxScrollTimer = null;
+      runtime.bodyFxScrollActive = false;
+      runtime.bodyFxSawScroll = false;
+      runtime.outputSyncDeferred = false;
+      runtime.hostSyncDeferred = false;
+      if (runtime.bodyFxClassOwner)
+        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+
+      await refreshPipelineBindingsAfterResume();
+      runtime.cachedLoaded = null;
+      runtime.generation += 1;
+      await installMainStyle();
+      await catchUpLatestOutput({ syncUi: false });
+      const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
+      await ensureRootInventory();
+      runtime.resumeTimer = globalThis.setTimeout(() => {
+        runtime.resumeTimer = null;
+        void scheduleCommittedOutputSync();
+      }, ITEMX_AUX_SETTLE_MS + 100);
+      runtime.backgrounded = false;
+    })()
+      .catch((error) => fail('browser resume recovery', error))
+      .finally(() => {
+        if (runtime.resumePromise === pending) runtime.resumePromise = null;
+      });
+    runtime.resumePromise = pending;
+    return pending;
+  }
+
+  function queueBrowserResume() {
+    if (runtime.unloading || !runtime.backgrounded) return;
+    if (runtime.resumeTimer) globalThis.clearTimeout(runtime.resumeTimer);
+    runtime.resumeTimer = globalThis.setTimeout(() => {
+      runtime.resumeTimer = null;
+      void recoverAfterBrowserResume();
+    }, 80);
+  }
+
+  function installBrowserResumeHandlers() {
+    const bind = (target, type, handler) => {
+      if (!target || typeof target.addEventListener !== 'function') return;
+      target.addEventListener(type, handler);
+      runtime.resumeBindings.push({ target, type, handler });
+    };
+    const background = () => {
+      runtime.backgrounded = true;
+    };
+    const visible = () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'hidden') queueBrowserResume();
+    };
+    bind(globalThis, 'pagehide', background);
+    bind(globalThis, 'pageshow', visible);
+    bind(globalThis, 'focus', visible);
+    bind(typeof document === 'undefined' ? null : document, 'visibilitychange', () => {
+      if (document.visibilityState === 'hidden') background();
+      else queueBrowserResume();
+    });
+  }
+
   try {
     await loadBadgePosition();
     const setting = await Risuai.registerSetting(
@@ -6238,6 +6321,7 @@ ${codexPageStyle()}
       void checkForUpdate();
     }, ITEMX_UPDATE_CHECK_MS);
     if (initial) void catchUpLatestOutput().catch((error) => fail('initial output catch-up', error));
+    installBrowserResumeHandlers();
     if (connected && styled) runtime.status = '정상';
     log(`v${ITEMX_PLUGIN_VERSION} ready`);
   } catch (error) {
@@ -6252,6 +6336,14 @@ ${codexPageStyle()}
     clearEventBursts();
     runtime.panelOpen = false;
     runtime.panelTransition += 1;
+    if (runtime.resumeTimer) globalThis.clearTimeout(runtime.resumeTimer);
+    runtime.resumeTimer = null;
+    for (const { target, type, handler } of runtime.resumeBindings) {
+      try {
+        target.removeEventListener(type, handler);
+      } catch {}
+    }
+    runtime.resumeBindings = [];
     if (runtime.remountTimer) globalThis.clearInterval(runtime.remountTimer);
     runtime.remountTimer = null;
     runtime.remountInterval = 0;

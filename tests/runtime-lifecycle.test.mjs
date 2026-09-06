@@ -78,6 +78,137 @@ test('watchdog replaces its timer only when mode changes and cannot rearm after 
   assert.equal(intervals.size, 0);
 });
 
+test('mobile background lifecycle coalesces one resume recovery and unregisters cleanly', async () => {
+  class Target {
+    listeners = new Map();
+    addEventListener(type, handler) {
+      const rows = this.listeners.get(type) || new Set();
+      rows.add(handler);
+      this.listeners.set(type, rows);
+    }
+    removeEventListener(type, handler) {
+      this.listeners.get(type)?.delete(handler);
+    }
+    fire(type) {
+      for (const handler of this.listeners.get(type) || []) handler({ type });
+    }
+  }
+  const windowTarget = new Target(),
+    documentTarget = new Target(),
+    timers = [],
+    runtime = { backgrounded: false, resumeTimer: null, resumeBindings: [], unloading: false };
+  documentTarget.visibilityState = 'visible';
+  const sandbox = vm.createContext({
+    runtime,
+    document: documentTarget,
+    setTimeout: (fn, ms) => {
+      timers.push({ fn, ms });
+      return timers.length;
+    },
+    clearTimeout: (id) => {
+      if (timers[id - 1]) timers[id - 1].cancelled = true;
+    },
+    recoverAfterBrowserResume: () => {
+      runtime.recovered = (runtime.recovered || 0) + 1;
+    }
+  });
+  Object.assign(sandbox, windowTarget);
+  sandbox.addEventListener = windowTarget.addEventListener.bind(windowTarget);
+  sandbox.removeEventListener = windowTarget.removeEventListener.bind(windowTarget);
+  const install = vm.runInContext(
+    section('  function queueBrowserResume()', '  try {\n    await loadBadgePosition') +
+      '\ninstallBrowserResumeHandlers;',
+    sandbox
+  );
+  install();
+  windowTarget.fire('pagehide');
+  windowTarget.fire('pageshow');
+  windowTarget.fire('focus');
+  assert.equal(timers.length, 2);
+  assert.equal(timers[0].cancelled, true);
+  assert.equal(timers[1].ms, 80);
+  timers[1].fn();
+  assert.equal(runtime.recovered, 1);
+  for (const { target, type, handler } of runtime.resumeBindings) target.removeEventListener(type, handler);
+  assert.equal(
+    [...windowTarget.listeners.values()].every((rows) => rows.size === 0),
+    true
+  );
+  assert.equal(
+    [...documentTarget.listeners.values()].every((rows) => rows.size === 0),
+    true
+  );
+});
+
+test('browser resume rebinds hooks, clears suspended effects and performs immediate plus settled recovery', async () => {
+  const calls = [],
+    timers = [],
+    runtime = {
+      unloading: false,
+      resumePromise: null,
+      permissions: { replacer: true },
+      hooks: {},
+      generation: 4,
+      backgrounded: true,
+      bodyFxScrollActive: true,
+      bodyFxSawScroll: true,
+      outputSyncDeferred: true,
+      hostSyncDeferred: true,
+      bodyFxClassOwner: { removeClass: async (name) => calls.push(`class:${name}`) }
+    };
+  const fn = () => {};
+  const recover = vm.runInNewContext(
+    section('  async function refreshPipelineBindingsAfterResume()', '  async function installPipelineHooksNow') +
+      section('  async function recoverAfterBrowserResume()', '  function queueBrowserResume()') +
+      '\nrecoverAfterBrowserResume;',
+    {
+      runtime,
+      ITEMX_AUX_SETTLE_MS: 1500,
+      processHandler: fn,
+      outputFallback: fn,
+      displayHandler: fn,
+      beforeRequest: fn,
+      afterRequest: fn,
+      Risuai: {
+        addRisuScriptHandler: async (mode) => calls.push(`script:${mode}`),
+        addRisuReplacer: async (mode) => calls.push(`replacer:${mode}`)
+      },
+      installMainStyle: async () => calls.push('style'),
+      catchUpLatestOutput: async () => calls.push('catch-up'),
+      rebuildCurrent: async () => {
+        calls.push('rebuild');
+        return { chat: {} };
+      },
+      ensureRootInventory: async () => calls.push('root'),
+      scheduleCommittedOutputSync: () => calls.push('settled-sync'),
+      fail: (_where, error) => {
+        throw error;
+      },
+      setTimeout: (callback, ms) => {
+        timers.push({ callback, ms });
+        return timers.length;
+      },
+      clearTimeout: () => {}
+    }
+  );
+  await recover();
+  assert.deepEqual(calls.slice(0, 6), [
+    'class:x-risu-itemx-body-scrolling',
+    'script:process',
+    'script:output',
+    'script:display',
+    'replacer:beforeRequest',
+    'replacer:afterRequest'
+  ]);
+  assert.ok(calls.indexOf('catch-up') < calls.indexOf('rebuild'));
+  assert.equal(runtime.bodyFxScrollActive, false);
+  assert.equal(runtime.generation, 5);
+  assert.equal(runtime.backgrounded, false);
+  assert.equal(timers.at(-1).ms, 1600);
+  timers.at(-1).callback();
+  assert.equal(calls.at(-1), 'settled-sync');
+});
+
 test('closing reflects native class removal even when settings bridge fails', async () => {
   const runtime = { rootOpen: true, rootDrawer: { getParent: async () => true, removeClass: async () => {} } };
   const sandbox = vm.createContext({
