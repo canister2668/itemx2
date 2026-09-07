@@ -3716,12 +3716,7 @@ ${codexPageStyle()}
   }
 
   function codexEntries(loaded, domain) {
-    const registry = domain === 'skill' ? loaded?.codexSnapshot?.skills : loaded?.codexSnapshot?.monsters;
-    return (registry?.order || [])
-      .map((id) => registry.entries[id])
-      .filter(Boolean)
-      .filter((entity) => !ITEMXHistory.terminal(domain, entity))
-      .slice(0, 60);
+    return ITEMXHistory.currentEntities(loaded, domain).slice(0, 60);
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
@@ -4645,22 +4640,10 @@ ${codexPageStyle()}
     return tab === 'skills' ? 'skill' : tab === 'bestiary' ? 'monster' : 'item';
   }
 
-  function historyHtml(loaded) {
+  function selectHistoryRows(loaded) {
     const view = runtime.historyView;
     const rows = ITEMXHistory.entries(loaded, view.domain).filter((row) => row.closed);
     const selected = rows.find((row) => row.entity.id === view.selected);
-    const prefs = ITEMXHistory.preferences(loaded.chat);
-    const filters = [
-      ['recent', '최근 기록'],
-      ...(view.domain === 'item'
-        ? [
-            ['consume', '소모'],
-            ['loss', '파손·소실']
-          ]
-        : []),
-      ['kept', '보존'],
-      ['archived', '보관됨']
-    ];
     const visible = rows.filter((row) =>
       view.filter === 'kept'
         ? row.kept
@@ -4673,6 +4656,41 @@ ${codexPageStyle()}
     const pages = Math.max(1, Math.ceil(visible.length / 16));
     view.page = Math.max(0, Math.min(pages - 1, view.page));
     runtime.historyRows = selected ? [selected] : visible.slice(view.page * 16, view.page * 16 + 16);
+    return { pages, selected, rows: runtime.historyRows };
+  }
+
+  async function prepareHistoryPortraits(loaded) {
+    const view = runtime.historyView;
+    if (!view.open || view.key !== loaded.key || view.domain !== 'monster') return;
+    const { rows, selected } = selectHistoryRows(loaded);
+    if (!rows.length) return;
+    const signature = `${view.key}:${view.domain}:${view.selected || ''}:${view.filter}:${view.page}`;
+    const monsters = {
+      order: rows.map((row) => row.entity.id),
+      entries: Object.fromEntries(rows.map((row) => [row.entity.id, row.entity]))
+    };
+    const portraits = await loadCodexPortraits(loaded.character, loaded.chat, { monsters }, loaded, !selected);
+    const now = runtime.historyView;
+    if (!now.open || `${now.key}:${now.domain}:${now.selected || ''}:${now.filter}:${now.page}` !== signature) return;
+    if (selected) loaded.portraits = { ...loaded.portraits, ...portraits };
+    else loaded.historyThumbnails = portraits;
+  }
+
+  function historyHtml(loaded) {
+    const view = runtime.historyView;
+    const { pages, selected } = selectHistoryRows(loaded);
+    const prefs = ITEMXHistory.preferences(loaded.chat);
+    const filters = [
+      ['recent', '최근 기록'],
+      ...(view.domain === 'item'
+        ? [
+            ['consume', '소모'],
+            ['loss', '파손·소실']
+          ]
+        : []),
+      ['kept', '보존'],
+      ['archived', '보관됨']
+    ];
     const buttons = (row, index) =>
       `<div class="itemx2-history-actions"><button class="itemx2-history-keep-${index}" type="button">${row.kept ? '보존 해제' : '보존'}</button>${!row.kept && !row.archived && row.cycle ? `<button class="itemx2-history-archive-${index}" type="button">지금 보관</button>` : ''}</div>`;
     const label = (row) =>
@@ -4690,7 +4708,7 @@ ${codexPageStyle()}
     const cards = runtime.historyRows
       .map(
         (row, index) =>
-          `<section class="itemx2-history-row itemx2-history-row-${index}"><button class="itemx2-history-detail-${index}" type="button"><strong>${ITEMXCore.esc(row.domain === 'item' ? ITEMXCore.resolveItemEmoji(row.entity) : row.entity.glyph || '📖')} ${ITEMXCore.esc(row.entity.name)}</strong><small>${label(row)}</small></button>${buttons(row, index)}</section>`
+          `<section class="itemx2-history-row itemx2-history-row-${index}"><button class="itemx2-history-detail-${index}" type="button"><strong>${row.domain === 'monster' && loaded.historyThumbnails?.[row.entity.id] ? `<img src="${ITEMXCore.esc(loaded.historyThumbnails[row.entity.id])}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:middle">` : ITEMXCore.esc(row.domain === 'item' ? ITEMXCore.resolveItemEmoji(row.entity) : row.entity.glyph || '📖')} ${ITEMXCore.esc(row.entity.name)}</strong><small>${label(row)}</small></button>${buttons(row, index)}</section>`
       )
       .join('');
     const detail = selected
@@ -4758,10 +4776,11 @@ ${codexPageStyle()}
         });
     }
     if (native) await drawRootHistory(loaded);
-    else drawIframeHistory(loaded);
+    else await drawIframeHistory(loaded);
   }
 
   async function drawRootHistory(loaded) {
+    await prepareHistoryPortraits(loaded);
     const body = await queryMainClass('itemx2-root-tab-body');
     if (!body) return;
     let pane = await queryMainClass('itemx2-history-pane');
@@ -4779,7 +4798,8 @@ ${codexPageStyle()}
     await body.addClass('x-risu-itemx2-history-opened');
   }
 
-  function drawIframeHistory(loaded) {
+  async function drawIframeHistory(loaded) {
+    await prepareHistoryPortraits(loaded);
     const body = document.querySelector('.itemx2-iframe-content');
     if (!body) return;
     let pane = body.querySelector('.itemx2-history-pane');
@@ -4874,11 +4894,7 @@ ${codexPageStyle()}
       .filter(Boolean)
       .filter((entity) => !ITEMXHistory.terminal('skill', entity))
       .slice(0, 60);
-    const monsters = (loaded.codexSnapshot?.monsters?.order || [])
-      .map((id) => loaded.codexSnapshot.monsters.entries[id])
-      .filter(Boolean)
-      .filter((entity) => !ITEMXHistory.terminal('monster', entity))
-      .slice(0, 60);
+    const monsters = codexEntries(loaded, 'monster');
     const counts = {
       all: all.length,
       owned: all.filter((item) => item.possession === 'owned').length,
@@ -6063,13 +6079,7 @@ ${codexPageStyle()}
             .filter(Boolean)
             .filter((entity) => !ITEMXHistory.terminal('skill', entity))
         : [];
-    const iframeMonsters =
-      ui.tab === 'bestiary'
-        ? (loaded.codexSnapshot?.monsters?.order || [])
-            .map((id) => loaded.codexSnapshot.monsters.entries[id])
-            .filter(Boolean)
-            .filter((entity) => !ITEMXHistory.terminal('monster', entity))
-        : [];
+    const iframeMonsters = ui.tab === 'bestiary' ? ITEMXHistory.currentEntities(loaded, 'monster') : [];
     const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
     const selectedMonster = ui.selectedMonster && iframeMonsters.find((one) => one.id === ui.selectedMonster);
     const skillRows = iframeSkills

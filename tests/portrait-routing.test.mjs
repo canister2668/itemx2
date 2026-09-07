@@ -177,3 +177,46 @@ test('large original images never enter inline HTML or the inline-only original 
   });
   assert.equal(details.mayuri, full, 'detail keeps its original portrait');
 });
+
+test('history pages load only visible portraits and late selected records get original detail assets', async () => {
+  const reads = [];
+  const p = await presentationRuntime(
+    {
+      Risuai: {
+        readImage: async (id) => {
+          reads.push(id);
+          return 'data:image/png;base64,AAAA';
+        }
+      }
+    },
+    'runtime.testPrepareHistory = prepareHistoryPortraits; runtime.testHistoryHtml = historyHtml;'
+  );
+  const entities = Object.fromEntries(
+    Array.from({ length: 33 }, (_, i) => [
+      `m${i}`,
+      { id: `m${i}`, name: `상대${i}`, portrait: `P${i}`, glyph: '👺', status: 'ended', active: false }
+    ])
+  );
+  const loaded = {
+    key: 'history',
+    character: {
+      chaId: 'history',
+      additionalAssets: Object.keys(entities).map((id, i) => [`P${i}`, `assets/${id}.png`, 'png'])
+    },
+    chat: { message: [], scriptstate: {} },
+    moduleAssetsEnabled: false,
+    snapshot: { registry: { order: [], entries: {} } },
+    codexSnapshot: { monsters: { order: Object.keys(entities), entries: entities }, history: { monster: {} } }
+  };
+  p.runtime.historyView = { open: true, key: 'history', domain: 'monster', filter: 'recent', page: 1, selected: null };
+  await p.runtime.testPrepareHistory(loaded);
+  assert.equal(reads.length, 16);
+  assert.equal(Object.keys(loaded.historyThumbnails).length, 16);
+  assert.match(p.runtime.testHistoryHtml(loaded), /<img[^>]+data:image\/png;base64,AAAA/);
+  p.runtime.historyView.selected = 'm32';
+  await p.runtime.testPrepareHistory(loaded);
+  assert.equal(reads.length, 17);
+  assert.equal(reads.at(-1), 'assets/m32.png');
+  assert.equal(loaded.portraits.m32, 'data:image/png;base64,AAAA');
+  assert.match(p.runtime.testHistoryHtml(loaded), /class="itemx-monster-portrait" src="data:image\/png;base64,AAAA/);
+});

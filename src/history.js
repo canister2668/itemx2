@@ -117,6 +117,11 @@ const ITEMXHistory = (() => {
       .filter(Boolean)
       .map((entity) => entry(loaded, domain, entity, prefs, turns));
   }
+  function currentEntities(loaded, domain) {
+    return entries(loaded, domain)
+      .filter((row) => !row.closed || (domain === 'monster' && row.cycle && row.age <= 2 && !row.archived))
+      .map((row) => row.entity);
+  }
   function requestSnapshot(loaded, narrative = '') {
     const text = String(narrative).normalize('NFKC').toLowerCase();
     const items = {},
@@ -145,5 +150,17 @@ const ITEMXHistory = (() => {
     }
     return { ...loaded.snapshot, registry: { ...loaded.snapshot.registry, order, items } };
   }
-  return { KEY, LIMITS, terminal, consumable, observe, preferences, completedTurns, entry, entries, requestSnapshot };
+  return {
+    KEY,
+    LIMITS,
+    terminal,
+    consumable,
+    observe,
+    preferences,
+    completedTurns,
+    entry,
+    entries,
+    currentEntities,
+    requestSnapshot
+  };
 })();

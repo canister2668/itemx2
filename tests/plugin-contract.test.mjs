@@ -430,7 +430,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /state: 'rejected'/);
   assert.match(source, /아이템 상세정보 보완 중/);
   assert.ok(
-    source.length < 670000,
+    source.length < 675000,
     'presentation, lifecycle history and bounded event FX must stay below the release size budget'
   );
   assert.equal(source.includes('itemx-batch'), false);

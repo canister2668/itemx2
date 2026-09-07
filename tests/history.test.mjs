@@ -275,3 +275,29 @@ test('recovered skills and new encounters return to the normal list without chan
   assert.equal(value.codexSnapshot.history.skill.s, undefined);
   assert.equal(value.codexSnapshot.history.monster.m, undefined);
 });
+
+test('ended encounters remain through two completed inputs, expire on third, and rewind with chat', () => {
+  const events = codex.extractResponse(
+    '<monsterExam><id>foe</id><name>상대</name><status>defeated</status></monsterExam>'
+  ).events;
+  const chat = chatOf([events, [], [], []]);
+  for (const turns of [0, 1, 2, 3, 2]) {
+    const value = loaded({ ...chat, message: chat.message.slice(0, 2 + turns * 2) });
+    assert.equal(h.codexEntries(value, 'monster').length, turns <= 2 ? 1 : 0);
+    const record = h.policy.entries(value, 'monster')[0];
+    assert.equal(record.entity.status, 'defeated');
+    assert.equal(record.closed, true);
+    assert.equal(record.age, turns);
+  }
+  const pending = {
+    ...chat,
+    message: chat.message
+      .slice(0, 6)
+      .concat({ role: 'user', data: '진행' }, { role: 'char', data: '출력 중', isStreaming: true })
+  };
+  assert.equal(h.codexEntries(loaded(pending), 'monster').length, 1);
+  const value = loaded(pending),
+    record = h.policy.entries(value, 'monster')[0];
+  pending.scriptstate[h.policy.KEY] = JSON.stringify({ archived: { 'monster:foe': record.cycle } });
+  assert.equal(h.codexEntries(loaded(pending), 'monster').length, 0, 'manual archive overrides the grace period');
+});
