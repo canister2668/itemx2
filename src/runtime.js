@@ -95,6 +95,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     cachedLoaded: null,
     cachedGeneration: -1,
     portraitCache: new Map(),
+    inlinePortraitCatalog: null,
+    portraitWarmup: null,
     portraitCacheBytes: 0,
     mainStyle: null,
     mainStylePosition: '',
@@ -1614,6 +1616,7 @@ ${codexPageStyle()}
         replayFingerprint: replaySourceFingerprint(latestChat),
         ...settings
       };
+      await prepareInlinePortraits(loaded, codexSnapshot, settings);
       runtime.cachedLoaded = loaded;
       runtime.cachedGeneration = runtime.generation;
       return loaded;
@@ -2518,6 +2521,7 @@ ${codexPageStyle()}
           ITEMXCodex.marker({ v: ITEMXCodex.VERSION, event, view, previous, review: { source: 'auxiliary' } })
         );
       }
+      await prepareInlinePortraits(ctx, codexReg, settings);
       const markerText = markers.join('\n');
       const message = next.message[index];
       if (typeof message?.data === 'string')
@@ -2983,6 +2987,7 @@ ${codexPageStyle()}
           ? core.marker({ ...payload, review: payload.review || { source: 'main', checked: false } })
           : raw;
       });
+      await prepareInlinePortraits(ctx, codexResult.snapshot, settings);
       const positioned = positionMarkersByNarrative(reviewed);
       armEventBursts(positioned);
       if (
@@ -3412,7 +3417,7 @@ ${codexPageStyle()}
     return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
   };
 
-  async function displayWithPortraits(content) {
+  function displayWithPortraits(content) {
     const monsters = {};
     const collect = (payload) => {
       if (payload?.event?.domain !== 'monster' || payload.error) return;
@@ -3427,19 +3432,17 @@ ${codexPageStyle()}
       collect(runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
       return '';
     });
-    let portraits = {};
-    if (Object.keys(monsters).length) {
-      try {
-        const ctx = await context();
-        if (ctx)
-          portraits = await loadCodexPortraits(
-            ctx.character,
-            ctx.chat,
-            { monsters: { order: Object.keys(monsters), entries: monsters } },
-            await outputSettings(ctx.character)
-          );
-      } catch (error) {
-        debugRecord('inline portrait', error?.message || String(error));
+    const portraits = {},
+      cached = runtime.inlinePortraitCatalog;
+    // Display hooks must never call back into the host. A host render may be
+    // waiting for this callback, and concurrent message renders amplify reads.
+    if (cached?.contextKey === runtime.activeContextKey) {
+      for (const entity of Object.values(monsters)) {
+        const asset = ITEMXCodex.assetForEntity(cached.catalog, entity, cached.narrative);
+        if (!asset) continue;
+        const cacheKey = `${cached.characterId}:${asset.id}:${asset.ext || ''}`;
+        const image = runtime.portraitCache.get(cacheKey);
+        if (image) portraits[entity.id] = image;
       }
     }
     return displayHandler(content, portraits);
@@ -4131,6 +4134,7 @@ ${codexPageStyle()}
     const nextKey = active?.key || '';
     if (runtime.activeContextKey === nextKey) return false;
     runtime.activeContextKey = nextKey;
+    runtime.inlinePortraitCatalog = null;
     runtime.historyView = { open: false, key: nextKey, domain: 'item', filter: 'recent', selected: null, page: 0 };
     clearEventBursts();
     armRemountWatchdog();
@@ -4267,7 +4271,43 @@ ${codexPageStyle()}
     }
   }
 
+  async function prepareInlinePortraits(ctx, codexSnapshot, settings) {
+    if (
+      typeof Risuai.readImage !== 'function' ||
+      !codexSnapshot?.monsters?.order?.length ||
+      ctx.key !== runtime.activeContextKey
+    )
+      return;
+    const key = `${ctx.key}:${Number(settings.moduleAssetsEnabled)}:${encounterRegistryFingerprint(codexSnapshot)}`;
+    let work = runtime.portraitWarmup;
+    if (work?.promise && work.key !== key) return;
+    if (work?.key === key && !work.promise && Date.now() - work.at < 30000) return;
+    if (!work?.promise) {
+      work = { key, at: Date.now(), promise: null };
+      runtime.portraitWarmup = work;
+      work.promise = loadCodexPortraits(ctx.character, ctx.chat, codexSnapshot, settings)
+        .catch((error) => debugRecord('portrait preparation', error?.message || String(error)))
+        .finally(() => {
+          work.promise = null;
+          work.at = Date.now();
+        });
+    }
+    // Optional images must not hold up committed state or recovery completion.
+    let timer;
+    try {
+      await Promise.race([
+        work.promise,
+        new Promise((resolve) => {
+          timer = globalThis.setTimeout(resolve, 800);
+        })
+      ]);
+    } finally {
+      if (timer) globalThis.clearTimeout(timer);
+    }
+  }
+
   async function loadCodexPortraits(character, chat, codexSnapshot, settings) {
+    const ownerKey = runtime.activeContextKey;
     const result = {},
       catalog = combinedPortraitAssets(
         character,
@@ -4327,6 +4367,13 @@ ${codexPageStyle()}
       .slice(-8)
       .map((message) => ITEMXCore.messageText(message))
       .join('\n');
+    if (runtime.activeContextKey === ownerKey)
+      runtime.inlinePortraitCatalog = {
+        contextKey: ownerKey,
+        characterId: character?.chaId || character?.id || 'character',
+        catalog,
+        narrative
+      };
     let portraitCursor = 0;
     const loadNextPortrait = async () => {
       while (portraitCursor < monsters.length) {

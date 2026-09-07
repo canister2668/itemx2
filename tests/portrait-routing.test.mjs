@@ -70,3 +70,77 @@ test('list portrait survives cached-copy detail hydration and inline rendering',
   );
   assert.match(fallback, /itemx2-inline-icon"><span>🪓/);
 });
+
+test('cold concurrent display returns immediately without host reads or writes', async () => {
+  let hostCalls = 0;
+  const p = await presentationRuntime(
+    {
+      Risuai: new Proxy(
+        {},
+        {
+          get: () => () => {
+            hostCalls++;
+            return new Promise(() => {});
+          }
+        }
+      )
+    },
+    'runtime.testDisplay = displayWithPortraits;'
+  );
+  p.runtime.activeContextKey = 'murim';
+  const entity = {
+    id: 'mayuri',
+    name: '마유리',
+    portrait: 'Mayuri',
+    glyph: '🪓',
+    status: 'active',
+    relation: 'hostile'
+  };
+  const marker = p.codex.marker({ v: 1, event: { domain: 'monster', kind: 'exam', entity }, view: entity });
+  for (let i = 0; i < 100; i++) {
+    const html = p.runtime.testDisplay(marker);
+    assert.equal(typeof html, 'string', 'display must not wait for any host promise');
+    assert.match(html, /마유리/);
+  }
+  assert.equal(hostCalls, 0);
+});
+
+test('portrait preparation coalesces concurrent recovery work and bounds a stalled image read', async () => {
+  let reads = 0;
+  const p = await presentationRuntime(
+    {
+      Risuai: {
+        readImage: () => {
+          reads++;
+          return new Promise(() => {});
+        }
+      }
+    },
+    'runtime.testPrepare = prepareInlinePortraits; runtime.testDisplay = displayWithPortraits;'
+  );
+  p.runtime.activeContextKey = 'murim';
+  const entity = {
+    id: 'mayuri',
+    name: '마유리',
+    portrait: 'Mayuri',
+    glyph: '🪓',
+    status: 'active',
+    relation: 'hostile'
+  };
+  const ctx = {
+    key: 'murim',
+    character: { chaId: 'murim', additionalAssets: [['Mayuri', 'assets/mayuri.png', 'avif']] },
+    chat: { message: [] }
+  };
+  const snapshot = { monsters: { order: ['mayuri'], entries: { mayuri: entity } } };
+  await Promise.all(
+    Array.from({ length: 20 }, () => p.runtime.testPrepare(ctx, snapshot, { moduleAssetsEnabled: false }))
+  );
+  assert.equal(reads, 1, 'only one in-flight image read despite concurrent recovery/rebuild');
+  const marker = p.codex.marker({ v: 1, event: { domain: 'monster', kind: 'exam', entity }, view: entity });
+  assert.equal(typeof p.runtime.testDisplay(marker), 'string');
+  assert.equal(reads, 1, 'display must not retry a stalled image');
+  p.runtime.activeContextKey = 'another-chat';
+  p.runtime.portraitCache.set('murim:assets/mayuri.png:avif', 'data:image/avif;base64,AAAA');
+  assert.doesNotMatch(p.runtime.testDisplay(marker), /<img/, 'old chat portraits must not leak across contexts');
+});
