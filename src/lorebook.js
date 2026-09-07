@@ -35,9 +35,17 @@ const ITEMXLorebook = (() => {
   function literalRegexKeys(entry) {
     const hint = entry?.loreCache?.literalKeyIndex;
     const key = entry?.key;
-    if (hint?.v !== 1 || typeof key !== 'string' || key.length > 4096 || !key.startsWith('/') || !Array.isArray(hint.keys) ||
-        hint.keys.length < 1 || hint.keys.length > 64 ||
-        hint.keys.some((one) => typeof one !== 'string' || !one.trim() || one.length > 120)) return null;
+    if (
+      hint?.v !== 1 ||
+      typeof key !== 'string' ||
+      key.length > 4096 ||
+      !key.startsWith('/') ||
+      !Array.isArray(hint.keys) ||
+      hint.keys.length < 1 ||
+      hint.keys.length > 64 ||
+      hint.keys.some((one) => typeof one !== 'string' || !one.trim() || one.length > 120)
+    )
+      return null;
     let hash = 2166136261;
     for (let i = 0; i < key.length; i++) hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
     if (hint.keyDigest !== (hash >>> 0).toString(16).padStart(8, '0')) return null;

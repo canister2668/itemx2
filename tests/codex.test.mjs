@@ -676,3 +676,23 @@ test('domain switches omit disabled protocol, context and events without leaking
   const anchor = codex.anchor(result.snapshot, '섬광', 9000, { enabledDomains: ['monster'] });
   assert.equal(anchor.includes('섬광'), false);
 });
+
+test('planning tag mentions cannot swallow the response or execute codex events', () => {
+  const monster =
+    '<monsterExam><id>plateau_goblin_scout</id><name>고원 고블린 척후</name><relation>hostile</relation><status>active</status></monsterExam>';
+  for (const tag of ['Thoughts', 'Thought', 'think', 'thinking', 'DSThink']) {
+    const planning = `<${tag}>아~ itemx 써야겠다~ 형태는 <monsterExam>이지? 고고혓~ ${skillExam('planned')}</${tag}>`;
+    const raw = `${planning}\n# Response\n본문 진행 ${monster} 뒤 서술`;
+    const result = codex.extractResponse(context.ITEMXCore.extractResponse(raw).content);
+    assert.equal(result.events.length, 1);
+    assert.equal(result.errors.length, 0);
+    assert.ok(result.content.startsWith(planning + '\n# Response\n본문 진행 '));
+    assert.ok(result.content.endsWith(' 뒤 서술'));
+    assert.equal(result.snapshot.monsters.entries.plateau_goblin_scout.name, '고원 고블린 척후');
+    assert.equal(result.snapshot.skills.order.length, 0);
+    const unfinished = `<${tag}>계획 ${monster}`;
+    const ignored = codex.extractResponse(unfinished);
+    assert.equal(ignored.content, unfinished);
+    assert.equal(ignored.events.length, 0);
+  }
+});

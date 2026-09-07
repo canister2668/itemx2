@@ -632,6 +632,8 @@ const ITEMXCodex = (() => {
     return next;
   }
   function extractResponse(content, base = snapshot(), options = {}) {
+    const protectedResult = ITEMXCore.protectPlanning(content, (masked) => extractResponse(masked, base, options));
+    if (protectedResult) return protectedResult;
     const text = String(content || ''),
       state = clone(base),
       parts = collect(text),

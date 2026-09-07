@@ -866,7 +866,7 @@ const ITEMXCore = (() => {
     return out.join('');
   }
 
-  function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
+  function protectPlanning(content, extract) {
     // Planning text is not an instruction source. Fail closed on an unclosed block.
     const original = String(content || '');
     if (/<(?:Thoughts|Thought|think|thinking|DSThink)\b[^>]*>/i.test(original)) {
@@ -881,10 +881,16 @@ const ITEMXCore = (() => {
           return key;
         }
       );
-      const result = extractResponse(masked, baseRegistry, options);
+      const result = extract(masked);
       for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
       return result;
     }
+    return null;
+  }
+
+  function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
+    const protectedResult = protectPlanning(content, (masked) => extractResponse(masked, baseRegistry, options));
+    if (protectedResult) return protectedResult;
     const text = stripInventoryEcho(content);
     const reg = clone(baseRegistry || newRegistry());
     const transports = collectTransports(text);
@@ -1054,6 +1060,7 @@ const ITEMXCore = (() => {
     newRegistry,
     applyEvent,
     extractResponse,
+    protectPlanning,
     stripInventoryEcho,
     comparisonView,
     eventsFromText,
