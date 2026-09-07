@@ -56,9 +56,7 @@ const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
 const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
 const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
 const ITEMX_CHECKPOINT_TAIL_BYTES = 196608;
-const ITEMX_CHECKPOINT_MAX_BYTES = 524288;
-const ITEMX_CHECKPOINT_ENTITY_LIMITS = { item: 192, skill: 128, monster: 128 };
-const ITEMX_CHECKPOINT_HISTORY_LIMIT = 128;
+const ITEMX_STORAGE_WARNING_BYTES = 16 * 1024 * 1024;
 const ITEMX_AUX_HISTORY_MAX_BYTES = 65536;
 const ITEMX_AUX_ZERO_MAX_BYTES = 65536;
 const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX CODEX"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="10.5" font-weight="900" letter-spacing="2">CODEX</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -983,95 +981,27 @@ ${codexPageStyle()}
     return { stateBytes, markerBytes, markerCount, totalBytes: stateBytes + markerBytes };
   }
 
-  function limitedHistory(history, allowedIds) {
-    const rows = Object.entries(history || {})
-      .filter(([id]) => allowedIds.has(id))
-      .sort(([, left], [, right]) => Number(left?.at || 0) - Number(right?.at || 0))
-      .slice(-ITEMX_CHECKPOINT_HISTORY_LIMIT);
-    return Object.fromEntries(rows);
-  }
-
-  function limitedRegistry(registry, domain, limit) {
-    const source = ITEMXCore.clone(registry || {}),
-      entries = domain === 'item' ? source.items || {} : source.entries || {},
-      order = [...new Set((source.order || []).filter((id) => entries[id]))];
-    const priority = (entity) => {
-      if (domain === 'item') {
-        if (entity.pin === true || entity.location === 'equipped') return 3;
-        if (entity.possession !== 'removed') return 2;
-        return 0;
-      }
-      if (!ITEMXHistory.terminal(domain, entity)) return 2;
-      return 0;
+  function createCheckpoint(itemSource, codexSource, boundary, sealedThroughId, previouslyPruned = false) {
+    // A checkpoint replaces the authoritative event prefix. Never discard state
+    // to meet a storage budget: the removed events cannot reconstruct it later.
+    const item = ITEMXCore.clone(itemSource),
+      codex = ITEMXCodex.clone(codexSource);
+    const counts = {
+      item: item.registry.order.length,
+      skill: codex.skills.order.length,
+      monster: codex.monsters.order.length
     };
-    const ranked = order
-      .map((id, index) => ({ id, index, priority: priority(entries[id]) }))
-      .sort((left, right) => right.priority - left.priority || right.index - left.index)
-      .slice(0, limit);
-    const kept = new Set(ranked.map((row) => row.id));
-    source.order = order.filter((id) => kept.has(id));
-    const target = {};
-    for (const id of source.order) target[id] = entries[id];
-    if (domain === 'item') {
-      source.items = target;
-      source.diagnostics = (source.diagnostics || []).slice(-20);
-    } else source.entries = target;
-    return source;
-  }
-
-  function boundedCheckpoint(itemSource, codexSource, boundary, sealedThroughId) {
-    const originalCounts = {
-      item: itemSource?.registry?.order?.length || 0,
-      skill: codexSource?.skills?.order?.length || 0,
-      monster: codexSource?.monsters?.order?.length || 0
+    const checkpoint = {
+      v: ITEMX_CHECKPOINT_VERSION,
+      boundary,
+      sealedThroughId: sealedThroughId || '',
+      item,
+      codex,
+      rows: [],
+      manual: [],
+      storage: { originalCounts: counts, storedCounts: counts, pruned: previouslyPruned }
     };
-    const scales = [1, 0.75, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625];
-    for (const scale of scales) {
-      const item = ITEMXCore.clone(itemSource),
-        codex = ITEMXCodex.clone(codexSource);
-      item.registry = limitedRegistry(
-        item.registry,
-        'item',
-        Math.max(1, Math.floor(ITEMX_CHECKPOINT_ENTITY_LIMITS.item * scale))
-      );
-      codex.skills = limitedRegistry(
-        codex.skills,
-        'skill',
-        Math.max(1, Math.floor(ITEMX_CHECKPOINT_ENTITY_LIMITS.skill * scale))
-      );
-      codex.monsters = limitedRegistry(
-        codex.monsters,
-        'monster',
-        Math.max(1, Math.floor(ITEMX_CHECKPOINT_ENTITY_LIMITS.monster * scale))
-      );
-      item.history = limitedHistory(item.history, new Set(item.registry.order));
-      codex.history = {
-        skill: limitedHistory(codex.history?.skill, new Set(codex.skills.order)),
-        monster: limitedHistory(codex.history?.monster, new Set(codex.monsters.order))
-      };
-      const storedCounts = {
-        item: item.registry.order.length,
-        skill: codex.skills.order.length,
-        monster: codex.monsters.order.length
-      };
-      const checkpoint = {
-        v: ITEMX_CHECKPOINT_VERSION,
-        boundary,
-        sealedThroughId: sealedThroughId || '',
-        item,
-        codex,
-        rows: [],
-        manual: [],
-        storage: {
-          originalCounts,
-          storedCounts,
-          pruned: Object.keys(originalCounts).some((key) => storedCounts[key] < originalCounts[key])
-        }
-      };
-      const encoded = JSON.stringify(checkpoint);
-      if (storageBytes(encoded) <= ITEMX_CHECKPOINT_MAX_BYTES) return { checkpoint, encoded };
-    }
-    throw new Error('ITEMX 현재 상태가 고정 저장 한도를 초과했습니다. 오래된 항목을 정리한 뒤 다시 시도하세요.');
+    return { checkpoint, encoded: JSON.stringify(checkpoint) };
   }
 
   function embeddedViewCode(payload, domain) {
@@ -1533,30 +1463,21 @@ ${codexPageStyle()}
     }
     const tailRows = [...rowsByKey].filter(([key]) => usedTail.has(key)).map(([, row]) => row);
     const tailManual = baseManual.filter((row) => row.afterIndex > boundary);
-    const bounded = boundedCheckpoint(item, codex, boundary, messages[boundary]?.chatId || '');
+    const sealed = createCheckpoint(
+      item,
+      codex,
+      boundary,
+      messages[boundary]?.chatId || '',
+      status.checkpoint?.storage?.pruned === true
+    );
     next.scriptstate = {
       ...(next.scriptstate || {}),
-      [ITEMX_CHECKPOINT_KEY]: bounded.encoded,
+      [ITEMX_CHECKPOINT_KEY]: sealed.encoded,
       [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows),
       [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual)
     };
-    const allowedPreferenceKeys = new Set([
-      ...bounded.checkpoint.item.registry.order.map((id) => `item:${id}`),
-      ...bounded.checkpoint.codex.skills.order.map((id) => `skill:${id}`),
-      ...bounded.checkpoint.codex.monsters.order.map((id) => `monster:${id}`)
-    ]);
-    const prefs = ITEMXHistory.preferences(next),
-      limitedPreferences = (value) =>
-        Object.fromEntries(
-          Object.entries(value || {})
-            .filter(([key]) => allowedPreferenceKeys.has(key))
-            .slice(-ITEMX_CHECKPOINT_HISTORY_LIMIT)
-        );
-    next.scriptstate[ITEMXHistory.KEY] = JSON.stringify({
-      after: prefs.after,
-      keep: limitedPreferences(prefs.keep),
-      archived: limitedPreferences(prefs.archived)
-    });
+    // Keep display preferences for both the sealed prefix and recent tail.
+    // They are user choices, not disposable event history.
     delete next.scriptstate[ITEMXCore.STATE_KEY];
     delete next.scriptstate[ITEMXCodex.STATE_KEY];
     return next;
@@ -1675,9 +1596,15 @@ ${codexPageStyle()}
       // snapshot here can race another module's output hook and restore an
       // older assistant message over its freshly appended display markers.
       const storagePruned = checkpoint.checkpoint?.storage?.pruned === true;
-      runtime.status = storagePruned
-        ? `저장 한도 적용 · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`
-        : `정상 · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
+      const storageWarning = itemxStorageFootprint(latestChat).totalBytes >= ITEMX_STORAGE_WARNING_BYTES;
+      const storageStatus =
+        [
+          storageWarning ? '저장 용량 16 MiB 이상 · 현재 상태 보존 중' : '',
+          storagePruned ? '이전 버전에서 저장 항목 축소 이력 있음' : ''
+        ]
+          .filter(Boolean)
+          .join(' · ') || '정상';
+      runtime.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
       const loaded = {
         ...ctx,
         chat: latestChat,
@@ -5692,7 +5619,7 @@ ${codexPageStyle()}
               return;
             }
             runtime.status = '현재 채팅 저장소 최적화 중';
-            await showRootFeedback('현재 상태를 고정 용량 체크포인트로 옮기는 중입니다…', 'working', 0);
+            await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await compactCurrentChatStorage();
               await showRootFeedback(

@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.0.12
+//@version 2.0.13
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX CODEX · v2.0.12
+//@display-name ITEMX CODEX · v2.0.13
 //@description World Inventory & Encounter Archive
 
 
@@ -3367,8 +3367,8 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 @media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
 `;
 const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.0.12";
-const ITEMX_VERSION_LABEL = "2.0.12";
+const ITEMX_PLUGIN_VERSION = "2.0.13";
+const ITEMX_VERSION_LABEL = "2.0.13";
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -3390,9 +3390,7 @@ const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
 const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
 const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
 const ITEMX_CHECKPOINT_TAIL_BYTES = 196608;
-const ITEMX_CHECKPOINT_MAX_BYTES = 524288;
-const ITEMX_CHECKPOINT_ENTITY_LIMITS = { item: 192, skill: 128, monster: 128 };
-const ITEMX_CHECKPOINT_HISTORY_LIMIT = 128;
+const ITEMX_STORAGE_WARNING_BYTES = 16 * 1024 * 1024;
 const ITEMX_AUX_HISTORY_MAX_BYTES = 65536;
 const ITEMX_AUX_ZERO_MAX_BYTES = 65536;
 const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX CODEX"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="10.5" font-weight="900" letter-spacing="2">CODEX</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -4310,95 +4308,25 @@ ${codexPageStyle()}
     return { stateBytes, markerBytes, markerCount, totalBytes: stateBytes + markerBytes };
   }
 
-  function limitedHistory(history, allowedIds) {
-    const rows = Object.entries(history || {})
-      .filter(([id]) => allowedIds.has(id))
-      .sort(([, left], [, right]) => Number(left?.at || 0) - Number(right?.at || 0))
-      .slice(-ITEMX_CHECKPOINT_HISTORY_LIMIT);
-    return Object.fromEntries(rows);
-  }
-
-  function limitedRegistry(registry, domain, limit) {
-    const source = ITEMXCore.clone(registry || {}),
-      entries = domain === 'item' ? source.items || {} : source.entries || {},
-      order = [...new Set((source.order || []).filter((id) => entries[id]))];
-    const priority = (entity) => {
-      if (domain === 'item') {
-        if (entity.pin === true || entity.location === 'equipped') return 3;
-        if (entity.possession !== 'removed') return 2;
-        return 0;
-      }
-      if (!ITEMXHistory.terminal(domain, entity)) return 2;
-      return 0;
+  function createCheckpoint(itemSource, codexSource, boundary, sealedThroughId, previouslyPruned = false) {
+    const item = ITEMXCore.clone(itemSource),
+      codex = ITEMXCodex.clone(codexSource);
+    const counts = {
+      item: item.registry.order.length,
+      skill: codex.skills.order.length,
+      monster: codex.monsters.order.length
     };
-    const ranked = order
-      .map((id, index) => ({ id, index, priority: priority(entries[id]) }))
-      .sort((left, right) => right.priority - left.priority || right.index - left.index)
-      .slice(0, limit);
-    const kept = new Set(ranked.map((row) => row.id));
-    source.order = order.filter((id) => kept.has(id));
-    const target = {};
-    for (const id of source.order) target[id] = entries[id];
-    if (domain === 'item') {
-      source.items = target;
-      source.diagnostics = (source.diagnostics || []).slice(-20);
-    } else source.entries = target;
-    return source;
-  }
-
-  function boundedCheckpoint(itemSource, codexSource, boundary, sealedThroughId) {
-    const originalCounts = {
-      item: itemSource?.registry?.order?.length || 0,
-      skill: codexSource?.skills?.order?.length || 0,
-      monster: codexSource?.monsters?.order?.length || 0
+    const checkpoint = {
+      v: ITEMX_CHECKPOINT_VERSION,
+      boundary,
+      sealedThroughId: sealedThroughId || '',
+      item,
+      codex,
+      rows: [],
+      manual: [],
+      storage: { originalCounts: counts, storedCounts: counts, pruned: previouslyPruned }
     };
-    const scales = [1, 0.75, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625];
-    for (const scale of scales) {
-      const item = ITEMXCore.clone(itemSource),
-        codex = ITEMXCodex.clone(codexSource);
-      item.registry = limitedRegistry(
-        item.registry,
-        'item',
-        Math.max(1, Math.floor(ITEMX_CHECKPOINT_ENTITY_LIMITS.item * scale))
-      );
-      codex.skills = limitedRegistry(
-        codex.skills,
-        'skill',
-        Math.max(1, Math.floor(ITEMX_CHECKPOINT_ENTITY_LIMITS.skill * scale))
-      );
-      codex.monsters = limitedRegistry(
-        codex.monsters,
-        'monster',
-        Math.max(1, Math.floor(ITEMX_CHECKPOINT_ENTITY_LIMITS.monster * scale))
-      );
-      item.history = limitedHistory(item.history, new Set(item.registry.order));
-      codex.history = {
-        skill: limitedHistory(codex.history?.skill, new Set(codex.skills.order)),
-        monster: limitedHistory(codex.history?.monster, new Set(codex.monsters.order))
-      };
-      const storedCounts = {
-        item: item.registry.order.length,
-        skill: codex.skills.order.length,
-        monster: codex.monsters.order.length
-      };
-      const checkpoint = {
-        v: ITEMX_CHECKPOINT_VERSION,
-        boundary,
-        sealedThroughId: sealedThroughId || '',
-        item,
-        codex,
-        rows: [],
-        manual: [],
-        storage: {
-          originalCounts,
-          storedCounts,
-          pruned: Object.keys(originalCounts).some((key) => storedCounts[key] < originalCounts[key])
-        }
-      };
-      const encoded = JSON.stringify(checkpoint);
-      if (storageBytes(encoded) <= ITEMX_CHECKPOINT_MAX_BYTES) return { checkpoint, encoded };
-    }
-    throw new Error('ITEMX 현재 상태가 고정 저장 한도를 초과했습니다. 오래된 항목을 정리한 뒤 다시 시도하세요.');
+    return { checkpoint, encoded: JSON.stringify(checkpoint) };
   }
 
   function embeddedViewCode(payload, domain) {
@@ -4856,30 +4784,19 @@ ${codexPageStyle()}
     }
     const tailRows = [...rowsByKey].filter(([key]) => usedTail.has(key)).map(([, row]) => row);
     const tailManual = baseManual.filter((row) => row.afterIndex > boundary);
-    const bounded = boundedCheckpoint(item, codex, boundary, messages[boundary]?.chatId || '');
+    const sealed = createCheckpoint(
+      item,
+      codex,
+      boundary,
+      messages[boundary]?.chatId || '',
+      status.checkpoint?.storage?.pruned === true
+    );
     next.scriptstate = {
       ...(next.scriptstate || {}),
-      [ITEMX_CHECKPOINT_KEY]: bounded.encoded,
+      [ITEMX_CHECKPOINT_KEY]: sealed.encoded,
       [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows),
       [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual)
     };
-    const allowedPreferenceKeys = new Set([
-      ...bounded.checkpoint.item.registry.order.map((id) => `item:${id}`),
-      ...bounded.checkpoint.codex.skills.order.map((id) => `skill:${id}`),
-      ...bounded.checkpoint.codex.monsters.order.map((id) => `monster:${id}`)
-    ]);
-    const prefs = ITEMXHistory.preferences(next),
-      limitedPreferences = (value) =>
-        Object.fromEntries(
-          Object.entries(value || {})
-            .filter(([key]) => allowedPreferenceKeys.has(key))
-            .slice(-ITEMX_CHECKPOINT_HISTORY_LIMIT)
-        );
-    next.scriptstate[ITEMXHistory.KEY] = JSON.stringify({
-      after: prefs.after,
-      keep: limitedPreferences(prefs.keep),
-      archived: limitedPreferences(prefs.archived)
-    });
     delete next.scriptstate[ITEMXCore.STATE_KEY];
     delete next.scriptstate[ITEMXCodex.STATE_KEY];
     return next;
@@ -4995,9 +4912,15 @@ ${codexPageStyle()}
       const settings = await outputSettings(ctx.character);
       refreshLatest(latestChat, lookup);
       const storagePruned = checkpoint.checkpoint?.storage?.pruned === true;
-      runtime.status = storagePruned
-        ? `저장 한도 적용 · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`
-        : `정상 · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
+      const storageWarning = itemxStorageFootprint(latestChat).totalBytes >= ITEMX_STORAGE_WARNING_BYTES;
+      const storageStatus =
+        [
+          storageWarning ? '저장 용량 16 MiB 이상 · 현재 상태 보존 중' : '',
+          storagePruned ? '이전 버전에서 저장 항목 축소 이력 있음' : ''
+        ]
+          .filter(Boolean)
+          .join(' · ') || '정상';
+      runtime.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
       const loaded = {
         ...ctx,
         chat: latestChat,
@@ -8991,7 +8914,7 @@ ${codexPageStyle()}
               return;
             }
             runtime.status = '현재 채팅 저장소 최적화 중';
-            await showRootFeedback('현재 상태를 고정 용량 체크포인트로 옮기는 중입니다…', 'working', 0);
+            await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await compactCurrentChatStorage();
               await showRootFeedback(

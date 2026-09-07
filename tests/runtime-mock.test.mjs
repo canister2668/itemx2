@@ -770,8 +770,9 @@ test('checkpoint seals old replay state and retains only a bounded recent event 
   const built = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
   const instrumented = built.replace(
     '  async function cachedOrRebuildCurrent() {',
-    `  globalThis.__itemxCheckpointForTest = (chat) => {
-      const next = checkpointReplay(chat), status = checkpointStatus(next), lookup = buildMessageEventLookup(next);
+    `  globalThis.__itemxCreateCheckpoint = createCheckpoint;
+    globalThis.__itemxCheckpointForTest = (chat, options) => {
+      const next = checkpointReplay(chat, options), status = checkpointStatus(next), lookup = buildMessageEventLookup(next);
       const manual = status.valid ? manualLedger(next) : [...(status.checkpoint?.manual || []), ...manualLedger(next)];
       const replay = status.valid ? { start: status.checkpoint.boundary + 1, registry: status.checkpoint.item.registry } : {};
       const snapshot = rebuildWithManual(next, lookup, { ...replay, manual });
@@ -906,8 +907,52 @@ test('checkpoint seals old replay state and retains only a bounded recent event 
     scriptstate: { $__itemx2_message_events: JSON.stringify(manyRows), $__itemx2_manual_events: '[]' }
   });
   assert.equal(bounded.version, 2);
-  assert.ok(bounded.checkpointBytes <= 524288);
+  assert.equal(JSON.parse(bounded.chat.scriptstate.$__itemx2_checkpoint).storage.pruned, false);
   assert.equal(bounded.tailRows, 24);
-  assert.ok(bounded.itemIds.length <= 192 + 24);
+  assert.equal(bounded.itemIds.length, 400);
+  assert.ok(bounded.itemIds.includes('bounded_0'));
+  assert.deepEqual(Array.from(sandbox.__itemxCheckpointForTest(bounded.chat).itemIds), Array.from(bounded.itemIds));
   assert.doesNotMatch(bounded.chat.message[0].data, /ITEMX2/);
+  // Explicit cleanup also preserves every user choice, including recent-tail IDs.
+  bounded.chat.scriptstate.$__itemx2_history_preferences = JSON.stringify({
+    after: 10,
+    keep: Object.fromEntries(bounded.itemIds.map((id) => [`item:${id}`, true])),
+    archived: { 'item:bounded_399': true }
+  });
+  const cleaned = sandbox.__itemxCheckpointForTest(bounded.chat, { force: true, keepMessages: 8 });
+  assert.equal(cleaned.itemIds.length, 400);
+  assert.equal(Object.keys(JSON.parse(cleaned.chat.scriptstate.$__itemx2_history_preferences).keep).length, 400);
+  assert.equal(JSON.parse(cleaned.chat.scriptstate.$__itemx2_history_preferences).archived['item:bounded_399'], true);
+
+  // Cross the former count/byte caps and the new warning threshold. Current
+  // state, terminal facts and lifecycle history must round-trip without pruning.
+  const largeItem = { registry: { order: [], items: {} }, history: {} };
+  const largeCodex = {
+    skills: { order: [], entries: {} },
+    monsters: { order: [], entries: {} },
+    history: { skill: {}, monster: {} }
+  };
+  for (let index = 0; index < 200; index++) {
+    const id = `large_${index}`;
+    largeItem.registry.order.push(id);
+    largeItem.registry.items[id] = {
+      ...manualItem(id).item,
+      trivia: '가'.repeat(30000),
+      possession: index % 2 ? 'removed' : 'owned'
+    };
+    largeItem.history[id] = { at: index, reason: 'consume' };
+    for (const domain of ['skill', 'monster']) {
+      const registry = domain === 'skill' ? largeCodex.skills : largeCodex.monsters;
+      registry.order.push(id);
+      registry.entries[id] = { id, name: id, status: domain === 'skill' ? 'lost' : 'dead' };
+      largeCodex.history[domain][id] = { at: index };
+    }
+  }
+  const large = sandbox.__itemxCreateCheckpoint(largeItem, largeCodex, 1, 'large-message');
+  assert.ok(Buffer.byteLength(large.encoded) > 16 * 1024 * 1024);
+  const restored = JSON.parse(large.encoded);
+  assert.deepEqual(restored.item, largeItem);
+  assert.deepEqual(restored.codex, largeCodex);
+  assert.equal(restored.storage.pruned, false);
+  assert.equal(sandbox.__itemxCreateCheckpoint(largeItem, largeCodex, 2, 'next', true).checkpoint.storage.pruned, true);
 });

@@ -75,7 +75,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /function checkpointReplay\(chat, options = \{\}\)/);
   assert.match(source, /prefixMarkerFingerprint/);
   assert.match(source, /ITEMX_CHECKPOINT_TAIL_MESSAGES = 24/);
-  assert.match(source, /ITEMX_CHECKPOINT_MAX_BYTES = 524288/);
+  assert.match(source, /ITEMX_STORAGE_WARNING_BYTES = 16 \* 1024 \* 1024/);
   assert.match(source, /ITEMX_AUX_ZERO_CHAT_LIMIT = 32/);
   assert.match(source, /async function compactCurrentChatStorage\(\)/);
   assert.match(source, /저장소 최적화/);
