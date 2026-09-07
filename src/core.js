@@ -869,12 +869,12 @@ const ITEMXCore = (() => {
   function protectPlanning(content, extract) {
     // Planning text is not an instruction source. Fail closed on an unclosed block.
     const original = String(content || '');
-    if (/<(?:Thoughts|Thought|think|thinking|DSThink)\b[^>]*>/i.test(original)) {
+    if (/<(?:Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>/i.test(original)) {
       const blocks = [];
       let prefix = '__ITEMX_PROTECTED__';
       while (original.includes(prefix)) prefix += '_';
       const masked = original.replace(
-        /<(Thoughts|Thought|think|thinking|DSThink)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+        /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
         (block) => {
           const key = prefix + blocks.length + '__';
           blocks.push([key, block]);

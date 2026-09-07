@@ -274,7 +274,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /querySelector\(`\.x-risu-\$\{className\}`\)[\s\S]*querySelector\(`\.\$\{className\}`\)/);
   assert.equal(source.includes('renderCard(detailItems[index]'), false);
   assert.match(source, /const ITEMX_CODEX_INLINE_STYLE =/);
-  assert.match(source, /function codexInlineEventHtml\(payload, motion = 'full'\)/);
+  assert.match(source, /function codexInlineEventHtml\(payload, motion = 'full', portrait = ''\)/);
   assert.match(source, /NEW SKILL ARCHIVED/);
   assert.match(source, /itemx2-inline-quick/);
   assert.match(source, /itemx2-inline-appraisal/);

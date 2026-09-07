@@ -166,7 +166,7 @@ test('browser resume rebinds hooks, clears suspended effects and performs immedi
       ITEMX_AUX_SETTLE_MS: 1500,
       processHandler: fn,
       outputFallback: fn,
-      displayHandler: fn,
+      displayWithPortraits: fn,
       beforeRequest: fn,
       afterRequest: fn,
       Risuai: {

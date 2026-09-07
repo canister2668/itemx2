@@ -680,7 +680,7 @@ test('domain switches omit disabled protocol, context and events without leaking
 test('planning tag mentions cannot swallow the response or execute codex events', () => {
   const monster =
     '<monsterExam><id>plateau_goblin_scout</id><name>고원 고블린 척후</name><relation>hostile</relation><status>active</status></monsterExam>';
-  for (const tag of ['Thoughts', 'Thought', 'think', 'thinking', 'DSThink']) {
+  for (const tag of ['Thoughts', 'Thought', 'think', 'thinking', 'DSThink', 'reasoning', 'analysis']) {
     const planning = `<${tag}>아~ itemx 써야겠다~ 형태는 <monsterExam>이지? 고고혓~ ${skillExam('planned')}</${tag}>`;
     const raw = `${planning}\n# Response\n본문 진행 ${monster} 뒤 서술`;
     const result = codex.extractResponse(context.ITEMXCore.extractResponse(raw).content);

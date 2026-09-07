@@ -109,10 +109,27 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   );
   assert.equal(
     auxiliaryRequest[0].content,
-    '보조 서사<sys>keep</sys>',
-    'non-main requests are sanitized without protocol injection'
+    '보조 서사<!--CODEX2@c2:YWJj--><sys>keep</sys>',
+    'translation must preserve existing card markers without protocol injection'
   );
+  const emotionRequest = await replacers.beforeRequest(
+    [{ role: 'assistant', content: '보조 서사<!--CODEX2@c2:YWJj--><sys>keep</sys>' }],
+    'emotion'
+  );
+  assert.equal(emotionRequest[0].content, '보조 서사<sys>keep</sys>');
   const preloadedSettingReads = settingReads;
+
+  const thought =
+    '<reasoning target=output priority=extra-high>\n\n조잡한 뼈 단도와 가능충을 본문에 배치한다.\n\n시작한다.\n\n</reasoning>';
+  const report = `${thought}\n\n<output target=input>\n\n조잡한 뼈 단도를 얻었다.\n\n[itemx: id=crude_bone_dagger | name=조잡한 뼈 단도 | type=단검 | possession=owned | location=inventory]\n\n가능충을 사용했다.\n\n<skillExam><id>possible_man</id><name>가능충</name><type>passive</type><status>equipped</status></skillExam>\n\n</output>`;
+  const positionedReport = await replacers.afterRequest(report, 'main');
+  assert.equal(positionedReport.slice(0, positionedReport.indexOf('</reasoning>') + 12), thought);
+  const translationRequest = await replacers.beforeRequest([{ role: 'user', content: positionedReport }], 'translate');
+  assert.equal(translationRequest[0].content, positionedReport);
+  assert.equal(await replacers.afterRequest(positionedReport, 'translate'), positionedReport);
+  const visibleReport = positionedReport.split('<output target=input>')[1].split('</output>')[0];
+  assert.equal((visibleReport.match(/<!--ITEMX2:/g) || []).length, 1);
+  assert.equal((visibleReport.match(/<!--CODEX2:/g) || []).length, 1);
 
   const raw =
     '런타임 검을 얻었다.\n\n전투가 끝난 뒤 일행은 다음 장소로 떠났다.\n\n<itemExam><id>runtime_blade</id><name>런타임 검</name><type>장검</type><emoji>⚔️</emoji><internalrarity>epic</internalrarity><displayrarity>에픽</displayrarity><power>2200-3100</power><durability>100/100</durability><possession>owned</possession><location>inventory</location><visual><theme>oriental</theme><affinity>lightning</affinity></visual><trivia>실제 훅 검증.</trivia></itemExam>';
@@ -372,16 +389,16 @@ test('self-contained compact refs render on first display without hydrated chat 
     augments: []
   };
   const code = Buffer.from(JSON.stringify({ v: 2, view })).toString('base64url');
-  const rendered = handlers.display(`검을 확인했다.\n<!--ITEMX2@i0_0_deadbeef:${code}-->`);
+  const rendered = await handlers.display(`검을 확인했다.\n<!--ITEMX2@i0_0_deadbeef:${code}-->`);
   assert.match(rendered, /itemx-card/);
   assert.match(rendered, /첫 진입 검/);
   assert.doesNotMatch(rendered, /기록 복원 중/);
-  const legacyFallback = handlers.display('<!--ITEMX2@i0_0_deadbeef-->');
+  const legacyFallback = await handlers.display('<!--ITEMX2@i0_0_deadbeef-->');
   assert.match(legacyFallback, /기록 복원 중/);
 
   const repairedView = { ...view, name: '최종 +12 검', augments: [{ name: '+12강화', desc: '보띿빛 오라' }] };
   const repairedCode = Buffer.from(JSON.stringify({ v: 2, view: repairedView })).toString('base64url');
-  const coalesced = handlers.display(
+  const coalesced = await handlers.display(
     `감정과 보완이 이어졌다.\n<!--ITEMX2@i0_0_exam:${code}-->\n<!--ITEMX2@i0_1_patch:${repairedCode}-->`
   );
   assert.equal((coalesced.match(/data-itemx-id="first_entry_blade"/g) || []).length, 1);
@@ -390,12 +407,12 @@ test('self-contained compact refs render on first display without hydrated chat 
 
   const otherView = { ...view, id: 'other_blade', name: '다른 검' };
   const otherCode = Buffer.from(JSON.stringify({ v: 2, view: otherView })).toString('base64url');
-  const separate = handlers.display(
+  const separate = await handlers.display(
     `두 검을 감정했다.\n<!--ITEMX2@i0_0_first:${code}-->\n<!--ITEMX2@i0_1_other:${otherCode}-->`
   );
   assert.equal((separate.match(/data-itemx-id=/g) || []).length, 2);
 
-  const laterChange = handlers.display(
+  const laterChange = await handlers.display(
     `첫 감정.\n<!--ITEMX2@i0_0_exam:${code}-->\n\n이후 전투에서 별도로 강화됐다.\n<!--ITEMX2@i0_1_later:${repairedCode}-->`
   );
   assert.equal((laterChange.match(/data-itemx-id="first_entry_blade"/g) || []).length, 2);
@@ -480,7 +497,7 @@ test('legacy bare refs are upgraded once from the per-chat event ledger', async 
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
   assert.equal(writes, 1);
   assert.match(chat.message[0].data, /<!--ITEMX2@i0_0_deadbeef:[A-Za-z0-9_-]+-->/);
-  const rendered = handlers.display(chat.message[0].data);
+  const rendered = await handlers.display(chat.message[0].data);
   assert.match(rendered, /itemx-card/);
   assert.match(rendered, /복원된 옛 검/);
 });

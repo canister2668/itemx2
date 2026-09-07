@@ -370,3 +370,14 @@ test('moxie observed acquisition precedes equip and planning never executes', ()
   assert.equal(result.registry.items.moxie_sword.count, 1);
   assert.equal(result.registry.items.moxie_sword.slot, 'main_hand');
 });
+
+test('reasoning and analysis with attributes cannot execute planned item acquisition', () => {
+  for (const tag of ['reasoning', 'analysis']) {
+    for (const closing of [`</${tag}>`, '']) {
+      const text = `<${tag} target=output priority=extra-high>[itemx: id=planned | name=계획 아이템 | possession=owned | location=inventory]${closing}`;
+      const result = core.extractResponse(text);
+      assert.equal(result.events.length, 0);
+      assert.equal(result.content, text);
+    }
+  }
+});

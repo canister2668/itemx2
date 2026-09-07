@@ -2700,6 +2700,12 @@ ${codexPageStyle()}
   }
 
   function positionMarkersByNarrative(content) {
+    // Planning is not visible narrative. A name mentioned there must never
+    // pull a committed card out of the response body.
+    const protectedResult = ITEMXCore.protectPlanning(content, (masked) => ({
+      content: positionMarkersByNarrative(masked)
+    }));
+    if (protectedResult) return protectedResult.content;
     const source = String(content || '');
     const markers = [];
     source.replace(ITEMXCore.MARKER_RE, (_, code, index) => {
@@ -2911,6 +2917,9 @@ ${codexPageStyle()}
   }
 
   const beforeRequest = async (messages, type) => {
+    // Translation is a view of the original response, not a new world-state
+    // request. Removing its card markers here makes them impossible to retain.
+    if (/translate/i.test(String(type || ''))) return messages || [];
     const safeMessages = (messages || []).map((message) => ({
       ...message,
       content: processTransportStripper(message.content)
@@ -3061,7 +3070,7 @@ ${codexPageStyle()}
   const codexInlineStat = (label, value) =>
     `<i><b>${ITEMXCore.esc(label)}</b><span>${ITEMXCore.esc(value || '미상')}</span></i>`;
 
-  function codexInlineEventHtml(payload, motion = 'full') {
+  function codexInlineEventHtml(payload, motion = 'full', portrait = '') {
     if (!codexInlineEventSignificant(payload)) return '';
     const event = payload.event,
       entity = payload.view || event.entity;
@@ -3157,7 +3166,7 @@ ${codexPageStyle()}
       .join('');
     const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
     const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
-    return `<section class="${classes}" style="${appraisal.style}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(encounterEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.threat || '위협 미상')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(aliases || entity.description || '전투 도감 기록')}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${ended ? '최근 전투 결과' : '관측 기록'}</b><span>${ITEMXCore.esc(detail)}</span></footer>${ITEMXRenderer.changesHtml(payload.previous, entity, 'monster')}</section>`;
+    return `<section class="${classes}" style="${appraisal.style}">${warning}<div class="itemx2-inline-main"><span class="itemx2-inline-icon">${portrait ? `<img src="${ITEMXCore.esc(portrait)}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span>${ITEMXCore.esc(encounterEmoji(entity))}</span>`}</span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-tier">${ITEMXCore.esc(entity.threat || '위협 미상')}</span><span class="itemx2-inline-meta">${ITEMXCore.esc(aliases || entity.description || '전투 도감 기록')}</span></span><i class="itemx2-inline-state">${state}</i></div><div class="itemx2-inline-rule"></div><span class="itemx2-inline-quick">${quick}</span><footer class="itemx2-inline-foot"><b>${ended ? '최근 전투 결과' : '관측 기록'}</b><span>${ITEMXCore.esc(detail)}</span></footer>${ITEMXRenderer.changesHtml(payload.previous, entity, 'monster')}</section>`;
   }
 
   function presentationPayloads(text) {
@@ -3301,7 +3310,7 @@ ${codexPageStyle()}
       }
     );
   }
-  const displayHandler = (content) => {
+  const displayHandler = (content, portraits = {}) => {
     const raw = ITEMXCore.stripInventoryEcho(content);
     if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return raw;
     const positioned =
@@ -3349,7 +3358,11 @@ ${codexPageStyle()}
         const payload = ITEMXCodex.decodePayload(code);
         if (!payload || payload.error) return '';
         const html = decorateInlineEvent(
-          codexInlineEventHtml(payload, markerMotion(`CODEX2:${code}`)),
+          codexInlineEventHtml(
+            payload,
+            markerMotion(`CODEX2:${code}`),
+            portraits[payload.view?.id || payload.event?.entity?.id] || ''
+          ),
           payload,
           payload.event?.domain
         );
@@ -3380,7 +3393,11 @@ ${codexPageStyle()}
         const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
         if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
         const html = decorateInlineEvent(
-          codexInlineEventHtml(payload, markerMotion(`CODEX2@${ref}`)),
+          codexInlineEventHtml(
+            payload,
+            markerMotion(`CODEX2@${ref}`),
+            portraits[payload.view?.id || payload.event?.entity?.id] || ''
+          ),
           payload,
           payload.event?.domain
         );
@@ -3394,6 +3411,39 @@ ${codexPageStyle()}
     if (runtime.mainStyle) return rendered;
     return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
   };
+
+  async function displayWithPortraits(content) {
+    const monsters = {};
+    const collect = (payload) => {
+      if (payload?.event?.domain !== 'monster' || payload.error) return;
+      const entity = payload.view || payload.event.entity;
+      if (entity?.id) monsters[entity.id] = entity;
+    };
+    String(content || '').replace(ITEMXCodex.MARKER_RE, (_, code) => {
+      collect(ITEMXCodex.decodePayload(code));
+      return '';
+    });
+    String(content || '').replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
+      collect(runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
+      return '';
+    });
+    let portraits = {};
+    if (Object.keys(monsters).length) {
+      try {
+        const ctx = await context();
+        if (ctx)
+          portraits = await loadCodexPortraits(
+            ctx.character,
+            ctx.chat,
+            { monsters: { order: Object.keys(monsters), entries: monsters } },
+            await outputSettings(ctx.character)
+          );
+      } catch (error) {
+        debugRecord('inline portrait', error?.message || String(error));
+      }
+    }
+    return displayHandler(content, portraits);
+  }
 
   function beginBodyScrollEffects() {
     runtime.bodyFxSawScroll = false;
@@ -3678,7 +3728,19 @@ ${codexPageStyle()}
     const index = Number(await marker.textContent());
     const entity = codexEntries(loaded, domain)[index];
     if (!entity) return false;
-    const portrait = domain === 'monster' ? loaded.portraits?.[entity.id] || '' : '';
+    // The list may have been rendered from a shallow copy of cachedLoaded.
+    // Resolve the selected portrait independently instead of trusting that copy.
+    let portrait = domain === 'monster' ? loaded.portraits?.[entity.id] || '' : '';
+    if (domain === 'monster' && !portrait) {
+      const portraits = await loadCodexPortraits(
+        loaded.character,
+        loaded.chat,
+        { monsters: { order: [entity.id], entries: { [entity.id]: entity } } },
+        loaded
+      );
+      portrait = portraits[entity.id] || '';
+    }
+    if (loaded.key !== runtime.activeContextKey) return false;
     const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
     if (runtime.rootHydratedDetail === detailKey) return true;
     const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
@@ -6397,7 +6459,7 @@ ${codexPageStyle()}
       runtime.hooks.output = true;
     }
     if (!runtime.hooks.display) {
-      await Risuai.addRisuScriptHandler('display', displayHandler);
+      await Risuai.addRisuScriptHandler('display', displayWithPortraits);
       runtime.hooks.display = true;
     }
   }
@@ -6408,7 +6470,7 @@ ${codexPageStyle()}
     // handlers in Sets and the v3 bridge preserves callback identity.
     await Risuai.addRisuScriptHandler('process', processHandler);
     await Risuai.addRisuScriptHandler('output', outputFallback);
-    await Risuai.addRisuScriptHandler('display', displayHandler);
+    await Risuai.addRisuScriptHandler('display', displayWithPortraits);
     if (runtime.permissions.replacer) {
       await Risuai.addRisuReplacer('beforeRequest', beforeRequest);
       await Risuai.addRisuReplacer('afterRequest', afterRequest);
@@ -6672,7 +6734,7 @@ ${codexPageStyle()}
       await Risuai.removeRisuScriptHandler('output', outputFallback);
     } catch {}
     try {
-      await Risuai.removeRisuScriptHandler('display', displayHandler);
+      await Risuai.removeRisuScriptHandler('display', displayWithPortraits);
     } catch {}
     try {
       await Risuai.removeRisuScriptHandler('process', processHandler);
