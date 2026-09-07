@@ -105,7 +105,7 @@ test('cold concurrent display returns immediately without host reads or writes',
   assert.equal(hostCalls, 0);
 });
 
-test('portrait preparation coalesces concurrent recovery work and bounds a stalled image read', async () => {
+test('portrait preparation coalesces concurrent recovery work without waiting for a stalled image read', async () => {
   let reads = 0;
   const p = await presentationRuntime(
     {
@@ -133,14 +133,47 @@ test('portrait preparation coalesces concurrent recovery work and bounds a stall
     chat: { message: [] }
   };
   const snapshot = { monsters: { order: ['mayuri'], entries: { mayuri: entity } } };
-  await Promise.all(
-    Array.from({ length: 20 }, () => p.runtime.testPrepare(ctx, snapshot, { moduleAssetsEnabled: false }))
-  );
+  for (let i = 0; i < 20; i++)
+    assert.equal(p.runtime.testPrepare(ctx, snapshot, { moduleAssetsEnabled: false }), undefined);
+  await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(reads, 1, 'only one in-flight image read despite concurrent recovery/rebuild');
   const marker = p.codex.marker({ v: 1, event: { domain: 'monster', kind: 'exam', entity }, view: entity });
   assert.equal(typeof p.runtime.testDisplay(marker), 'string');
   assert.equal(reads, 1, 'display must not retry a stalled image');
   p.runtime.activeContextKey = 'another-chat';
-  p.runtime.portraitCache.set('murim:assets/mayuri.png:avif', 'data:image/avif;base64,AAAA');
+  p.runtime.portraitThumbnailCache.set('murim:assets/mayuri.png:avif', 'data:image/avif;base64,AAAA');
   assert.doesNotMatch(p.runtime.testDisplay(marker), /<img/, 'old chat portraits must not leak across contexts');
+});
+
+test('large original images never enter inline HTML or the inline-only original cache', async () => {
+  const full = 'data:image/png;base64,' + 'A'.repeat(300000);
+  const p = await presentationRuntime(
+    { Risuai: { readImage: async () => full } },
+    'runtime.testLoadPortraits = loadCodexPortraits; runtime.testDisplay = displayWithPortraits;'
+  );
+  p.runtime.activeContextKey = 'murim';
+  const entity = {
+    id: 'mayuri',
+    name: '마유리',
+    portrait: 'Mayuri',
+    glyph: '🪓',
+    status: 'active',
+    relation: 'hostile'
+  };
+  const character = { chaId: 'murim', additionalAssets: [['Mayuri', 'assets/mayuri.png', 'png']] };
+  const snapshot = { monsters: { order: ['mayuri'], entries: { mayuri: entity } } };
+  await p.runtime.testLoadPortraits(character, { message: [] }, snapshot, { moduleAssetsEnabled: false }, true);
+  assert.equal(p.runtime.portraitCache.size, 0, 'inline preparation must not retain original images');
+  const marker = p.codex.marker({ v: 1, event: { domain: 'monster', kind: 'exam', entity }, view: entity });
+  const html = p.runtime.testDisplay(marker);
+  assert.equal(html.includes(full), false);
+  assert.match(
+    html,
+    /itemx2-inline-icon"><span>🪓/,
+    'no thumbnail API must fall back instead of embedding a full image'
+  );
+  const details = await p.runtime.testLoadPortraits(character, { message: [] }, snapshot, {
+    moduleAssetsEnabled: false
+  });
+  assert.equal(details.mayuri, full, 'detail keeps its original portrait');
 });

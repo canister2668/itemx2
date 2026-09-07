@@ -95,6 +95,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     cachedLoaded: null,
     cachedGeneration: -1,
     portraitCache: new Map(),
+    portraitThumbnailCache: new Map(),
+    portraitThumbnailPending: new Map(),
     inlinePortraitCatalog: null,
     portraitWarmup: null,
     portraitCacheBytes: 0,
@@ -1616,7 +1618,7 @@ ${codexPageStyle()}
         replayFingerprint: replaySourceFingerprint(latestChat),
         ...settings
       };
-      await prepareInlinePortraits(loaded, codexSnapshot, settings);
+      prepareInlinePortraits(loaded, codexSnapshot, settings);
       runtime.cachedLoaded = loaded;
       runtime.cachedGeneration = runtime.generation;
       return loaded;
@@ -2521,7 +2523,7 @@ ${codexPageStyle()}
           ITEMXCodex.marker({ v: ITEMXCodex.VERSION, event, view, previous, review: { source: 'auxiliary' } })
         );
       }
-      await prepareInlinePortraits(ctx, codexReg, settings);
+      prepareInlinePortraits(ctx, codexReg, settings);
       const markerText = markers.join('\n');
       const message = next.message[index];
       if (typeof message?.data === 'string')
@@ -2987,7 +2989,7 @@ ${codexPageStyle()}
           ? core.marker({ ...payload, review: payload.review || { source: 'main', checked: false } })
           : raw;
       });
-      await prepareInlinePortraits(ctx, codexResult.snapshot, settings);
+      prepareInlinePortraits(ctx, codexResult.snapshot, settings);
       const positioned = positionMarkersByNarrative(reviewed);
       armEventBursts(positioned);
       if (
@@ -3441,7 +3443,7 @@ ${codexPageStyle()}
         const asset = ITEMXCodex.assetForEntity(cached.catalog, entity, cached.narrative);
         if (!asset) continue;
         const cacheKey = `${cached.characterId}:${asset.id}:${asset.ext || ''}`;
-        const image = runtime.portraitCache.get(cacheKey);
+        const image = runtime.portraitThumbnailCache.get(cacheKey);
         if (image) portraits[entity.id] = image;
       }
     }
@@ -4271,7 +4273,7 @@ ${codexPageStyle()}
     }
   }
 
-  async function prepareInlinePortraits(ctx, codexSnapshot, settings) {
+  function prepareInlinePortraits(ctx, codexSnapshot, settings) {
     if (
       typeof Risuai.readImage !== 'function' ||
       !codexSnapshot?.monsters?.order?.length ||
@@ -4285,28 +4287,69 @@ ${codexPageStyle()}
     if (!work?.promise) {
       work = { key, at: Date.now(), promise: null };
       runtime.portraitWarmup = work;
-      work.promise = loadCodexPortraits(ctx.character, ctx.chat, codexSnapshot, settings)
+      work.promise = Promise.resolve()
+        .then(() => loadCodexPortraits(ctx.character, ctx.chat, codexSnapshot, settings, true))
         .catch((error) => debugRecord('portrait preparation', error?.message || String(error)))
         .finally(() => {
           work.promise = null;
           work.at = Date.now();
         });
     }
-    // Optional images must not hold up committed state or recovery completion.
-    let timer;
+    // Preparation is optional background work; never wait inside commit/rebuild.
+  }
+
+  async function portraitThumbnail(cacheKey, image) {
+    if (runtime.portraitThumbnailCache.has(cacheKey)) return runtime.portraitThumbnailCache.get(cacheKey);
+    if (runtime.portraitThumbnailPending.has(cacheKey)) return runtime.portraitThumbnailPending.get(cacheKey);
+    const work = (async () => {
+      let thumbnail = '';
+      try {
+        if (image.length <= 24576) thumbnail = image;
+        else if (typeof createImageBitmap === 'function' && typeof OffscreenCanvas === 'function') {
+          const match = /^data:(image\/[^;]+);base64,(.+)$/.exec(image);
+          if (match) {
+            const bytes = Uint8Array.from(atob(match[2]), (one) => one.charCodeAt(0));
+            const bitmap = await createImageBitmap(new Blob([bytes], { type: match[1] }));
+            try {
+              const canvas = new OffscreenCanvas(96, 96),
+                context = canvas.getContext('2d');
+              const side = Math.min(bitmap.width, bitmap.height);
+              context.drawImage(
+                bitmap,
+                (bitmap.width - side) / 2,
+                (bitmap.height - side) / 2,
+                side,
+                side,
+                0,
+                0,
+                96,
+                96
+              );
+              const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.72 });
+              const encoded = `data:${blob.type};base64,${btoa(String.fromCharCode(...new Uint8Array(await blob.arrayBuffer())))}`;
+              if (encoded.length <= 24576) thumbnail = encoded;
+            } finally {
+              bitmap.close();
+            }
+          }
+        }
+      } catch (error) {
+        debugRecord('portrait thumbnail', error?.message || String(error));
+      }
+      runtime.portraitThumbnailCache.set(cacheKey, thumbnail);
+      while (runtime.portraitThumbnailCache.size > 64)
+        runtime.portraitThumbnailCache.delete(runtime.portraitThumbnailCache.keys().next().value);
+      return thumbnail;
+    })();
+    runtime.portraitThumbnailPending.set(cacheKey, work);
     try {
-      await Promise.race([
-        work.promise,
-        new Promise((resolve) => {
-          timer = globalThis.setTimeout(resolve, 800);
-        })
-      ]);
+      return await work;
     } finally {
-      if (timer) globalThis.clearTimeout(timer);
+      runtime.portraitThumbnailPending.delete(cacheKey);
     }
   }
 
-  async function loadCodexPortraits(character, chat, codexSnapshot, settings) {
+  async function loadCodexPortraits(character, chat, codexSnapshot, settings, inlineOnly = false) {
     const ownerKey = runtime.activeContextKey;
     const result = {},
       catalog = combinedPortraitAssets(
@@ -4381,8 +4424,14 @@ ${codexPageStyle()}
         const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
         if (!asset) continue;
         const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
+        if (inlineOnly && runtime.portraitThumbnailCache.has(cacheKey)) {
+          result[monster.id] = runtime.portraitThumbnailCache.get(cacheKey);
+          continue;
+        }
         if (runtime.portraitCache.has(cacheKey)) {
-          result[monster.id] = runtime.portraitCache.get(cacheKey);
+          const image = runtime.portraitCache.get(cacheKey);
+          const thumbnail = await portraitThumbnail(cacheKey, image);
+          result[monster.id] = inlineOnly ? thumbnail : image;
           continue;
         }
         try {
@@ -4398,8 +4447,9 @@ ${codexPageStyle()}
           }
           const image = asDataUrl(raw, asset.ext);
           if (image) {
-            result[monster.id] = image;
-            if (image.length <= 4 * 1024 * 1024) {
+            const thumbnail = await portraitThumbnail(cacheKey, image);
+            result[monster.id] = inlineOnly ? thumbnail : image;
+            if (!inlineOnly && image.length <= 4 * 1024 * 1024) {
               runtime.portraitCache.set(cacheKey, image);
               runtime.portraitCacheBytes += image.length;
               while (runtime.portraitCache.size > 24 || runtime.portraitCacheBytes > 16 * 1024 * 1024) {
