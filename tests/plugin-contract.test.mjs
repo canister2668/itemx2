@@ -430,7 +430,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /state: 'rejected'/);
   assert.match(source, /아이템 상세정보 보완 중/);
   assert.ok(
-    source.length < 675000,
+    source.length < 700000,
     'presentation, lifecycle history and bounded event FX must stay below the release size budget'
   );
   assert.equal(source.includes('itemx-batch'), false);
@@ -468,7 +468,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /runtime\.lastDomError/);
   assert.match(source, /await delay\(300\)/);
   assert.equal(source.includes("registerSetting('ITEMX CODEX · 설정', () => openInventory('settings')"), false);
-  assert.equal(source.includes("showContainer('fullscreen')"), false);
+  const withoutBackupPanel =
+    source.slice(0, source.indexOf('async function openBackupPanel')) +
+    source.slice(source.indexOf('function cleanChatPluginData'));
+  assert.equal(withoutBackupPanel.includes("showContainer('fullscreen')"), false);
   assert.match(source, /async function openRootInventory/);
   assert.match(source, /x-itemx2-drawer/);
   assert.match(source, /pointer-events:none/);

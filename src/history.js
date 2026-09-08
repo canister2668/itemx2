@@ -79,7 +79,10 @@ const ITEMXHistory = (() => {
     const key = `${domain}:${entity.id}`;
     const closed = terminal(domain, entity);
     const age = evidence
-      ? Math.max(0, turns.total - (evidence.at < 0 ? 0 : (turns.counts[evidence.at] ?? turns.total)))
+      ? Math.max(
+          0,
+          (evidence.ageOffset || 0) + turns.total - (evidence.at < 0 ? 0 : (turns.counts[evidence.at] ?? turns.total))
+        )
       : 0;
     const kept = prefs.keep[key] === true;
     const automatic = domain === 'item' && consumable(entity) && evidence?.reason === 'consume';
