@@ -125,9 +125,27 @@ try {
     assert.equal(result.item.count, 2);
     assert.equal(result.chat.message[0].data, '손요약 인사말');
     assert.equal(result.chat.scriptstate.other, 'keep');
+    await frame.locator('#ix-preview').click();
+    await frame.waitForFunction(() => document.getElementById('ix-status').textContent.includes('이미 ITEMX'));
+    await frame.locator('#ix-mode').selectOption('replace');
+    await frame.locator('#ix-preview').click();
+    await frame.locator('#ix-import:not([disabled])').waitFor();
+    assert.match(await frame.locator('#ix-preview-text').textContent(), /교체 대상: 아이템 1/);
+    await frame.locator('#ix-mode').selectOption('empty');
+    assert.equal(await frame.locator('#ix-import').isDisabled(), true);
+    await frame.locator('#ix-mode').selectOption('replace');
+    await frame.locator('#ix-preview').click();
+    await frame.locator('#ix-import:not([disabled])').waitFor();
+    assert.match(await frame.locator('#ix-import').textContent(), /덮어쓰기/);
+    await frame.locator('#ix-import').click();
+    await frame.waitForFunction(() => writes === 2);
+    assert.equal(
+      await frame.evaluate(() => testBackup.backupState(testContext).snapshot.registry.items.sword.count),
+      2
+    );
     assert.deepEqual(errors, []);
     console.log(
-      `backup ${width}px: sandbox download verified, ${width === 390 ? 'file' : 'paste'} import verified, one write, no overflow/errors`
+      `backup ${width}px: sandbox download verified, ${width === 390 ? 'file' : 'paste'} import verified, overwrite and mode invalidation verified, no overflow/errors`
     );
     await page.close();
   }

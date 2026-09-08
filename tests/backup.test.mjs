@@ -32,7 +32,7 @@ async function harness() {
         }
       }
     },
-    'context = async () => current(); capture({backup:ITEMXBackup, history:ITEMXHistory, backupState, exportCurrentBackup, prepareBackupImport, commitBackupImport, checkpointReplay, cleanChatPluginData, backupSettingsHtml});'
+    'context = async () => current(); isEnabled = async () => true; outputSettings = async () => ({itemsEnabled:true,skillsEnabled:true,encountersEnabled:true,auxOutput: "always"}); capture({recoverAuxiliaryOutputNow, backup:ITEMXBackup, history:ITEMXHistory, backupState, exportCurrentBackup, prepareBackupImport, commitBackupImport, checkpointReplay, cleanChatPluginData, backupSettingsHtml});'
   );
   return {
     p,
@@ -224,4 +224,88 @@ test('backup keeps registries larger than old storage limits and preserves unkno
   assert.equal(again.records.item.length, 600);
   assert.equal(again.records.skill[0].entity.mastery, null);
   assert.equal(again.records.skill[0].entity.level, null);
+});
+
+test('explicit overwrite replaces all records and replay sources, preserving prose and other module state', async () => {
+  const h = await harness(),
+    backup = source(h),
+    text = JSON.stringify(backup);
+  const oldItem = h.p.core.normalizeItem({
+    id: 'old_item',
+    name: '이전 물건',
+    possession: 'owned',
+    location: 'inventory',
+    count: 99
+  }).item;
+  const oldCodex = h.p.codex.extractResponse(
+    '<skillExam><id>old_skill</id><name>이전 기술</name></skillExam><monsterExam><id>old_foe</id><name>이전 상대</name><relation>hostile</relation><status>active</status></monsterExam>'
+  ).events;
+  h.ctx.chat.message = [
+    { role: 'user', data: '원문\n\n  유지', chatId: 'u' },
+    {
+      role: 'char',
+      chatId: 'a',
+      data:
+        '이전 응답\n' +
+        h.p.core.marker({ v: 2, event: { kind: 'exam', item: oldItem } }) +
+        oldCodex.map((event) => h.p.codex.marker({ v: 1, event })).join('') +
+        '<!--ITEMX2@oldref-->\n끝'
+    }
+  ];
+  h.ctx.chat.scriptstate.$__itemx2_message_events = JSON.stringify([
+    { ref: 'oldref', domain: 'item', payload: { event: { kind: 'exam', item: oldItem } } }
+  ]);
+  h.ctx.chat.scriptstate.$__itemx2_lore_enrichment = JSON.stringify({ stale: 'old' });
+  h.ctx.chat.scriptstate.$__itemx2_aux_processed = JSON.stringify({ already: true });
+  await assert.rejects(() => h.api.prepareBackupImport(text, h.ctx.key), /이미 ITEMX/);
+  const preview = await h.api.prepareBackupImport(text, h.ctx.key, 'replace');
+  assert.deepEqual(Array.from(preview.previousCounts), [1, 1, 1]);
+  assert.equal(h.writes, 0);
+  await h.api.commitBackupImport(preview);
+  assert.equal(h.writes, 1);
+  assert.deepEqual(plain((await h.api.exportCurrentBackup(h.ctx.key)).records), plain(backup.records));
+  assert.equal(h.ctx.chat.message[0].data, '원문\n\n  유지');
+  assert.equal(h.ctx.chat.message[1].data, '이전 응답\n\n끝');
+  assert.equal(h.ctx.chat.scriptstate.$other, 'keep');
+  assert.equal(h.ctx.chat.scriptstate.$__itemx2_lore_enrichment, undefined);
+  assert.equal(h.ctx.chat.scriptstate.$__itemx2_message_events, undefined);
+  assert.equal(h.ctx.chat.scriptstate.$__itemx2_aux_processed, '{"already":true}');
+  await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key, 'replace'));
+  assert.deepEqual(plain((await h.api.exportCurrentBackup(h.ctx.key)).records), plain(backup.records));
+  h.ctx.chat.message.pop();
+  assert.equal(h.api.backupState(h.ctx).snapshot.registry.items.old_item, undefined);
+});
+
+test('overwrite preview expires on chat edits and invalid modes cannot bypass protection', async () => {
+  const h = await harness(),
+    text = JSON.stringify(source(h));
+  await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key));
+  const preview = await h.api.prepareBackupImport(text, h.ctx.key, 'replace');
+  h.ctx.chat.scriptstate.$other = 'changed';
+  await assert.rejects(() => h.api.commitBackupImport(preview), /변경/);
+  await assert.rejects(() => h.api.prepareBackupImport(text, h.ctx.key, 'merge'), /방식/);
+  assert.equal(h.writes, 1);
+});
+
+test('restored replies are not automatically recollected; explicit recovery and later replies remain eligible', async () => {
+  const h = await harness(),
+    text = JSON.stringify(source(h));
+  h.ctx.chat.message = [{ role: 'char', data: '오래된 대화', chatId: 'old' }];
+  await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key, 'replace'));
+  assert.deepEqual(Array.from(await h.api.recoverAuxiliaryOutputNow()), []);
+  assert.equal(
+    await h.api.recoverAuxiliaryOutputNow({ force: true }),
+    null,
+    'explicit recovery passes the restore guard and reaches the unavailable-model check'
+  );
+  h.ctx.chat.message.push({ role: 'user', data: '진행' }, { role: 'char', data: '새 응답' });
+  assert.equal(await h.api.recoverAuxiliaryOutputNow(), null, 'new response passes the restore guard');
+});
+
+test('explicit overwrite accepts an empty backup to restore an empty inventory', async () => {
+  const h = await harness(),
+    empty = h.api.backup.capture(h.api.backupState(h.ctx));
+  await h.api.commitBackupImport(await h.api.prepareBackupImport(JSON.stringify(source(h)), h.ctx.key));
+  await h.api.commitBackupImport(await h.api.prepareBackupImport(JSON.stringify(empty), h.ctx.key, 'replace'));
+  assert.deepEqual(Array.from(h.api.backup.counts(await h.api.exportCurrentBackup(h.ctx.key))), [0, 0, 0]);
 });

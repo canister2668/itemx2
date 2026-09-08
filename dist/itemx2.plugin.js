@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.0.18
+//@version 2.0.19
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX CODEX · v2.0.18
+//@display-name ITEMX CODEX · v2.0.19
 //@description World Inventory & Encounter Archive
 
 
@@ -3562,8 +3562,8 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 @media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
 `;
 const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.0.18";
-const ITEMX_VERSION_LABEL = "2.0.18";
+const ITEMX_PLUGIN_VERSION = "2.0.19";
+const ITEMX_VERSION_LABEL = "2.0.19";
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -4991,6 +4991,10 @@ ${codexPageStyle()}
       messages[boundary]?.chatId || '',
       status.checkpoint?.storage?.pruned === true
     );
+    if (status.checkpoint?.restored) {
+      sealed.checkpoint.restored = true;
+      sealed.encoded = JSON.stringify(sealed.checkpoint);
+    }
     next.scriptstate = {
       ...(next.scriptstate || {}),
       [ITEMX_CHECKPOINT_KEY]: sealed.encoded,
@@ -5182,20 +5186,23 @@ ${codexPageStyle()}
     return ITEMXBackup.capture(backupState(ctx));
   }
 
-  async function prepareBackupImport(text, key) {
+  async function prepareBackupImport(text, key, mode = 'empty') {
+    if (!['empty', 'replace'].includes(mode)) throw new Error('불러오기 방식을 선택해 주세요.');
     const value = ITEMXBackup.parse(text),
       ctx = await context();
     if (!ctx || ctx.key !== key) throw new Error('채팅이 변경되었습니다. 백업 화면을 다시 열어 주세요.');
     requireBackupIdle(ctx.chat);
     const loaded = backupState(ctx);
-    if (
-      loaded.snapshot.registry.order.length ||
-      loaded.codexSnapshot.skills.order.length ||
+    const previousCounts = [
+      loaded.snapshot.registry.order.length,
+      loaded.codexSnapshot.skills.order.length,
       loaded.codexSnapshot.monsters.order.length
-    )
-      throw new Error('이미 ITEMX 기록이 있습니다. 기록이 없는 새 채팅에서 불러와 주세요.');
-    if (!ITEMXBackup.counts(value).some(Boolean)) throw new Error('불러올 ITEMX 기록이 없는 백업입니다.');
-    return { value, key, expected: JSON.stringify(ctx.chat) };
+    ];
+    if (mode === 'empty' && previousCounts.some(Boolean))
+      throw new Error('이미 ITEMX 기록이 있습니다. 덮어쓰기를 선택하거나 새 채팅에서 불러와 주세요.');
+    if (mode !== 'replace' && !ITEMXBackup.counts(value).some(Boolean))
+      throw new Error('불러올 ITEMX 기록이 없는 백업입니다.');
+    return { value, key, mode, previousCounts, expected: JSON.stringify(ctx.chat) };
   }
 
   async function commitBackupImport(preview) {
@@ -5205,7 +5212,9 @@ ${codexPageStyle()}
       requireBackupIdle(ctx.chat);
       if (JSON.stringify(ctx.chat) !== preview.expected)
         throw new Error('미리보기 이후 채팅이 변경되었습니다. 내용을 다시 확인해 주세요.');
-      const value = ITEMXBackup.parse(JSON.stringify(preview.value));
+      const checked = await prepareBackupImport(JSON.stringify(preview.value), preview.key, preview.mode);
+      if (checked.expected !== preview.expected) throw new Error('채팅이 변경되었습니다. 내용을 다시 확인해 주세요.');
+      const value = checked.value;
       const restored = ITEMXBackup.restore(value, ctx.chat);
       const boundary = (ctx.chat.message || []).length - 1;
       const checkpoint = createCheckpoint(
@@ -5214,11 +5223,28 @@ ${codexPageStyle()}
         boundary,
         ctx.chat.message?.[boundary]?.chatId
       );
+      checkpoint.checkpoint.restored = true;
+      const base = ITEMXCore.clone(ctx.chat);
+      if (preview.mode === 'replace') {
+        for (const message of base.message || []) {
+          for (const field of ['data', 'content']) {
+            if (typeof message[field] !== 'string') continue;
+            message[field] = message[field]
+              .replace(ITEMXCore.MARKER_RE, '')
+              .replace(ITEMXCodex.MARKER_RE, '')
+              .replace(ITEMX_REF_RE, '')
+              .replace(ITEMX_CODEX_REF_RE, '');
+          }
+        }
+        base.scriptstate = { ...base.scriptstate };
+        for (const key of CHAT_DATA_KEYS)
+          if (![ITEMX_AUX_KEY, ITEMXCore.CHAT_KEY].includes(key)) delete base.scriptstate[key];
+      }
       const next = {
-        ...ctx.chat,
+        ...base,
         scriptstate: {
-          ...ctx.chat.scriptstate,
-          [ITEMX_CHECKPOINT_KEY]: checkpoint.encoded,
+          ...base.scriptstate,
+          [ITEMX_CHECKPOINT_KEY]: JSON.stringify(checkpoint.checkpoint),
           [ITEMXHistory.KEY]: JSON.stringify(restored.prefs),
           [ITEMX_MANUAL_KEY]: '[]'
         }
@@ -5240,7 +5266,11 @@ ${codexPageStyle()}
       runtime.markerHtmlCache.clear();
       runtime.detailHtmlCache.clear();
       runtime.generation++;
-      runtime.status = '채팅 이사 완료 · 백업 기록을 불러왔습니다';
+      refreshLatest(next);
+      runtime.status =
+        preview.mode === 'replace'
+          ? '덮어쓰기 완료 · 백업 기록으로 교체했습니다'
+          : '채팅 이사 완료 · 백업 기록을 불러왔습니다';
       return value;
     });
   }
@@ -5257,10 +5287,10 @@ ${codexPageStyle()}
     let preview = null,
       url = '',
       busy = false;
-    document.body.innerHTML = `<main id="itemx-backup"><header><h2>백업 · 채팅 이사</h2><button id="ix-close" type="button">닫기</button></header><p id="ix-target"></p><p>아이템·스킬·조우의 현재 상태와 기록 목록을 옮깁니다. 대화 본문·손요약·다른 모듈의 호감도/위치 변수·이미지 파일은 포함하지 않습니다. 초상은 같은 캐릭터/모듈 에셋이 있어야 표시됩니다.</p><section><h3>1. 지금 기록 저장</h3><button id="ix-export" type="button">백업 만들기</button><a id="ix-download" hidden>JSON 파일 저장</a><button id="ix-copy" type="button" disabled>텍스트 복사</button><textarea id="ix-export-text" aria-label="내보낸 백업" readonly placeholder="백업을 만들면 파일 저장 또는 텍스트 복사를 선택할 수 있습니다."></textarea></section><section><h3>2. 새 채팅에서 불러오기</h3><p>ITEMX 기록이 없는 채팅에서만 불러옵니다. 기존 대화와 다른 모듈의 데이터는 그대로 유지됩니다.</p><label>백업 JSON 파일 <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="불러올 백업" placeholder="파일을 선택하거나 백업 텍스트를 붙여넣으세요."></textarea><button id="ix-preview" type="button">내용 확인</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>이 채팅에 불러오기</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
+    document.body.innerHTML = `<main id="itemx-backup"><header><h2>백업 · 채팅 이사</h2><button id="ix-close" type="button">닫기</button></header><p id="ix-target"></p><p>아이템·스킬·조우의 현재 상태와 기록 목록을 옮깁니다. 대화 본문·손요약·다른 모듈의 호감도/위치 변수·이미지 파일은 포함하지 않습니다. 초상은 같은 캐릭터/모듈 에셋이 있어야 표시됩니다.</p><section><h3>1. 지금 기록 저장</h3><button id="ix-export" type="button">백업 만들기</button><a id="ix-download" hidden>JSON 파일 저장</a><button id="ix-copy" type="button" disabled>텍스트 복사</button><textarea id="ix-export-text" aria-label="내보낸 백업" readonly placeholder="백업을 만들면 파일 저장 또는 텍스트 복사를 선택할 수 있습니다."></textarea></section><section><h3>2. 백업 불러오기</h3><label>불러오기 방식 <select id="ix-mode"><option value="empty">빈 채팅에 불러오기</option><option value="replace">기존 ITEMX 기록 덮어쓰기</option></select></label><p>덮어쓰기는 현재 ITEMX 기록을 백업 상태로 교체하고 기존 본문 카드를 제거합니다. 대화 글과 다른 모듈 데이터는 유지됩니다. 필요하면 먼저 현재 기록을 백업하세요.</p><label>백업 JSON 파일 <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="불러올 백업" placeholder="파일을 선택하거나 백업 텍스트를 붙여넣으세요."></textarea><button id="ix-preview" type="button">내용 확인</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>이 채팅에 불러오기</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
     const style = document.createElement('style');
     style.textContent =
-      'body{margin:0;background:#0c121c;color:#e4eaf4;font:15px/1.6 system-ui}#itemx-backup{max-width:680px;margin:auto;padding:20px;box-sizing:border-box}#itemx-backup header{display:flex;align-items:center;justify-content:space-between;gap:12px}#itemx-backup section{padding:16px;margin:16px 0;border:1px solid #33435d;border-radius:12px}#itemx-backup button,#itemx-backup a{display:inline-block;padding:10px;margin:4px;border:1px solid #536884;border-radius:8px;background:#1a2940;color:#eef3fc;font:inherit;cursor:pointer}#itemx-backup [hidden]{display:none}#itemx-backup button:disabled{opacity:.45;cursor:default}#itemx-backup textarea{display:block;box-sizing:border-box;width:100%;min-height:105px;margin:12px 0;padding:10px;background:#090e17;color:#d9e6fc;border:1px solid #40516c;border-radius:8px}#itemx-backup input{max-width:100%}#itemx-backup p{overflow-wrap:anywhere}#ix-status{padding:10px;background:#142137}';
+      'body{margin:0;background:#0c121c;color:#e4eaf4;font:15px/1.6 system-ui}#itemx-backup{max-width:680px;margin:auto;padding:20px;box-sizing:border-box}#itemx-backup header{display:flex;align-items:center;justify-content:space-between;gap:12px}#itemx-backup section{padding:16px;margin:16px 0;border:1px solid #33435d;border-radius:12px}#itemx-backup button,#itemx-backup a{display:inline-block;padding:10px;margin:4px;border:1px solid #536884;border-radius:8px;background:#1a2940;color:#eef3fc;font:inherit;cursor:pointer}#itemx-backup [hidden]{display:none}#itemx-backup button:disabled{opacity:.45;cursor:default}#itemx-backup textarea{display:block;box-sizing:border-box;width:100%;min-height:105px;margin:12px 0;padding:10px;background:#090e17;color:#d9e6fc;border:1px solid #40516c;border-radius:8px}#itemx-backup input,#itemx-backup select{max-width:100%}#itemx-backup select{padding:8px;background:#1a2940;color:#eef3fc;border:1px solid #536884;border-radius:8px}#itemx-backup p{overflow-wrap:anywhere}#ix-status{padding:10px;background:#142137}';
     document.head.appendChild(style);
     const get = (id) => document.getElementById(id);
     get('ix-target').textContent = `현재 대상: ${ctx.character.name || '캐릭터'} · ${ctx.chat.name || '현재 채팅'}`;
@@ -5322,6 +5352,7 @@ ${codexPageStyle()}
         }
       });
     get('ix-import-text').oninput = invalidate;
+    get('ix-mode').onchange = invalidate;
     get('ix-file').onchange = () =>
       run(async () => {
         invalidate();
@@ -5336,12 +5367,14 @@ ${codexPageStyle()}
       run(async () => {
         invalidate();
         const text = get('ix-import-text').value;
-        const prepared = await prepareBackupImport(text, ctx.key);
-        if (get('ix-import-text').value !== text)
+        const mode = get('ix-mode').value;
+        const prepared = await prepareBackupImport(text, ctx.key, mode);
+        if (get('ix-import-text').value !== text || get('ix-mode').value !== mode)
           throw new Error('백업 텍스트가 변경되었습니다. 내용을 다시 확인해 주세요.');
         preview = prepared;
         get('ix-preview-text').textContent =
-          `${preview.value.source} · ${preview.value.createdAt} · ${countText(preview.value)}`;
+          `${preview.value.source} · ${preview.value.createdAt} · ${countText(preview.value)}${mode === 'replace' ? ` · 교체 대상: 아이템 ${preview.previousCounts[0]} · 스킬 ${preview.previousCounts[1]} · 조우 ${preview.previousCounts[2]}` : ''}`;
+        get('ix-import').textContent = mode === 'replace' ? '기존 기록을 백업으로 덮어쓰기' : '이 채팅에 불러오기';
         get('ix-import').disabled = false;
         status('위 기록을 현재 채팅으로 가져옵니다. 확인 후 불러오기를 누르세요.');
       });
@@ -6042,6 +6075,8 @@ ${codexPageStyle()}
     if (runtime.auxProviderUnavailable && !force) return [];
     const index = assistantMessageIndex(ctx.chat, messageIndex);
     if (index < 0) return null;
+    const restored = checkpointStatus(ctx.chat);
+    if (!force && restored.valid && restored.checkpoint.restored && index <= restored.checkpoint.boundary) return [];
     const source = messageData(ctx.chat.message[index]);
     if (!force && !automaticAuxReady(ctx.chat, index, source)) return null;
     const sourceHash = ITEMXCore.fnv1a(source);
