@@ -2576,7 +2576,11 @@ ${codexPageStyle()}
     const source = messageData(ctx.chat.message[index]);
     if (!force && !automaticAuxReady(ctx.chat, index, source)) return null;
     const sourceHash = ITEMXCore.fnv1a(source);
-    const guardKey = `${index}:visible-${auxiliarySemanticHash(source)}:${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}:q${ITEMXQuality.REVISION}:p${ITEMX_AUX_PROMPT_REVISION}`;
+    // Anchor the recovery ledger on the stable message id. A body-derived key is
+    // invalidated by the very commit this function performs, so every reopen wrote
+    // a fresh key and recovery ran again on an already-recovered message.
+    const auxMessageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
+    const guardKey = `${index}:msg-${auxMessageId}:${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}:q${ITEMXQuality.REVISION}:p${ITEMX_AUX_PROMPT_REVISION}`;
     if (auxiliaryHistory(ctx.chat)[guardKey] && !force) return [];
     if ((await auxiliaryZeroHistory(ctx))[guardKey] && !force) return [];
     if (typeof Risuai.runLLMModel !== 'function') return null;
@@ -3112,7 +3116,11 @@ ${codexPageStyle()}
     source = repaired.source;
     ctx = repaired.ctx;
     if (runtime.activeContextKey !== ctx.key) return;
-    const fingerprint = `${ctx.key}:${index}:visible-${auxiliarySemanticHash(source)}`;
+    // The guard must survive our own rewrite. recoverAuxiliaryOutput commits a new
+    // message body, so a body-derived hash invalidates itself and the next open of
+    // the same chat re-runs recovery forever. Anchor on the stable message id.
+    const messageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
+    const fingerprint = `${ctx.key}:${index}:msg-${messageId}`;
     if (fingerprint === runtime.catchUpFingerprint) return;
     if (fingerprint === runtime.catchUpFailedFingerprint && Date.now() < runtime.catchUpRetryAt) return;
     const result = await recoverAuxiliaryOutput({ messageIndex: index });
