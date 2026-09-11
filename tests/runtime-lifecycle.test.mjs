@@ -140,7 +140,7 @@ test('mobile background lifecycle coalesces one resume recovery and unregisters 
   );
 });
 
-test('browser resume rebinds hooks, clears suspended effects and performs immediate plus settled recovery', async () => {
+test('browser resume rebinds hooks and clears suspended effects without regenerating auxiliary output', async () => {
   const calls = [],
     timers = [],
     runtime = {
@@ -200,13 +200,16 @@ test('browser resume rebinds hooks, clears suspended effects and performs immedi
     'replacer:beforeRequest',
     'replacer:afterRequest'
   ]);
-  assert.ok(calls.indexOf('catch-up') < calls.indexOf('rebuild'));
+  // Resume must not regenerate auxiliary output: that path rewrites the stored
+  // message and the catch-up guard hashes that same message, so each foreground
+  // return re-injected planning blocks once. Regeneration belongs to new turns.
+  assert.ok(!calls.includes('catch-up'));
+  assert.ok(!calls.includes('settled-sync'));
+  assert.deepEqual(calls.slice(6), ['style', 'rebuild', 'root']);
+  assert.equal(timers.length, 0);
   assert.equal(runtime.bodyFxScrollActive, false);
   assert.equal(runtime.generation, 5);
   assert.equal(runtime.backgrounded, false);
-  assert.equal(timers.at(-1).ms, 1600);
-  timers.at(-1).callback();
-  assert.equal(calls.at(-1), 'settled-sync');
 });
 
 test('closing reflects native class removal even when settings bridge fails', async () => {

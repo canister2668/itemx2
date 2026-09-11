@@ -6971,13 +6971,12 @@ ${codexPageStyle()}
       runtime.cachedLoaded = null;
       runtime.generation += 1;
       await installMainStyle();
-      await catchUpLatestOutput({ syncUi: false });
-      const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
+      // Resume restores rendering and bindings only. Auxiliary regeneration and
+      // committed-output sync rewrite the stored message, and the catch-up guard
+      // hashes that same message, so every foreground return re-injected planning
+      // blocks once per resume. Regeneration belongs to real new turns.
+      await rebuildCurrent({ upgradeDisplayRefs: true });
       await ensureRootInventory();
-      runtime.resumeTimer = globalThis.setTimeout(() => {
-        runtime.resumeTimer = null;
-        void scheduleCommittedOutputSync();
-      }, ITEMX_AUX_SETTLE_MS + 100);
       runtime.backgrounded = false;
     })()
       .catch((error) => fail('browser resume recovery', error))
