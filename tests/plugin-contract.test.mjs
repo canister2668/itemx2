@@ -432,9 +432,14 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /state: unresolvedPartials\.length \|\| rejectedIds\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /state: 'rejected'/);
   assert.match(source, /아이템 상세정보 보완 중/);
-  // Budget raised for 2.0.22: the three-skin palette sheet and the per-affinity body
-  // layers (flames, strike flash, miasma, descending light) are shipped as source text.
-  // 2.0.21 had already passed 700000 at 704688; this keeps a real ceiling above it.
+  // Self-imposed alarm, not a RisuAI constraint: importPlugin stores the script as a
+  // plain string with no size check. It still costs something real -- the file is
+  // refetched on update, kept per install in the Risu database, and parsed on load,
+  // and the demo CSS ships twice (raw plus chat-scoped), so a CSS byte costs two.
+  // Raised for 2.0.22 because the three-skin palette sheet and the per-affinity body
+  // layers (flames, strike flash, miasma, descending light) ship as source text:
+  // 690854 chars at 2.0.21, 726325 now. The ceiling keeps roughly 7% headroom so the
+  // next unplanned growth still trips it.
   assert.ok(
     source.length < 780000,
     'presentation, lifecycle history and bounded event FX must stay below the release size budget'
