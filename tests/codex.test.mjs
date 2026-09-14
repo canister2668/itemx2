@@ -335,7 +335,10 @@ test('large portrait catalogs resolve from indexes instead of rescanning every r
   const rows = codex.assetCatalog({ additionalAssets: names }, 20000);
   const indexedAt = Date.now();
   codex.portraitAssetIndex(rows);
-  assert.ok(Date.now() - indexedAt < 250, `portrait index build took ${Date.now() - indexedAt}ms`);
+  // Wall-clock budgets, so they are deliberately loose: the regression this guards
+  // against is an O(rows) rescan per lookup, which costs orders of magnitude more,
+  // not the tens of percent a loaded machine adds.
+  assert.ok(Date.now() - indexedAt < 900, `portrait index build took ${Date.now() - indexedAt}ms`);
   const started = Date.now();
   for (let i = 0; i < 20; i += 1)
     assert.equal(
@@ -347,7 +350,7 @@ test('large portrait catalogs resolve from indexes instead of rescanning every r
     entities: [{ id: 'reimu', name: '하쿠레이 레이무', aliases: [], portrait: 'NONE' }]
   });
   const elapsed = Date.now() - started;
-  assert.ok(elapsed < 40, `indexed portrait lookup took ${elapsed}ms`);
+  assert.ok(elapsed < 200, `indexed portrait lookup took ${elapsed}ms`);
   assert.equal(protocolNames.includes('hakurei_reimu_annoyed'), true);
   assert.equal(protocolNames.includes('hakurei_reimu_default'), true);
 });

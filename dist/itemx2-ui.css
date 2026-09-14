@@ -129,6 +129,24 @@
     .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }
     .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }
     .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }
+    /* One body layer per remaining affinity, so every element reads before its
+       particles are studied. Opacity follows the card's rarity intensity. */
+    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }
+    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }
+    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }
+    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }
+    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }
+    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }
+    /* Dark eats the frame inward, so it multiplies instead of adding light. */
+    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }
+    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }
+    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }
+    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }
+    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }
+    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }
+    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }
+    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }
+
     /* Poison cauldron haze drifting at the base. */
     .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }
     .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }

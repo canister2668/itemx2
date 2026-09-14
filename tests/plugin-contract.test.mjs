@@ -104,8 +104,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /hostPluginSettingsVisible/);
   assert.match(source, /보조 모델 상태/);
   assert.match(source, /itemx2-setting-aux-run/);
-  assert.match(source, /itemx2-setting-rarity/);
-  assert.match(source, /data-action="rarity-mode"/);
+  // Multi-choice settings are segmented controls, one class per option.
+  assert.match(source, /itemx2-seg-rarity-\$\{value\}|itemx2-seg-\$\{group\}-\$\{value\}/);
+  for (const group of ['aux', 'rarity', 'skin']) assert.match(source, new RegExp(`'${group}',`));
+  // The fallback now offers every option through data-seg instead of one cycling button.
+  assert.match(source, /data-seg="rarity"/);
   assert.match(source, /rarityMode:\$\{id\}/);
   assert.match(source, /effectsEnabled:\$\{id\}/);
   assert.match(source, /fontScale:\$\{id\}/);
@@ -144,7 +147,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /itemx2-setting-effects/);
   // The drawer and the iframe fallback must offer the same controls.
   assert.match(source, /const ITEMX_CONTROL_STYLE =/);
-  assert.match(source, /data-action="skin"/);
+  assert.match(source, /data-seg="skin"/);
   assert.match(source, /data-position=/);
   assert.match(source, /data-font=/);
   assert.match(source, /data-action="effects"/);
@@ -209,8 +212,12 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(rootToggleHandler, /updateRootSettingButton/);
   assert.equal(rootToggleHandler.includes('openRootInventory'), false);
   assert.equal(rootToggleHandler.includes('recoverAuxiliaryOutput'), false);
-  const iframeAuxHandler = source.match(/root\.querySelector\('\[data-action="aux-output"\]'\)[^\n]+/)?.[0] || '';
-  assert.equal(iframeAuxHandler.includes('recoverAuxiliaryOutput'), false);
+  const iframeSegHandler = source.slice(
+    source.indexOf("root.querySelectorAll('[data-seg]')"),
+    source.indexOf("root.querySelectorAll('[data-font]')")
+  );
+  assert.match(iframeSegHandler, /setAuxOutput\(loaded\.character, value\)/);
+  assert.equal(iframeSegHandler.includes('recoverAuxiliaryOutput'), false);
   const auxRunHandler = source.slice(
     source.indexOf('const auxRun ='),
     source.indexOf('for (const [key, label] of BADGE_POSITIONS)')

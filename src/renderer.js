@@ -204,6 +204,9 @@ const ITEMXRenderer = (() => {
     return `<div class="current-fx">${rays ? `<div class="current-rays">${rays}</div>` : ''}${fog}${scan}${veil}${motes}</div>`;
   }
 
+  // Affinities whose signature is a field rather than particles get one body layer.
+  const bodyLayers = { wind: 'wind', earth: 'earth', dark: 'dark', arcane: 'arcane', blood: 'blood', void: 'void' };
+
   function affinityEffects(kind, role, rarity, motion = 'full') {
     if (!kind || !affinities[kind] || motion === 'off') return '';
     const a = affinities[kind],
@@ -244,7 +247,9 @@ const ITEMXRenderer = (() => {
               ? `<div class="poison-miasma${secondary}" style="--ac:${a.c}"></div>`
               : kind === 'light'
                 ? `<div class="light-veilfall${secondary}" style="--ac:${a.c}"></div><div class="light-ground${secondary}" style="--ac:${a.c}"></div>`
-                : '';
+                : bodyLayers[kind]
+                  ? `<div class="affinity-body body-${bodyLayers[kind]}${secondary}" style="--ac:${a.c}"></div>`
+                  : '';
     const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
     const signature =
       kind === 'ice'
