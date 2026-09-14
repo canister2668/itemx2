@@ -209,7 +209,18 @@ const ITEMXRenderer = (() => {
     const a = affinities[kind],
       tag = kind === 'lightning' ? 'b' : 'i',
       budgetScale = Math.max(0.28, (particleBudget[rarity] || 4) / 16);
-    let count = kind === 'lightning' ? 14 : kind === 'ice' ? 18 : kind === 'wind' ? 11 : 16;
+    let count =
+      kind === 'lightning'
+        ? 14
+        : kind === 'ice'
+          ? 18
+          : kind === 'wind'
+            ? 11
+            : kind === 'fire'
+              ? 22
+              : kind === 'poison'
+                ? 18
+                : 16;
     count = Math.max(
       3,
       Math.ceil(count * budgetScale * (role === 'secondary' ? 0.68 : 1) * (motion === 'lite' ? 0.72 : 1))
@@ -220,12 +231,20 @@ const ITEMXRenderer = (() => {
       bits += `<${tag} style="${style}"></${tag}>`;
     }
     const secondary = role === 'secondary' ? ' secondary' : '';
+    // Body layers per affinity: flame sheets, strike flash, cauldron haze, descending light.
+    // Their opacity scales with the card's rarity intensity (--int), so low tiers stay quiet.
     const extra =
       kind === 'lightning'
-        ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div>`
+        ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div><div class="lightning-flash${secondary}" style="--ac:${a.c}"></div>`
         : kind === 'ice'
           ? `<div class="ice-cracks${secondary}" style="--ac:${a.c}"></div>`
-          : '';
+          : kind === 'fire'
+            ? `<div class="affinity-flames${secondary}" style="--ac:${a.c}"><b class="af-f2"></b><b class="af-f1"></b><b class="af-f3"></b></div>`
+            : kind === 'poison'
+              ? `<div class="poison-miasma${secondary}" style="--ac:${a.c}"></div>`
+              : kind === 'light'
+                ? `<div class="light-veilfall${secondary}" style="--ac:${a.c}"></div><div class="light-ground${secondary}" style="--ac:${a.c}"></div>`
+                : '';
     const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
     const signature =
       kind === 'ice'
@@ -418,10 +437,12 @@ const ITEMXRenderer = (() => {
     const theme = crafts[item.theme] ? item.theme : 'arcane',
       rarity = rarityLabels[item.rarity] ? item.rarity : 'normal',
       motion = options.motion || 'full';
+    const strong = ['legendary', 'mythical', 'empyrean'].includes(rarity);
     const classes = [
       'itemx-card',
       `craft-${theme}`,
       `rarity-${rarity}`,
+      strong ? 'itemx2-strong' : '',
       item.condition ? `condition-${item.condition}` : '',
       motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
       options.inline ? 'itemx-inline-card' : '',
@@ -436,7 +457,7 @@ const ITEMXRenderer = (() => {
     const fx =
       motion === 'off'
         ? ''
-        : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>`;
+        : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>${strong ? '<div class="itemx-edge" aria-hidden="true"></div>' : ''}`;
     return `<article class="${classes}" style="${itemVars(item)}" data-itemx-id="${esc(item.id)}">${themeDecor(theme)}${fx}<div class="itemx-content"><div class="itemx-head"><div class="itemx-medallion"><span class="itemx-emoji">${esc(ITEMXCore.resolveItemEmoji(item))}</span></div><div class="itemx-titles"><div class="itemx-eyebrow">${esc(crafts[theme].eyebrow)}</div><span class="itemx-name">${esc(item.name || '???')}</span><span class="itemx-tier">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="itemx-subline"><span>${esc(possession)} · ${esc(location)}</span><span>${esc(item.itemType || '기타')}</span>${Number(item.count) > 1 ? `<span>×${Number(item.count)}</span>` : ''}</span></div></div>${affinityUi(item)}<div class="itemx-rule"></div>${stats(item)}${effectSection(item)}${item.trivia ? `<div class="itemx-flavor">${esc(item.trivia)}</div>` : ''}</div></article>`;
   }
 

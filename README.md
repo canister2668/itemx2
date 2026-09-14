@@ -4,7 +4,7 @@
 
 ITEMX CODEX는 RisuAi 채팅에서 얻은 아이템, 익힌 스킬, 실제로 맞선 상대를 자동으로 정리해 주는 RisuAI API v3 플러그인입니다. 대화 중 중요한 변화가 생겼을 때만 카드를 보여주고, 평소에는 화면 옆 `CODEX` 배지에서 인벤토리와 도감을 편하게 열어볼 수 있습니다.
 
-현재 공개 버전은 `2.0.19`입니다. 플러그인 목록에도 `ITEMX CODEX · v2.0.19`로 표시되므로 설치된 버전과 업데이트 여부를 바로 확인할 수 있습니다.
+현재 공개 버전은 `2.0.22`입니다. 플러그인 목록에도 `ITEMX CODEX · v2.0.22`로 표시되므로 설치된 버전과 업데이트 여부를 바로 확인할 수 있습니다.
 
 ### 무엇을 기록하나요?
 
@@ -96,3 +96,17 @@ ITEMX_RISU_DB=/path/to/risu.db \
 ITEMX_BACKUP_DIR=/path/to/itemx-backups \
 python3 scripts/deploy-live.py
 ```
+
+## 라이선스와 출처
+
+ITEMX CODEX는 [RisuAI](https://github.com/kwaroran/RisuAI)의 플러그인 API v3 위에서 동작하는
+RisuAI 파생 저작물이며, 상위 프로젝트와 같은 **GNU General Public License v3.0 이상**으로 배포한다.
+전문은 저장소 루트의 [`LICENSE`](LICENSE)에 있다.
+
+- 상위 저작물: RisuAI — Copyright (C) 2024 Kwaroran, GPL-3.0
+- 이 저작물: ITEMX CODEX — Copyright (C) 2026 canister2668, GPL-3.0-or-later
+
+이 프로그램은 유용하기를 바라며 배포하지만 어떠한 보증도 하지 않는다.
+상품성이나 특정 목적 적합성에 대한 묵시적 보증도 포함되지 않는다. 자세한 내용은 GNU GPL을 참고한다.
+배포본 `dist/itemx2.plugin.js`는 `src/`의 소스에서 `npm run build`로 생성되며,
+소스 전체는 이 저장소에서 함께 공개된다.

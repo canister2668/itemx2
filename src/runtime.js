@@ -186,6 +186,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     update: { checking: false, checkedAt: 0, latest: '', available: false },
     debugEnabled: false,
     visualEffectsEnabled: true,
+    visualSkin: 'dark',
     debugEntries: [],
     backupOpen: false,
     cleanupArmedUntil: 0,
@@ -382,6 +383,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       current = runtime.settingsCache.get(id);
     if (current) runtime.settingsCache.set(id, { ...current, ...patch });
     if ('effectsEnabled' in patch) runtime.visualEffectsEnabled = Boolean(patch.effectsEnabled);
+    if ('skin' in patch) runtime.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
   }
 
   async function outputSettings(character, { refresh = false } = {}) {
@@ -400,7 +402,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       Risuai.pluginStorage.getItem(`effectsEnabled:${id}`),
       Risuai.pluginStorage.getItem(`fontScale:${id}`),
       Risuai.pluginStorage.getItem(`moduleAssetsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`lorebookEncounterEnabled:${id}`)
+      Risuai.pluginStorage.getItem(`lorebookEncounterEnabled:${id}`),
+      Risuai.pluginStorage.getItem(`skin:${id}`)
     ])
       .then(
         ([
@@ -415,7 +418,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
           effects,
           fontScale,
           moduleAssets,
-          lorebookEncounter
+          lorebookEncounter,
+          skin
         ]) => {
           const settings = {
             enabled: enabled !== '0',
@@ -430,10 +434,12 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
             effectsEnabled: effects !== '0',
             fontScale: ['small', 'medium', 'large'].includes(fontScale) ? fontScale : 'small',
             moduleAssetsEnabled: moduleAssets === '1',
-            lorebookEncounterEnabled: lorebookEncounter === '1'
+            lorebookEncounterEnabled: lorebookEncounter === '1',
+            skin: SKIN_MODES.includes(skin) ? skin : 'dark'
           };
           runtime.settingsCache.set(id, settings);
           runtime.visualEffectsEnabled = settings.effectsEnabled;
+          runtime.visualSkin = settings.skin;
           return settings;
         }
       )
@@ -796,8 +802,236 @@ ${codexPageStyle()}
   }
   const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event{box-shadow:none!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{animation-play-state:paused!important;filter:none!important;mix-blend-mode:normal!important;box-shadow:none!important}`;
   const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-codex-fx,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-event::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-icon::before,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-warning{display:none!important;animation:none!important}`;
+  // Light skins. One rule set, two palettes: `frost` is the neutral daylight skin that
+  // sits on Risu's light theme without yellowing it, `hanji` is the warm document skin
+  // that matches the codex's appraisal identity. Effects stay on and trade glow for
+  // pigment density. Applied wherever the skin class sits above the surface: the chat
+  // body, the main-document drawer, and the iframe fallback panel.
+  const SKIN_PALETTES = {
+    frost: {
+      lineRGB: '96,116,140',
+      glowRGB: '86,150,200',
+      shadowRGB: '60,80,105',
+      gaugeRGB: '50,120,175',
+      dangerRGB: '150,60,95',
+      paperHi: '#f4f8fc',
+      paper: '#dde7f2',
+      inset: 'rgba(96,118,145,.18)',
+      ink: '#111826',
+      ink2: '#16202f',
+      ink3: '#18222f',
+      fg: '#222c3a',
+      body: '#3c4757',
+      dim: '#6a7889',
+      dim2: '#78869a',
+      dim3: '#77869a',
+      dim4: '#566476',
+      muted: '#7b899c',
+      accent: '#2f6f9e',
+      accentDeep: '#245a80',
+      accentSeg: '#3b82b8',
+      segInk: '#1d2839',
+      btnInk: '#2e3a4b',
+      histInk: '#2c3746',
+      chipInk: '#3a4657',
+      tileRkInk: '#141d2b',
+      repairInk: '#215274',
+      changeEm: '#1f4f74',
+      lineStrong: '#b7c6d7',
+      lineCard: '#a9bacd',
+      repairLine: '#8fa8c2',
+      surface: '#eef3f9',
+      surfHi: '#f6fafd',
+      surfLo: '#e4ecf5',
+      raise: '#f5f9fd',
+      tileA: '#f8fbfe',
+      tileB: '#e7eef7',
+      tileHover: '#fbfdff',
+      input: '#e9f0f8',
+      inputHi: '#fbfdff',
+      manager: '#f2f7fc',
+      histBtn: '#f6fafe',
+      heroA: '#f5f9fe',
+      heroB: '#e2ebf5',
+      medalA: '#fafdff',
+      medalB: '#e0e9f4',
+      statA: '#f8fbfe',
+      statB: '#e8eff8',
+      gaugeOff: '#ccd8e6',
+      gaugeA: '#4a9fd8',
+      gaugeB: '#2f6f9e',
+      dangerA: '#f6eef2',
+      dangerB: '#e6e3ee',
+      dangerLine: '#a4849c',
+      dangerInk: '#8e2f4d',
+      dangerBanner: 'rgba(246,238,245,.88)',
+      changeBg: 'rgba(246,250,254,.94)',
+      repairBg: '#eef4fb',
+      tileEq: '#4a9fd8',
+      fxFilter: 'saturate(.92)',
+      fxOpacity: '.62'
+    },
+    hanji: {
+      lineRGB: '120,95,55',
+      glowRGB: '176,134,58',
+      shadowRGB: '96,72,38',
+      gaugeRGB: '160,110,20',
+      dangerRGB: '178,52,74',
+      paperHi: '#f6eeda',
+      paper: '#e9dcbf',
+      inset: 'rgba(126,99,56,.22)',
+      ink: '#241a0c',
+      ink2: '#2c2113',
+      ink3: '#2e2413',
+      fg: '#33291a',
+      body: '#4c4028',
+      dim: '#7c6a49',
+      dim2: '#8a7a5c',
+      dim3: '#87765a',
+      dim4: '#6d5a35',
+      muted: '#96835f',
+      accent: '#8a621f',
+      accentDeep: '#6b4c12',
+      accentSeg: '#a8781f',
+      segInk: '#3d2f14',
+      btnInk: '#4c3d20',
+      histInk: '#3d3320',
+      chipInk: '#5b4b2e',
+      tileRkInk: '#2c2210',
+      repairInk: '#5b4310',
+      changeEm: '#5b3f0c',
+      lineStrong: '#c3ae86',
+      lineCard: '#b6a077',
+      repairLine: '#b79a63',
+      surface: '#f4ecda',
+      surfHi: '#f8f1e0',
+      surfLo: '#efe4cb',
+      raise: '#faf4e4',
+      tileA: '#fbf5e6',
+      tileB: '#f1e7d1',
+      tileHover: '#fdf8ec',
+      input: '#f3e9d5',
+      inputHi: '#fdf8ec',
+      manager: '#f7f0de',
+      histBtn: '#f9f3e3',
+      heroA: '#f7efdd',
+      heroB: '#ece0c6',
+      medalA: '#fdf6e4',
+      medalB: '#eaddc0',
+      statA: '#fbf5e6',
+      statB: '#f2e8d3',
+      gaugeOff: '#dfd2b6',
+      gaugeA: '#c8901f',
+      gaugeB: '#9a6b1f',
+      dangerA: '#f7e6de',
+      dangerB: '#efdcc8',
+      dangerLine: '#b8776f',
+      dangerInk: '#9c2a3e',
+      dangerBanner: 'rgba(250,235,230,.86)',
+      changeBg: 'rgba(250,244,228,.94)',
+      repairBg: '#f6ecd4',
+      tileEq: '#c8901f',
+      fxFilter: 'saturate(.82)',
+      fxOpacity: '.6'
+    }
+  };
+  const SKIN_NAMES = Object.keys(SKIN_PALETTES);
+  const SKIN_LABELS = { dark: '다크', frost: '서리', hanji: '한지' };
+  const SKIN_MODES = ['dark', ...SKIN_NAMES];
+
+  function skinCss(name) {
+    const c = SKIN_PALETTES[name],
+      S = `.itemx2-skin-${name}`,
+      line = (alpha) => `rgba(${c.lineRGB},${alpha})`;
+    return [
+      // Card surface and type.
+      `${S} .itemx-card{--fg:${c.fg};--dim:${c.dim};--line:${c.lineCard};--surf:${line('.12')};--inset-sh:inset 0 0 46px ${c.inset};background:repeating-linear-gradient(102deg,${line('.04')} 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,${line('.03')} 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,${c.paperHi},${c.paper} 70%);color:var(--fg);box-shadow:var(--inset-sh),0 0 calc(20px*var(--int)) var(--pg),0 10px 26px rgba(${c.shadowRGB},.24)}`,
+      `${S} .itemx-name{color:${c.ink};text-shadow:none}`,
+      `${S} .rarity-epic .itemx-name,${S} .rarity-legendary .itemx-name,${S} .rarity-mythical .itemx-name,${S} .rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 42%,${c.ink2});text-shadow:none}`,
+      `${S} .itemx-medallion{background:radial-gradient(circle at 32% 28%,${c.medalA},${c.medalB} 72%)}`,
+      `${S} .itemx-tier{color:color-mix(in srgb,var(--rk) 45%,${c.segInk});border-color:color-mix(in srgb,var(--rk) 60%,transparent)}`,
+      `${S} .itemx-eyebrow,${S} .itemx-subline{color:${c.dim}}`,
+      `${S} .itemx-fx{opacity:${c.fxOpacity};filter:${c.fxFilter}}`,
+      `${S} .itemx-cond{mix-blend-mode:multiply;opacity:.55}`,
+      `${S} .affinity-chip{color:color-mix(in srgb,var(--chip) 45%,${c.chipInk})}`,
+      `${S} .reaction-chip{color:${c.accentDeep}}`,
+      `${S} .itemx-oriental-seal{background:rgba(155,32,38,.78);color:#ffe9df}`,
+      `${S} .itemx-edge{opacity:calc(.55*var(--int))}`,
+      // Panel shell: header, tabs, tools, list body, footer.
+      `:is(${S} .itemx-panel,.itemx-panel${S}){border-color:${c.lineStrong};background:${c.surface};color:${c.fg};box-shadow:0 18px 50px rgba(${c.shadowRGB},.3)}`,
+      `${S} .itemx-ph{border-bottom-color:${line('.28')};background:radial-gradient(120% 150% at 18% -40%,rgba(${c.glowRGB},.14),transparent 55%),linear-gradient(180deg,${c.surfHi},${c.surfLo})}`,
+      `${S} .itemx-ph-eyebrow{color:${c.accent}}`,
+      `${S} .itemx-ph-title{color:${c.ink2}}`,
+      `${S} .itemx-ph-sub,${S} .itemx-pf{color:${c.dim}}`,
+      `${S} .itemx-ph-btn{border-color:${line('.28')};background:rgba(255,255,255,.5);color:${c.dim4}}`,
+      `${S} .itemx-seg{border-bottom-color:${line('.24')}}`,
+      `${S} .itemx-seg-i{color:${c.dim2}}`,
+      `${S} .itemx-seg-on{border-bottom-color:${c.accentSeg};color:${c.segInk}}`,
+      `${S} .itemx-tool,${S} .itemx-search{border-color:${line('.3')};background:rgba(255,255,255,.48);color:${c.dim4}}`,
+      `${S} .itemx-pf{border-top-color:${line('.24')}}`,
+      `${S} .itemx-empty,${S} .itemx2-root-empty{color:${c.dim2}}`,
+      // Inventory tiles.
+      `${S} .itemx-tile{border-color:${line('.28')};background:linear-gradient(160deg,${c.tileA},${c.tileB} 78%)}`,
+      `${S} .itemx-tile:hover,${S} .itemx-tile:focus-visible{background:${c.tileHover}}`,
+      `${S} .itemx-tile-nm{color:${c.ink3}}`,
+      `${S} .itemx-tile-lc{color:${c.dim3}}`,
+      `${S} .itemx-tile-rk{color:color-mix(in srgb,var(--rk) 58%,${c.tileRkInk})}`,
+      `${S} .itemx-tile-em{background:radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%)}`,
+      `${S} .itemx-tile-eq{border-top-color:${c.tileEq}}`,
+      // Codex heroes: skills and bestiary.
+      `${S} .itemx-codex-hero{border-color:${c.lineStrong};background:radial-gradient(circle at 50% 45%,rgba(${c.glowRGB},.18),transparent 31%),linear-gradient(145deg,${c.heroA},${c.heroB} 70%);box-shadow:inset 0 0 45px rgba(${c.glowRGB},.12),0 12px 34px rgba(${c.shadowRGB},.2)}`,
+      `${S} .itemx-codex-hero-glyph{border-color:rgba(${c.glowRGB},.5);background:radial-gradient(circle at 45% 38%,${c.medalA},${c.heroB} 68%);color:${c.segInk};text-shadow:none}`,
+      `${S} .itemx-codex-hero-copy small{color:${c.dim2}}`,
+      `${S} .itemx-codex-hero-copy strong{color:${c.ink2}}`,
+      `${S} .itemx-codex-hero-copy span{color:${c.dim}}`,
+      `${S} .itemx-codex-stat{border-color:${line('.3')};background:linear-gradient(145deg,${c.statA},${c.statB})}`,
+      `${S} .itemx-codex-stat small{color:${c.dim2}}`,
+      `${S} .itemx-codex-stat strong{color:${c.ink3}}`,
+      `${S} .itemx-codex-section{border-color:${line('.28')};background:${c.raise};color:${c.body}}`,
+      `${S} .itemx-codex-section h4{color:${c.segInk}}`,
+      `${S} .itemx-codex-chip-row i{border-color:${line('.32')};background:${c.input};color:${c.chipInk}}`,
+      `${S} .itemx-codex-mastery i{background:${c.gaugeOff}}`,
+      `${S} .itemx-codex-mastery i.on{background:linear-gradient(90deg,${c.gaugeA},${c.gaugeB});box-shadow:0 0 6px rgba(${c.gaugeRGB},.35)}`,
+      `${S} .itemx-codex-back,${S} .itemx2-root-back{border-color:${line('.34')};background:${c.input};color:${c.btnInk}}`,
+      `${S} .itemx-codex-fold{border-color:${line('.28')};background:${c.raise}}`,
+      `${S} .itemx-codex-fold summary strong{color:${c.ink3}}`,
+      `${S} .itemx-codex-fold summary small{color:${c.dim2}}`,
+      `${S} .itemx-codex-detail{border-top-color:${line('.24')};color:${c.body}}`,
+      `${S} .itemx-codex-detail b{color:${c.dim2}}`,
+      // The bestiary hero keeps its warning identity, tuned for a light surface.
+      `${S} .itemx-monster-hero{border-color:${c.dangerLine};background:radial-gradient(circle at 50% 40%,rgba(${c.dangerRGB},.16),transparent 34%),linear-gradient(145deg,${c.dangerA},${c.dangerB} 72%);box-shadow:inset 0 0 54px rgba(${c.dangerRGB},.1),0 12px 34px rgba(${c.shadowRGB},.22)}`,
+      `${S} .itemx-threat-banner{border-color:rgba(${c.dangerRGB},.45);background:${c.dangerBanner};color:${c.dangerInk}}`,
+      // Settings and history surfaces.
+      `${S} .itemx2-root-setting-card,${S} .itemx-setting-card{border-color:${line('.28')};background:${c.raise}}`,
+      `${S} .itemx-setting-card strong{color:${c.ink3}}`,
+      `${S} .itemx-setting-card small,${S} .itemx-setting-note{color:${c.dim2}}`,
+      `${S} .itemx2-root-setting-button,${S} .itemx-position-select{border-color:${line('.36')};background:${c.input};color:${c.btnInk}}`,
+      `${S} .itemx-setting-on{border-color:#5f8f6d;color:#2f6144}`,
+      `${S} .itemx-manager{border-color:${line('.34')};background:${c.manager}}`,
+      `${S} .itemx-manager-title{color:${c.accent}}`,
+      `${S} .itemx-manager-field{color:${c.dim}}`,
+      `${S} .itemx-manager-field select,${S} .itemx-manager-field textarea{border-color:${line('.32')};background:${c.inputHi};color:${c.fg}}`,
+      `${S} .itemx-manager-current,${S} .itemx-manager-help{color:${c.dim3}}`,
+      `${S} .itemx2-history-pane{background:${c.surface};color:${c.body}}`,
+      `${S} .itemx2-history-pane button{border-color:${line('.3')};background:${c.histBtn};color:${c.histInk}}`,
+      `${S} .itemx2-history-row{border-color:${line('.28')}}`,
+      `${S} .itemx2-history-row small,${S} .itemx2-history-policy small{color:${c.dim3}}`,
+      `${S} .itemx2-change-note,${S} .itemx2-review-note{border-color:${line('.3')};background:${c.changeBg};color:${c.body}}`,
+      `${S} .itemx2-change-note>strong{color:${c.accentDeep}}`,
+      `${S} .itemx2-change-note em{color:${c.changeEm}}`,
+      `${S} .itemx2-change-note del,${S} .itemx2-change-note small,${S} .itemx2-change-note b{color:${c.dim2}}`,
+      `${S} .itemx2-repair-one{border-color:${c.repairLine};background:${c.repairBg};color:${c.repairInk}}`,
+      // Inline chat event chips.
+      `${S} .itemx2-inline-event{border-color:${line('.34')};background:linear-gradient(145deg,${c.surfHi},${c.surfLo});color:${c.fg};box-shadow:0 12px 30px rgba(${c.shadowRGB},.18)}`,
+      `${S} .itemx2-inline-icon{border-color:${line('.3')};background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(${c.glowRGB},.2)),${c.paperHi} 72%)}`,
+      `${S} .itemx2-inline-name{color:${c.ink2}}`,
+      `${S} .itemx2-inline-meta{color:${c.dim3}}`,
+      `${S} .itemx2-inline-state{border-color:${line('.3')};background:rgba(255,255,255,.5)}`
+    ].join('');
+  }
+  const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
   const mainStyleText = () =>
-    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${badgeStyle()}`;
+    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
 
   function enqueue(key, work) {
     const prev = queues.get(key) || Promise.resolve();
@@ -2378,10 +2612,6 @@ ${codexPageStyle()}
     return text.replace(/\n{3,}/g, '\n\n').trim();
   }
 
-  function auxiliarySemanticHash(value) {
-    return ITEMXCore.fnv1a(auxiliaryVisibleText(value, { itemRefs: false }).replace(/\s+/g, ' ').trim());
-  }
-
   function clipAuxiliaryText(value, max) {
     const text = String(value || '').trim();
     if (text.length <= max) return text;
@@ -3793,6 +4023,13 @@ ${codexPageStyle()}
     }
   }
 
+  async function setSkin(character, value) {
+    const next = SKIN_MODES.includes(value) ? value : 'dark';
+    await Risuai.pluginStorage.setItem(`skin:${settingsId(character)}`, next);
+    updateCachedSettings(character, { skin: next });
+    await syncMainEffectsState();
+  }
+
   async function syncMainEffectsState() {
     if (!runtime.mainDoc) return;
     try {
@@ -3800,6 +4037,10 @@ ${codexPageStyle()}
       if (!body) return;
       if (runtime.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
       else await body.addClass('x-risu-itemx2-effects-off');
+      for (const name of SKIN_NAMES) {
+        if (runtime.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
+        else await body.removeClass(`x-risu-itemx2-skin-${name}`);
+      }
     } catch (error) {
       debugRecord('effect setting sync', error?.message || String(error));
     }
@@ -5277,7 +5518,7 @@ ${codexPageStyle()}
       storageCleanupArmed = runtime.storageCleanupArmedUntil > Date.now(),
       footprint = itemxStorageFootprint(loaded.chat),
       footprintLabel = `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`;
-    const settings = `<div class="itemx2-root-settings">${backupSettingsHtml(true)}<section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 누락 복구 또는 항상 검사를 직접 선택하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈의 캐릭터 에셋을 조우 초상화 후보에 더합니다. 권한·탐색·이미지 로드 실패 시 이모지로 표시합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 실제 등록된 조우만 정확 일치로 보완합니다. 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우의 주요 글자만 즉시 조절합니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${footprintLabel} · 최근 원장은 자동 순환됩니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button><button class="itemx2-root-setting-button itemx2-setting-storage-cleanup ${storageCleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화'}</button></span></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const settings = `<div class="itemx2-root-settings">${backupSettingsHtml(true)}<section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 누락 복구 또는 항상 검사를 직접 선택하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>화면 스킨</strong><small>다크 · 서리(밝은 중립) · 한지(밝은 문서) 순으로 바뀝니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-skin ${loaded.skin && loaded.skin !== 'dark' ? 'itemx2-setting-on' : ''}">${SKIN_LABELS[loaded.skin] || SKIN_LABELS.dark}</button></section><section class="itemx2-root-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈의 캐릭터 에셋을 조우 초상화 후보에 더합니다. 권한·탐색·이미지 로드 실패 시 이모지로 표시합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 실제 등록된 조우만 정확 일치로 보완합니다. 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우의 주요 글자만 즉시 조절합니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${footprintLabel} · 최근 원장은 자동 순환됩니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button><button class="itemx2-root-setting-button itemx2-setting-storage-cleanup ${storageCleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화'}</button></span></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
     const pager =
       pageCount > 1
         ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
@@ -5947,6 +6188,28 @@ ${codexPageStyle()}
             return;
           }
         }
+        const skinToggle = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-skin'));
+        if (skinToggle) {
+          const rect = await skinToggle.getBoundingClientRect();
+          if (
+            event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom
+          ) {
+            await applyRootSetting(async () => {
+              const loaded = await cachedOrRebuildCurrent();
+              if (!loaded) return;
+              const current = (cachedSettings(loaded.character) || (await outputSettings(loaded.character))).skin;
+              const value = SKIN_MODES[(Math.max(0, SKIN_MODES.indexOf(current)) + 1) % SKIN_MODES.length];
+              await setSkin(loaded.character, value);
+              loaded.skin = value;
+              runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+              await openRootInventory({ open: true, tab: 'settings', loaded });
+            });
+            return;
+          }
+        }
         const moduleAssets =
           runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-module-assets'));
         const lorebookToggle =
@@ -6210,7 +6473,7 @@ ${codexPageStyle()}
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(
-        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}`
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
       );
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && runtime.rootContentReady && (await updateRootRegions(html));
@@ -6383,7 +6646,7 @@ ${codexPageStyle()}
           : ui.tab === 'bestiary'
             ? bestiaryContent
             : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav><div class="itemx2-iframe-content">${content}</div></section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav><div class="itemx2-iframe-content">${content}</div></section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => {
       runtime.historyView.open = false;
       void closeInventory();
@@ -6772,7 +7035,7 @@ ${codexPageStyle()}
         runtime.status = 'PocketRisu 호환 모드';
         log('resizeContainer unavailable; using bounded fullscreen fallback');
       }
-      document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx-setting-card span{display:grid;gap:4px}.itemx-setting-card strong{color:#edf2fb}.itemx-setting-card small,.itemx-setting-note{color:#77839c;line-height:1.45}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-position-select{min-height:38px;padding:0 10px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9}.itemx-setting-note{margin:2px 4px 0;font-size:.72rem}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-domain-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-setting-card{align-items:flex-start;flex-direction:column}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions,.itemx-domain-controls{grid-template-columns:1fr}}</style>`;
+      document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx-setting-card span{display:grid;gap:4px}.itemx-setting-card strong{color:#edf2fb}.itemx-setting-card small,.itemx-setting-note{color:#77839c;line-height:1.45}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-position-select{min-height:38px;padding:0 10px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9}.itemx-setting-note{margin:2px 4px 0;font-size:.72rem}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-domain-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-setting-card{align-items:flex-start;flex-direction:column}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions,.itemx-domain-controls{grid-template-columns:1fr}}</style>`;
       document.body.innerHTML = '<div id="itemx2-root"></div>';
       const loaded = await rebuildCurrent();
       if (!loaded) throw new Error('No active chat context');

@@ -79,7 +79,7 @@ const mainCss = scopeBlock(chatCss.replace(/\/\*[\s\S]*?\*\//g, ''));
 const productionSource = (source) =>
   source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, '');
 
-const metadata = `//@name itemx2\n//@api 3.0\n//@version ${packageVersion}\n${updateUrl ? `//@update-url ${updateUrl}\n` : ''}//@display-name ITEMX CODEX · v${packageVersion}\n//@description World Inventory & Encounter Archive\n\n`;
+const metadata = `//@name itemx2\n//@api 3.0\n//@version ${packageVersion}\n${updateUrl ? `//@update-url ${updateUrl}\n` : ''}//@display-name ITEMX CODEX · v${packageVersion}\n//@description World Inventory & Encounter Archive\n\n/*\n * ITEMX CODEX - World Inventory & Encounter Archive\n * Copyright (C) 2026 canister2668\n *\n * A RisuAI derivative work, built on the RisuAI plugin API v3.\n * Upstream: RisuAI - Copyright (C) 2024 Kwaroran - https://github.com/kwaroran/RisuAI\n *\n * This program is free software: you can redistribute it and/or modify it under\n * the terms of the GNU General Public License as published by the Free Software\n * Foundation, either version 3 of the License, or (at your option) any later version.\n *\n * This program is distributed in the hope that it will be useful, but WITHOUT ANY\n * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A\n * PARTICULAR PURPOSE. See the GNU General Public License for more details.\n *\n * You should have received a copy of the GNU General Public License along with this\n * program. If not, see <https://www.gnu.org/licenses/>.\n *\n * Source: https://github.com/canister2668/itemx2\n */\n\n`;
 const builtRuntime = productionSource(
   runtime
     .replace('__ITEMX_PLUGIN_VERSION_JSON__', JSON.stringify(packageVersion))

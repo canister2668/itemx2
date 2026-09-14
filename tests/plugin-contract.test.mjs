@@ -365,7 +365,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /async function catchUpLatestOutput\(\{ syncUi = true \} = \{\}\)/);
   assert.match(source, /async function repairCommittedTransport\(ctx, index, source\)/);
   assert.match(source, /runtime\.catchUpFingerprint = fingerprint/);
-  assert.match(source, /visible-\$\{auxiliarySemanticHash\(source\)\}/);
+  // 2.0.21 anchored the catch-up guard on the message id instead of a hash of the visible text.
+  assert.match(source, /const fingerprint = `\$\{ctx\.key\}:\$\{index\}:msg-\$\{messageId\}`/);
+  assert.match(source, /msg-\$\{auxMessageId\}/);
+  assert.equal(source.includes('auxiliarySemanticHash'), false);
   assert.match(source, /ITEMX_MESSAGE_EVENT_KEY/);
   assert.match(source, /compactRefMarker\(prefix, ref, payload, domain\)/);
   assert.match(source, /embeddedViewCode/);
@@ -429,8 +432,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /state: unresolvedPartials\.length \|\| rejectedIds\.length \? 'partial_final' : 'complete'/);
   assert.match(source, /state: 'rejected'/);
   assert.match(source, /아이템 상세정보 보완 중/);
+  // Budget raised for 2.0.22: the three-skin palette sheet and the per-affinity body
+  // layers (flames, strike flash, miasma, descending light) are shipped as source text.
+  // 2.0.21 had already passed 700000 at 704688; this keeps a real ceiling above it.
   assert.ok(
-    source.length < 700000,
+    source.length < 780000,
     'presentation, lifecycle history and bounded event FX must stay below the release size budget'
   );
   assert.equal(source.includes('itemx-batch'), false);

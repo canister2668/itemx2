@@ -56,9 +56,9 @@
        the proposed affinity effects are deliberately separate layers. */
     .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }
     .itemx-detail { display: flex; justify-content: center; }
-    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: "Nanum Myeongjo","Noto Serif KR",Georgia,serif; font-size: .92rem; line-height: 1.62; box-shadow: inset 0 0 60px rgba(0,0,0,.55),0 0 calc(30px*var(--int)) var(--pg); }
+    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: "Nanum Myeongjo","Noto Serif KR",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }
     .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }
-    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);box-shadow:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48),0 0 calc(24px*var(--int)) var(--pg); }
+    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }
     .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }
     .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }
     .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }
@@ -75,6 +75,12 @@
     .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}
     .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}
     .itemx-card::before { content:""; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }
+    /* Legendary+ frame flourishes: breathing outer aura and a light tracing the border. */
+    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }
+    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }
+    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }
+    .itemx-edge::before { content:""; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }
+    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }
     .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
     .itemx-fx { z-index:1; }
     .itemx-cond { z-index:2; }
@@ -106,13 +112,26 @@
     .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }
     .afx i { position:absolute; display:block; color:var(--ac); }
     .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }
+    /* Fire body: three blurred flame sheets breathing at the card base. Intensity follows rarity. */
+    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }
+    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }
+    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }
+    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }
+    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }
+    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }
     .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }
     .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }
+    /* Strike flash lighting the whole card in the lightning cadence. */
+    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }
+    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }
     .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }
     .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }
     .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }
     .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }
     .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }
+    /* Poison cauldron haze drifting at the base. */
+    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }
+    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }
     .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }
     .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }
     /* A second, broad signature per affinity. Particles provide detail; these
@@ -131,6 +150,12 @@
     .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }
     .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }
     .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }
+    /* Light descends: a veil of radiance falling from above, pooling on the ground line. */
+    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }
+    .light-veilfall::before { content:""; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }
+    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }
+    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }
+    .light-ground.secondary { clip-path:inset(0 0 0 46%); }
     .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }
     .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }
     .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }
@@ -194,7 +219,7 @@
     @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }
     @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }
     @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }
-    @keyframes aff-poison { 0%,100%{transform:translate(0,4px) rotate(-8deg);opacity:.2}50%{transform:translate(8px,-10px) rotate(12deg);opacity:.8} }
+    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }
     @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }
     @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }
     @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }
@@ -208,7 +233,17 @@
     @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }
     @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }
     @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }
-    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion) * { animation:none!important; } }
+    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }
+    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }
+    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }
+    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }
+    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }
+    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }
+    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }
+    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }
+    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }
+    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }
+    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }
     @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }
 .itemx2-panel-actions {
   display: flex;
@@ -649,7 +684,7 @@
     animation: none !important;
   }
 }
-.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.21</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
+.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.0.22</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 const ITEMXCore = (() => {
   'use strict';
 
@@ -1943,7 +1978,18 @@ const ITEMXRenderer = (() => {
     const a = affinities[kind],
       tag = kind === 'lightning' ? 'b' : 'i',
       budgetScale = Math.max(0.28, (particleBudget[rarity] || 4) / 16);
-    let count = kind === 'lightning' ? 14 : kind === 'ice' ? 18 : kind === 'wind' ? 11 : 16;
+    let count =
+      kind === 'lightning'
+        ? 14
+        : kind === 'ice'
+          ? 18
+          : kind === 'wind'
+            ? 11
+            : kind === 'fire'
+              ? 22
+              : kind === 'poison'
+                ? 18
+                : 16;
     count = Math.max(
       3,
       Math.ceil(count * budgetScale * (role === 'secondary' ? 0.68 : 1) * (motion === 'lite' ? 0.72 : 1))
@@ -1954,12 +2000,20 @@ const ITEMXRenderer = (() => {
       bits += `<${tag} style="${style}"></${tag}>`;
     }
     const secondary = role === 'secondary' ? ' secondary' : '';
+    // Body layers per affinity: flame sheets, strike flash, cauldron haze, descending light.
+    // Their opacity scales with the card's rarity intensity (--int), so low tiers stay quiet.
     const extra =
       kind === 'lightning'
-        ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div>`
+        ? `<div class="lightning-field${secondary}" style="--ac:${a.c}"></div><div class="lightning-flash${secondary}" style="--ac:${a.c}"></div>`
         : kind === 'ice'
           ? `<div class="ice-cracks${secondary}" style="--ac:${a.c}"></div>`
-          : '';
+          : kind === 'fire'
+            ? `<div class="affinity-flames${secondary}" style="--ac:${a.c}"><b class="af-f2"></b><b class="af-f1"></b><b class="af-f3"></b></div>`
+            : kind === 'poison'
+              ? `<div class="poison-miasma${secondary}" style="--ac:${a.c}"></div>`
+              : kind === 'light'
+                ? `<div class="light-veilfall${secondary}" style="--ac:${a.c}"></div><div class="light-ground${secondary}" style="--ac:${a.c}"></div>`
+                : '';
     const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
     const signature =
       kind === 'ice'
@@ -2152,10 +2206,12 @@ const ITEMXRenderer = (() => {
     const theme = crafts[item.theme] ? item.theme : 'arcane',
       rarity = rarityLabels[item.rarity] ? item.rarity : 'normal',
       motion = options.motion || 'full';
+    const strong = ['legendary', 'mythical', 'empyrean'].includes(rarity);
     const classes = [
       'itemx-card',
       `craft-${theme}`,
       `rarity-${rarity}`,
+      strong ? 'itemx2-strong' : '',
       item.condition ? `condition-${item.condition}` : '',
       motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
       options.inline ? 'itemx-inline-card' : '',
@@ -2170,7 +2226,7 @@ const ITEMXRenderer = (() => {
     const fx =
       motion === 'off'
         ? ''
-        : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>`;
+        : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>${strong ? '<div class="itemx-edge" aria-hidden="true"></div>' : ''}`;
     return `<article class="${classes}" style="${itemVars(item)}" data-itemx-id="${esc(item.id)}">${themeDecor(theme)}${fx}<div class="itemx-content"><div class="itemx-head"><div class="itemx-medallion"><span class="itemx-emoji">${esc(ITEMXCore.resolveItemEmoji(item))}</span></div><div class="itemx-titles"><div class="itemx-eyebrow">${esc(crafts[theme].eyebrow)}</div><span class="itemx-name">${esc(item.name || '???')}</span><span class="itemx-tier">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="itemx-subline"><span>${esc(possession)} · ${esc(location)}</span><span>${esc(item.itemType || '기타')}</span>${Number(item.count) > 1 ? `<span>×${Number(item.count)}</span>` : ''}</span></div></div>${affinityUi(item)}<div class="itemx-rule"></div>${stats(item)}${effectSection(item)}${item.trivia ? `<div class="itemx-flavor">${esc(item.trivia)}</div>` : ''}</div></article>`;
   }
 
@@ -2213,4 +2269,4 @@ const ITEMXRenderer = (() => {
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
 
-const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.21</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
+const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.0.22</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
