@@ -1021,6 +1021,20 @@ ${codexPageStyle()}
       `${S} .itemx2-change-note em{color:${c.changeEm}}`,
       `${S} .itemx2-change-note del,${S} .itemx2-change-note small,${S} .itemx2-change-note b{color:${c.dim2}}`,
       `${S} .itemx2-repair-one{border-color:${c.repairLine};background:${c.repairBg};color:${c.repairInk}}`,
+      // Tabs, choice grids and the remaining controls. The drawer marks its active tab
+      // through a :checked sibling, so that selector is skinned alongside the class form.
+      `${S} .itemx-main-tabs{border-bottom-color:${line('.24')}}`,
+      `${S} .itemx-main-tab{background:${c.surfLo};color:${c.dim2}}`,
+      `${S} .itemx-main-tab-on{border-bottom-color:${c.accentSeg}!important;background:${c.surfHi}!important;color:${c.segInk}!important}`,
+      `.itemx2-tab-inventory:checked~.itemx2-root-layer ${S} label[for="itemx2-tab-inventory"],.itemx2-tab-skills:checked~.itemx2-root-layer ${S} label[for="itemx2-tab-skills"],.itemx2-tab-bestiary:checked~.itemx2-root-layer ${S} label[for="itemx2-tab-bestiary"],.itemx2-tab-settings:checked~.itemx2-root-layer ${S} label[for="itemx2-tab-settings"]{border-bottom-color:${c.accentSeg};background:${c.surfHi};color:${c.segInk}}`,
+      `${S} .itemx2-position-choice,${S} .itemx2-font-choice{border-color:${line('.32')};background:${c.input};color:${c.dim4}}`,
+      `${S} .itemx2-root-setting-button-primary{border-color:${c.accentSeg};background:${c.raise};color:${c.accentDeep}}`,
+      `${S} .itemx2-root-setting-button-busy{color:${c.dim2}}`,
+      `${S} .itemx-manager-danger{border-color:#b5646f!important;color:#8f2436!important}`,
+      `${S} .itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b5646f inset!important}`,
+      `${S} .itemx2-tab-loading{color:${c.dim}}`,
+      `${S} .itemx-codex-list-button{color:inherit}`,
+      `${S} .itemx-empty{color:${c.dim2}}`,
       // Inline chat event chips.
       `${S} .itemx2-inline-event{border-color:${line('.34')};background:linear-gradient(145deg,${c.surfHi},${c.surfLo});color:${c.fg};box-shadow:0 12px 30px rgba(${c.shadowRGB},.18)}`,
       `${S} .itemx2-inline-icon{border-color:${line('.3')};background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(${c.glowRGB},.2)),${c.paperHi} 72%)}`,
