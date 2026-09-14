@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.0.23
+//@version 2.0.24
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX CODEX · v2.0.23
+//@display-name ITEMX CODEX · v2.0.24
 //@description World Inventory & Encounter Archive
 
 /*
@@ -3600,10 +3600,23 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .itemx2-inline-appraisal.itemx2-inline-ended::after{filter:grayscale(1);opacity:.46}
 .itemx2-inline-appraisal.motion-off::before{display:block!important;animation:none!important}
 @media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
+
+
+.itemx2-inline-event.itemx2-inline-appraisal{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rk,#a58add) 34%,transparent),inset 0 0 36px rgba(0,0,0,.54),0 7px 18px rgba(0,0,0,.24),0 0 16px color-mix(in srgb,var(--rk,#a58add) 20%,transparent)}
+.itemx2-inline-appraisal .itemx2-inline-name{font-size:1rem;font-weight:700;letter-spacing:-.005em}
+.itemx2-inline-appraisal .itemx2-inline-kicker{color:color-mix(in srgb,var(--rk,#a58add) 62%,#9f9586)}
+
+.itemx2-inline-encounter:not(.itemx2-inline-ended) .itemx2-inline-icon{position:relative;overflow:visible}
+.itemx2-inline-encounter:not(.itemx2-inline-ended) .itemx2-inline-icon::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px solid color-mix(in srgb,var(--rk,#d64b60) 66%,transparent);opacity:0;animation:itemx2-inline-threat 2.6s ease-out infinite}
+@keyframes itemx2-inline-threat{0%{opacity:.85;transform:scale(.88)}70%{opacity:0;transform:scale(1.16)}100%{opacity:0}}
+
+.itemx2-inline-ended .itemx2-inline-state{position:relative;rotate:-7deg;border-radius:4px;border-width:1.5px;letter-spacing:.2em;font-family:"Nanum Myeongjo","Noto Serif KR",serif}
+.motion-off .itemx2-inline-encounter .itemx2-inline-icon::after{animation:none!important;opacity:0}
+@media(prefers-reduced-motion:reduce){.itemx2-inline-encounter .itemx2-inline-icon::after{animation:none!important;opacity:0}}
 `;
 const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.0.23";
-const ITEMX_VERSION_LABEL = "2.0.23";
+const ITEMX_PLUGIN_VERSION = "2.0.24";
+const ITEMX_VERSION_LABEL = "2.0.24";
 const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
 const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
@@ -4345,7 +4358,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-root-detail{display:none}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-filters,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-tools,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-pf{display:none}
 .itemx2-root-settings{display:none;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-bestiary{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-settings{display:grid;gap:10px}
 .itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}
-.itemx2-position-grid,.itemx2-font-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-position-choice,.itemx2-font-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}
+.itemx2-font-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-position-grid{display:grid;gap:8px}.itemx2-set-group{display:flex;align-items:center;gap:8px;margin:6px 2px 0;font-size:.58rem;font-weight:800;letter-spacing:.2em;color:#7a8aa3}.itemx2-set-group::after{content:'';flex:1;height:1px;background:#232f42}.itemx2-danger-zone{display:grid;gap:8px;padding:11px;border:1px solid #6b3540;border-radius:12px;background:rgba(150,50,66,.08)}.itemx2-danger-zone>h4{margin:0;font-size:.58rem;font-weight:800;letter-spacing:.16em;color:#e0697c}.itemx2-danger-zone>.itemx2-root-setting-card{border:0;background:transparent;padding:0}.itemx2-danger-zone .itemx2-root-setting-button{border-color:#a3505d;color:#ffb3bd}.itemx2-sw{position:relative;flex:0 0 auto;width:44px;min-width:44px;height:26px;padding:0;border-radius:999px!important;border:1px solid #33405a!important;background:#1a2331!important;cursor:pointer;transition:background .15s ease,border-color .15s ease}.itemx2-sw>i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#8394ad;transition:transform .15s ease,background .15s ease}.itemx2-sw.itemx2-setting-on{border-color:#4e8968!important;background:#173226!important;color:transparent!important}.itemx2-sw.itemx2-setting-on>i{transform:translateX(18px);background:#a9e6c2}.itemx2-position-map{position:relative;width:100%;max-width:230px;aspect-ratio:16/10;margin:2px auto 0;border:1px solid #2b3547;border-radius:10px;background:#101724;overflow:hidden}.itemx2-position-screen{position:absolute;inset:0;display:grid;place-items:center;color:#5d6a80;font-size:.6rem;pointer-events:none}.itemx2-position-map .itemx2-position-choice{position:absolute;width:18px;height:34px;min-height:0;padding:0;border-radius:5px;border:1px solid #33405a;background:#1a2331;cursor:pointer}.itemx2-position-map .itemx2-position-lt{left:7px;top:7px}.itemx2-position-map .itemx2-position-lm{left:7px;top:50%;transform:translateY(-50%)}.itemx2-position-map .itemx2-position-lb{left:7px;bottom:7px}.itemx2-position-map .itemx2-position-rt{right:7px;top:7px}.itemx2-position-map .itemx2-position-rm{right:7px;top:50%;transform:translateY(-50%)}.itemx2-position-map .itemx2-position-rb{right:7px;bottom:7px}.itemx2-position-map .itemx2-position-on{border-color:#d4af6e;background:#d4af6e;box-shadow:0 0 10px rgba(212,175,110,.55)}.itemx2-position-hint{margin:7px 2px 0;color:#8a97ad;font-size:.64rem;text-align:center}.itemx2-position-hint b{color:#dfe7f3}.itemx2-font-choice{display:grid!important;gap:2px;place-items:center;min-height:52px!important;padding:7px 4px!important}.itemx2-font-choice>em{font-style:normal;font-weight:800;line-height:1.15}.itemx2-font-choice>span{font-size:.58rem;opacity:.8}.itemx2-setting-font-small>em{font-size:.78rem}.itemx2-setting-font-medium>em{font-size:.95rem}.itemx2-setting-font-large>em{font-size:1.16rem}.itemx2-domain-card>i{font-style:normal;font-size:.55rem;font-weight:800;letter-spacing:.06em;color:#7a8aa3}.itemx2-domain-card.itemx2-setting-on>i{color:#a9e6c2}.itemx2-position-choice,.itemx2-font-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}
 .itemx2-font-choice.itemx2-font-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}
 .itemx2-position-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}
 .itemx2-root-setting-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx2-root-setting-card span{display:grid;gap:3px}.itemx2-root-setting-card small{color:#77839c;line-height:1.4}.itemx2-root-setting-button{min-height:36px;padding:0 11px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9;cursor:pointer}
@@ -4375,8 +4388,8 @@ ${codexPageStyle()}
       shadowRGB: '60,80,105',
       gaugeRGB: '50,120,175',
       dangerRGB: '150,60,95',
-      paperHi: '#f4f8fc',
-      paper: '#dde7f2',
+      paperHi: '#cfdbea',
+      paper: '#b0c3da',
       inset: 'rgba(96,118,145,.18)',
       ink: '#111826',
       ink2: '#16202f',
@@ -4412,8 +4425,8 @@ ${codexPageStyle()}
       inputHi: '#fbfdff',
       manager: '#f2f7fc',
       histBtn: '#f6fafe',
-      heroA: '#f5f9fe',
-      heroB: '#e2ebf5',
+      heroA: '#d0dcec',
+      heroB: '#b6c8dd',
       medalA: '#fafdff',
       medalB: '#e0e9f4',
       statA: '#f8fbfe',
@@ -4430,7 +4443,7 @@ ${codexPageStyle()}
       repairBg: '#eef4fb',
       tileEq: '#4a9fd8',
       fxFilter: 'saturate(.92)',
-      fxOpacity: '.62'
+      fxOpacity: '1'
     },
     hanji: {
       lineRGB: '120,95,55',
@@ -4438,8 +4451,8 @@ ${codexPageStyle()}
       shadowRGB: '96,72,38',
       gaugeRGB: '160,110,20',
       dangerRGB: '178,52,74',
-      paperHi: '#f6eeda',
-      paper: '#e9dcbf',
+      paperHi: '#ddcfa9',
+      paper: '#c2ae84',
       inset: 'rgba(126,99,56,.22)',
       ink: '#241a0c',
       ink2: '#2c2113',
@@ -4475,8 +4488,8 @@ ${codexPageStyle()}
       inputHi: '#fdf8ec',
       manager: '#f7f0de',
       histBtn: '#f9f3e3',
-      heroA: '#f7efdd',
-      heroB: '#ece0c6',
+      heroA: '#dfd0aa',
+      heroB: '#c8b58c',
       medalA: '#fdf6e4',
       medalB: '#eaddc0',
       statA: '#fbf5e6',
@@ -4493,7 +4506,7 @@ ${codexPageStyle()}
       repairBg: '#f6ecd4',
       tileEq: '#c8901f',
       fxFilter: 'saturate(.82)',
-      fxOpacity: '.6'
+      fxOpacity: '1'
     }
   };
   const SKIN_NAMES = Object.keys(SKIN_PALETTES);
@@ -4513,6 +4526,7 @@ ${codexPageStyle()}
       `${S} .itemx-eyebrow,${S} .itemx-subline{color:${c.dim}}`,
       `${S} .itemx-fx{opacity:${c.fxOpacity};filter:${c.fxFilter}}`,
       `${S} .itemx-cond{mix-blend-mode:multiply;opacity:.55}`,
+
       `${S} .affinity-chip{color:color-mix(in srgb,var(--chip) 45%,${c.chipInk})}`,
       `${S} .reaction-chip{color:${c.accentDeep}}`,
       `${S} .itemx-oriental-seal{background:rgba(155,32,38,.78);color:#ffe9df}`,
@@ -8974,23 +8988,26 @@ ${codexPageStyle()}
             .join('') || '<div class="itemx2-root-empty">표시할 아이템이 없답니다.</div>'
         : '';
     const enabled = loaded.enabled === true;
+    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === runtime.badgePosition) || BADGE_POSITIONS[0])[1];
     const positionChoices =
       tab === 'settings'
-        ? BADGE_POSITIONS.map(
+        ? `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
             ([key, label]) =>
-              `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button">${label}</button>`
-          ).join('')
+              `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button" aria-label="${label}"></button>`
+          ).join(
+            ''
+          )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`
         : '';
     const fontChoices =
       tab === 'settings'
         ? [
-            ['small', '소'],
-            ['medium', '중'],
-            ['large', '대']
+            ['small', '작게'],
+            ['medium', '보통'],
+            ['large', '크게']
           ]
             .map(
               ([value, label]) =>
-                `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button">${label}</button>`
+                `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button"><em>가나다</em><span>${label}</span></button>`
             )
             .join('')
         : '';
@@ -9022,7 +9039,7 @@ ${codexPageStyle()}
     ]
       .map(
         ([key, label, value, note]) =>
-          `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label} · ${value ? 'ON' : 'OFF'}</strong><small>${note}</small></button>`
+          `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label}</strong><small>${note}</small><i>${value ? '기록 중' : '멈춤'}</i></button>`
       )
       .join('');
     const debugLog =
@@ -9039,7 +9056,7 @@ ${codexPageStyle()}
       storageCleanupArmed = runtime.storageCleanupArmedUntil > Date.now(),
       footprint = itemxStorageFootprint(loaded.chat),
       footprintLabel = `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`;
-    const settings = `<div class="itemx2-root-settings">${backupSettingsHtml(true)}<section class="itemx2-root-setting-card"><span><strong>연결 및 권한</strong><small>첫 연결에서는 Risu가 모델 처리와 화면 접근 권한을 각각 물을 수 있습니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><section class="itemx2-root-setting-card"><span><strong>기능별 추적</strong><small>OFF는 새 수집만 멈추며 기존 기록은 보존합니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>사이드 배지 위치</strong><small>선택 즉시 배지와 패널이 이동하고 저장됩니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<section class="itemx2-root-setting-card"><span><strong>현재 봇 ITEMX CODEX</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-setting-toggle">${enabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>메인 출력</strong><small>메인 모델에 활성화된 기능의 규약만 주입합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-main">${loaded.mainOutput ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 출력</strong><small>새 설치에서는 OFF입니다. Risu의 기타 보조모델을 설정한 뒤 누락 복구 또는 항상 검사를 직접 선택하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 기준</strong><small>아이템과 스킬의 세계관 등급명은 보존하고 내부 시각 등급의 판정 기준을 선택합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>시각 이펙트</strong><small>본문 카드·인벤토리·스킬·조우의 장식 효과를 한 번에 켜거나 끕니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}">${loaded.effectsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>화면 스킨</strong><small>다크 · 서리(밝은 중립) · 한지(밝은 문서) 순으로 바뀝니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-skin ${loaded.skin && loaded.skin !== 'dark' ? 'itemx2-setting-on' : ''}">${SKIN_LABELS[loaded.skin] || SKIN_LABELS.dark}</button></section><section class="itemx2-root-setting-card"><span><strong>모듈 에셋 초상화</strong><small>활성 모듈의 캐릭터 에셋을 조우 초상화 후보에 더합니다. 권한·탐색·이미지 로드 실패 시 이모지로 표시합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}">${loaded.moduleAssetsEnabled ? 'ON' : 'OFF'}</button></section><section class="itemx2-root-setting-card"><span><strong>조우 로어북 보완</strong><small>캐릭터·현재 채팅·활성 모듈 로어북에서 실제 등록된 조우만 정확 일치로 보완합니다. 모델 토큰은 사용하지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button">${loaded.lorebookEncounterEnabled ? '자동 ON' : '자동 OFF'}</button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·스킬·조우의 주요 글자만 즉시 조절합니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>채팅 저장소</strong><small>${footprintLabel} · 최근 원장은 자동 순환됩니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button><button class="itemx2-root-setting-button itemx2-setting-storage-cleanup ${storageCleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화'}</button></span></section><section class="itemx2-root-setting-card"><span><strong>현재 채팅 ITEMX 기록 제거</strong><small>현재 봇을 OFF로 바꾸고, 이 채팅 본문의 마커와 ITEMX/CODEX 원장을 삭제합니다. 되돌릴 수 없습니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const settings = `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4><section class="itemx2-root-setting-card"><span><strong>Risu 연결</strong><small>모델 응답을 읽고 화면에 카드를 그리려면 Risu의 허가가 필요합니다. 처음 한 번만 물어봅니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><h4 class="itemx2-set-group">기록</h4><section class="itemx2-root-setting-card"><span><strong>무엇을 기록할까요</strong><small>끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>이 봇에서 사용</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-toggle ${enabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${enabled ? 'true' : 'false'}"><i></i></button></section><section class="itemx2-root-setting-card"><span><strong>메인 모델에 형식 알리기</strong><small>대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-main ${loaded.mainOutput ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.mainOutput ? 'true' : 'false'}"><i></i></button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델로 보완</strong><small>메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-aux">${AUX_LABELS[loaded.auxOutput] || AUX_LABELS.off}</button></section><section class="itemx2-root-setting-card"><span><strong>등급 판정 기준</strong><small>세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-rarity ${loaded.rarityMode === 'itemx' ? 'itemx2-setting-on' : ''}">${RARITY_MODE_LABELS[loaded.rarityMode] || RARITY_MODE_LABELS.world}</button></section><section class="itemx2-root-setting-card"><span><strong>로어북에서 설명 채우기</strong><small>이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.lorebookEncounterEnabled ? 'true' : 'false'}"><i></i></button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>모듈 초상화 사용</strong><small>활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.moduleAssetsEnabled ? 'true' : 'false'}"><i></i></button></section><h4 class="itemx2-set-group">모양</h4><section class="itemx2-root-setting-card"><span><strong>화면 스킨</strong><small>서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.</small></span><button class="itemx2-root-setting-button itemx2-setting-skin ${loaded.skin && loaded.skin !== 'dark' ? 'itemx2-setting-on' : ''}">${SKIN_LABELS[loaded.skin] || SKIN_LABELS.dark}</button></section><section class="itemx2-root-setting-card"><span><strong>이펙트</strong><small>카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.effectsEnabled ? 'true' : 'false'}"><i></i></button></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·도감의 본문 글자에 바로 적용됩니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>배지 위치</strong><small>화면에서 CODEX 배지가 붙을 자리입니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(true)}<section class="itemx2-root-setting-card"><span><strong>저장 공간</strong><small>${footprintLabel} · 최근 원장은 자동 순환됩니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button><button class="itemx2-root-setting-button itemx2-setting-storage-cleanup ${storageCleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화'}</button></span></section><div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4><section class="itemx2-root-setting-card"><span><strong>이 채팅의 ITEMX 기록 지우기</strong><small>본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section></div>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
     const pager =
       pageCount > 1
         ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`

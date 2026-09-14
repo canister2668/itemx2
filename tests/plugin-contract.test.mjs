@@ -570,25 +570,34 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
 
 test('guide settings preview is generated from the real root settings renderer', async () => {
   const source = await readFile(resolve(root, 'design/itemx-settings-actual.html'), 'utf8');
+  // 2.0.24 regrouped settings into 연결 / 기록 / 모양 / 데이터 and a danger zone,
+  // and rewrote the copy around what happens when a switch is off.
   for (const label of [
-    '연결 및 권한',
+    'Risu 연결',
     '보조 모델 상태',
-    '기능별 추적',
-    '사이드 배지 위치',
+    '무엇을 기록할까요',
+    '배지 위치',
     '아이템 관리',
-    '현재 봇 ITEMX CODEX',
-    '메인 출력',
-    '보조 출력',
-    '등급 기준',
-    '시각 이펙트',
-    '모듈 에셋 초상화',
+    '이 봇에서 사용',
+    '메인 모델에 형식 알리기',
+    '보조 모델로 보완',
+    '등급 판정 기준',
+    '이펙트',
+    '모듈 초상화 사용',
     '글자 크기',
-    '채팅 저장소',
-    '현재 채팅 ITEMX 기록 제거'
+    '저장 공간',
+    '이 채팅의 ITEMX 기록 지우기'
   ])
     assert.match(source, new RegExp(label));
+  for (const group of ['연결', '기록', '모양', '데이터', '되돌릴 수 없는 작업'])
+    assert.match(source, new RegExp(`<h4[^>]*>${group}</h4>`));
+  // Switches, the badge position map and the font preview must survive a regeneration.
+  assert.match(source, /itemx2-sw/);
+  assert.match(source, /itemx2-position-map/);
+  assert.match(source, /itemx2-setting-font-large[^>]*><em>가나다<\/em>/);
   assert.doesNotMatch(source, /도감 컨텍스트 제한|이름 없는 잡졸|확장 UI 시안/);
-  assert.match(source, /ITEMX CODEX · 2\.0\.0/);
+  // The artifact is regenerated from the current build, so pin the shape, not the number.
+  assert.match(source, /ITEMX CODEX · \d+\.\d+\.\d+/);
 });
 
 test('preview uses the same renderer source as the plugin', async () => {
