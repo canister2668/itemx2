@@ -142,8 +142,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(materialFx.includes('will-change'), false);
   assert.equal(materialFx.includes('itemx2-codex-spin'), true);
   assert.match(source, /itemx2-setting-effects/);
+  // The drawer and the iframe fallback must offer the same controls.
+  assert.match(source, /const ITEMX_CONTROL_STYLE =/);
+  assert.match(source, /data-action="skin"/);
+  assert.match(source, /data-position=/);
+  assert.match(source, /data-font=/);
   assert.match(source, /data-action="effects"/);
-  assert.match(source, /시각 이펙트/);
+  assert.match(source, /이펙트<\/strong>/);
   assert.match(source, /settingsCache: new Map\(\)/);
   assert.match(source, /settingsLoadPromises: new Map\(\)/);
   assert.match(source, /await outputSettings\(initial\.character\)/);
@@ -358,8 +363,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.match(source, /getCurrentLorebookEntries/);
   assert.match(source, /lorebookEncounterEnabled:\$\{id\}/);
-  assert.match(source, /조우 로어북 보완/);
-  assert.match(source, /활성 모듈 로어북/);
+  assert.match(source, /로어북에서 설명 채우기/);
+  assert.match(source, /이미 만난 상대만 로어북과 대조합니다/);
   assert.match(source, /automaticAuxSettled\(ctx, index, source\)/);
   assert.match(source, /auxCandidateChecks >= 2/);
   assert.match(source, /async function catchUpLatestOutput\(\{ syncUi = true \} = \{\}\)/);
@@ -407,7 +412,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /setDomainEnabled/);
   assert.match(source, /enabledCodexDomains/);
   assert.match(source, /Enabled domains: \$\{requested\}/);
-  assert.match(source, /기능별 추적/);
+  assert.match(source, /무엇을 기록할까요/);
   assert.match(source, /무기·아이템/);
   assert.match(source, /전투 도감/);
   assert.match(source, /디버그 진단/);
@@ -554,7 +559,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const styled = await installMainStyle\(\)/);
   assert.match(source, /getRootDocument\(/);
   assert.match(source, /setChatToIndex\(/);
-  assert.match(source, /현재 채팅 ITEMX 기록 제거/);
+  assert.match(source, /이 채팅의 ITEMX 기록 지우기/);
   assert.match(source, /async function cleanCurrentChatItemx\(\)/);
   assert.match(source, /const CHAT_DATA_KEYS = \[/);
   assert.match(source, /await setEnabled\(ctx\.character, false\)/);
