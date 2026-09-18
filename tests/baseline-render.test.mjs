@@ -1,13 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 
 // A permanent before/after oracle, kept in Git rather than duplicating a 750 KB
 // release bundle. It intentionally compares HTML byte-for-byte, not screenshots.
 const baseline = execFileSync('git', ['show', '22fde72:dist/itemx2.plugin.js'], { cwd: new URL('../', import.meta.url), maxBuffer: 4 * 1024 * 1024, encoding: 'utf8' });
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 test('structural changes preserve the 2.2.0 drawer HTML', async () => {
-  const old = await presentationRuntime({}, '', baseline);
+  // Release labels are expected to change; keep every other rendered byte in
+  // the historical oracle intact instead of dropping the header comparison.
+  const relabeled = baseline.replace(/const (ITEMX_PLUGIN_VERSION|ITEMX_VERSION_LABEL) = "2\.2\.0";/g,
+    (_, name) => `const ${name} = ${JSON.stringify(version)};`);
+  assert.equal((baseline.match(/const (ITEMX_PLUGIN_VERSION|ITEMX_VERSION_LABEL) = "2\.2\.0";/g) || []).length, 2);
+  const old = await presentationRuntime({}, '', relabeled);
   const next = await presentationRuntime();
   const loaded = {
     key: 'c:chat', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',

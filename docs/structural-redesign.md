@@ -184,3 +184,18 @@ SHA-256 `5fb51e18ccbd790bc9ed40ab427d5c039d78c2f1186b33224e75d664200967d1`.
 Unrelated settings/plugin rows were verified unchanged. The verified production
 app mapping remains `LIVE-SERVER`, alias `risu-haejeok-trial-app`, port 16003; its
 local HTTP endpoint returned 200. No chat migration or Git push was performed.
+
+## v2.3.0 live test release
+
+At the user's request, the same implementation was versioned as 2.3.0 and
+deployed to production. The plugin bundle differs only in its four version
+labels; the historical HTML comparison relabels the old oracle to the current
+release while retaining every other comparison. All 240 tests pass, including
+the Chromium settings gate, with no skips.
+
+The live record reports `ITEMX CODEX · v2.3.0`. Local bundle, canonical setting
+value and `system.plugins.script` match SHA-256
+`694c1edcfdb51d1d4756d4ad2ccb5297b91b714c70af09f9bb5d7033ce65d4f3`.
+The previous plugin is backed up at
+`/volume2/risu/backups/itemx2-production/production-itemx-20260919-083737.json`.
+The production app's local HTTP endpoint returned 200. No Git push was performed.
