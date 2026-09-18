@@ -8269,27 +8269,11 @@ ${codexPageStyle()}
 
   async function notifyUser(message, tone = 'error') {
     if (await showRootFeedback(message, tone, tone === 'error' ? 4200 : 2600)) return true;
-    for (const name of tone === 'error'
-      ? ['alertError', 'alertNormal', 'alert']
-      : ['alertNormal', 'alert', 'alertError']) {
-      try {
-        const result = await callOptionalRisuApi(name, message);
-        if (result.available) return true;
-      } catch (error) {
-        fail(`optional notification ${name}`, error);
-      }
-    }
     log(message);
     return false;
   }
 
   async function confirmUser(message) {
-    try {
-      const result = await callOptionalRisuApi('alertConfirm', message);
-      if (result.available) return result.value === true;
-    } catch (error) {
-      fail('optional confirmation', error);
-    }
     try {
       if (typeof globalThis.confirm === 'function') return globalThis.confirm(message) === true;
     } catch (error) {
