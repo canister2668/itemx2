@@ -4,6 +4,20 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 
 const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+const queueSource = await readFile(new URL('../src/work-queue.js', import.meta.url), 'utf8');
+const queuePrelude =
+  queueSource +
+  `
+const workQueue = ITEMXWorkQueue.create();
+const dispatch = (kind, work) => workQueue.enqueue({kind, work});
+const entry = (kind, work) => (...args) => dispatch(kind, () => work(...args));
+const saveChat = (...args) => Risuai.setChatToIndex(...args);
+const pipelineEntries = {process: globalThis.processHandler, output: globalThis.outputFallback, display: globalThis.displayWithPortraits, before: globalThis.beforeRequest, after: globalThis.afterRequest};
+`;
+function runWithQueue(code, sandbox) {
+  return vm.runInNewContext(queuePrelude + code, { setTimeout, clearTimeout, setInterval, clearInterval, ...sandbox });
+}
+
 const loreSource = await readFile(new URL('../src/lorebook.js', import.meta.url), 'utf8');
 function section(start, end) {
   const from = source.indexOf(start);
@@ -12,12 +26,13 @@ function section(start, end) {
   return source.slice(from, to);
 }
 
-test('root ensure coalesces concurrent checks and stops after unload', async () => {
+test('root ensure queues one successor for concurrent changes and stops after unload', async () => {
   let release,
     calls = 0;
   const runtime = {};
-  const ensure = vm.runInNewContext(
-    section('  let rootEnsurePromise = null;', '  async function ensureRootInventoryNow()') + '\nensureRootInventory;',
+  const ensure = runWithQueue(
+    section('  function ensureRootInventory()', '  async function ensureRootInventoryNow()') +
+      "\nentry('ensure', ensureRootInventory);",
     {
       runtime,
       ensureRootInventoryNow: () => {
@@ -28,16 +43,18 @@ test('root ensure coalesces concurrent checks and stops after unload', async () 
       }
     }
   );
-  const a = ensure(),
-    b = ensure();
-  assert.equal(a, b);
+  const a = ensure();
+  await new Promise((resolve) => setImmediate(resolve));
+  const b = ensure(),
+    c = ensure();
+  assert.equal(b, c);
   assert.equal(calls, 1);
   release();
   await a;
-  const c = ensure();
+  await new Promise((resolve) => setImmediate(resolve));
   assert.equal(calls, 2);
   release();
-  await c;
+  await b;
   runtime.unloading = true;
   await ensure();
   assert.equal(calls, 2);
@@ -47,8 +64,8 @@ test('watchdog replaces its timer only when mode changes and cannot rearm after 
   const intervals = new Map();
   let sequence = 0;
   const runtime = { activeContextKey: 'chat' };
-  const arm = vm.runInNewContext(
-    section('  function armRemountWatchdog()', '  try {\n    await loadBadgePosition') + '\narmRemountWatchdog;',
+  const arm = runWithQueue(
+    section('  function armRemountWatchdog()', '  const pipelineEntries =') + '\narmRemountWatchdog;',
     {
       runtime,
       ensureRootInventory: async () => {},
@@ -116,7 +133,8 @@ test('mobile background lifecycle coalesces one resume recovery and unregisters 
   sandbox.addEventListener = windowTarget.addEventListener.bind(windowTarget);
   sandbox.removeEventListener = windowTarget.removeEventListener.bind(windowTarget);
   const install = vm.runInContext(
-    section('  function queueBrowserResume()', '  try {\n    await loadBadgePosition') +
+    queuePrelude +
+      section('  function queueBrowserResume()', '  const pipelineEntries =') +
       '\ninstallBrowserResumeHandlers;',
     sandbox
   );
@@ -127,7 +145,7 @@ test('mobile background lifecycle coalesces one resume recovery and unregisters 
   assert.equal(timers.length, 2);
   assert.equal(timers[0].cancelled, true);
   assert.equal(timers[1].ms, 80);
-  timers[1].fn();
+  await timers[1].fn();
   assert.equal(runtime.recovered, 1);
   for (const { target, type, handler } of runtime.resumeBindings) target.removeEventListener(type, handler);
   assert.equal(
@@ -157,7 +175,7 @@ test('browser resume rebinds hooks and clears suspended effects without regenera
       bodyFxClassOwner: { removeClass: async (name) => calls.push(`class:${name}`) }
     };
   const fn = () => {};
-  const recover = vm.runInNewContext(
+  const recover = runWithQueue(
     section('  async function refreshPipelineBindingsAfterResume()', '  async function installPipelineHooksNow') +
       section('  async function recoverAfterBrowserResume()', '  function queueBrowserResume()') +
       '\nrecoverAfterBrowserResume;',
@@ -232,7 +250,7 @@ test('closing reflects native class removal even when settings bridge fails', as
 test('committed sync enriches encounters after auxiliary recovery and syncs UI once', async () => {
   const calls = [],
     runtime = {};
-  const sync = vm.runInNewContext(
+  const sync = runWithQueue(
     section('  function scheduleCommittedOutputSync()', '  function armCatchUpWatchdog()') +
       '\nscheduleCommittedOutputSync;',
     {
@@ -264,7 +282,7 @@ test('automatic lore scan invalidates on source edits, source removal and encoun
   };
   let chat = { message: [], scriptstate: {} };
   const runtime = { detailHtmlCache: new Map(), generation: 0 };
-  const scan = vm.runInNewContext(
+  const scan = runWithQueue(
     section('  async function scanLorebookEncounters(', '  async function notifyUser(') + '\nscanLorebookEncounters;',
     {
       runtime,

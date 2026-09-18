@@ -7,8 +7,8 @@ import { parsers } from 'prettier/plugins/babel';
 
 const fixture = await readFile(new URL('fixtures/risuai.d.ts', import.meta.url), 'utf8');
 const provenance = JSON.parse(await readFile(new URL('fixtures/risuai-source.json', import.meta.url)));
-// Upstream contains a malformed return type in createMutationObserver. Keep the
-// exact fixture; extract declarations instead of silently repairing upstream.
+// An upstream JSDoc regex example contains a comment terminator. Keep the exact
+// fixture; extract declarations instead of silently repairing upstream comments.
 function members(name) {
   const body = fixture.split(`interface ${name} {`)[1]?.split('\n}')[0];
   assert.ok(body, `missing upstream interface ${name}`);

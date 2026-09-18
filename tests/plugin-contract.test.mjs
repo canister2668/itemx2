@@ -25,8 +25,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /addRisuReplacer\('afterRequest'/);
   assert.match(source, /addRisuScriptHandler\('output'/);
   assert.match(source, /addRisuScriptHandler\('display'/);
-  assert.match(source, /addRisuScriptHandler\('process', processHandler\)/);
-  assert.match(source, /removeRisuScriptHandler\('process', processHandler\)/);
+  assert.match(source, /addRisuScriptHandler\('process', pipelineEntries\.process\)/);
+  assert.match(source, /removeRisuScriptHandler\('process', pipelineEntries\.process\)/);
   assert.match(source, /function processTransportStripper\(content\)/);
   assert.match(source, /content: processTransportStripper\(message\.content\)/);
   assert.match(source, /function requestEndsWithModelTurn\(messages\)/);
@@ -57,12 +57,12 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /\['pointerdown', beginBodyScrollEffects\]/);
   assert.match(source, /\['scroll', continueBodyScrollEffects\]/);
   assert.match(source, /\['scrollend', \(\) => endBodyScrollEffects\(40\)\]/);
-  assert.match(source, /addEventListener\(type, handler, true\)/);
+  assert.match(source, /addEventListener\(type, entry\('scroll', handler\), true\)/);
   assert.match(
     source,
     /function continueBodyScrollEffects\(\)[\s\S]*activateBodyScrollEffects\(\);[\s\S]*endBodyScrollEffects\(220\)/
   );
-  assert.match(source, /bodyFxScrollTimer = globalThis\.setTimeout/);
+  assert.match(source, /workQueue\.schedule\(\s*'bodyFxScrollTimer'/);
   assert.match(source, /const ITEMX_ROOT_PAGE_SIZE = 16/);
   assert.equal(source.includes('.slice(-512)'), false, 'message event replay must never drop live refs by count');
   assert.equal(source.includes('.slice(-256)'), false, 'manual replay must never drop authoritative events by count');
@@ -96,7 +96,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source.indexOf('async function openRootInventory')
   );
   assert.equal((rootRouter.match(/addEventListener\(\s*'click'/g) || []).length, 1);
-  assert.match(rootRouter, /rootClickBindings = \[\{ type: 'click', id, capture: true \}\]/);
+  assert.match(rootRouter, /rootClickBindings = \[\{ owner, type: 'click', id, capture: true \}\]/);
   assert.match(rootRouter, /if \(!runtime\.rootOpen\) return;/);
   assert.match(rootRouter, /itemx2-root-detail-body-/);
   assert.match(source, /ITEMX CODEX · 권한 및 설정/);
@@ -159,7 +159,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /setSwitch\(skin, 'effects', loaded\.effectsEnabled\)/);
   assert.match(source, /setCard\(\s*'이펙트',/);
   assert.match(source, /settingsCache: new Map\(\)/);
-  assert.match(source, /settingsLoadPromises: new Map\(\)/);
+  assert.match(source, /const workQueue = ITEMXWorkQueue\.create\(\)/);
   assert.match(source, /await outputSettings\(initial\.character\)/);
   assert.match(source, /ITEMX Rarity Policy: FORCED/);
   assert.match(source, /rarity=empyrean even if the setting calls that grade Epic/);
@@ -191,7 +191,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /const visual = portrait\s*\?\s*`<img[^`]+`\s*:\s*`<span class="itemx2-codex-glyph">/);
   assert.match(source, /runtime\.moduleAssetCache = \{ key, at: Date\.now\(\), rows: \[\] \}/);
   assert.match(source, /보조 검사 완료/);
-  assert.match(source, /connectionBusy: false/);
+  assert.match(source, /workQueue\.isActive\('connect'\)/);
   assert.match(source, /async function updateConnectionUi/);
   // The connect control is a row in the drawer's action table now; slice the
   // row rather than a local variable that no longer exists.
@@ -200,23 +200,23 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source.indexOf("hook: 'itemx2-setting-aux-run'")
   );
   assert.ok(connectionHandler.length > 200, 'connect action row not found');
-  assert.match(connectionHandler, /if \(runtime\.connectionBusy\) return/);
+  assert.match(connectionHandler, /workQueue\.stage\('connect'\)/);
   assert.match(connectionHandler, /await updateConnectionUi\(\)/);
   assert.equal(connectionHandler.includes('openRootInventory'), false);
-  assert.match(source, /settingChangeBusy:\s*false,\s*auxRecoveryPromise:\s*null/);
+  assert.match(source, /pending\.set\(key, job\)/);
   assert.match(source, /보조 모델이 90초 안에 응답하지 않았습니다/);
-  assert.match(source, /if \(runtime\.auxRecoveryPromise\) return runtime\.auxRecoveryPromise/);
+  assert.match(source, /const result = await workQueue\.external/);
   assert.match(source, /automaticAuxReady\(ctx\.chat, index, source\)/);
-  assert.match(source, /if \(runtime\.auxActive > 0 \|\| runtime\.auxRecoveryPromise\) return/);
-  assert.match(source, /runtime\.auxActive === 0 && !runtime\.auxRecoveryPromise/);
+  assert.match(source, /if \(runtime\.auxActive > 0\) return/);
+  assert.match(source, /runtime\.auxActive === 0/);
   assert.match(source, /await rememberAuxiliaryZero\(ctx, guardKey\)/);
   assert.match(source, /ITEMX context-aware auxiliary regeneration pass/);
   assert.match(source, /TRIGGERING USER TURN/);
   assert.match(source, /RECENT NARRATIVE CONTEXT/);
   assert.match(source, /COMMITTED ASSISTANT OUTPUT \(visible narrative only\)/);
   assert.match(source, /if \(\/itemx\/i\.test\(key\)/);
-  assert.match(source, /runtime\.uiRemountAfter = Date\.now\(\) \+ 1200/);
-  assert.match(source, /Date\.now\(\) < runtime\.uiRemountAfter/);
+  assert.match(source, /!suspended \|\| job\.resume \|\| job\.intent\.reentrant/);
+  assert.match(source, /await dispatch\('bootstrap'/);
   // Toggling the bot patches the one switch it changed; it must not re-render the
   // whole panel or kick off a recovery pass.
   const rootToggleHandler = source.slice(
@@ -328,7 +328,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(displayHandler, /renderPayload\(`item-ref:\$\{ref\}`, payload, motion\)/);
   assert.match(source, /cachedOrRebuildCurrent\(\)/);
   assert.match(source, /portraitCache: new Map\(\)/);
-  assert.match(source, /mainStylePosition === runtime\.badgePosition/);
+  assert.match(source, /workQueue\.revision\('style-position'\) === runtime\.badgePosition/);
   assert.match(source, /content-visibility:auto/);
   assert.match(source, /async function installBodyEffectGovernor/);
   assert.equal(source.includes('getBoundingClientRect();\n        const active = rect.bottom'), false);
@@ -337,10 +337,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /itemx2-inline-main::before/);
   assert.match(source, /mix-blend-mode:normal!important/);
   assert.match(source, /contain-intrinsic-size:auto 128px/);
-  assert.match(source, /outputSyncDeferred = true/);
+  assert.match(source, /ready: \(\) => !runtime\.bodyFxScrollActive/);
   assert.match(
     source,
-    /if \(runtime\.bodyFxScrollActive\) \{\s*runtime\.hostSyncDeferred = true;\s*if \(runtime\.hostSyncTimer\) globalThis\.clearTimeout/
+    /workQueue\.schedule\('hostSyncTimer'/
   );
   assert.match(source, /itemx2-effects-off/);
   assert.match(source, /itemx-codex-scan\{0%,100%\{opacity:\.2;transform:translate3d/);
@@ -352,7 +352,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /Preserve the previous outcome when a new encounter begins/);
   assert.match(source, /touch-action:pan-y;-webkit-overflow-scrolling:touch/);
   assert.equal(source.includes('registerButton('), false);
-  assert.match(source, /registerSetting\(\s*'ITEMX CODEX · 권한 및 설정',\s*openSettingsFromRisuMenu/);
+  assert.match(source, /registerSetting\(\s*'ITEMX CODEX · 권한 및 설정',\s*entry\('settings', openSettingsFromRisuMenu\)/);
   assert.equal(source.includes('requestPermission: false'), false);
   assert.match(source, /requestPluginPermission\('replacer'\)/);
   assert.match(source, /runtime\.permissions\.replacer = permission === true/);
@@ -370,8 +370,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /overflow:\s*hidden/);
   assert.match(source, /@keyframes itemx-plugin-panel-in/);
   assert.match(source, /@keyframes itemx-plugin-panel-out/);
-  assert.match(source, /panelOpen:\s*false,\s*panelTransition:\s*0/);
-  assert.match(source, /transition !== runtime\.panelTransition \|\| runtime\.panelOpen/);
+  assert.match(source, /entry\(\s*'ui-action'/);
+  assert.match(source, /if \(runtime\.panelOpen\) return/);
   assert.equal(/pluginStorage\.setItem\([^\n]*(panelOpen|inventoryOpen)/.test(source), false);
   const outputPipeline = source.slice(
     source.indexOf('async function processOutput'),
@@ -391,10 +391,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /로어북에서 설명 채우기/);
   assert.match(source, /이미 만난 상대만 로어북과 대조합니다/);
   assert.match(source, /automaticAuxSettled\(ctx, index, source\)/);
-  assert.match(source, /auxCandidateChecks >= 2/);
+  assert.match(source, /workQueue\.settled\('aux-settle', fingerprint, ITEMX_AUX_SETTLE_MS\)/);
   assert.match(source, /async function catchUpLatestOutput\(\{ syncUi = true \} = \{\}\)/);
   assert.match(source, /async function repairCommittedTransport\(ctx, index, source\)/);
-  assert.match(source, /runtime\.catchUpFingerprint = fingerprint/);
+  assert.match(source, /workQueue\.attempt\('catch-up', fingerprint/);
   // 2.0.21 anchored the catch-up guard on the message id instead of a hash of the visible text.
   assert.match(source, /const fingerprint = `\$\{ctx\.key\}:\$\{index\}:msg-\$\{messageId\}`/);
   assert.match(source, /msg-\$\{auxMessageId\}/);
@@ -404,20 +404,20 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /embeddedViewCode/);
   assert.match(source, /inlineViewPayload\(inline, 'item'\)/);
   assert.match(source, /ITEMX CODEX · 기록 복원 중/);
-  assert.match(source, /runtime\.catchUpFailedFingerprint = fingerprint/);
-  assert.match(source, /runtime\.catchUpRetryAt = Date\.now\(\) \+ Math\.min\(120000/);
+  assert.match(source, /previous\?\.key === key/);
+  assert.match(source, /retryAt: failures \? Date\.now\(\) \+ Math\.min\(120000/);
   assert.equal(source.includes("settings.auxOutput === 'missing' && sourceEvents.length"), false);
-  assert.match(source, /removeRisuReplacer\('beforeRequest', beforeRequest\)/);
-  assert.match(source, /removeRisuReplacer\('afterRequest', afterRequest\)/);
+  assert.match(source, /removeRisuReplacer\('beforeRequest', pipelineEntries\.before\)/);
+  assert.match(source, /removeRisuReplacer\('afterRequest', pipelineEntries\.after\)/);
   assert.match(source, /validationRegistry = ITEMXCore\.clone\(snapshot\.registry\)/);
   assert.match(source, /const interval = runtime\.hooks\.listener === true \? 45000 : 4500/);
-  assert.match(source, /setInterval\(\(\) => \{\s*void catchUpLatestOutput\(\)/);
+  assert.match(source, /workQueue\.schedule\(\s*'catchUpTimer',\s*\(\) => \{\s*return catchUpLatestOutput\(\)/);
   assert.match(source, /including an earlier misspelling/);
   assert.match(source, /itemPatch op=merge/);
   assert.match(source, /const ITEMX_AUX_PROMPT_REVISION = 2/);
   assert.match(source, /allowPlugins:\s*true/);
   assert.match(source, /AUX_PROVIDER_UNAVAILABLE/);
-  assert.match(source, /runtime\.auxProviderUnavailable && !force/);
+  assert.match(source, /workQueue\.revision\('aux-provider'\) === 'unavailable'\) && !force/);
   assert.match(source, /positionMarkersByNarrative/);
   assert.match(source, /preserve every required status\/state\/route trailer/);
   assert.match(source, /itemx-oriental-frame/);
@@ -477,13 +477,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /function armRemountWatchdog\(\)/);
   assert.match(source, /runtime\.hostObserver \|\| !runtime\.activeContextKey \? 10000 : 1200/);
-  assert.match(source, /runtime\.remountTimer = globalThis\.setInterval/);
-  assert.match(source, /runtime\.remountInterval === interval/);
-  assert.match(source, /if \(runtime\.remountTimer\) globalThis\.clearInterval\(runtime\.remountTimer\)/);
+  assert.match(source, /workQueue\.schedule\(\s*'remountTimer'/);
+  assert.match(source, /row\.ms === ms/);
+  assert.match(source, /workQueue\.clearTimer\('remountTimer'\)/);
   assert.match(source, /const moduleAssets = settings\.encountersEnabled\s*\? await modulePortraitAssets/);
   assert.match(source, /function encounterRegistryFingerprint\(snapshot\)/);
-  assert.match(source, /runtime\.lorebookAutoFingerprint === sourceFingerprint/);
-  assert.match(source, /runtime\.lorebookAutoFingerprint = scanResult\.sourceFingerprint/);
+  assert.match(source, /workQueue\.revision\('lorebook'\) === sourceFingerprint/);
+  assert.match(source, /workQueue\.remember\('lorebook', scanResult\.sourceFingerprint\)/);
   assert.match(source, /async function cachedRequestState\(\)/);
   assert.match(source, /cached\.replayFingerprint === replaySourceFingerprint\(active\.chat\)/);
   assert.match(source, /const loaded = await cachedRequestState\(\)/);
@@ -540,7 +540,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source.indexOf('const routeControls = async')
   );
   assert.ok(badgeClick.indexOf('await setRootOpen(true)') < badgeClick.indexOf('cachedOrRebuildCurrent()'));
-  assert.match(badgeClick, /runtime\.rootContentReady && cacheReady/);
+  assert.match(badgeClick, /Boolean\(workQueue\.revision\('render'\)\) && cacheReady/);
   const removeRoot = source.slice(
     source.indexOf('async function removeRootClickRouter'),
     source.indexOf('async function mountRootLoading')
@@ -558,7 +558,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /\['avif', 'avis', 'mif1', 'miaf'\]\.includes\(isoBrand\)/);
   assert.match(
     source,
-    /const regionUpdated = attached && open && runtime\.rootContentReady && \(?await updateRootRegions\(html\)\)?/
+    /const regionUpdated = attached && open && Boolean\(workQueue\.revision\('render'\)\) && \(?await updateRootRegions\(html\)\)?/
   );
   assert.match(source, /attached = Boolean\(await root\.getParent\(\)\)/);
   assert.match(source, /if \(!attached\) \{\s*await removeRootDrawer\(\)/);
