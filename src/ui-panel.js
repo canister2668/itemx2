@@ -533,7 +533,7 @@
       cached?.key === active.key &&
       cached.replayFingerprint !== replaySourceFingerprint(active.chat);
 
-    if (!contextChanged && (auxState.auxActive > 0))
+    if (!contextChanged && (auxState.auxActive > 0 || workQueue.recent('host-settling', 1200) === active.key))
       return;
 
     try {

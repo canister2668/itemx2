@@ -255,7 +255,7 @@
       workQueue.remember('render', '');
       pipelineState.cachedLoaded = null;
       pipelineState.generation += 1;
-
+      workQueue.remember('host-settling', ctx.key);
     }
     await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot));
     const errors = parsed.errors.length + codexParsed.errors.length,

@@ -686,7 +686,7 @@
       const stillActive = pipelineState.activeContextKey === ctx.key;
       if (stillActive) {
         refreshLatest(compacted, compactedLookup);
-
+        workQueue.remember('host-settling', ctx.key);
       }
       await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt));
       if (stillActive) {
@@ -694,7 +694,7 @@
         commitEventBursts(compacted);
         pipelineState.cachedLoaded = null;
         pipelineState.generation += 1;
-
+        workQueue.remember('host-settling', ctx.key);
         uiState.status = ITEMXText("aux.027", valid.length);
       }
       if (stillActive)

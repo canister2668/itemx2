@@ -7,7 +7,26 @@
     "confirmedSearch": true,
     "skillDetail": true,
     "settingsToggle": true,
-    "cleanupConfirmation": true
+    "cleanupConfirmation": true,
+    "timings": {
+      "fixtureItems": 2,
+      "initialRenderMs": 3.6,
+      "radioFilterThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 33.3,
+        "p95Ms": 63.5
+      },
+      "mainTabThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 66.7,
+        "p95Ms": 82.7
+      },
+      "itemDetailThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 51.6,
+        "p95Ms": 93.8
+      }
+    }
   },
   {
     "mode": "frame",
@@ -17,7 +36,26 @@
     "confirmedSearch": true,
     "skillDetail": true,
     "settingsToggle": true,
-    "cleanupConfirmation": true
+    "cleanupConfirmation": true,
+    "timings": {
+      "fixtureItems": 2,
+      "initialRenderMs": 3.8,
+      "radioFilterThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 33.5,
+        "p95Ms": 42.1
+      },
+      "mainTabThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 73.5,
+        "p95Ms": 109.5
+      },
+      "itemDetailThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 44.1,
+        "p95Ms": 78.7
+      }
+    }
   },
   {
     "mode": "drawer",
@@ -27,7 +65,26 @@
     "confirmedSearch": true,
     "skillDetail": true,
     "settingsToggle": true,
-    "cleanupConfirmation": true
+    "cleanupConfirmation": true,
+    "timings": {
+      "fixtureItems": 2,
+      "initialRenderMs": 3.9,
+      "radioFilterThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 33.3,
+        "p95Ms": 33.5
+      },
+      "mainTabThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 66.8,
+        "p95Ms": 67.1
+      },
+      "itemDetailThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 33.8,
+        "p95Ms": 34.4
+      }
+    }
   },
   {
     "mode": "drawer",
@@ -37,6 +94,25 @@
     "confirmedSearch": true,
     "skillDetail": true,
     "settingsToggle": true,
-    "cleanupConfirmation": true
+    "cleanupConfirmation": true,
+    "timings": {
+      "fixtureItems": 2,
+      "initialRenderMs": 3.6,
+      "radioFilterThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 33.3,
+        "p95Ms": 34.4
+      },
+      "mainTabThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 66.7,
+        "p95Ms": 67.4
+      },
+      "itemDetailThroughTwoFrames": {
+        "samples": 12,
+        "medianMs": 35.8,
+        "p95Ms": 40.4
+      }
+    }
   }
 ]

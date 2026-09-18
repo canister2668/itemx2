@@ -160,6 +160,30 @@ test('stabilization requires an unchanged candidate for the whole quiet period',
   now = 2999; assert.equal(queue.settled('aux', 'b', 1500), true);
 });
 
+test('failed returns and thrown errors back off through 10, 20, 40, 80 and 120 seconds', async () => {
+  let now=0,calls=0; const queue=create({Date:{now:()=>now}});
+  for(const delay of [10000,20000,40000,80000,120000,120000]) {
+    await assert.rejects(queue.attempt('aux','same',()=>{calls++;throw Error('offline')}),/offline/);
+    now+=delay-1;
+    assert.equal((await queue.attempt('aux','same',()=>assert.fail('retry storm'))).skipped,true);
+    now++;
+  }
+  assert.equal(calls,6);
+  assert.equal((await queue.attempt('aux','new-message',()=>[])).skipped,false);
+});
+
+test('scroll end runs while a model RPC is suspended, without admitting blocked heavy work', async () => {
+  const queue=create(),hold=gate(),seen=[];
+  const aux=queue.enqueue({kind:'aux',work:()=>queue.external(()=>hold.promise)});
+  await tick();let scrolling=true;
+  const render=queue.enqueue({kind:'render',ready:()=>!scrolling,work:()=>seen.push('render')});
+  queue.schedule('bodyFxScrollTimer',()=>{scrolling=false;seen.push('scroll end')},0);
+  await new Promise(resolve=>setTimeout(resolve,20));
+  assert.deepEqual(seen,['scroll end']);
+  hold.resolve();await Promise.all([aux,render]);
+  assert.deepEqual(seen,['scroll end','render']);
+});
+
 test('domain state keeps at most 60 fields without runtime coordination flags', async () => {
   const source = await readFile(new URL('../src/state.js', import.meta.url), 'utf8');
   const owners = vm.runInNewContext(source + '\nITEMXState.create();');

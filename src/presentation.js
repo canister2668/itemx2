@@ -496,15 +496,15 @@
   async function installBodyEffectGovernor() {
     if (!hostState.mainDoc) return;
     try {
-      presentationState.bodyFxClassOwner = (await hostState.mainDoc.querySelector('.chattext')) || presentationState.bodyFxClassOwner;
+      const body = await hostState.mainDoc.querySelector('body');
+      if (!body) return;
+      presentationState.bodyFxClassOwner = body;
       if (presentationState.bodyFxEventIds[0]?.owner) {
         try {
           if (await presentationState.bodyFxEventIds[0]?.owner.getParent()) return;
         } catch {}
         await removeBodyEffectGovernor();
       }
-      const body = await hostState.mainDoc.querySelector('body');
-      if (!body) return;
       const bindings = [
         ['pointerdown', beginBodyScrollEffects],
         ['scroll', continueBodyScrollEffects],

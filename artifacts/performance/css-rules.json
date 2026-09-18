@@ -1,0 +1,76 @@
+{
+  "comparison": "f131ad2 -> 869ffa5 -> current",
+  "engine": "Chromium CSSOM",
+  "parts": {
+    "main": {
+      "originalRules": 1385,
+      "splitExactOrderEqual": true,
+      "currentRules": 1394,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "shell": {
+      "originalRules": 334,
+      "splitExactOrderEqual": true,
+      "currentRules": 334,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "inline": {
+      "originalRules": 125,
+      "splitExactOrderEqual": true,
+      "currentRules": 125,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "controls": {
+      "originalRules": 35,
+      "splitExactOrderEqual": true,
+      "currentRules": 35,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "skins": {
+      "originalRules": 242,
+      "splitExactOrderEqual": true,
+      "currentRules": 242,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "badge": {
+      "originalRules": 4,
+      "splitExactOrderEqual": true,
+      "currentRules": 4,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "codex": {
+      "originalRules": 165,
+      "splitExactOrderEqual": true,
+      "currentRules": 165,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "scroll": {
+      "originalRules": 3,
+      "splitExactOrderEqual": true,
+      "currentRules": 4,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "effects": {
+      "originalRules": 1,
+      "splitExactOrderEqual": true,
+      "currentRules": 1,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    },
+    "settings": {
+      "originalRules": 39,
+      "splitExactOrderEqual": true,
+      "currentRules": 39,
+      "lostRules": 0,
+      "strengthenedRules": 0
+    }
+  }
+}

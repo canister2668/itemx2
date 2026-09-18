@@ -8,7 +8,7 @@
       work,
       unique,
       ...options,
-      reentrant: ['process', 'output', 'display', 'before-request', 'after-request'].includes(kind)
+      reentrant: ['process', 'output', 'display', 'before-request', 'after-request', 'scroll'].includes(kind)
     });
   const entry =
     (kind, work, unique = false) =>

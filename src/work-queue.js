@@ -103,7 +103,7 @@ const ITEMXWorkQueue = (() => {
       clearTimer(key);
       const callback = () => {
         if (!repeat) timers.delete(key);
-        return enqueue({ kind: key, work, ready }).catch(() => {});
+        return enqueue({ kind: key, work, ready, reentrant: ['bodyFxStartTimer', 'bodyFxScrollTimer'].includes(key) }).catch(() => {});
       };
       const id = (repeat ? setInterval : setTimeout)(callback, ms);
       timers.set(key, { id, ms, repeat });
@@ -125,9 +125,11 @@ const ITEMXWorkQueue = (() => {
     async function attempt(kind, key, work, accept = () => true, ttl = Infinity) {
       const previous = records.get(kind);
       if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt)) return { skipped: true };
-      const value = await work();
-      const failures = accept(value) ? 0 : Math.min((previous?.key === key ? previous.failures || 0 : 0) + 1, 6);
+      let value, error;
+      try { value = await work(); } catch (caught) { error = caught; }
+      const failures = !error && accept(value) ? 0 : Math.min((previous?.key === key ? previous.failures || 0 : 0) + 1, 6);
       records.set(kind, { key, at: Date.now(), done: failures === 0, failures, retryAt: failures ? Date.now() + Math.min(120000, 5000 * 2 ** failures) : 0 });
+      if (error) throw error;
       return { skipped: false, value };
     }
     function close() {

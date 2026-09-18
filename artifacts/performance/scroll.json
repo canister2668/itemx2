@@ -1,0 +1,72 @@
+[
+  {
+    "width": 390,
+    "affinities": [
+      "fire",
+      "ice",
+      "lightning",
+      "wind",
+      "earth",
+      "light",
+      "dark",
+      "arcane",
+      "poison",
+      "blood",
+      "void"
+    ],
+    "chatContainers": 2,
+    "cards": 72,
+    "activeAnimationsBefore": 262,
+    "scroll": {
+      "active": true,
+      "ownerClass": "x-risu-itemx-body-scrolling",
+      "heavy": 0,
+      "running": [],
+      "paused": 545
+    },
+    "scrollEndWhileModelPending": true,
+    "scenarioWallMs": 1821,
+    "after": {
+      "heavy": 9,
+      "committedBatches": 2,
+      "heavyCallsDuringScroll": 0,
+      "running": 578,
+      "active": false
+    }
+  },
+  {
+    "width": 900,
+    "affinities": [
+      "fire",
+      "ice",
+      "lightning",
+      "wind",
+      "earth",
+      "light",
+      "dark",
+      "arcane",
+      "poison",
+      "blood",
+      "void"
+    ],
+    "chatContainers": 2,
+    "cards": 72,
+    "activeAnimationsBefore": 389,
+    "scroll": {
+      "active": true,
+      "ownerClass": "x-risu-itemx-body-scrolling",
+      "heavy": 0,
+      "running": [],
+      "paused": 507
+    },
+    "scrollEndWhileModelPending": true,
+    "scenarioWallMs": 1547,
+    "after": {
+      "heavy": 7,
+      "committedBatches": 2,
+      "heavyCallsDuringScroll": 0,
+      "running": 534,
+      "active": false
+    }
+  }
+]

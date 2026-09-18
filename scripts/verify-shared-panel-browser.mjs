@@ -14,8 +14,10 @@ const fixture = bundle.replace(anchor, `
     hostState.mainDoc=nativeElement(document); installMainStyle=async()=>true;
     uiState.panelOpen=mode==='frame'; uiState.rootOpen=true; uiState.activeRootTab='inventory';
     document.head.innerHTML=fallbackDocumentHead();
+    const started=performance.now();
     if(mode==='frame') await drawInventory(loaded,'inventory');
     else { root.className='itemx2-root-drawer itemx2-pos-rm itemx2-is-open'; root.innerHTML=rootInventoryHtml(loaded,true,'inventory'); uiState.rootDrawer=nativeElement(root); await installRootClickRouter(uiState.rootDrawer); }
+    itemxTest.initialRenderMs=performance.now()-started;
     return loaded;
   }};
   return;
@@ -55,7 +57,33 @@ try { for(const mode of ['frame','drawer']) for(const width of [390,900]) {
  await page.locator('.itemx2-setting-storage-cleanup').click();
  await page.waitForFunction(()=>itemxTest.armed()>Date.now());
  if(errors.length)throw Error(errors.join(';'));
- results.push({mode,width,radioWithoutRewrite:true,detail:true,confirmedSearch:true,skillDetail:true,settingsToggle:true,cleanupConfirmation:true,screenshot:(await page.screenshot()).toString('base64')});
+ const screenshot=(await page.screenshot()).toString('base64');
+ await page.locator('.itemx2-setting-toggle').click();
+ await page.waitForFunction(()=>document.querySelector('.itemx2-setting-toggle')?.textContent==='ON');
+ await page.evaluate(mode=>itemxTest.setup(mode),mode);
+ const timings=await page.evaluate(async()=>{
+   const paint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   const click=selector=>{const node=document.querySelector(selector),rect=node.getBoundingClientRect();node.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2}))};
+   const filter=[],tabs=[],details=[];
+   const body=document.querySelector('.itemx2-root-tab-body'),html=body.innerHTML;
+   for(let i=0;i<12;i++){
+     const start=performance.now();click('label[for="itemx2-filter-'+(i%2?'all':'equipped')+'"]');await paint();filter.push(performance.now()-start);
+   }
+   if(body.innerHTML!==html)throw Error('profiled filter rewrote body');
+   for(let i=0;i<12;i++){
+     const start=performance.now();click(i%2?'.itemx2-root-tab-inventory':'.itemx2-root-tab-skills');
+     const selector=i%2?'.itemx2-root-item':'.itemx2-skill-card';
+     while(!document.querySelector(selector)){if(performance.now()-start>5000)throw Error('tab stalled');await paint()}
+     await paint();tabs.push(performance.now()-start);
+   }
+   for(let i=0;i<12;i++){
+     const start=performance.now();click('.itemx2-root-tile-0');await paint();details.push(performance.now()-start);
+     click('label[for="itemx2-detail-none"]');await paint();
+   }
+   const stats=values=>{values.sort((a,b)=>a-b);return {samples:values.length,medianMs:+values[Math.floor(values.length/2)].toFixed(2),p95Ms:+values.at(-1).toFixed(2)}};
+   return {fixtureItems:2,initialRenderMs:+itemxTest.initialRenderMs.toFixed(2),radioFilterThroughTwoFrames:stats(filter),mainTabThroughTwoFrames:stats(tabs),itemDetailThroughTwoFrames:stats(details)};
+ });
+ results.push({mode,width,radioWithoutRewrite:true,detail:true,confirmedSearch:true,skillDetail:true,settingsToggle:true,cleanupConfirmation:true,timings,screenshot});
  await page.close();
  } console.log(JSON.stringify(results)); } finally {await browser.close();} })().catch(e=>{console.error(e);process.exit(1)});`;
 const result = JSON.parse(execFileSync('docker', ['exec','-i','claudex-workhouse-browser-runtime','node'], { input: script, encoding:'utf8',timeout:180000,maxBuffer:12e6 }));

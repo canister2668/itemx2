@@ -1,0 +1,55 @@
+{
+  "engine": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+  "fixture": {
+    "messages": 3000,
+    "events": 900
+  },
+  "measurements": {
+    "before": {
+      "unchanged": {
+        "medianMs": 223.1,
+        "p95Ms": 251,
+        "applyEventCalls": 1800
+      },
+      "oneAppend": {
+        "medianMs": 200.9,
+        "p95Ms": 235.5,
+        "applyEventCalls": 1802
+      },
+      "cacheLoss": {
+        "medianMs": 205,
+        "p95Ms": 230.3,
+        "applyEventCalls": 1800
+      },
+      "appendPersistMs": 187.8,
+      "documentsUtf8Bytes": {
+        "itemx:log": 220036,
+        "itemx:prefs": 36,
+        "itemx:cache": 7
+      }
+    },
+    "after": {
+      "unchanged": {
+        "medianMs": 127.4,
+        "p95Ms": 186.3,
+        "applyEventCalls": 0
+      },
+      "oneAppend": {
+        "medianMs": 107.9,
+        "p95Ms": 156.2,
+        "applyEventCalls": 1
+      },
+      "cacheLoss": {
+        "medianMs": 117.4,
+        "p95Ms": 151.6,
+        "applyEventCalls": 900
+      },
+      "appendPersistMs": 127.2,
+      "documentsUtf8Bytes": {
+        "itemx:log": 220036,
+        "itemx:prefs": 36,
+        "itemx:cache": 522814
+      }
+    }
+  }
+}

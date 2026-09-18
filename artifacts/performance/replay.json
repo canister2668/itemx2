@@ -1,0 +1,55 @@
+{
+  "fixture": {
+    "messages": 3000,
+    "events": 900
+  },
+  "hostWriteCalls": "not measured; this benchmark is the local storage boundary",
+  "measurements": {
+    "before": {
+      "unchanged": {
+        "medianMs": 474.94,
+        "p95Ms": 572.46,
+        "applyEventCalls": 1800
+      },
+      "oneAppend": {
+        "medianMs": 456.89,
+        "p95Ms": 481.38,
+        "applyEventCalls": 1802
+      },
+      "cacheLoss": {
+        "medianMs": 440.97,
+        "p95Ms": 470.63,
+        "applyEventCalls": 1800
+      },
+      "appendPersistMs": 345.17,
+      "documentsUtf8Bytes": {
+        "itemx:log": 220036,
+        "itemx:prefs": 36,
+        "itemx:cache": 7
+      }
+    },
+    "after": {
+      "unchanged": {
+        "medianMs": 183.86,
+        "p95Ms": 211.91,
+        "applyEventCalls": 0
+      },
+      "oneAppend": {
+        "medianMs": 173.76,
+        "p95Ms": 187.94,
+        "applyEventCalls": 1
+      },
+      "cacheLoss": {
+        "medianMs": 185.92,
+        "p95Ms": 205.68,
+        "applyEventCalls": 900
+      },
+      "appendPersistMs": 203.65,
+      "documentsUtf8Bytes": {
+        "itemx:log": 220036,
+        "itemx:prefs": 36,
+        "itemx:cache": 522814
+      }
+    }
+  }
+}

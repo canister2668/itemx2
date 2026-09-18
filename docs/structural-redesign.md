@@ -94,3 +94,93 @@ previously optional Chromium settings layout gate. The old eight keys totalled
 The browser checks use real Chromium DOM/CSS and a host API adapter fixture.
 They do not constitute an authenticated production-browser or real-model test.
 `core.js`, `codex.js`, and `main-protocol.txt` remain unchanged.
+
+## Performance follow-up
+
+The reinforcement review found two omissions in the initial redesign: there
+was no reusable derived replay checkpoint, and the 1,200 ms post-commit remount
+quiet period had been dropped. Both are now restored. The earlier 98,255-byte
+conversion measurement describes the initial documents, not the warmed cache
+after this follow-up.
+
+- `itemx:cache.replay` stores the replay position, item/codex state, lifecycle
+  occurrence counters and display projections. Events remain exclusively in the
+  authoritative log; the cached projections omit their event copies. The ordered
+  prefix and cache checksum must match before reuse. Late historical insertions,
+  changed message identities, compact-marker aliases and damaged cache data
+  invalidate the checkpoint. Missing cache data performs one full reconstruction.
+  Baseline-only chats need zero folds without a second snapshot. The obsolete
+  `cache.item` and `cache.codex` copies are no longer persisted.
+- Capture indexes event identities with a Map, avoiding repeated full-log
+  searches. Cache validation and document serialization still scan bytes; this
+  is not constant-time end-to-end storage. The log is never truncated.
+- The queue records the post-commit quiet period by context identity. Failed
+  auxiliary attempts, including exceptions, retain 10/20/40/80/120-second retry
+  intervals (the existing `5000 * 2 ** failures` policy). A new message identity
+  remains eligible immediately.
+- Scroll callbacks and their end timers can run while an external model call is
+  suspended. Heavy committed-output and DOM jobs remain deferred. The pause
+  class now belongs to the body so multiple message containers are covered.
+  A scoped rule also pauses card-level aura, border and lightning animations and
+  pseudo-elements that the older FX-layer selector missed. Removing the class
+  resumes them; the effects themselves are preserved.
+- Regression tests retain 64 marker HTML entries, 60 detail HTML entries, 24
+  original portraits, their existing 16 MiB string-length budget, and 64 thumbnails.
+
+The final gate passed **240 tests, zero failures and zero skips**. The original
+205 tests remain present. The 19-chat replay/57-render differential verification
+also passes with the new checkpoints and after deleting the derived cache.
+
+### Measurements and limits
+
+`node scripts/measure-replay-browser.mjs` compares the previous `b4fe1c2` bundle
+with the current bundle in fresh Chromium iframe realms, using 3,000 messages and
+900 events. These timings cover local hydration plus state replay, not host RPC
+or PostgreSQL latency. Twelve samples per scenario produced:
+
+| Scenario | Previous median | Current median | Previous/current event applications |
+| --- | ---: | ---: | ---: |
+| Unchanged chat | 223.1 ms | 127.4 ms | 1,800 / 0 |
+| One appended event | 200.9 ms | 107.9 ms | 1,802 / 1 |
+| Lost cache | 205.0 ms | 117.4 ms | 1,800 / 900 |
+
+The synthetic fixture's serialized three-document size increases from 220,079
+to 742,886 UTF-8 bytes: the event log stays 220,036 bytes, preferences 36 bytes,
+and the display/checkpoint cache is 522,814 bytes. Historical cards require their
+reconstructed display projections to avoid folding old events on every read.
+No application-level compression is added. Whole-document host writes and their
+write amplification remain; these results do **not** establish lower database
+write latency or compressed disk usage. Re-running the 19-chat offline conversion
+produces 182,670 bytes (log 76,229 + preferences 684 + cache 105,757); production
+chat data is not re-imported by this follow-up.
+
+`node scripts/verify-scroll-browser.mjs` drives real scroll events at 390px and
+900px with 72 cards across two message containers and all 11 affinities. It checks
+animation pause/resume, heavy-work deferral both with and without an outstanding
+model call, and one committed batch for three coalesced intents. The model and
+host bridge are fixtures; no physical-device FPS or live-model behavior is claimed.
+
+`node scripts/verify-style-rules.mjs` parses generated styles with Chromium CSSOM.
+The stage-5 split (`f131ad2` to `869ffa5`) preserves rule text **and order**, including
+1,385 main-sheet rule objects and nested rules within their serialized text. The
+current main sheet has 1,394 objects, retaining every original rule and adding
+search and scroll-pause rules. The separate shell, inline, controls, skins, badge,
+codex, scroll, effects and settings components are also compared.
+
+The shared-panel browser check now records 12 filter, tab and detail samples per
+mode/width, including two animation frames after each interaction. In this small
+two-item fixture, filter medians were about 33 ms, main tabs 67–74 ms, and details
+34–52 ms. These include the explicit frame waits and are not input-latency or FPS
+claims. Radio filtering preserves the body HTML; main section tabs still use the
+shared controller. Raw data is in `artifacts/performance/` and
+`artifacts/shared-panel/results.json`; the Node VM benchmark is separate from the
+Chromium measurements and must not be presented as browser timing.
+
+This completion fix for step 6 was deployed as a same-version 2.2.0 replacement.
+The deployer backed up the previous plugin to
+`/volume2/risu/backups/itemx2-production/production-itemx-20260919-083403.json`.
+The canonical setting value, `system.plugins.script`, and local bundle all match
+SHA-256 `5fb51e18ccbd790bc9ed40ab427d5c039d78c2f1186b33224e75d664200967d1`.
+Unrelated settings/plugin rows were verified unchanged. The verified production
+app mapping remains `LIVE-SERVER`, alias `risu-haejeok-trial-app`, port 16003; its
+local HTTP endpoint returned 200. No chat migration or Git push was performed.
