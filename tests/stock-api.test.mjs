@@ -1,3 +1,4 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
@@ -67,7 +68,7 @@ test('API audit rejects fork APIs including computed and optional calls', async 
     await assert.rejects(audit(source));
 });
 test('resizeContainer rejection executes the bounded fullscreen fallback', async () => {
-  const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+  const source = await runtimeSource();
   const start = source.indexOf('      try {\n        await Risuai.resizeContainer');
   const end = source.indexOf('      document.head.innerHTML', start);
   const runtime = { compactContainer: true };

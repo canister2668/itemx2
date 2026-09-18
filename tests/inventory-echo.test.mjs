@@ -1,3 +1,4 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -62,7 +63,7 @@ test('current authoritative anchor echo is stripped too', () => {
 });
 
 test('display and request early returns use cleaned text, including no-context output', async () => {
-  const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+  const source = await runtimeSource();
   vm.runInContext(
     source.slice(
       source.indexOf('  const OWNED_TRANSPORT_HINT_RE ='),

@@ -1,9 +1,10 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 
-const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+const source = await runtimeSource();
 const queueSource = await readFile(new URL('../src/work-queue.js', import.meta.url), 'utf8');
 const queuePrelude =
   queueSource +

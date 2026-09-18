@@ -1,3 +1,4 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -91,7 +92,7 @@ test('no table row points at a class the drawer never renders', async () => {
 });
 
 test('the router dispatches through the table, not a coordinate chain', async () => {
-  const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+  const source = await runtimeSource();
   assert.match(source, /for \(const action of rootSettingActions\(\)\) \{\s*if \(!\(await eventHitsMainClass\(event, action\.hook\)\)\) continue;/);
   // The chain was 24 copies of the same four-way comparison.
   const router = source.slice(source.indexOf('const routeControls = async'), source.indexOf("fail('native setting click'"));
@@ -100,7 +101,7 @@ test('the router dispatches through the table, not a coordinate chain', async ()
 });
 
 test('a hidden control cannot be hit at the origin', async () => {
-  const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+  const source = await runtimeSource();
   // A collapsed <details> reports a zero rect; without this guard a click at
   // (0,0) would match every hidden control at once.
   const helper = source.slice(source.indexOf('async function eventHitsMainClass'));

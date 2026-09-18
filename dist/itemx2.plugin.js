@@ -4049,14 +4049,111 @@ const ITEMXSettings = (() => {
   return { KEY, schema, normalize, read, update, migrate };
 })();
 
-const ITEMX_STYLE = ":root { color-scheme: dark; font-family: Inter, Pretendard, \"Noto Sans KR\", sans-serif; }\n    * { box-sizing: border-box; }\n    body { margin: 0; min-height: 100vh; background: #080a10; color: #e6ebf4; }\n    button, select { font: inherit; }\n    button { color: inherit; }\n\n    .risu-shell { min-height: 100vh; background: radial-gradient(900px 560px at 50% 20%, #171b27 0, #0b0e15 55%, #07090e 100%); }\n    .risu-topbar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #202532; background: rgba(12,15,23,.94); color: #aeb7c9; font-size: 13px; }\n    .risu-topbar strong { color: #f2f4f8; font-size: 14px; }\n    .stage { width: min(920px, 100%); margin: 0 auto; padding: 22px 18px 64px; }\n    .demo-note { display: flex; align-items: center; gap: 9px; margin: 0 auto 14px; width: min(760px,100%); padding: 9px 12px; border: 1px solid #30394a; border-radius: 10px; background: #111622; color: #919db2; font-size: 12px; line-height: 1.45; }\n    .demo-note b { color: #d8b25c; white-space: nowrap; }\n\n    .lab { width: min(760px, 100%); margin: 0 auto 14px; padding: 12px; border: 1px solid #252c3a; border-radius: 13px; background: rgba(13,17,26,.96); }\n    .lab-title { margin-bottom: 9px; color: #8e9ab0; font-size: 10px; font-weight: 800; letter-spacing: .22em; }\n    .lab-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }\n    .lab label { display: grid; gap: 5px; color: #79869d; font-size: 11px; }\n    .lab select, .lab button { min-height: 34px; border: 1px solid #31394a; border-radius: 8px; background: #171c28; color: #d9dfeb; padding: 0 9px; }\n    .lab button { cursor: pointer; }\n    .lab button[aria-pressed=\"true\"] { border-color: #806a3d; background: #2a2418; color: #f0d79d; }\n\n    \n    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
-const ITEMX_CHAT_STYLE = "    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .itemx2-never-stage{padding:12px 8px 40px}.itemx2-never-topbar{padding:0 12px}.itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.itemx2-never-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
-const ITEMX_MAIN_STYLE = ".chattext .x-risu-itemx-panel{ display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }.chattext .x-risu-itemx-ph{ display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }.chattext .x-risu-itemx-ph-text{ display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }.chattext .x-risu-itemx-ph-eyebrow{ color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }.chattext .x-risu-itemx-ph-title{ color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }.chattext .x-risu-itemx-ph-sub{ color: #77839c; font-size: .72rem; }.chattext .x-risu-itemx-ph-btn{ width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }.chattext .x-risu-itemx-seg{ display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }.chattext .x-risu-itemx-seg-i{ flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }.chattext .x-risu-itemx-seg-on{ border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }.chattext .x-risu-itemx-seg-n{ opacity: .65; font-size: .92em; }.chattext .x-risu-itemx-tools{ display: flex; gap: .4em; margin: .6em 1.05em 0; }.chattext .x-risu-itemx-tool, .chattext .x-risu-itemx-search{ min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }.chattext .x-risu-itemx-search{ flex: 1; color: #64718c; }.chattext .x-risu-itemx-body{ padding: .75em 1.05em .95em; }.chattext .x-risu-itemx-grid{ display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }.chattext .x-risu-itemx-tile{ --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }.chattext .x-risu-itemx-tile:hover, .chattext .x-risu-itemx-tile:focus-visible{ border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }.chattext .x-risu-itemx-tile-bar{ position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }.chattext .x-risu-itemx-tile-eq{ position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }.chattext .x-risu-itemx-tile-em{ grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }.chattext .x-risu-itemx-tile-nm{ align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }.chattext .x-risu-itemx-tile-meta{ display: flex; justify-content: space-between; gap: .5em; align-self: end; }.chattext .x-risu-itemx-tile-rk{ color: var(--rk); font-size: .7rem; font-weight: 700; }.chattext .x-risu-itemx-tile-lc{ color: #67748c; font-size: .7rem; }.chattext .x-risu-itemx-tile-aff{ position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }.chattext .x-risu-itemx-pf{ padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }.chattext .x-risu-itemx-card{ content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }.chattext .x-risu-itemx-back{ display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }.chattext .x-risu-itemx-detail{ display: flex; justify-content: center; }.chattext .x-risu-itemx-card{ --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }.chattext .x-risu-craft-forged{ --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }.chattext .x-risu-craft-oriental{ --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }.chattext .x-risu-craft-clockwork{ --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }.chattext .x-risu-craft-synthetic{ --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }.chattext .x-risu-craft-celestial{ --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }.chattext .x-risu-craft-organic{ --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }.chattext .x-risu-craft-forged .x-risu-itemx-medallion, .chattext .x-risu-craft-oriental .x-risu-itemx-medallion{border-radius:3px}.chattext .x-risu-craft-synthetic .x-risu-itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.chattext .x-risu-craft-organic .x-risu-itemx-medallion{border-radius:60% 12% 60% 12%}.chattext .x-risu-craft-celestial .x-risu-itemx-medallion{border-radius:50%}.chattext .x-risu-craft-oriental .x-risu-itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.chattext .x-risu-craft-oriental .x-risu-itemx-badge, .chattext .x-risu-craft-oriental .x-risu-itemx-subline{color:#aaa194}.chattext .x-risu-craft-oriental .x-risu-itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.chattext .x-risu-craft-oriental .x-risu-itemx-head{padding-right:2.55em}.chattext .x-risu-craft-oriental .x-risu-itemx-effect, .chattext .x-risu-craft-oriental .x-risu-itemx-stat{background:rgba(7,9,9,.38)}.chattext .x-risu-itemx-oriental-paper, .chattext .x-risu-itemx-oriental-ink, .chattext .x-risu-itemx-oriental-frame, .chattext .x-risu-itemx-oriental-seal{display:none;position:absolute;pointer-events:none}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::before, .chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}.chattext .x-risu-itemx-card::before{ content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }.chattext .x-risu-itemx2-strong{ animation:itemx2-aura 3.8s ease-in-out infinite; }.chattext .x-risu-itemx2-strong:has(.x-risu-lightning-flash){ animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }.chattext .x-risu-itemx-edge{ position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }.chattext .x-risu-itemx-edge::before{ content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }.chattext .x-risu-motion-off.x-risu-itemx-card, .chattext .x-risu-motion-off .x-risu-itemx-edge::before{ animation:none!important; }.chattext .x-risu-itemx-fx, .chattext .x-risu-itemx-cond{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }.chattext .x-risu-itemx-fx{ z-index:1; }.chattext .x-risu-itemx-cond{ z-index:2; }.chattext .x-risu-craft-oriental .x-risu-itemx-fx{z-index:2}.chattext .x-risu-craft-oriental .x-risu-current-fx{opacity:.42}.chattext .x-risu-craft-oriental .x-risu-current-fog{opacity:.28}.chattext .x-risu-craft-oriental .x-risu-current-veil, .chattext .x-risu-craft-oriental .x-risu-current-rays{opacity:.44}.chattext .x-risu-craft-oriental .x-risu-affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}.chattext .x-risu-current-fx, .chattext .x-risu-affinity-fx{ position:absolute; inset:0; overflow:hidden; }.chattext .x-risu-current-rays{ position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }.chattext .x-risu-current-rays i{ position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }.chattext .x-risu-current-veil{ position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }.chattext .x-risu-current-veil-visual{ position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }.chattext .x-risu-craft-mote{ position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }.chattext .x-risu-craft-mote.x-risu-diamond{ height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }.chattext .x-risu-craft-mote.x-risu-shape-ash{ height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }.chattext .x-risu-craft-mote.x-risu-shape-petal{ height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }.chattext .x-risu-craft-mote.x-risu-shape-block{ height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }.chattext .x-risu-craft-mote.x-risu-shape-streak{ width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }.chattext .x-risu-craft-mote.x-risu-shape-cross{ height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }.chattext .x-risu-craft-mote.x-risu-shape-cross::after{ content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }.chattext .x-risu-craft-mote.x-risu-shape-gear{ height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }.chattext .x-risu-craft-mote.x-risu-shape-gear::before{ content:\"⚙\";position:absolute;inset:0; }.chattext .x-risu-path-drift{animation-name:existing-drift}.chattext .x-risu-path-pulse{animation-name:existing-pulse}.chattext .x-risu-path-sway{animation-name:existing-sway}.chattext .x-risu-path-turn{animation-name:existing-turn}.chattext .x-risu-path-jitter{animation-name:existing-jitter}.chattext .x-risu-current-fog{ position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }.chattext .x-risu-current-fog-visual{ position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }.chattext .x-risu-current-scan{ position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }.chattext .x-risu-affinity-fx{ z-index:2; }.chattext .x-risu-afx{ position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }.chattext .x-risu-afx-secondary{ opacity:.68; clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx i{ position:absolute; display:block; color:var(--ac); }.chattext .x-risu-afx-fire i{ left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-flames{ position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }.chattext .x-risu-affinity-flames.x-risu-secondary{ clip-path:inset(0 0 0 46%); opacity:.6; }.chattext .x-risu-affinity-flames b{ position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }.chattext .x-risu-affinity-flames .x-risu-af-f1{ filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }.chattext .x-risu-affinity-flames .x-risu-af-f2{ height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }.chattext .x-risu-affinity-flames .x-risu-af-f3{ height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }.chattext .x-risu-afx-ice i{ left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-lightning b{ position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }.chattext .x-risu-lightning-flash{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }.chattext .x-risu-lightning-flash.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx-wind i{ left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-earth i{ left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-light i{ left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }.chattext .x-risu-afx-dark i{ left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }.chattext .x-risu-afx-poison i{ left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-body{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }.chattext .x-risu-affinity-body.x-risu-secondary{ clip-path:inset(0 0 0 46%); opacity:.62; }.chattext .x-risu-body-wind{ background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }@keyframes itemx2-gust{ from{transform:translateX(-11%)} to{transform:translateX(11%)} }.chattext .x-risu-body-earth{ inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }@keyframes itemx2-sediment{ from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }.chattext .x-risu-body-dark{ mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }@keyframes itemx2-encroach{ from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }.chattext .x-risu-body-arcane{ background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }@keyframes itemx2-sigil{ to{transform:rotate(360deg)} }.chattext .x-risu-body-blood{ inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }@keyframes itemx2-pool{ from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }.chattext .x-risu-body-void{ background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }@keyframes itemx2-collapse{ 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }.chattext .x-risu-poison-miasma{ position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }.chattext .x-risu-poison-miasma.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx-blood i{ left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-void i{ left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-signature{ position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }.chattext .x-risu-affinity-signature-visual{ position:absolute;inset:0;display:block; }.chattext .x-risu-affinity-signature.x-risu-secondary{ opacity:.48; clip-path:inset(0 0 0 48%); }.chattext .x-risu-sig-fire{ animation:sig-fire 5.2s linear infinite; }.chattext .x-risu-sig-fire>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }.chattext .x-risu-ice-cracks{ position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }.chattext .x-risu-sig-lightning{ background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }.chattext .x-risu-lightning-field{ position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }.chattext .x-risu-sig-wind{ transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }.chattext .x-risu-sig-wind>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }.chattext .x-risu-sig-earth{ animation:sig-earth 6s ease-in-out infinite alternate; }.chattext .x-risu-sig-earth>.x-risu-affinity-signature-visual{ background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }.chattext .x-risu-sig-light{ animation:sig-light 7s ease-in-out infinite alternate; }.chattext .x-risu-sig-light>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }.chattext .x-risu-light-veilfall{ position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }.chattext .x-risu-light-veilfall::before{ content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }.chattext .x-risu-light-veilfall.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-light-ground{ position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }.chattext .x-risu-light-ground.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-sig-dark{ animation:sig-dark 7.5s ease-in-out infinite alternate; }.chattext .x-risu-sig-dark>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }.chattext .x-risu-sig-poison{ animation:sig-poison 8s ease-in-out infinite alternate; }.chattext .x-risu-sig-poison>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }.chattext .x-risu-sig-blood{ animation:sig-blood 5.8s ease-in-out infinite alternate; }.chattext .x-risu-sig-blood>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }.chattext .x-risu-sig-void{ animation:sig-void 4.9s step-end infinite; }.chattext .x-risu-sig-void>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }.chattext .x-risu-itemx-content{ position:relative; z-index:4; padding:1.35em; }.chattext .x-risu-itemx-head{ display:flex; align-items:flex-start; gap:.85em; }.chattext .x-risu-itemx-medallion{ flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }.chattext .x-risu-itemx-emoji{ font-size:1.6em; }.chattext .x-risu-itemx-titles{ flex:1; min-width:0; }.chattext .x-risu-itemx-eyebrow{ color:var(--dim); font-size:.74em; letter-spacing:.2em; }.chattext .x-risu-itemx-name{ display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }.chattext .x-risu-itemx-tier{ display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }.chattext .x-risu-itemx-subline{ display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }.chattext .x-risu-itemx-subline span+span::before{ content:\"·\"; margin:0 .55em; color:var(--line); }.chattext .x-risu-affinity-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }.chattext .x-risu-affinity-chip{ display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }.chattext .x-risu-affinity-chip small{ opacity:.62; font-size:9px; }.chattext .x-risu-reaction-chip{ border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }.chattext .x-risu-itemx-rule{ height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }.chattext .x-risu-itemx-stats{ display:flex; gap:.45em; }.chattext .x-risu-itemx-stat{ flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }.chattext .x-risu-itemx-statk{ display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }.chattext .x-risu-itemx-statv{ display:block; margin-top:.1em; font-weight:700; }.chattext .x-risu-itemx-gap{ height:1.1em; }.chattext .x-risu-itemx-section-label{ margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }.chattext .x-risu-itemx-effects{ display:grid; gap:.7em; }.chattext .x-risu-itemx-effect{ position:relative; padding-left:1.1em; }.chattext .x-risu-itemx-effect::before{ content:\"❧\"; position:absolute; left:0; color:var(--s); }.chattext .x-risu-itemx-efname{ color:var(--p); font-weight:700; }.chattext .x-risu-itemx-flavor{ margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }.chattext .x-risu-motion-off *{ animation:none!important; }.chattext .x-risu-rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.chattext .x-risu-rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.chattext .x-risu-rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.chattext .x-risu-rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.chattext .x-risu-rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.chattext .x-risu-rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.chattext .x-risu-rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.chattext .x-risu-rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}.chattext .x-risu-rarity-epic .x-risu-itemx-medallion, .chattext .x-risu-rarity-legendary .x-risu-itemx-medallion, .chattext .x-risu-rarity-mythical .x-risu-itemx-medallion, .chattext .x-risu-rarity-empyrean .x-risu-itemx-medallion{ border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }.chattext .x-risu-rarity-epic .x-risu-itemx-name, .chattext .x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }.chattext .x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ font-weight:900; letter-spacing:.012em; }.chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }.chattext .x-risu-craft-oriental.x-risu-rarity-epic .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-empyrean .x-risu-itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}.chattext .x-risu-condition-cursed .x-risu-itemx-cond{ background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }.chattext .x-risu-condition-blessed .x-risu-itemx-cond{ background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }.chattext .x-risu-condition-corrupted .x-risu-itemx-cond{ background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }@keyframes existing-spin{ to { transform:rotate(360deg); } }@keyframes existing-veil{ 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }@keyframes existing-rise{ 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }@keyframes existing-drift{ 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }@keyframes existing-pulse{ 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }@keyframes existing-sway{ 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }@keyframes existing-turn{ 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }@keyframes existing-jitter{ 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }@keyframes existing-fog{ from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }@keyframes existing-scan{ from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }@keyframes aff-fire{ 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }@keyframes aff-ice{ 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }@keyframes aff-lightning{ 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }@keyframes aff-wind{ 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }@keyframes aff-earth{ 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }@keyframes aff-light{ from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }@keyframes aff-dark{ from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }@keyframes aff-poison{ 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }@keyframes aff-blood{ 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }@keyframes aff-void{ 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }@keyframes sig-fire{ from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }@keyframes ice-cracks{ 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }@keyframes sig-lightning{ 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }@keyframes lightning-field{ 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }@keyframes sig-wind{ to{transform:translateX(28%)} }@keyframes sig-earth{ from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }@keyframes sig-light{ from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }@keyframes sig-dark{ from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }@keyframes sig-poison{ from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }@keyframes sig-blood{ from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }@keyframes sig-void{ 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }@keyframes itemx2-aura{ 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }@keyframes itemx2-edge{ to{transform:translate(-50%,-50%) rotate(360deg)} }@keyframes itemx2-jolt{ 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }@keyframes itemx2-flick1{ 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }@keyframes itemx2-flick2{ from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }@keyframes itemx2-flick3{ 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }@keyframes itemx2-boltflash{ 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }@keyframes itemx2-miasma{ from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }@keyframes itemx2-veilfall{ 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }@keyframes itemx2-ground{ from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }@media (prefers-reduced-motion:reduce){.chattext .x-risu-itemx-card:not(.x-risu-force-motion), .chattext .x-risu-itemx-card:not(.x-risu-force-motion) *{ animation:none!important; } }@media (max-width:620px){.chattext .x-risu-itemx2-never-stage{padding:12px 8px 40px}.chattext .x-risu-itemx2-never-topbar{padding:0 12px}.chattext .x-risu-itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.chattext .x-risu-itemx-grid{grid-template-columns:1fr}.chattext .x-risu-itemx-panel{border-radius:12px}.chattext .x-risu-itemx2-never-note{align-items:flex-start}.chattext .x-risu-itemx-card{font-size:.86rem}.chattext .x-risu-itemx-content{padding:1.05em} }.chattext .x-risu-itemx2-panel-actions{\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}.chattext .x-risu-itemx2-panel-actions > button{\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}.chattext .x-risu-itemx2-panel-actions > .x-risu-itemx2-history-open{\n  font-size: 11px;\n  color: #b7c4d8;\n}.chattext .x-risu-itemx-ph-text > span{\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}.chattext .x-risu-itemx2-history-pane button{\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}.chattext .x-risu-itemx2-root-tab-body, .chattext .x-risu-itemx2-iframe-content{\n  position: relative;\n}.chattext .x-risu-itemx2-iframe-content{\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}.chattext .x-risu-itemx2-iframe-content > .x-risu-itemx-body{\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}.chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane), .chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *{\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}.chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *::before, .chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *::after{\n  animation-play-state: paused !important;\n}.chattext .x-risu-itemx2-root-tab-body > .x-risu-itemx2-history-pane, .chattext .x-risu-itemx2-iframe-content > .x-risu-itemx2-history-pane{\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}.chattext .x-risu-itemx2-history-heading, .chattext .x-risu-itemx2-history-filters, .chattext .x-risu-itemx2-history-actions{\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}.chattext .x-risu-itemx2-history-pane .x-risu-itemx2-history-filter-on{\n  border-color: #b69961;\n  color: #f0d79d;\n}.chattext .x-risu-itemx2-history-policy{\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}.chattext .x-risu-itemx2-history-policy small{\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}.chattext .x-risu-itemx2-history-list{\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}.chattext .x-risu-itemx2-history-row{\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}.chattext .x-risu-itemx2-history-row > button{\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-history-row small{\n  color: #a9b6c8;\n}.chattext .x-risu-itemx2-history-row .x-risu-itemx2-history-actions{\n  margin-top: 7px;\n}.chattext .x-risu-itemx2-root-settings > .x-risu-itemx2-root-setting-card{\n  flex-direction: row;\n  flex-wrap: wrap;\n}.chattext .x-risu-itemx2-root-setting-card > span:first-child{\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions{\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-root-setting-button{\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions > button{\n  flex: 0 0 auto;\n  min-height: 38px;\n}.chattext .x-risu-itemx2-detail-stack{\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}.chattext .x-risu-itemx2-detail-stack > *{\n  flex-shrink: 0;\n}.chattext .x-risu-itemx2-change-note, .chattext .x-risu-itemx2-review-note{\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-change-note > strong{\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}.chattext .x-risu-itemx2-change-note > span{\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}.chattext .x-risu-itemx2-change-note small{\n  color: #9eacbf;\n  min-width: 48px;\n}.chattext .x-risu-itemx2-change-note del{\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}.chattext .x-risu-itemx2-change-note em{\n  font-style: normal;\n  color: #f1e0b6;\n}.chattext .x-risu-itemx2-change-note b{\n  color: #8494aa;\n}.chattext .x-risu-itemx2-review-note{\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}.chattext .x-risu-itemx2-review-note small{\n  font-size: inherit;\n}.chattext .x-risu-itemx2-review-partial{\n  border-left: 3px solid #bf9461;\n}.chattext .x-risu-itemx2-review-partial strong{\n  color: #ecc99a;\n}.chattext .x-risu-itemx2-repair-one{\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}.chattext .x-risu-itemx2-technique-material{\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}.chattext .x-risu-itemx2-skill-form-slash .x-risu-itemx2-technique-material{\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}.chattext .x-risu-itemx2-skill-form-ward .x-risu-itemx2-technique-material{\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}.chattext .x-risu-itemx2-skill-form-heal .x-risu-itemx2-technique-material{\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}.chattext .x-risu-itemx2-skill-form-shadow .x-risu-itemx2-technique-material{\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}@keyframes itemx2-technique-shear{\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}@keyframes itemx2-technique-ward{\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}@keyframes itemx2-technique-rise{\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}@keyframes itemx2-technique-shadow{\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}.chattext .x-risu-itemx2-skill-type-passive .x-risu-itemx2-technique-material{\n  animation-duration: 16s;\n}.chattext .x-risu-itemx2-skill-type-sealed .x-risu-itemx2-technique-material, .chattext .x-risu-itemx2-skill-status-sealed .x-risu-itemx2-technique-material{\n  animation: none;\n  opacity: 0.22;\n}.chattext .x-risu-itemx2-skill-status-lost .x-risu-itemx2-technique-material{\n  animation: none;\n  opacity: 0.1;\n}.chattext .x-risu-itemx2-blend-fire-ice .x-risu-affinity-fx::after{\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}.chattext .x-risu-itemx2-blend-dark-lightning .x-risu-lightning-field{\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}.chattext .x-risu-itemx2-blend-fire-wind .x-risu-sig-fire{\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}.chattext .x-risu-itemx2-blend-ice-light .x-risu-ice-cracks{\n  background-color: rgba(235, 240, 216, 0.025);\n}.chattext .x-risu-itemx2-event-burst{\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}.chattext .x-risu-itemx2-burst-active > .x-risu-itemx2-event-burst{\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}.chattext .x-risu-itemx2-burst-enhanced{\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}.chattext .x-risu-itemx2-burst-damage{\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}.chattext .x-risu-itemx2-burst-learned{\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}.chattext .x-risu-itemx2-burst-resolved{\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}@keyframes itemx2-event-reveal{\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}@keyframes itemx2-event-resolve{\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}.chattext .x-risu-motion-off .x-risu-itemx2-event-burst, .chattext .x-risu-itemx2-effects-off .x-risu-itemx2-event-burst, .chattext .x-risu-itemx2-effects-off .x-risu-itemx2-technique-material, .chattext .x-risu-itemx-body-scrolling .x-risu-itemx2-event-burst{\n  display: none !important;\n  animation: none !important;\n}@media (prefers-reduced-motion: reduce){.chattext .x-risu-itemx2-technique-material{\n    animation: none !important;\n  }.chattext .x-risu-itemx2-event-burst{\n    display: none !important;\n    animation: none !important;\n  }\n}.chattext .x-risu-itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}.chattext .x-risu-itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}.chattext .x-risu-itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong{color:#a8341f}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong{color:#94301c}";
-const ITEMX_CHIP_STYLE =
+(async () => {
+  'use strict';
+  const workQueue = ITEMXWorkQueue.create();
+  const dispatch = (kind, work, unique = false, options = {}) =>
+    workQueue.enqueue({
+      kind,
+      work,
+      unique,
+      ...options,
+      reentrant: ['process', 'output', 'display', 'before-request', 'after-request'].includes(kind)
+    });
+  const entry =
+    (kind, work, unique = false) =>
+    (...args) =>
+      dispatch(kind, () => work(...args), unique);
+  const readChat = async (...args) => ITEMXStorage.hydrate(await Risuai.getChatFromIndex(...args));
+  const saveChat = (characterIndex, chatIndex, chat) => {
+    workQueue.assertCurrent();
+    return Risuai.setChatToIndex(characterIndex, chatIndex, ITEMXStorage.persist(chat));
+  };
+  const stateOwners = ITEMXState.create();
+  const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
+  const ui = uiState.view;
+  const log = (...args) => console.log('[ITEMX 2]', ...args);
+  const debugRecord = (where, detail = '') => {
+    if (!settingsState.debugEnabled) return;
+    const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
+    settingsState.debugEntries.push({ at: Date.now(), where: String(where), detail: String(text || '').slice(0, 500) });
+    if (settingsState.debugEntries.length > 30) settingsState.debugEntries.splice(0, settingsState.debugEntries.length - 30);
+    console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
+  };
+  const fail = (where, error) => {
+    debugRecord(`ERROR · ${where}`, error?.message || String(error));
+    console.error(`[ITEMX 2] ${where}`, error);
+  };
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+
+  const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
+
+  const ITEMX_PLUGIN_VERSION = "2.2.0";
+
+  const ITEMX_VERSION_LABEL = "2.2.0";
+
+  const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
+
+  const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
+
+  const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
+
+  const ITEMX_MANUAL_KEY = '$__itemx2_manual_events';
+
+  const ITEMX_MESSAGE_EVENT_KEY = '$__itemx2_message_events';
+
+  const ITEMX_CHECKPOINT_KEY = '$__itemx2_checkpoint';
+
+  const ITEMX_AUX_KEY = '$__itemx2_aux_processed';
+
+  const ITEMX_LORE_KEY = '$__itemx2_lore_enrichment';
+
+  const ITEMX_AUX_ZERO_STORAGE_KEY = 'auxZeroRing:v1';
+
+  const ITEMX_AUX_ZERO_CHAT_LIMIT = 32;
+
+  const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
+
+  const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
+
+  const ITEMX_AUX_SETTLE_MS = 1500;
+
+  const ITEMX_AUX_PROMPT_REVISION = 2;
+
+  const ITEMX_ROOT_PAGE_SIZE = 16;
+
+  const ITEMX_CHECKPOINT_VERSION = 2;
+
+  const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
+
+  const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
+
+  const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
+
+  const ITEMX_CHECKPOINT_TAIL_BYTES = 196608;
+
+  const ITEMX_STORAGE_WARNING_BYTES = 16 * 1024 * 1024;
+
+  const ITEMX_AUX_HISTORY_MAX_BYTES = 65536;
+
+  const ITEMX_AUX_ZERO_MAX_BYTES = 65536;
+
+
+  const ITEMX_STYLE = ":root { color-scheme: dark; font-family: Inter, Pretendard, \"Noto Sans KR\", sans-serif; }\n    * { box-sizing: border-box; }\n    body { margin: 0; min-height: 100vh; background: #080a10; color: #e6ebf4; }\n    button, select { font: inherit; }\n    button { color: inherit; }\n\n    .risu-shell { min-height: 100vh; background: radial-gradient(900px 560px at 50% 20%, #171b27 0, #0b0e15 55%, #07090e 100%); }\n    .risu-topbar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #202532; background: rgba(12,15,23,.94); color: #aeb7c9; font-size: 13px; }\n    .risu-topbar strong { color: #f2f4f8; font-size: 14px; }\n    .stage { width: min(920px, 100%); margin: 0 auto; padding: 22px 18px 64px; }\n    .demo-note { display: flex; align-items: center; gap: 9px; margin: 0 auto 14px; width: min(760px,100%); padding: 9px 12px; border: 1px solid #30394a; border-radius: 10px; background: #111622; color: #919db2; font-size: 12px; line-height: 1.45; }\n    .demo-note b { color: #d8b25c; white-space: nowrap; }\n\n    .lab { width: min(760px, 100%); margin: 0 auto 14px; padding: 12px; border: 1px solid #252c3a; border-radius: 13px; background: rgba(13,17,26,.96); }\n    .lab-title { margin-bottom: 9px; color: #8e9ab0; font-size: 10px; font-weight: 800; letter-spacing: .22em; }\n    .lab-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }\n    .lab label { display: grid; gap: 5px; color: #79869d; font-size: 11px; }\n    .lab select, .lab button { min-height: 34px; border: 1px solid #31394a; border-radius: 8px; background: #171c28; color: #d9dfeb; padding: 0 9px; }\n    .lab button { cursor: pointer; }\n    .lab button[aria-pressed=\"true\"] { border-color: #806a3d; background: #2a2418; color: #f0d79d; }\n\n    \n    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
+
+  const ITEMX_CHAT_STYLE = "    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .itemx2-never-stage{padding:12px 8px 40px}.itemx2-never-topbar{padding:0 12px}.itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.itemx2-never-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
+
+  const ITEMX_MAIN_STYLE = ".chattext .x-risu-itemx-panel{ display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }.chattext .x-risu-itemx-ph{ display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }.chattext .x-risu-itemx-ph-text{ display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }.chattext .x-risu-itemx-ph-eyebrow{ color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }.chattext .x-risu-itemx-ph-title{ color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }.chattext .x-risu-itemx-ph-sub{ color: #77839c; font-size: .72rem; }.chattext .x-risu-itemx-ph-btn{ width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }.chattext .x-risu-itemx-seg{ display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }.chattext .x-risu-itemx-seg-i{ flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }.chattext .x-risu-itemx-seg-on{ border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }.chattext .x-risu-itemx-seg-n{ opacity: .65; font-size: .92em; }.chattext .x-risu-itemx-tools{ display: flex; gap: .4em; margin: .6em 1.05em 0; }.chattext .x-risu-itemx-tool, .chattext .x-risu-itemx-search{ min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }.chattext .x-risu-itemx-search{ flex: 1; color: #64718c; }.chattext .x-risu-itemx-body{ padding: .75em 1.05em .95em; }.chattext .x-risu-itemx-grid{ display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }.chattext .x-risu-itemx-tile{ --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }.chattext .x-risu-itemx-tile:hover, .chattext .x-risu-itemx-tile:focus-visible{ border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }.chattext .x-risu-itemx-tile-bar{ position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }.chattext .x-risu-itemx-tile-eq{ position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }.chattext .x-risu-itemx-tile-em{ grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }.chattext .x-risu-itemx-tile-nm{ align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }.chattext .x-risu-itemx-tile-meta{ display: flex; justify-content: space-between; gap: .5em; align-self: end; }.chattext .x-risu-itemx-tile-rk{ color: var(--rk); font-size: .7rem; font-weight: 700; }.chattext .x-risu-itemx-tile-lc{ color: #67748c; font-size: .7rem; }.chattext .x-risu-itemx-tile-aff{ position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }.chattext .x-risu-itemx-pf{ padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }.chattext .x-risu-itemx-card{ content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }.chattext .x-risu-itemx-back{ display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }.chattext .x-risu-itemx-detail{ display: flex; justify-content: center; }.chattext .x-risu-itemx-card{ --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }.chattext .x-risu-craft-forged{ --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }.chattext .x-risu-craft-oriental{ --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }.chattext .x-risu-craft-clockwork{ --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }.chattext .x-risu-craft-synthetic{ --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }.chattext .x-risu-craft-celestial{ --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }.chattext .x-risu-craft-organic{ --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }.chattext .x-risu-craft-forged .x-risu-itemx-medallion, .chattext .x-risu-craft-oriental .x-risu-itemx-medallion{border-radius:3px}.chattext .x-risu-craft-synthetic .x-risu-itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.chattext .x-risu-craft-organic .x-risu-itemx-medallion{border-radius:60% 12% 60% 12%}.chattext .x-risu-craft-celestial .x-risu-itemx-medallion{border-radius:50%}.chattext .x-risu-craft-oriental .x-risu-itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.chattext .x-risu-craft-oriental .x-risu-itemx-badge, .chattext .x-risu-craft-oriental .x-risu-itemx-subline{color:#aaa194}.chattext .x-risu-craft-oriental .x-risu-itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.chattext .x-risu-craft-oriental .x-risu-itemx-head{padding-right:2.55em}.chattext .x-risu-craft-oriental .x-risu-itemx-effect, .chattext .x-risu-craft-oriental .x-risu-itemx-stat{background:rgba(7,9,9,.38)}.chattext .x-risu-itemx-oriental-paper, .chattext .x-risu-itemx-oriental-ink, .chattext .x-risu-itemx-oriental-frame, .chattext .x-risu-itemx-oriental-seal{display:none;position:absolute;pointer-events:none}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::before, .chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}.chattext .x-risu-itemx-card::before{ content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }.chattext .x-risu-itemx2-strong{ animation:itemx2-aura 3.8s ease-in-out infinite; }.chattext .x-risu-itemx2-strong:has(.x-risu-lightning-flash){ animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }.chattext .x-risu-itemx-edge{ position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }.chattext .x-risu-itemx-edge::before{ content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }.chattext .x-risu-motion-off.x-risu-itemx-card, .chattext .x-risu-motion-off .x-risu-itemx-edge::before{ animation:none!important; }.chattext .x-risu-itemx-fx, .chattext .x-risu-itemx-cond{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }.chattext .x-risu-itemx-fx{ z-index:1; }.chattext .x-risu-itemx-cond{ z-index:2; }.chattext .x-risu-craft-oriental .x-risu-itemx-fx{z-index:2}.chattext .x-risu-craft-oriental .x-risu-current-fx{opacity:.42}.chattext .x-risu-craft-oriental .x-risu-current-fog{opacity:.28}.chattext .x-risu-craft-oriental .x-risu-current-veil, .chattext .x-risu-craft-oriental .x-risu-current-rays{opacity:.44}.chattext .x-risu-craft-oriental .x-risu-affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}.chattext .x-risu-current-fx, .chattext .x-risu-affinity-fx{ position:absolute; inset:0; overflow:hidden; }.chattext .x-risu-current-rays{ position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }.chattext .x-risu-current-rays i{ position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }.chattext .x-risu-current-veil{ position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }.chattext .x-risu-current-veil-visual{ position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }.chattext .x-risu-craft-mote{ position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }.chattext .x-risu-craft-mote.x-risu-diamond{ height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }.chattext .x-risu-craft-mote.x-risu-shape-ash{ height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }.chattext .x-risu-craft-mote.x-risu-shape-petal{ height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }.chattext .x-risu-craft-mote.x-risu-shape-block{ height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }.chattext .x-risu-craft-mote.x-risu-shape-streak{ width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }.chattext .x-risu-craft-mote.x-risu-shape-cross{ height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }.chattext .x-risu-craft-mote.x-risu-shape-cross::after{ content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }.chattext .x-risu-craft-mote.x-risu-shape-gear{ height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }.chattext .x-risu-craft-mote.x-risu-shape-gear::before{ content:\"⚙\";position:absolute;inset:0; }.chattext .x-risu-path-drift{animation-name:existing-drift}.chattext .x-risu-path-pulse{animation-name:existing-pulse}.chattext .x-risu-path-sway{animation-name:existing-sway}.chattext .x-risu-path-turn{animation-name:existing-turn}.chattext .x-risu-path-jitter{animation-name:existing-jitter}.chattext .x-risu-current-fog{ position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }.chattext .x-risu-current-fog-visual{ position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }.chattext .x-risu-current-scan{ position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }.chattext .x-risu-affinity-fx{ z-index:2; }.chattext .x-risu-afx{ position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }.chattext .x-risu-afx-secondary{ opacity:.68; clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx i{ position:absolute; display:block; color:var(--ac); }.chattext .x-risu-afx-fire i{ left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-flames{ position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }.chattext .x-risu-affinity-flames.x-risu-secondary{ clip-path:inset(0 0 0 46%); opacity:.6; }.chattext .x-risu-affinity-flames b{ position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }.chattext .x-risu-affinity-flames .x-risu-af-f1{ filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }.chattext .x-risu-affinity-flames .x-risu-af-f2{ height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }.chattext .x-risu-affinity-flames .x-risu-af-f3{ height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }.chattext .x-risu-afx-ice i{ left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-lightning b{ position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }.chattext .x-risu-lightning-flash{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }.chattext .x-risu-lightning-flash.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx-wind i{ left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-earth i{ left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-light i{ left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }.chattext .x-risu-afx-dark i{ left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }.chattext .x-risu-afx-poison i{ left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-body{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }.chattext .x-risu-affinity-body.x-risu-secondary{ clip-path:inset(0 0 0 46%); opacity:.62; }.chattext .x-risu-body-wind{ background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }@keyframes itemx2-gust{ from{transform:translateX(-11%)} to{transform:translateX(11%)} }.chattext .x-risu-body-earth{ inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }@keyframes itemx2-sediment{ from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }.chattext .x-risu-body-dark{ mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }@keyframes itemx2-encroach{ from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }.chattext .x-risu-body-arcane{ background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }@keyframes itemx2-sigil{ to{transform:rotate(360deg)} }.chattext .x-risu-body-blood{ inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }@keyframes itemx2-pool{ from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }.chattext .x-risu-body-void{ background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }@keyframes itemx2-collapse{ 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }.chattext .x-risu-poison-miasma{ position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }.chattext .x-risu-poison-miasma.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx-blood i{ left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-void i{ left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-signature{ position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }.chattext .x-risu-affinity-signature-visual{ position:absolute;inset:0;display:block; }.chattext .x-risu-affinity-signature.x-risu-secondary{ opacity:.48; clip-path:inset(0 0 0 48%); }.chattext .x-risu-sig-fire{ animation:sig-fire 5.2s linear infinite; }.chattext .x-risu-sig-fire>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }.chattext .x-risu-ice-cracks{ position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }.chattext .x-risu-sig-lightning{ background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }.chattext .x-risu-lightning-field{ position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }.chattext .x-risu-sig-wind{ transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }.chattext .x-risu-sig-wind>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }.chattext .x-risu-sig-earth{ animation:sig-earth 6s ease-in-out infinite alternate; }.chattext .x-risu-sig-earth>.x-risu-affinity-signature-visual{ background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }.chattext .x-risu-sig-light{ animation:sig-light 7s ease-in-out infinite alternate; }.chattext .x-risu-sig-light>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }.chattext .x-risu-light-veilfall{ position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }.chattext .x-risu-light-veilfall::before{ content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }.chattext .x-risu-light-veilfall.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-light-ground{ position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }.chattext .x-risu-light-ground.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-sig-dark{ animation:sig-dark 7.5s ease-in-out infinite alternate; }.chattext .x-risu-sig-dark>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }.chattext .x-risu-sig-poison{ animation:sig-poison 8s ease-in-out infinite alternate; }.chattext .x-risu-sig-poison>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }.chattext .x-risu-sig-blood{ animation:sig-blood 5.8s ease-in-out infinite alternate; }.chattext .x-risu-sig-blood>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }.chattext .x-risu-sig-void{ animation:sig-void 4.9s step-end infinite; }.chattext .x-risu-sig-void>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }.chattext .x-risu-itemx-content{ position:relative; z-index:4; padding:1.35em; }.chattext .x-risu-itemx-head{ display:flex; align-items:flex-start; gap:.85em; }.chattext .x-risu-itemx-medallion{ flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }.chattext .x-risu-itemx-emoji{ font-size:1.6em; }.chattext .x-risu-itemx-titles{ flex:1; min-width:0; }.chattext .x-risu-itemx-eyebrow{ color:var(--dim); font-size:.74em; letter-spacing:.2em; }.chattext .x-risu-itemx-name{ display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }.chattext .x-risu-itemx-tier{ display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }.chattext .x-risu-itemx-subline{ display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }.chattext .x-risu-itemx-subline span+span::before{ content:\"·\"; margin:0 .55em; color:var(--line); }.chattext .x-risu-affinity-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }.chattext .x-risu-affinity-chip{ display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }.chattext .x-risu-affinity-chip small{ opacity:.62; font-size:9px; }.chattext .x-risu-reaction-chip{ border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }.chattext .x-risu-itemx-rule{ height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }.chattext .x-risu-itemx-stats{ display:flex; gap:.45em; }.chattext .x-risu-itemx-stat{ flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }.chattext .x-risu-itemx-statk{ display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }.chattext .x-risu-itemx-statv{ display:block; margin-top:.1em; font-weight:700; }.chattext .x-risu-itemx-gap{ height:1.1em; }.chattext .x-risu-itemx-section-label{ margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }.chattext .x-risu-itemx-effects{ display:grid; gap:.7em; }.chattext .x-risu-itemx-effect{ position:relative; padding-left:1.1em; }.chattext .x-risu-itemx-effect::before{ content:\"❧\"; position:absolute; left:0; color:var(--s); }.chattext .x-risu-itemx-efname{ color:var(--p); font-weight:700; }.chattext .x-risu-itemx-flavor{ margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }.chattext .x-risu-motion-off *{ animation:none!important; }.chattext .x-risu-rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.chattext .x-risu-rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.chattext .x-risu-rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.chattext .x-risu-rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.chattext .x-risu-rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.chattext .x-risu-rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.chattext .x-risu-rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.chattext .x-risu-rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}.chattext .x-risu-rarity-epic .x-risu-itemx-medallion, .chattext .x-risu-rarity-legendary .x-risu-itemx-medallion, .chattext .x-risu-rarity-mythical .x-risu-itemx-medallion, .chattext .x-risu-rarity-empyrean .x-risu-itemx-medallion{ border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }.chattext .x-risu-rarity-epic .x-risu-itemx-name, .chattext .x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }.chattext .x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ font-weight:900; letter-spacing:.012em; }.chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }.chattext .x-risu-craft-oriental.x-risu-rarity-epic .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-empyrean .x-risu-itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}.chattext .x-risu-condition-cursed .x-risu-itemx-cond{ background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }.chattext .x-risu-condition-blessed .x-risu-itemx-cond{ background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }.chattext .x-risu-condition-corrupted .x-risu-itemx-cond{ background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }@keyframes existing-spin{ to { transform:rotate(360deg); } }@keyframes existing-veil{ 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }@keyframes existing-rise{ 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }@keyframes existing-drift{ 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }@keyframes existing-pulse{ 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }@keyframes existing-sway{ 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }@keyframes existing-turn{ 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }@keyframes existing-jitter{ 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }@keyframes existing-fog{ from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }@keyframes existing-scan{ from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }@keyframes aff-fire{ 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }@keyframes aff-ice{ 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }@keyframes aff-lightning{ 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }@keyframes aff-wind{ 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }@keyframes aff-earth{ 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }@keyframes aff-light{ from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }@keyframes aff-dark{ from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }@keyframes aff-poison{ 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }@keyframes aff-blood{ 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }@keyframes aff-void{ 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }@keyframes sig-fire{ from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }@keyframes ice-cracks{ 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }@keyframes sig-lightning{ 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }@keyframes lightning-field{ 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }@keyframes sig-wind{ to{transform:translateX(28%)} }@keyframes sig-earth{ from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }@keyframes sig-light{ from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }@keyframes sig-dark{ from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }@keyframes sig-poison{ from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }@keyframes sig-blood{ from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }@keyframes sig-void{ 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }@keyframes itemx2-aura{ 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }@keyframes itemx2-edge{ to{transform:translate(-50%,-50%) rotate(360deg)} }@keyframes itemx2-jolt{ 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }@keyframes itemx2-flick1{ 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }@keyframes itemx2-flick2{ from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }@keyframes itemx2-flick3{ 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }@keyframes itemx2-boltflash{ 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }@keyframes itemx2-miasma{ from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }@keyframes itemx2-veilfall{ 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }@keyframes itemx2-ground{ from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }@media (prefers-reduced-motion:reduce){.chattext .x-risu-itemx-card:not(.x-risu-force-motion), .chattext .x-risu-itemx-card:not(.x-risu-force-motion) *{ animation:none!important; } }@media (max-width:620px){.chattext .x-risu-itemx2-never-stage{padding:12px 8px 40px}.chattext .x-risu-itemx2-never-topbar{padding:0 12px}.chattext .x-risu-itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.chattext .x-risu-itemx-grid{grid-template-columns:1fr}.chattext .x-risu-itemx-panel{border-radius:12px}.chattext .x-risu-itemx2-never-note{align-items:flex-start}.chattext .x-risu-itemx-card{font-size:.86rem}.chattext .x-risu-itemx-content{padding:1.05em} }.chattext .x-risu-itemx2-panel-actions{\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}.chattext .x-risu-itemx2-panel-actions > button{\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}.chattext .x-risu-itemx2-panel-actions > .x-risu-itemx2-history-open{\n  font-size: 11px;\n  color: #b7c4d8;\n}.chattext .x-risu-itemx-ph-text > span{\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}.chattext .x-risu-itemx2-history-pane button{\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}.chattext .x-risu-itemx2-root-tab-body, .chattext .x-risu-itemx2-iframe-content{\n  position: relative;\n}.chattext .x-risu-itemx2-iframe-content{\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}.chattext .x-risu-itemx2-iframe-content > .x-risu-itemx-body{\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}.chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane), .chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *{\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}.chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *::before, .chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *::after{\n  animation-play-state: paused !important;\n}.chattext .x-risu-itemx2-root-tab-body > .x-risu-itemx2-history-pane, .chattext .x-risu-itemx2-iframe-content > .x-risu-itemx2-history-pane{\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}.chattext .x-risu-itemx2-history-heading, .chattext .x-risu-itemx2-history-filters, .chattext .x-risu-itemx2-history-actions{\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}.chattext .x-risu-itemx2-history-pane .x-risu-itemx2-history-filter-on{\n  border-color: #b69961;\n  color: #f0d79d;\n}.chattext .x-risu-itemx2-history-policy{\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}.chattext .x-risu-itemx2-history-policy small{\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}.chattext .x-risu-itemx2-history-list{\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}.chattext .x-risu-itemx2-history-row{\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}.chattext .x-risu-itemx2-history-row > button{\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-history-row small{\n  color: #a9b6c8;\n}.chattext .x-risu-itemx2-history-row .x-risu-itemx2-history-actions{\n  margin-top: 7px;\n}.chattext .x-risu-itemx2-root-settings > .x-risu-itemx2-root-setting-card{\n  flex-direction: row;\n  flex-wrap: wrap;\n}.chattext .x-risu-itemx2-root-setting-card > span:first-child{\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions{\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-root-setting-button{\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions > button{\n  flex: 0 0 auto;\n  min-height: 38px;\n}.chattext .x-risu-itemx2-detail-stack{\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}.chattext .x-risu-itemx2-detail-stack > *{\n  flex-shrink: 0;\n}.chattext .x-risu-itemx2-change-note, .chattext .x-risu-itemx2-review-note{\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-change-note > strong{\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}.chattext .x-risu-itemx2-change-note > span{\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}.chattext .x-risu-itemx2-change-note small{\n  color: #9eacbf;\n  min-width: 48px;\n}.chattext .x-risu-itemx2-change-note del{\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}.chattext .x-risu-itemx2-change-note em{\n  font-style: normal;\n  color: #f1e0b6;\n}.chattext .x-risu-itemx2-change-note b{\n  color: #8494aa;\n}.chattext .x-risu-itemx2-review-note{\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}.chattext .x-risu-itemx2-review-note small{\n  font-size: inherit;\n}.chattext .x-risu-itemx2-review-partial{\n  border-left: 3px solid #bf9461;\n}.chattext .x-risu-itemx2-review-partial strong{\n  color: #ecc99a;\n}.chattext .x-risu-itemx2-repair-one{\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}.chattext .x-risu-itemx2-technique-material{\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}.chattext .x-risu-itemx2-skill-form-slash .x-risu-itemx2-technique-material{\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}.chattext .x-risu-itemx2-skill-form-ward .x-risu-itemx2-technique-material{\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}.chattext .x-risu-itemx2-skill-form-heal .x-risu-itemx2-technique-material{\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}.chattext .x-risu-itemx2-skill-form-shadow .x-risu-itemx2-technique-material{\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}@keyframes itemx2-technique-shear{\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}@keyframes itemx2-technique-ward{\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}@keyframes itemx2-technique-rise{\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}@keyframes itemx2-technique-shadow{\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}.chattext .x-risu-itemx2-skill-type-passive .x-risu-itemx2-technique-material{\n  animation-duration: 16s;\n}.chattext .x-risu-itemx2-skill-type-sealed .x-risu-itemx2-technique-material, .chattext .x-risu-itemx2-skill-status-sealed .x-risu-itemx2-technique-material{\n  animation: none;\n  opacity: 0.22;\n}.chattext .x-risu-itemx2-skill-status-lost .x-risu-itemx2-technique-material{\n  animation: none;\n  opacity: 0.1;\n}.chattext .x-risu-itemx2-blend-fire-ice .x-risu-affinity-fx::after{\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}.chattext .x-risu-itemx2-blend-dark-lightning .x-risu-lightning-field{\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}.chattext .x-risu-itemx2-blend-fire-wind .x-risu-sig-fire{\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}.chattext .x-risu-itemx2-blend-ice-light .x-risu-ice-cracks{\n  background-color: rgba(235, 240, 216, 0.025);\n}.chattext .x-risu-itemx2-event-burst{\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}.chattext .x-risu-itemx2-burst-active > .x-risu-itemx2-event-burst{\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}.chattext .x-risu-itemx2-burst-enhanced{\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}.chattext .x-risu-itemx2-burst-damage{\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}.chattext .x-risu-itemx2-burst-learned{\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}.chattext .x-risu-itemx2-burst-resolved{\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}@keyframes itemx2-event-reveal{\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}@keyframes itemx2-event-resolve{\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}.chattext .x-risu-motion-off .x-risu-itemx2-event-burst, .chattext .x-risu-itemx2-effects-off .x-risu-itemx2-event-burst, .chattext .x-risu-itemx2-effects-off .x-risu-itemx2-technique-material, .chattext .x-risu-itemx-body-scrolling .x-risu-itemx2-event-burst{\n  display: none !important;\n  animation: none !important;\n}@media (prefers-reduced-motion: reduce){.chattext .x-risu-itemx2-technique-material{\n    animation: none !important;\n  }.chattext .x-risu-itemx2-event-burst{\n    display: none !important;\n    animation: none !important;\n  }\n}.chattext .x-risu-itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}.chattext .x-risu-itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}.chattext .x-risu-itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong{color:#a8341f}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong{color:#94301c}";
+
+  const ITEMX_CHIP_STYLE =
   '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.28em .58em;border:1px solid rgba(126,145,174,.26);border-radius:999px;background:rgba(18,25,38,.72);color:#dce6f4;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
-const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);content-visibility:auto;contain:layout paint style;contain-intrinsic-size:auto 128px;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
-const ITEMX_CODEX_INLINE_DENSE_STYLE = `.itemx2-inline-event.itemx2-inline-event{align-self:start;box-sizing:border-box;width:min(400px,calc(100% - 8px));max-width:400px;margin:.42rem auto .65rem;border-radius:11px;line-height:1.2}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;height:auto;padding:6px 8px 5px}.itemx2-inline-event .itemx2-inline-icon{align-self:center;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:9px;font-size:1.08rem;line-height:1}.itemx2-inline-event .itemx2-inline-copy{align-self:center;gap:1px;line-height:1.15}.itemx2-inline-event .itemx2-inline-kicker{font-size:.46rem;line-height:1.2;letter-spacing:.12em}.itemx2-inline-event .itemx2-inline-name{font-size:.82rem;line-height:1.18}.itemx2-inline-event .itemx2-inline-meta{font-size:.51rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.itemx2-inline-event .itemx2-inline-quick{display:flex;align-items:center;gap:3px;min-width:0;margin-top:2px;overflow:hidden}.itemx2-inline-event .itemx2-inline-quick i{flex:0 1 auto;min-width:0;height:auto;padding:1px 4px;border:1px solid rgba(150,165,190,.16);border-radius:4px;background:rgba(255,255,255,.035);color:#9ca9bb;font-size:.47rem;font-style:normal;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-quick i b{color:var(--ix-tone);font-weight:900}.itemx2-inline-event .itemx2-inline-foot{align-items:center;min-height:23px;height:auto;padding:4px 8px;font-size:.53rem;line-height:1.3}.itemx2-inline-event .itemx2-inline-foot b{font-size:.49rem}.itemx2-inline-event .itemx2-inline-foot span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-state{display:inline-flex;align-self:center;align-items:center;justify-content:center;width:auto;height:auto;min-height:0;padding:2px 5px;font-size:.46rem;line-height:1.2;white-space:nowrap}@media(max-width:520px){.itemx2-inline-event.itemx2-inline-event{margin:.36rem auto .58rem}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:34px minmax(0,1fr) auto;gap:6px;min-height:51px;padding:5px 7px 4px}.itemx2-inline-event .itemx2-inline-icon{width:34px;height:34px;min-width:34px;min-height:34px}.itemx2-inline-event .itemx2-inline-name{font-size:.78rem}.itemx2-inline-event .itemx2-inline-quick{gap:2px}.itemx2-inline-event .itemx2-inline-quick i{padding:1px 3px;font-size:.44rem}.itemx2-inline-event .itemx2-inline-quick i:nth-last-child(n+5){display:none}.itemx2-inline-event .itemx2-inline-foot{min-height:21px;padding:3px 7px;font-size:.5rem}}`;
-const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
+
+  const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);content-visibility:auto;contain:layout paint style;contain-intrinsic-size:auto 128px;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
+
+  const ITEMX_CODEX_INLINE_DENSE_STYLE = `.itemx2-inline-event.itemx2-inline-event{align-self:start;box-sizing:border-box;width:min(400px,calc(100% - 8px));max-width:400px;margin:.42rem auto .65rem;border-radius:11px;line-height:1.2}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;height:auto;padding:6px 8px 5px}.itemx2-inline-event .itemx2-inline-icon{align-self:center;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:9px;font-size:1.08rem;line-height:1}.itemx2-inline-event .itemx2-inline-copy{align-self:center;gap:1px;line-height:1.15}.itemx2-inline-event .itemx2-inline-kicker{font-size:.46rem;line-height:1.2;letter-spacing:.12em}.itemx2-inline-event .itemx2-inline-name{font-size:.82rem;line-height:1.18}.itemx2-inline-event .itemx2-inline-meta{font-size:.51rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.itemx2-inline-event .itemx2-inline-quick{display:flex;align-items:center;gap:3px;min-width:0;margin-top:2px;overflow:hidden}.itemx2-inline-event .itemx2-inline-quick i{flex:0 1 auto;min-width:0;height:auto;padding:1px 4px;border:1px solid rgba(150,165,190,.16);border-radius:4px;background:rgba(255,255,255,.035);color:#9ca9bb;font-size:.47rem;font-style:normal;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-quick i b{color:var(--ix-tone);font-weight:900}.itemx2-inline-event .itemx2-inline-foot{align-items:center;min-height:23px;height:auto;padding:4px 8px;font-size:.53rem;line-height:1.3}.itemx2-inline-event .itemx2-inline-foot b{font-size:.49rem}.itemx2-inline-event .itemx2-inline-foot span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-state{display:inline-flex;align-self:center;align-items:center;justify-content:center;width:auto;height:auto;min-height:0;padding:2px 5px;font-size:.46rem;line-height:1.2;white-space:nowrap}@media(max-width:520px){.itemx2-inline-event.itemx2-inline-event{margin:.36rem auto .58rem}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:34px minmax(0,1fr) auto;gap:6px;min-height:51px;padding:5px 7px 4px}.itemx2-inline-event .itemx2-inline-icon{width:34px;height:34px;min-width:34px;min-height:34px}.itemx2-inline-event .itemx2-inline-name{font-size:.78rem}.itemx2-inline-event .itemx2-inline-quick{gap:2px}.itemx2-inline-event .itemx2-inline-quick i{padding:1px 3px;font-size:.44rem}.itemx2-inline-event .itemx2-inline-quick i:nth-last-child(n+5){display:none}.itemx2-inline-event .itemx2-inline-foot{min-height:21px;padding:3px 7px;font-size:.5rem}}`;
+
+  const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .itemx2-inline-event.itemx2-inline-appraisal{--ix-fg:#e8e0d2;--ix-dim:#9f9586;--ix-line:#544936;--ix-surface:rgba(93,76,48,.18);border:1px solid var(--ix-line);border-radius:3px;background:repeating-linear-gradient(102deg,rgba(255,235,190,.024) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.13) 0 3px,transparent 3px 9px),radial-gradient(115% 92% at 50% -16%,#292218,#11100e 72%);color:var(--ix-fg);font-family:"Nanum Myeongjo","Noto Serif KR",Georgia,serif;box-shadow:inset 0 0 36px rgba(0,0,0,.54),0 7px 18px rgba(0,0,0,.22),0 0 14px color-mix(in srgb,var(--rk,#a58add) 18%,transparent)}
 .itemx2-inline-event.itemx2-inline-appraisal::before{inset:0 0 auto;z-index:5;width:auto;height:2px;background:linear-gradient(90deg,transparent,var(--rk,#a58add) 18%,var(--rk,#a58add) 82%,transparent);opacity:.82;transform:none}
 .itemx2-inline-event.itemx2-inline-appraisal::after{z-index:-1;background:radial-gradient(72% 125% at 8% 20%,var(--ix-glow),transparent 68%),linear-gradient(105deg,transparent 54%,rgba(255,255,255,.025),transparent 86%)}
@@ -4140,500 +4237,12 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .motion-off .itemx2-inline-body,.motion-off .itemx2-inline-scan,.itemx2-inline-event.motion-off .itemx2-inline-icon::after{animation:none!important}
 @media(prefers-reduced-motion:reduce){.itemx2-inline-body,.itemx2-inline-scan{animation:none!important}}
 `;
-const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
-const ITEMX_PLUGIN_VERSION = "2.2.0";
-const ITEMX_VERSION_LABEL = "2.2.0";
-const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
-const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
-const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
-const ITEMX_MANUAL_KEY = '$__itemx2_manual_events';
-const ITEMX_PRESENTATION_STYLE = ".itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}\n";
-const ITEMX_MESSAGE_EVENT_KEY = '$__itemx2_message_events';
-const ITEMX_CHECKPOINT_KEY = '$__itemx2_checkpoint';
-const ITEMX_AUX_KEY = '$__itemx2_aux_processed';
-const ITEMX_LORE_KEY = '$__itemx2_lore_enrichment';
-const ITEMX_AUX_ZERO_STORAGE_KEY = 'auxZeroRing:v1';
-const ITEMX_AUX_ZERO_CHAT_LIMIT = 32;
-const ITEMX_REF_RE = /<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
-const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
-const ITEMX_AUX_SETTLE_MS = 1500;
-const ITEMX_AUX_PROMPT_REVISION = 2;
-const ITEMX_ROOT_PAGE_SIZE = 16;
-const ITEMX_CHECKPOINT_VERSION = 2;
-const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
-const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
-const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
-const ITEMX_CHECKPOINT_TAIL_BYTES = 196608;
-const ITEMX_STORAGE_WARNING_BYTES = 16 * 1024 * 1024;
-const ITEMX_AUX_HISTORY_MAX_BYTES = 65536;
-const ITEMX_AUX_ZERO_MAX_BYTES = 65536;
-const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX CODEX"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="10.5" font-weight="900" letter-spacing="2">CODEX</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
-const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(ITEMX_BADGE_SVG)}`;
 
-(async () => {
-  'use strict';
-  const workQueue = ITEMXWorkQueue.create();
-  const dispatch = (kind, work, unique = false, options = {}) =>
-    workQueue.enqueue({
-      kind,
-      work,
-      unique,
-      ...options,
-      reentrant: ['process', 'output', 'display', 'before-request', 'after-request'].includes(kind)
-    });
-  const entry =
-    (kind, work, unique = false) =>
-    (...args) =>
-      dispatch(kind, () => work(...args), unique);
-  const readChat = async (...args) => ITEMXStorage.hydrate(await Risuai.getChatFromIndex(...args));
-  const saveChat = (characterIndex, chatIndex, chat) => {
-    workQueue.assertCurrent();
-    return Risuai.setChatToIndex(characterIndex, chatIndex, ITEMXStorage.persist(chat));
-  };
-  const stateOwners = ITEMXState.create();
-  const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
-  const ui = uiState.view;
+  const ITEMX_PRESENTATION_STYLE = ".itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}\n";
 
-  const log = (...args) => console.log('[ITEMX 2]', ...args);
-  const debugRecord = (where, detail = '') => {
-    if (!settingsState.debugEnabled) return;
-    const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
-    settingsState.debugEntries.push({ at: Date.now(), where: String(where), detail: String(text || '').slice(0, 500) });
-    if (settingsState.debugEntries.length > 30) settingsState.debugEntries.splice(0, settingsState.debugEntries.length - 30);
-    console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
-  };
-  const fail = (where, error) => {
-    debugRecord(`ERROR · ${where}`, error?.message || String(error));
-    console.error(`[ITEMX 2] ${where}`, error);
-  };
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  async function withTimeout(promise, timeoutMs, message) {
-    let timer = null;
-    try {
-      return await Promise.race([
-        promise,
-        new Promise((_, reject) => {
-          timer = globalThis.setTimeout(() => reject(new Error(message)), timeoutMs);
-        })
-      ]);
-    } finally {
-      if (timer) globalThis.clearTimeout(timer);
-    }
-  }
-  function compareVersions(left, right) {
-    const parse = (value) => {
-      const [main, prerelease = ''] = String(value || '')
-        .trim()
-        .replace(/^v/i, '')
-        .split('-', 2);
-      return {
-        main: main.split('.').map((part) => Number.parseInt(part, 10) || 0),
-        pre: prerelease ? prerelease.split('.') : []
-      };
-    };
-    const a = parse(left),
-      b = parse(right);
-    for (let index = 0; index < Math.max(a.main.length, b.main.length); index += 1) {
-      const difference = (a.main[index] || 0) - (b.main[index] || 0);
-      if (difference) return difference > 0 ? 1 : -1;
-    }
-    if (!a.pre.length || !b.pre.length) return a.pre.length === b.pre.length ? 0 : a.pre.length ? -1 : 1;
-    for (let index = 0; index < Math.max(a.pre.length, b.pre.length); index += 1) {
-      if (a.pre[index] == null || b.pre[index] == null) return a.pre[index] == null ? -1 : 1;
-      if (a.pre[index] === b.pre[index]) continue;
-      const aNumber = /^\d+$/.test(a.pre[index]) ? Number(a.pre[index]) : null;
-      const bNumber = /^\d+$/.test(b.pre[index]) ? Number(b.pre[index]) : null;
-      if (aNumber != null && bNumber != null) return aNumber > bNumber ? 1 : -1;
-      if (aNumber != null || bNumber != null) return aNumber != null ? -1 : 1;
-      return a.pre[index] > b.pre[index] ? 1 : -1;
-    }
-    return 0;
-  }
-  async function syncUpdateIndicator() {
-    if (!hostState.mainDoc || !uiState.rootDrawer) return;
-    try {
-      const current = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
-      const currentLabel = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-label');
-      if (!hostState.update.available) {
-        if (current) await current.remove();
-        if (currentLabel) await currentLabel.remove();
-        return;
-      }
-      if (current) {
-        await current.setAttribute('x-itemx2-update', hostState.update.latest);
-      } else {
-        const badge = await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge');
-        if (badge) {
-          const indicator = await hostState.mainDoc.createElement('span');
-          await indicator.setClassName('x-risu-itemx2-update-indicator');
-          await indicator.setAttribute('x-itemx2-update', hostState.update.latest);
-          await indicator.setTextContent('↑');
-          await badge.appendChild(indicator);
-        }
-      }
-      if (!currentLabel) {
-        const eyebrow = await hostState.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
-        if (eyebrow) {
-          const label = await hostState.mainDoc.createElement('span');
-          await label.setClassName('x-risu-itemx2-update-label');
-          await label.setAttribute('x-itemx2-update', hostState.update.latest);
-          await label.setTextContent('UPDATE');
-          await eyebrow.appendChild(label);
-        }
-      }
-    } catch (error) {
-      fail('update indicator', error);
-    }
-  }
-  async function checkForUpdate() {
-    if (hostState.update.checking || !pipelineState.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
-    hostState.update.checking = true;
-    try {
-      let cached = null;
-      try {
-        cached = JSON.parse((await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY)) || 'null');
-      } catch {}
-      if (cached?.latest) {
-        hostState.update.checkedAt = Number(cached.checkedAt) || 0;
-        hostState.update.latest = String(cached.latest);
-        hostState.update.available = compareVersions(hostState.update.latest, ITEMX_PLUGIN_VERSION) > 0;
-        await syncUpdateIndicator();
-      }
-      if (Date.now() - hostState.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
-      const response = await withTimeout(
-        Risuai.nativeFetch(ITEMX_UPDATE_URL, {
-          method: 'GET',
-          headers: { Range: 'bytes=0-2047' },
-          cache: 'no-store'
-        }),
-        6000,
-        '업데이트 확인 시간이 초과되었습니다'
-      );
-      if (!response?.ok) throw new Error(`업데이트 서버 응답 ${response?.status || '없음'}`);
-      const header = String((await response.text()) || '');
-      const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
-      if (!latest) throw new Error('업데이트 버전 헤더를 찾지 못했습니다');
-      hostState.update.checkedAt = Date.now();
-      hostState.update.latest = latest;
-      hostState.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
-      try {
-        await Risuai.safeLocalStorage.setItem(
-          ITEMX_UPDATE_CACHE_KEY,
-          JSON.stringify({ checkedAt: hostState.update.checkedAt, latest })
-        );
-      } catch {}
-      await syncUpdateIndicator();
-    } catch (error) {
-      debugRecord('update check', error?.message || String(error));
-    } finally {
-      hostState.update.checking = false;
-    }
-  }
-  const messageData = (message) => ITEMXCore.messageText(message);
-  const markerCodes = (text) => {
-    const out = new Set();
-    String(text || '').replace(ITEMXCore.MARKER_RE, (_, code) => {
-      out.add(`ITEMX2:${code}`);
-      return '';
-    });
-    String(text || '').replace(ITEMXCodex.MARKER_RE, (_, code) => {
-      out.add(`CODEX2:${code}`);
-      return '';
-    });
-    String(text || '').replace(ITEMX_REF_RE, (_, ref) => {
-      out.add(`ITEMX2@${ref}`);
-      return '';
-    });
-    String(text || '').replace(ITEMX_CODEX_REF_RE, (_, ref) => {
-      out.add(`CODEX2@${ref}`);
-      return '';
-    });
-    return out;
-  };
+  const ITEMX_BADGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="176" viewBox="0 0 48 176" role="img" aria-label="ITEMX CODEX"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2940"/><stop offset="1" stop-color="#090d17"/></linearGradient><filter id="s" x="-40%" y="-20%" width="180%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".52"/></filter></defs><g filter="url(#s)"><rect x="1" y="1" width="46" height="174" rx="10" fill="url(#g)" stroke="#536684" stroke-width="1.2"/><path d="M2 35h44M2 141h44" stroke="#263650" stroke-width="1"/></g><text x="24" y="26" text-anchor="middle" font-size="17">📦</text><text x="24" y="88" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 24 88)" fill="#f1f5fc" font-family="Arial,sans-serif" font-size="10.5" font-weight="900" letter-spacing="2">CODEX</text><path d="M17 154h14M24 147v14" fill="none" stroke="#9abcf4" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
-  async function context() {
-    try {
-      const [characterIndex, chatIndex, character] = await Promise.all([
-        Risuai.getCurrentCharacterIndex(),
-        Risuai.getCurrentChatIndex(),
-        Risuai.getCharacter()
-      ]);
-      if (characterIndex == null || chatIndex == null || !character) return null;
-      const chat = await readChat(characterIndex, chatIndex);
-      if (!chat) return null;
-      return {
-        characterIndex,
-        chatIndex,
-        character,
-        chat,
-        key: `${character.chaId || characterIndex}:${chat.id || chatIndex}`
-      };
-    } catch (error) {
-      if (!/chatPage|current chat|undefined/i.test(String(error?.message || error))) fail('active chat context', error);
-      return null;
-    }
-  }
-
-  const settingsId = (character) => character?.chaId || 'unknown';
-  const cachedSettings = (character) => settingsState.settingsCache.get(settingsId(character));
-  function updateCachedSettings(character, patch) {
-    const id = settingsId(character),
-      current = settingsState.settingsCache.get(id);
-    if (current) settingsState.settingsCache.set(id, { ...current, ...patch });
-    if ('effectsEnabled' in patch) presentationState.visualEffectsEnabled = Boolean(patch.effectsEnabled);
-    if ('skin' in patch) presentationState.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
-  }
-
-  async function outputSettings(character, { refresh = false } = {}) {
-    const id = settingsId(character);
-    if (!refresh && settingsState.settingsCache.has(id)) return { ...settingsState.settingsCache.get(id) };
-    const document = await ITEMXSettings.read(Risuai.pluginStorage);
-    const settings = ITEMXSettings.normalize(document.characters[id]);
-    settingsState.settingsCache.set(id, settings);
-    presentationState.visualEffectsEnabled = settings.effectsEnabled;
-    presentationState.visualSkin = settings.skin;
-    return { ...settings };
-  }
-
-  const writeSetting = (character, key, value) => ITEMXSettings.update(Risuai.pluginStorage, settingsId(character), { [key]: value });
-
-  async function isEnabled(character) {
-    return (cachedSettings(character) || (await outputSettings(character))).enabled;
-  }
-
-  async function setEnabled(character, value) {
-    await writeSetting(character, 'enabled', Boolean(value));
-    updateCachedSettings(character, { enabled: Boolean(value) });
-  }
-
-  async function setDomainEnabled(character, domain, value) {
-    const keys = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
-    if (!keys[domain]) throw new Error('Invalid ITEMX domain');
-    await writeSetting(character, keys[domain], Boolean(value));
-    updateCachedSettings(character, { [keys[domain]]: Boolean(value) });
-    workQueue.forget('catch-up');
-    workQueue.forget('aux-settle');
-  }
-
-  async function setDebugEnabled(character, value) {
-    settingsState.debugEnabled = Boolean(value);
-    await writeSetting(character, 'debugEnabled', Boolean(value));
-    updateCachedSettings(character, { debugEnabled: Boolean(value) });
-    debugRecord('debug', value ? 'enabled' : 'disabled');
-  }
-
-  async function setMainOutput(character, value) {
-    await writeSetting(character, 'mainOutput', Boolean(value));
-    updateCachedSettings(character, { mainOutput: Boolean(value) });
-  }
-
-  async function setAuxOutput(character, value) {
-    if (!['off', 'missing', 'always'].includes(value)) throw new Error('Invalid auxiliary output mode');
-    await writeSetting(character, 'auxOutput', value);
-    updateCachedSettings(character, { auxOutput: value });
-    workQueue.forget('catch-up');
-    workQueue.forget('aux-settle');
-  }
-
-  async function setRarityMode(character, value) {
-    if (!['world', 'itemx'].includes(value)) throw new Error('Invalid rarity mode');
-    await writeSetting(character, 'rarityMode', value);
-    updateCachedSettings(character, { rarityMode: value });
-  }
-
-  async function setEffectsEnabled(character, value) {
-    await writeSetting(character, 'effectsEnabled', Boolean(value));
-    updateCachedSettings(character, { effectsEnabled: Boolean(value) });
-    presentationState.markerHtmlCache.clear();
-    presentationState.detailHtmlCache.clear();
-    await syncMainEffectsState();
-  }
-
-  async function setFontScale(character, value) {
-    if (!['small', 'medium', 'large'].includes(value)) throw new Error('Invalid font scale');
-    await writeSetting(character, 'fontScale', value);
-    updateCachedSettings(character, { fontScale: value });
-    await syncRootFontScale(value);
-  }
-
-  async function setModuleAssetsEnabled(character, value) {
-    await writeSetting(character, 'moduleAssetsEnabled', Boolean(value));
-    updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
-    portraitsState.moduleAssetCache = { key: '', at: 0, rows: [] };
-  }
-
-  async function setLorebookEncounterEnabled(character, value) {
-    await writeSetting(character, 'lorebookEncounterEnabled', Boolean(value));
-    updateCachedSettings(character, { lorebookEncounterEnabled: Boolean(value) });
-    workQueue.remember('lorebook', '');
-  }
-
-  const AUX_LABELS = { off: '끔', missing: '누락 시', always: '항상 검토' };
-  const RARITY_MODE_LABELS = { world: '세계관 우선', itemx: 'ITEMX 강제' };
-
-  function itemxProtocolText(rarityMode = 'world') {
-    const policy =
-      rarityMode === 'itemx'
-        ? `## ITEMX Rarity Policy: FORCED\nITEMX rarity is an internal relative power and visual tier, not necessarily the world's printed grade name. Preserve the setting's local grade wording in display. An explicit user-requested ITEMX tier always wins. When the narrative conclusively establishes a newly appraised item as the setting's absolute highest grade, ultimate pinnacle, server/world-unique apex, or beyond the existing grade system, emit rarity=empyrean even if the setting calls that grade Epic; keep the local wording and distinction in display. Use mythical or legendary for clearly lower relative standings. Do not promote from ornate prose alone: the apex standing must be settled by the narrative.`
-        : `## ITEMX Rarity Policy: WORLD FIRST\nTreat the setting's literal item grade as authoritative. Map its stated grade to the nearest literal ITEMX rarity and do not promote it merely because it is described as the setting's best. Preserve the local grade wording in display.`;
-    return `${ITEMX_PROTOCOL_TEXT}\n\n${policy}`;
-  }
-
-  const enabledCodexDomains = (settings) =>
-    [settings.skillsEnabled && 'skill', settings.encountersEnabled && 'monster'].filter(Boolean);
-  const stripItemTransport = (content) =>
-    ITEMXCore.extractResponse(String(content || ''), ITEMXCore.newRegistry()).content.replace(ITEMXCore.MARKER_RE, '');
-  const stripAllTransport = (content) =>
-    ITEMXCodex.extractResponse(stripItemTransport(content), ITEMXCodex.snapshot(), {
-      enabledDomains: []
-    }).content.replace(ITEMXCodex.MARKER_RE, '');
-  const OWNED_TRANSPORT_HINT_RE =
-    /<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
-  function processTransportStripper(content) {
-    const source = ITEMXCore.stripInventoryEcho(content);
-    if (!OWNED_TRANSPORT_HINT_RE.test(source)) return source;
-    return stripAllTransport(source)
-      .replace(ITEMX_REF_RE, '')
-      .replace(ITEMX_CODEX_REF_RE, '')
-      .replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
-  }
-  function characterAssetFingerprint(character) {
-    const additional = character?.additionalAssets || [],
-      emotions = character?.emotionImages || [],
-      cc = character?.ccAssets || [];
-    const last = additional[additional.length - 1];
-    return `${additional.length}:${emotions.length}:${cc.length}:${additional[0]?.[0] || ''}:${last?.[0] || ''}:${cc[0]?.name || ''}`;
-  }
-
-  function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
-    const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
-    if (portraitsState.characterAssetCache.key === key && Date.now() - portraitsState.characterAssetCache.at < 30000)
-      return portraitsState.characterAssetCache.rows;
-    const rows = ITEMXCodex.assetCatalog(character, max, true);
-    ITEMXCodex.portraitAssetIndex(rows);
-    portraitsState.characterAssetCache = { key, at: Date.now(), rows };
-    return rows;
-  }
-
-  function combinedPortraitAssets(character, moduleAssets = [], max = ITEMXCodex.ASSET_CATALOG_MAX) {
-    const extra = characterPortraitAssets(character, max);
-    if (!extra.length) {
-      const rows = moduleAssets || [];
-      return rows.length <= max ? rows : rows.slice(0, max);
-    }
-    if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
-    const combinedKey = `${portraitsState.characterAssetCache.key}|${portraitsState.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
-    if (portraitsState.combinedAssetCache.key === combinedKey && Date.now() - portraitsState.combinedAssetCache.at < 30000)
-      return portraitsState.combinedAssetCache.rows;
-    const rows = extra.slice(),
-      seen = new Set(rows.map((row) => row.name));
-    for (const row of moduleAssets) {
-      if (rows.length >= max || !row?.name || !row?.id || seen.has(row.name)) continue;
-      seen.add(row.name);
-      rows.push(row);
-    }
-    ITEMXCodex.portraitAssetIndex(rows);
-    portraitsState.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
-    return rows;
-  }
-
-  function encounterEntities(snapshot) {
-    const monsters = snapshot?.monsters;
-    return (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
-  }
-
-  function encounterRegistryFingerprint(snapshot) {
-    const monsters = snapshot?.monsters;
-    const rows = (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
-    return ITEMXCore.fnv1a(JSON.stringify(rows));
-  }
-
-  async function modulePortraitAssets(settings, character, chat) {
-    if (!settings?.moduleAssetsEnabled || typeof Risuai.getDatabase !== 'function') return [];
-    const key = `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`;
-    if (portraitsState.moduleAssetCache.key === key && Date.now() - portraitsState.moduleAssetCache.at < 30000)
-      return portraitsState.moduleAssetCache.rows;
-    try {
-      const database = await Risuai.getDatabase([
-        'modules',
-        'enabledModules',
-        'moduleIntergration',
-        'personas',
-        'selectedPersona'
-      ]);
-      if (!database) {
-        hostState.permissions.db = false;
-        portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
-        return [];
-      }
-      hostState.permissions.db = true;
-      const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
-      ITEMXCodex.portraitAssetIndex(rows);
-      portraitsState.moduleAssetCache = { key, at: Date.now(), rows };
-      return rows;
-    } catch (error) {
-      hostState.permissions.db = false;
-      portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
-      debugRecord('module portrait assets', error?.message || String(error));
-      return [];
-    }
-  }
-
-  async function enableModuleAssets(character, chat) {
-    if (typeof Risuai.getDatabase !== 'function') return false;
-    try {
-      if (
-        typeof Risuai.requestPluginPermission === 'function' &&
-        (await Risuai.requestPluginPermission('db')) !== true
-      ) {
-        hostState.permissions.db = false;
-        return false;
-      }
-      const probe = await Risuai.getDatabase([
-        'modules',
-        'enabledModules',
-        'moduleIntergration',
-        'personas',
-        'selectedPersona'
-      ]);
-      if (!probe) {
-        hostState.permissions.db = false;
-        return false;
-      }
-      hostState.permissions.db = true;
-      await setModuleAssetsEnabled(character, true);
-      const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
-      ITEMXCodex.portraitAssetIndex(rows);
-      portraitsState.moduleAssetCache = {
-        key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`,
-        at: Date.now(),
-        rows
-      };
-      return true;
-    } catch (error) {
-      hostState.permissions.db = false;
-      debugRecord('module portrait permission', error?.message || String(error));
-      return false;
-    }
-  }
-
-  function protocolForSettings(settings, character, moduleAssets = [], options = {}) {
-    const parts = [];
-    if (settings.itemsEnabled) parts.push(itemxProtocolText(settings.rarityMode));
-    const domains = enabledCodexDomains(settings);
-    if (domains.length) {
-      const portraitRows = domains.includes('monster')
-        ? combinedPortraitAssets(character, moduleAssets, ITEMXCodex.ASSET_CATALOG_MAX)
-        : [];
-      const names = ITEMXCodex.portraitProtocolNames(portraitRows, {
-        narrative: options.narrative || '',
-        entities: options.entities || [],
-        max: ITEMXCodex.PORTRAIT_PROTOCOL_MAX
-      });
-      parts.push(ITEMXCodex.protocol(names, { enabledDomains: domains, rarityMode: settings.rarityMode }));
-    }
-    return parts.join('\n\n');
-  }
+  const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(ITEMX_BADGE_SVG)}`;
 
   const BADGE_POSITIONS = [
     ['lb', '좌하'],
@@ -4643,11 +4252,6 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     ['rm', '우중'],
     ['rt', '우상']
   ];
-
-  async function loadBadgePosition() {
-    const saved = (await ITEMXSettings.read(Risuai.pluginStorage)).global.badgePosition;
-    if (BADGE_POSITIONS.some(([value]) => value === saved)) uiState.badgePosition = saved;
-  }
 
   function badgeStyle() {
     const positions = {
@@ -4690,6 +4294,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 `;
 
   const ITEMX_SETTINGS_STYLE = `.itemx2-root-empty{padding:2rem;text-align:center;color:#77839c}.itemx2-root-settings{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.itemx2-position-choice,.itemx2-font-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-font-choice.itemx2-font-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-position-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-root-setting-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx2-root-setting-card span{display:grid;gap:3px}.itemx2-root-setting-card small{color:#77839c;line-height:1.4}.itemx2-root-setting-button{min-height:36px;padding:0 11px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9;cursor:pointer}.itemx2-status-row{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:5px!important;margin-top:3px}.itemx2-status-chip{display:inline-flex!important;padding:3px 7px;border:1px solid #354157;border-radius:999px;background:#131a26;color:#93a2ba;font-size:.66rem;font-weight:800;font-style:normal}.itemx2-status-chip-warn{border-color:#6a5530;color:#e8c987;background:#241d10}.itemx2-root-setting-button-primary{border-color:#6e5a32;background:#2a2316;color:#f0d79d}.itemx2-setting-on{border-color:#4e8968!important;background:#12241a!important;color:#a9e6c2!important}.itemx2-setting-cleanup{border-color:#65333a!important;background:#241216!important;color:#ffadb5!important}.itemx2-root-setting-button:disabled,.itemx2-root-setting-button-busy{opacity:.58;cursor:default;pointer-events:none}.itemx2-manager-fold{border:1px solid #283247;border-radius:12px;background:#0b1019;overflow:hidden}.itemx2-manager-fold summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;cursor:pointer;color:#f0d79d;font-weight:800;list-style:none}.itemx2-manager-fold summary::-webkit-details-marker{display:none}.itemx2-manager-fold summary::after{content:'＋';color:#8291aa}.itemx2-manager-fold[open] summary::after{content:'－'}.itemx2-manager-body{display:grid;gap:10px;padding:0 12px 12px}.itemx2-manager-label{display:grid;gap:5px;color:#8592a8;font-size:.72rem}.itemx2-manager-editor{min-height:58px;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}.itemx2-manager-editor:focus{border-color:#637ba3}.itemx2-manager-list{display:grid;gap:7px}.itemx2-manager-actions{display:flex;gap:5px}.itemx2-manager-actions button{min-height:31px;padding:0 8px;border:1px solid #344159;border-radius:7px;background:#172131;color:#cbd7e9;cursor:pointer}.itemx2-manager-actions .itemx2-manager-remove{border-color:#65333a;color:#ffadb5}.itemx2-manager-create{display:grid;gap:7px;padding-top:3px;border-top:1px solid #1d2737}.itemx2-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-domain-card{display:grid;gap:5px;padding:10px;border:1px solid #273247;border-radius:10px;background:#101722;color:#dce5f2;text-align:left}.itemx2-domain-card small{color:#718199;font-size:.62rem}.itemx2-debug-fold{border-color:#334056}.itemx2-debug-body{display:grid;gap:8px;padding:0 12px 12px}.itemx2-debug-grid{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 8px;font-size:.64rem}.itemx2-debug-grid b{color:#718199}.itemx2-debug-grid span{color:#c4cfdf;overflow-wrap:anywhere}.itemx2-debug-log{display:grid;gap:4px;max-height:180px;overflow:auto;padding:8px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere}`;
+
   const rootDrawerStyle = () => `
 .itemx2-root-drawer,.itemx2-root-drawer *{box-sizing:border-box}
 .itemx2-root-drawer{--itemx-ui-scale:1;--itemx-text-xs:calc(.62rem * var(--itemx-ui-scale));--itemx-text-sm:calc(.70rem * var(--itemx-ui-scale));--itemx-text-md:calc(.82rem * var(--itemx-ui-scale));--itemx-text-lg:calc(1.08rem * var(--itemx-ui-scale));position:fixed;inset:0;z-index:49;pointer-events:none;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif;color:#e6ebf4}.itemx2-root-drawer.itemx2-font-medium{--itemx-ui-scale:1.12}.itemx2-root-drawer.itemx2-font-large{--itemx-ui-scale:1.25}
@@ -4735,13 +4340,17 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 @media(prefers-reduced-motion:reduce){.itemx2-root-layer,.itemx2-root-panel,.itemx2-aux-status i{animation:none!important;transition:none!important}}
 ${codexPageStyle()}
 `;
+
   function prefixRisuClasses(css) {
     return String(css || '').replace(/\.([a-zA-Z][\w-]*)/g, (_, name) =>
       name.startsWith('x-risu-') ? `.${name}` : `.x-risu-${name}`
     );
   }
+
   const bodyScrollStyle = `.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{visibility:hidden!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event{box-shadow:none!important}.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-fx *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx-inline-card .x-risu-itemx-cond *,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-event::after,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-main::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-icon::before,.chattext.x-risu-itemx-body-scrolling .x-risu-itemx2-inline-warning{animation-play-state:paused!important;filter:none!important;mix-blend-mode:normal!important;box-shadow:none!important}`;
+
   const bodyEffectsStyle = `body.x-risu-itemx2-effects-off .x-risu-itemx-fx,body.x-risu-itemx2-effects-off .x-risu-itemx-cond,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::before,body.x-risu-itemx2-effects-off .x-risu-itemx-codex-hero::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-codex-fx,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-event::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-icon::before,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-body,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-scan,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-encounter .x-risu-itemx2-inline-icon::after,body.x-risu-itemx2-effects-off .x-risu-itemx2-inline-warning{display:none!important;animation:none!important}`;
+
   const ITEMX_CONTROL_STYLE = `.itemx2-seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;flex:0 0 100%;margin-top:2px;padding:3px;border:1px solid #2b3547;border-radius:10px;background:#121926}.itemx2-seg-btn{min-height:30px;padding:0 8px;border:0;border-radius:7px;background:transparent;color:#8a97ad;font:inherit;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap}.itemx2-seg-on{background:#22304a;color:#f1f5fb;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,.3)}.itemx2-font-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-position-grid{display:grid;gap:8px}.itemx2-set-group{display:flex;align-items:center;gap:8px;margin:6px 2px 0;font-size:.58rem;font-weight:800;letter-spacing:.2em;color:#7a8aa3}.itemx2-set-group::after{content:'';flex:1;height:1px;background:#232f42}.itemx2-danger-zone{display:grid;gap:8px;padding:11px;border:1px solid #6b3540;border-radius:12px;background:rgba(150,50,66,.08)}.itemx2-danger-zone>h4{margin:0;font-size:.58rem;font-weight:800;letter-spacing:.16em;color:#e0697c}.itemx2-danger-zone>.itemx2-root-setting-card{border:0;background:transparent;padding:0}.itemx2-danger-zone .itemx2-root-setting-button{border-color:#a3505d;color:#ffb3bd}.itemx2-sw{position:relative;flex:0 0 auto;width:44px;min-width:44px;height:26px;min-height:26px!important;max-height:26px;padding:0!important;box-sizing:border-box;border-radius:999px!important;border:1px solid #33405a!important;background:#1a2331!important;cursor:pointer;transition:background .15s ease,border-color .15s ease}.itemx2-sw>i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#8394ad;transition:transform .15s ease,background .15s ease}.itemx2-sw.itemx-setting-on,.itemx2-sw.itemx2-setting-on{border-color:#4e8968!important;background:#173226!important;color:transparent!important}.itemx2-sw.itemx-setting-on>i,.itemx2-sw.itemx2-setting-on>i{transform:translateX(18px);background:#a9e6c2}.itemx2-position-map{position:relative;width:100%;max-width:230px;aspect-ratio:16/10;margin:2px auto 0;border:1px solid #2b3547;border-radius:10px;background:#101724;overflow:hidden}.itemx2-position-screen{position:absolute;inset:0;display:grid;place-items:center;color:#5d6a80;font-size:.6rem;pointer-events:none}.itemx2-position-map .itemx2-position-choice{position:absolute;width:18px;height:34px;min-height:0;padding:0;border-radius:5px;border:1px solid #33405a;background:#1a2331;cursor:pointer}.itemx2-position-map .itemx2-position-lt{left:7px;top:7px}.itemx2-position-map .itemx2-position-lm{left:7px;top:50%;transform:translateY(-50%)}.itemx2-position-map .itemx2-position-lb{left:7px;bottom:7px}.itemx2-position-map .itemx2-position-rt{right:7px;top:7px}.itemx2-position-map .itemx2-position-rm{right:7px;top:50%;transform:translateY(-50%)}.itemx2-position-map .itemx2-position-rb{right:7px;bottom:7px}.itemx2-position-map .itemx2-position-on{border-color:#d4af6e;background:#d4af6e;box-shadow:0 0 10px rgba(212,175,110,.55)}.itemx2-position-hint{margin:7px 2px 0;color:#8a97ad;font-size:.64rem;text-align:center}.itemx2-position-hint b{color:#dfe7f3}.itemx2-font-choice{display:grid!important;gap:2px;place-items:center;min-height:52px!important;padding:7px 4px!important}.itemx2-font-choice>em{font-style:normal;font-weight:800;line-height:1.15}.itemx2-font-choice>span{font-size:.58rem;opacity:.8}.itemx2-setting-font-small>em{font-size:.78rem}.itemx2-setting-font-medium>em{font-size:.95rem}.itemx2-setting-font-large>em{font-size:1.16rem}.itemx2-domain-card>i{font-style:normal;font-size:.55rem;font-weight:800;letter-spacing:.06em;color:#7a8aa3}.itemx2-domain-card.itemx-setting-on>i,.itemx2-domain-card.itemx2-setting-on>i{color:#a9e6c2}`;
 
   const SKIN_PALETTES = {
@@ -4880,8 +4489,11 @@ ${codexPageStyle()}
       fxOpacity: '1'
     }
   };
+
   const SKIN_NAMES = Object.keys(SKIN_PALETTES);
+
   const SKIN_LABELS = { dark: '다크', frost: '서리', hanji: '한지' };
+
   const SKIN_MODES = ['dark', ...SKIN_NAMES];
 
   function skinCss(name) {
@@ -5013,9 +4625,1354 @@ ${codexPageStyle()}
       `${S} .itemx2-inline-state{border-color:${line('.3')};background:rgba(255,255,255,.5)}`
     ].join('');
   }
+
   const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
+
   const mainStyleText = () =>
     `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
+
+  async function setSkin(character, value) {
+    const next = SKIN_MODES.includes(value) ? value : 'dark';
+    await writeSetting(character, 'skin', next);
+    updateCachedSettings(character, { skin: next });
+    await syncMainEffectsState();
+  }
+
+  async function syncMainEffectsState() {
+    if (!hostState.mainDoc) return;
+    try {
+      const body = await hostState.mainDoc.querySelector('body');
+      if (!body) return;
+      if (presentationState.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
+      else await body.addClass('x-risu-itemx2-effects-off');
+      for (const name of SKIN_NAMES) {
+        if (presentationState.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
+        else await body.removeClass(`x-risu-itemx2-skin-${name}`);
+      }
+    } catch (error) {
+      debugRecord('effect setting sync', error?.message || String(error));
+    }
+  }
+
+  async function syncRootFontScale(value) {
+    const root = uiState.rootDrawer;
+    if (!root) return;
+    for (const scale of ['small', 'medium', 'large']) {
+      try {
+        await root.removeClass(`x-risu-itemx2-font-${scale}`);
+      } catch {}
+    }
+    try {
+      await root.addClass(`x-risu-itemx2-font-${['small', 'medium', 'large'].includes(value) ? value : 'small'}`);
+    } catch {}
+  }
+
+  async function installMainStyle() {
+    try {
+      if (hostState.mainStyle && workQueue.revision('style-position') === uiState.badgePosition) {
+        try {
+          if (!(await hostState.mainStyle.getParent())) throw new Error('detached style owner');
+          hostState.permissions.mainDom = true;
+          hostState.lastDomError = '';
+          await installBodyEffectGovernor();
+          await syncMainEffectsState();
+          await installHostObserver();
+          return true;
+        } catch {
+          hostState.mainStyle = null;
+          hostState.mainDoc = null;
+          presentationState.bodyFxClassOwner = null;
+        }
+      }
+      const doc = await Risuai.getRootDocument();
+      if (!doc) {
+        hostState.permissions.mainDom = false;
+        hostState.lastDomError = '메인 문서 API가 null을 반환했습니다';
+        return false;
+      }
+      hostState.mainDoc = doc;
+      hostState.permissions.mainDom = true;
+      const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
+      if (existing) {
+        hostState.mainStyle = existing;
+        await existing.setTextContent(mainStyleText());
+        workQueue.remember('style-position', uiState.badgePosition);
+        await installBodyEffectGovernor();
+        await syncMainEffectsState();
+        await installHostObserver();
+        return true;
+      }
+      const style = await doc.createElement('style');
+      await style.setAttribute('x-itemx2-style', 'owner');
+      await style.setTextContent(mainStyleText());
+      const head = await doc.querySelector('head');
+      if (head) await head.appendChild(style);
+      else await doc.appendChild(style);
+      hostState.mainStyle = style;
+      workQueue.remember('style-position', uiState.badgePosition);
+      hostState.lastDomError = '';
+      await installBodyEffectGovernor();
+      await syncMainEffectsState();
+      await installHostObserver();
+      return true;
+    } catch (error) {
+      hostState.permissions.mainDom = false;
+      hostState.mainStyle = null;
+      workQueue.remember('style-position', '');
+      hostState.mainDoc = null;
+      hostState.lastDomError = String(error?.message || error || '알 수 없는 DOM 오류');
+      fail('main style connection', error);
+      return false;
+    }
+  }
+
+  function fallbackDocumentHead() { return `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`; }
+
+
+  function compareVersions(left, right) {
+    const parse = (value) => {
+      const [main, prerelease = ''] = String(value || '')
+        .trim()
+        .replace(/^v/i, '')
+        .split('-', 2);
+      return {
+        main: main.split('.').map((part) => Number.parseInt(part, 10) || 0),
+        pre: prerelease ? prerelease.split('.') : []
+      };
+    };
+    const a = parse(left),
+      b = parse(right);
+    for (let index = 0; index < Math.max(a.main.length, b.main.length); index += 1) {
+      const difference = (a.main[index] || 0) - (b.main[index] || 0);
+      if (difference) return difference > 0 ? 1 : -1;
+    }
+    if (!a.pre.length || !b.pre.length) return a.pre.length === b.pre.length ? 0 : a.pre.length ? -1 : 1;
+    for (let index = 0; index < Math.max(a.pre.length, b.pre.length); index += 1) {
+      if (a.pre[index] == null || b.pre[index] == null) return a.pre[index] == null ? -1 : 1;
+      if (a.pre[index] === b.pre[index]) continue;
+      const aNumber = /^\d+$/.test(a.pre[index]) ? Number(a.pre[index]) : null;
+      const bNumber = /^\d+$/.test(b.pre[index]) ? Number(b.pre[index]) : null;
+      if (aNumber != null && bNumber != null) return aNumber > bNumber ? 1 : -1;
+      if (aNumber != null || bNumber != null) return aNumber != null ? -1 : 1;
+      return a.pre[index] > b.pre[index] ? 1 : -1;
+    }
+    return 0;
+  }
+
+  async function syncUpdateIndicator() {
+    if (!hostState.mainDoc || !uiState.rootDrawer) return;
+    try {
+      const current = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
+      const currentLabel = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-label');
+      if (!hostState.update.available) {
+        if (current) await current.remove();
+        if (currentLabel) await currentLabel.remove();
+        return;
+      }
+      if (current) {
+        await current.setAttribute('x-itemx2-update', hostState.update.latest);
+      } else {
+        const badge = await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge');
+        if (badge) {
+          const indicator = await hostState.mainDoc.createElement('span');
+          await indicator.setClassName('x-risu-itemx2-update-indicator');
+          await indicator.setAttribute('x-itemx2-update', hostState.update.latest);
+          await indicator.setTextContent('↑');
+          await badge.appendChild(indicator);
+        }
+      }
+      if (!currentLabel) {
+        const eyebrow = await hostState.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
+        if (eyebrow) {
+          const label = await hostState.mainDoc.createElement('span');
+          await label.setClassName('x-risu-itemx2-update-label');
+          await label.setAttribute('x-itemx2-update', hostState.update.latest);
+          await label.setTextContent('UPDATE');
+          await eyebrow.appendChild(label);
+        }
+      }
+    } catch (error) {
+      fail('update indicator', error);
+    }
+  }
+
+  async function checkForUpdate() {
+    if (hostState.update.checking || !pipelineState.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
+    hostState.update.checking = true;
+    try {
+      let cached = null;
+      try {
+        cached = JSON.parse((await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY)) || 'null');
+      } catch {}
+      if (cached?.latest) {
+        hostState.update.checkedAt = Number(cached.checkedAt) || 0;
+        hostState.update.latest = String(cached.latest);
+        hostState.update.available = compareVersions(hostState.update.latest, ITEMX_PLUGIN_VERSION) > 0;
+        await syncUpdateIndicator();
+      }
+      if (Date.now() - hostState.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
+      const response = await withTimeout(
+        Risuai.nativeFetch(ITEMX_UPDATE_URL, {
+          method: 'GET',
+          headers: { Range: 'bytes=0-2047' },
+          cache: 'no-store'
+        }),
+        6000,
+        '업데이트 확인 시간이 초과되었습니다'
+      );
+      if (!response?.ok) throw new Error(`업데이트 서버 응답 ${response?.status || '없음'}`);
+      const header = String((await response.text()) || '');
+      const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
+      if (!latest) throw new Error('업데이트 버전 헤더를 찾지 못했습니다');
+      hostState.update.checkedAt = Date.now();
+      hostState.update.latest = latest;
+      hostState.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
+      try {
+        await Risuai.safeLocalStorage.setItem(
+          ITEMX_UPDATE_CACHE_KEY,
+          JSON.stringify({ checkedAt: hostState.update.checkedAt, latest })
+        );
+      } catch {}
+      await syncUpdateIndicator();
+    } catch (error) {
+      debugRecord('update check', error?.message || String(error));
+    } finally {
+      hostState.update.checking = false;
+    }
+  }
+
+  const messageData = (message) => ITEMXCore.messageText(message);
+
+  const markerCodes = (text) => {
+    const out = new Set();
+    String(text || '').replace(ITEMXCore.MARKER_RE, (_, code) => {
+      out.add(`ITEMX2:${code}`);
+      return '';
+    });
+    String(text || '').replace(ITEMXCodex.MARKER_RE, (_, code) => {
+      out.add(`CODEX2:${code}`);
+      return '';
+    });
+    String(text || '').replace(ITEMX_REF_RE, (_, ref) => {
+      out.add(`ITEMX2@${ref}`);
+      return '';
+    });
+    String(text || '').replace(ITEMX_CODEX_REF_RE, (_, ref) => {
+      out.add(`CODEX2@${ref}`);
+      return '';
+    });
+    return out;
+  };
+
+  const settingsId = (character) => character?.chaId || 'unknown';
+
+  const cachedSettings = (character) => settingsState.settingsCache.get(settingsId(character));
+
+  function updateCachedSettings(character, patch) {
+    const id = settingsId(character),
+      current = settingsState.settingsCache.get(id);
+    if (current) settingsState.settingsCache.set(id, { ...current, ...patch });
+    if ('effectsEnabled' in patch) presentationState.visualEffectsEnabled = Boolean(patch.effectsEnabled);
+    if ('skin' in patch) presentationState.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
+  }
+
+  async function outputSettings(character, { refresh = false } = {}) {
+    const id = settingsId(character);
+    if (!refresh && settingsState.settingsCache.has(id)) return { ...settingsState.settingsCache.get(id) };
+    const document = await ITEMXSettings.read(Risuai.pluginStorage);
+    const settings = ITEMXSettings.normalize(document.characters[id]);
+    settingsState.settingsCache.set(id, settings);
+    presentationState.visualEffectsEnabled = settings.effectsEnabled;
+    presentationState.visualSkin = settings.skin;
+    return { ...settings };
+  }
+
+  const writeSetting = (character, key, value) => ITEMXSettings.update(Risuai.pluginStorage, settingsId(character), { [key]: value });
+
+  async function isEnabled(character) {
+    return (cachedSettings(character) || (await outputSettings(character))).enabled;
+  }
+
+  async function setEnabled(character, value) {
+    await writeSetting(character, 'enabled', Boolean(value));
+    updateCachedSettings(character, { enabled: Boolean(value) });
+  }
+
+  async function setDomainEnabled(character, domain, value) {
+    const keys = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
+    if (!keys[domain]) throw new Error('Invalid ITEMX domain');
+    await writeSetting(character, keys[domain], Boolean(value));
+    updateCachedSettings(character, { [keys[domain]]: Boolean(value) });
+    workQueue.forget('catch-up');
+    workQueue.forget('aux-settle');
+  }
+
+  async function setDebugEnabled(character, value) {
+    settingsState.debugEnabled = Boolean(value);
+    await writeSetting(character, 'debugEnabled', Boolean(value));
+    updateCachedSettings(character, { debugEnabled: Boolean(value) });
+    debugRecord('debug', value ? 'enabled' : 'disabled');
+  }
+
+  async function setMainOutput(character, value) {
+    await writeSetting(character, 'mainOutput', Boolean(value));
+    updateCachedSettings(character, { mainOutput: Boolean(value) });
+  }
+
+  async function setAuxOutput(character, value) {
+    if (!['off', 'missing', 'always'].includes(value)) throw new Error('Invalid auxiliary output mode');
+    await writeSetting(character, 'auxOutput', value);
+    updateCachedSettings(character, { auxOutput: value });
+    workQueue.forget('catch-up');
+    workQueue.forget('aux-settle');
+  }
+
+  async function setRarityMode(character, value) {
+    if (!['world', 'itemx'].includes(value)) throw new Error('Invalid rarity mode');
+    await writeSetting(character, 'rarityMode', value);
+    updateCachedSettings(character, { rarityMode: value });
+  }
+
+  async function setEffectsEnabled(character, value) {
+    await writeSetting(character, 'effectsEnabled', Boolean(value));
+    updateCachedSettings(character, { effectsEnabled: Boolean(value) });
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
+    await syncMainEffectsState();
+  }
+
+  async function setFontScale(character, value) {
+    if (!['small', 'medium', 'large'].includes(value)) throw new Error('Invalid font scale');
+    await writeSetting(character, 'fontScale', value);
+    updateCachedSettings(character, { fontScale: value });
+    await syncRootFontScale(value);
+  }
+
+  async function setModuleAssetsEnabled(character, value) {
+    await writeSetting(character, 'moduleAssetsEnabled', Boolean(value));
+    updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
+    portraitsState.moduleAssetCache = { key: '', at: 0, rows: [] };
+  }
+
+  async function setLorebookEncounterEnabled(character, value) {
+    await writeSetting(character, 'lorebookEncounterEnabled', Boolean(value));
+    updateCachedSettings(character, { lorebookEncounterEnabled: Boolean(value) });
+    workQueue.remember('lorebook', '');
+  }
+
+  const AUX_LABELS = { off: '끔', missing: '누락 시', always: '항상 검토' };
+
+  const RARITY_MODE_LABELS = { world: '세계관 우선', itemx: 'ITEMX 강제' };
+
+  async function loadBadgePosition() {
+    const saved = (await ITEMXSettings.read(Risuai.pluginStorage)).global.badgePosition;
+    if (BADGE_POSITIONS.some(([value]) => value === saved)) uiState.badgePosition = saved;
+  }
+
+  function backupSettingsHtml(native) {
+    return setCard(
+      '백업 · 채팅 이사',
+      '아이템·스킬·조우와 기록 목록을 저장하고 새 채팅으로 가져옵니다.',
+      `<button class="itemx2-root-setting-button itemx2-setting-backup" data-action="backup" type="button">저장 / 불러오기</button>`
+    );
+  }
+
+  async function openBackupPanel() {
+    if (uiState.backupOpen) return;
+    const ctx = await context();
+    if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
+    uiState.backupOpen = true;
+    let preview = null,
+      url = '',
+      busy = false;
+    document.body.innerHTML = `<main id="itemx-backup"><header><h2>백업 · 채팅 이사</h2><button id="ix-close" type="button">닫기</button></header><p id="ix-target"></p><p>아이템·스킬·조우의 현재 상태와 기록 목록을 옮깁니다. 대화 본문·손요약·다른 모듈의 호감도/위치 변수·이미지 파일은 포함하지 않습니다. 초상은 같은 캐릭터/모듈 에셋이 있어야 표시됩니다.</p><section><h3>1. 지금 기록 저장</h3><button id="ix-export" type="button">백업 만들기</button><a id="ix-download" hidden>JSON 파일 저장</a><button id="ix-copy" type="button" disabled>텍스트 복사</button><textarea id="ix-export-text" aria-label="내보낸 백업" readonly placeholder="백업을 만들면 파일 저장 또는 텍스트 복사를 선택할 수 있습니다."></textarea></section><section><h3>2. 백업 불러오기</h3><label>불러오기 방식 <select id="ix-mode"><option value="empty">빈 채팅에 불러오기</option><option value="replace">기존 ITEMX 기록 덮어쓰기</option></select></label><p>덮어쓰기는 현재 ITEMX 기록을 백업 상태로 교체하고 기존 본문 카드를 제거합니다. 대화 글과 다른 모듈 데이터는 유지됩니다. 필요하면 먼저 현재 기록을 백업하세요.</p><label>백업 JSON 파일 <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="불러올 백업" placeholder="파일을 선택하거나 백업 텍스트를 붙여넣으세요."></textarea><button id="ix-preview" type="button">내용 확인</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>이 채팅에 불러오기</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
+    const style = document.createElement('style');
+    style.textContent =
+      'body{margin:0;background:#0c121c;color:#e4eaf4;font:15px/1.6 system-ui}#itemx-backup{max-width:680px;margin:auto;padding:20px;box-sizing:border-box}#itemx-backup header{display:flex;align-items:center;justify-content:space-between;gap:12px}#itemx-backup section{padding:16px;margin:16px 0;border:1px solid #33435d;border-radius:12px}#itemx-backup button,#itemx-backup a{display:inline-block;padding:10px;margin:4px;border:1px solid #536884;border-radius:8px;background:#1a2940;color:#eef3fc;font:inherit;cursor:pointer}#itemx-backup [hidden]{display:none}#itemx-backup button:disabled{opacity:.45;cursor:default}#itemx-backup textarea{display:block;box-sizing:border-box;width:100%;min-height:105px;margin:12px 0;padding:10px;background:#090e17;color:#d9e6fc;border:1px solid #40516c;border-radius:8px}#itemx-backup input,#itemx-backup select{max-width:100%}#itemx-backup select{padding:8px;background:#1a2940;color:#eef3fc;border:1px solid #536884;border-radius:8px}#itemx-backup p{overflow-wrap:anywhere}#ix-status{padding:10px;background:#142137}';
+    document.head.appendChild(style);
+    const get = (id) => document.getElementById(id);
+    get('ix-target').textContent = `현재 대상: ${ctx.character.name || '캐릭터'} · ${ctx.chat.name || '현재 채팅'}`;
+    const status = (text) => {
+      get('ix-status').textContent = text;
+    };
+    const countText = (value) => {
+      const [i, s, m] = ITEMXBackup.counts(value);
+      return `아이템 ${i} · 스킬 ${s} · 조우 ${m}`;
+    };
+    const run = async (work) => {
+      if (busy) return;
+      busy = true;
+      try {
+        await work();
+      } catch (error) {
+        status(error.message || String(error));
+      } finally {
+        busy = false;
+      }
+    };
+    const invalidate = () => {
+      preview = null;
+      get('ix-import').disabled = true;
+      get('ix-preview-text').textContent = '';
+    };
+    get('ix-close').onclick = entry(
+      'ui-action',
+      () =>
+        run(async () => {
+          if (url) URL.revokeObjectURL(url);
+          style.remove();
+          uiState.backupOpen = false;
+          await Risuai.hideContainer();
+          await openRootInventory({ open: true, tab: 'settings' });
+        }),
+      true
+    );
+    get('ix-export').onclick = entry(
+      'ui-action',
+      () =>
+        run(async () => {
+          const value = await exportCurrentBackup(ctx.key),
+            text = JSON.stringify(value);
+          get('ix-export-text').value = text;
+          if (url) URL.revokeObjectURL(url);
+          url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+          const link = get('ix-download');
+          link.href = url;
+          link.download = `itemx-backup-${new Date().toISOString().slice(0, 10)}.json`;
+          link.hidden = false;
+          get('ix-copy').disabled = false;
+          status(`${countText(value)} · 백업 준비 완료. 파일 저장이나 텍스트 복사를 눌러 보관하세요.`);
+        }),
+      true
+    );
+    get('ix-copy').onclick = entry(
+      'ui-action',
+      () =>
+        run(async () => {
+          const area = get('ix-export-text');
+          area.focus();
+          area.select();
+          try {
+            await navigator.clipboard.writeText(area.value);
+            status('백업 텍스트를 복사했습니다.');
+          } catch {
+            status('백업 텍스트를 선택했습니다. 기기의 복사 메뉴로 복사해 주세요.');
+          }
+        }),
+      true
+    );
+    get('ix-import-text').oninput = invalidate;
+    get('ix-mode').onchange = invalidate;
+    get('ix-file').onchange = () =>
+      run(async () => {
+        invalidate();
+        const file = get('ix-file').files[0];
+        if (!file) return;
+        get('ix-import-text').value = '';
+        if (file.size > ITEMXBackup.MAX_BYTES) throw new Error('백업 파일은 32 MiB 이하여야 합니다.');
+        get('ix-import-text').value = await file.text();
+        status('파일을 읽었습니다. 내용을 확인해 주세요.');
+      });
+    get('ix-preview').onclick = entry(
+      'ui-action',
+      () =>
+        run(async () => {
+          invalidate();
+          const text = get('ix-import-text').value;
+          const mode = get('ix-mode').value;
+          const prepared = await prepareBackupImport(text, ctx.key, mode);
+          if (get('ix-import-text').value !== text || get('ix-mode').value !== mode)
+            throw new Error('백업 텍스트가 변경되었습니다. 내용을 다시 확인해 주세요.');
+          preview = prepared;
+          get('ix-preview-text').textContent =
+            `${preview.value.source} · ${preview.value.createdAt} · ${countText(preview.value)}${mode === 'replace' ? ` · 교체 대상: 아이템 ${preview.previousCounts[0]} · 스킬 ${preview.previousCounts[1]} · 조우 ${preview.previousCounts[2]}` : ''}`;
+          get('ix-import').textContent = mode === 'replace' ? '기존 기록을 백업으로 덮어쓰기' : '이 채팅에 불러오기';
+          get('ix-import').disabled = false;
+          status('위 기록을 현재 채팅으로 가져옵니다. 확인 후 불러오기를 누르세요.');
+        }),
+      true
+    );
+    get('ix-import').onclick = entry(
+      'ui-action',
+      () =>
+        run(async () => {
+          if (!preview) return;
+          get('ix-import').disabled = true;
+          const ready = preview;
+          preview = null;
+          const value = await commitBackupImport(ready);
+          status(`${countText(value)} · 불러오기 완료. 닫은 뒤 CODEX에서 확인하세요.`);
+        }),
+      true
+    );
+    try {
+      await Risuai.showContainer('fullscreen');
+    } catch (error) {
+      uiState.backupOpen = false;
+      style.remove();
+      throw error;
+    }
+  }
+
+  const NATIVE_ACTION_ALIASES = { 'main-output': 'main', 'lorebook-toggle': 'lorebook', 'cleanup-chat': 'cleanup' };
+
+  const SETTINGS_SKINS = {
+    native: {
+      native: true,
+      hook: (action) => ` itemx2-setting-${NATIVE_ACTION_ALIASES[action] || action}`,
+      data: () => '',
+      segHook: (group, value) => ` itemx2-seg-${group}-${value}`,
+      segData: () => '',
+      choiceData: () => ''
+    },
+    frame: {
+      native: false,
+      hook: () => '',
+      data: (action) => ` data-action="${action}"`,
+      segHook: () => '',
+      segData: (group, value) => ` data-seg="${group}" data-value="${value}"`,
+      choiceData: (name, value) => ` data-${name}="${value}"`
+    }
+  };
+
+  const setCard = (title, note, control = '', extra = '') =>
+    `<section class="itemx2-root-setting-card"><span><strong>${title}</strong><small${extra}>${note}</small></span>${control}</section>`;
+
+  const setButton = (skin, action, label, extra = '') =>
+    `<button class="itemx2-root-setting-button${skin.hook(action)}${extra}" type="button"${skin.data(action)}>${label}</button>`;
+
+  const setSwitch = (skin, action, on) =>
+    `<button class="itemx2-root-setting-button itemx2-sw${skin.hook(action)}${on ? ' itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"${skin.data(action)}><i></i></button>`;
+
+  const setSegment = (skin, group, entries, current) =>
+    `<div class="itemx2-seg">${entries
+      .map(
+        ([value, label]) =>
+          `<button class="itemx2-seg-btn${skin.segHook(group, value)}${current === value ? ' itemx2-seg-on' : ''}" type="button"${skin.segData(group, value)}>${label}</button>`
+      )
+      .join('')}</div>`;
+
+  function settingsPanelHtml(loaded, skin, parts) {
+    const enabled = loaded.enabled === true;
+    const connection = parts.connection;
+    const connectionCards = skin.native
+      ? setCard(
+          'Risu 연결',
+          '모델 응답을 읽고 화면에 카드를 그리려면 Risu의 허가가 필요합니다. 처음 한 번만 물어봅니다.',
+          setButton(
+            skin,
+            'connect',
+            workQueue.isActive('connect') ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기',
+            ` itemx2-root-setting-button-primary${workQueue.isActive('connect') ? ' itemx2-root-setting-button-busy' : ''}`
+          )
+        ).replace('</small>', `</small><span class="itemx2-status-row">${parts.chips}</span>`)
+      : // The fallback exists because main-document access was refused, so it
+        setCard(
+          '모델 처리 권한',
+          `${parts.permissionLabel} · 모델 응답을 읽고 원시 태그를 정리하려면 필요합니다.`,
+          setButton(skin, 'permissions', '권한 요청')
+        ) +
+        setCard(
+          '본문 카드 스타일',
+          `${parts.styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.`,
+          setButton(skin, 'style', '다시 연결')
+        );
+    return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4>${connectionCards}${setCard(
+      '보조 모델 상태',
+      ITEMXCore.esc(auxStatusText()),
+      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${auxState.auxActive > 0 ? 'disabled' : ''}>${auxState.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
+      ' class="itemx2-aux-setting-status"'
+    )}<h4 class="itemx2-set-group">기록</h4>${setCard(
+      '무엇을 기록할까요',
+      '끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.'
+    )}<div class="itemx2-domain-grid">${parts.domainControls}</div>${setCard(
+      '이 봇에서 사용',
+      enabled ? '활성 상태입니다.' : '끄면 이 봇에서만 멈춥니다. 다른 봇은 영향받지 않습니다.',
+      setSwitch(skin, 'toggle', enabled)
+    )}${setCard(
+      '메인 모델에 형식 알리기',
+      '대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.',
+      setSwitch(skin, 'main-output', loaded.mainOutput)
+    )}${setCard(
+      '보조 모델로 보완',
+      '메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.',
+      setSegment(skin, 'aux', Object.entries(AUX_LABELS), loaded.auxOutput)
+    )}${setCard(
+      '등급 판정 기준',
+      '세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.',
+      setSegment(skin, 'rarity', Object.entries(RARITY_MODE_LABELS), loaded.rarityMode)
+    )}${setCard(
+      '로어북에서 설명 채우기',
+      '이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.',
+      `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', '지금 스캔')}</span>`
+    )}${setCard(
+      '모듈 초상화 사용',
+      '활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.',
+      setSwitch(skin, 'module-assets', loaded.moduleAssetsEnabled)
+    )}<h4 class="itemx2-set-group">모양</h4>${setCard(
+      '화면 스킨',
+      '서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.',
+      setSegment(
+        skin,
+        'skin',
+        SKIN_MODES.map((mode) => [mode, SKIN_LABELS[mode]]),
+        loaded.skin || 'dark'
+      )
+    )}${setCard(
+      '이펙트',
+      '카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.',
+      setSwitch(skin, 'effects', loaded.effectsEnabled)
+    )}${setCard('글자 크기', '인벤토리·도감의 본문 글자에 바로 적용됩니다.')}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
+      '배지 위치',
+      '화면에서 CODEX 배지가 붙을 자리입니다.'
+    )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(skin.native)}${setCard(
+      '저장 공간',
+      `${parts.footprintLabel} · 최근 원장은 자동 순환됩니다.`,
+      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', '재구축')}${setButton(skin, 'storage-cleanup', parts.storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화', parts.storageCleanupArmed ? ' itemx2-setting-cleanup-armed' : '')}</span>`
+    )}<div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4>${setCard(
+      '이 채팅의 ITEMX 기록 지우기',
+      '본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.',
+      setButton(
+        skin,
+        'cleanup-chat',
+        parts.cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리',
+        parts.cleanupArmed ? ' itemx2-setting-cleanup-armed' : ''
+      )
+    )}</div>${parts.debugPanel}${setCard('플러그인', `ITEMX CODEX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  }
+
+  function settingsDomainControls(loaded, skin) {
+    return [
+      ['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'],
+      ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'],
+      ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']
+    ]
+      .map(
+        ([key, label, value, note]) =>
+          `<button class="itemx2-domain-card${skin.hook(`domain-${key}`)} ${value ? 'itemx2-setting-on' : ''}" type="button"${skin.data(`domain-${key}`)}><strong>${label}</strong><small>${note}</small><i>${value ? '기록 중' : '멈춤'}</i></button>`
+      )
+      .join('');
+  }
+
+  function settingsFontChoices(loaded, skin) {
+    return [
+      ['small', '작게'],
+      ['medium', '보통'],
+      ['large', '크게']
+    ]
+      .map(
+        ([value, label]) =>
+          `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button"${skin.choiceData('font', value)}><em>가나다</em><span>${label}</span></button>`
+      )
+      .join('');
+  }
+
+  function settingsPositionChoices(skin) {
+    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === uiState.badgePosition) || BADGE_POSITIONS[0])[1];
+    return `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
+      ([key, label]) =>
+        `<button class="itemx2-position-choice itemx2-position-${key} ${uiState.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
+    ).join(
+      ''
+    )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`;
+  }
+
+  function settingsStorageParts(loaded) {
+    const footprint = itemxStorageFootprint(loaded.chat);
+    return {
+      cleanupArmed: uiState.cleanupArmedUntil > Date.now(),
+      storageCleanupArmed: uiState.storageCleanupArmedUntil > Date.now(),
+      footprintLabel: `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`
+    };
+  }
+
+  function settingsDebugLog() {
+    return (
+      settingsState.debugEntries
+        .slice(-12)
+        .reverse()
+        .map(
+          (entry) =>
+            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
+        )
+        .join('\n\n') || '기록 없음'
+    );
+  }
+
+  function rootSettingActions() {
+    const toggleSetting = (hook, read, write, label) => ({
+      hook,
+      run: () =>
+        applyRootSetting(async () => {
+          const loaded = await cachedOrRebuildCurrent();
+          if (!loaded) return;
+          const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
+          const value = !read(current);
+          await write(loaded, value);
+          uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+          await openRootInventory({ open: true, tab: 'settings', loaded });
+        })
+    });
+    const armed = (key, arm, confirmed) => async () => {
+      if (runtime[key] <= Date.now()) {
+        runtime[key] = Date.now() + 7000;
+        await arm();
+        await openRootInventory({ open: true, tab: 'settings' });
+        return;
+      }
+      await confirmed();
+    };
+    return [
+      {
+        hook: 'itemx2-setting-connect',
+        run: async () => {
+          const restoreStage = workQueue.stage('connect');
+          uiState.status = '연결 및 권한 확인 중';
+          await updateConnectionUi();
+          await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
+          try {
+            const connected = await installPipelineHooks({ prompt: true });
+            const styled = await installMainStyle();
+            uiState.status =
+              connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
+            if (connected && styled) {
+              await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
+            } else {
+              await showRootFeedback(
+                `연결 확인 실패 · ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
+                'error',
+                3600
+              );
+            }
+            if (!connected || !styled)
+              await notifyUser(
+                `ITEMX CODEX 연결 확인 실패: ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
+                'error'
+              );
+          } finally {
+            restoreStage();
+            await updateConnectionUi();
+          }
+        }
+      },
+      {
+        hook: 'itemx2-setting-aux-run',
+        run: async () => {
+          if (auxState.auxActive > 0) return;
+          uiState.status = '보조 모델 수동 검사 중';
+          await recoverAuxiliaryOutput({ force: true });
+        }
+      },
+      ...BADGE_POSITIONS.map(([key, label]) => ({
+        hook: `itemx2-position-${key}`,
+        run: async () => {
+          uiState.badgePosition = key;
+          await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: key });
+          uiState.status = `배지 위치 · ${label}`;
+          if (uiState.rootDrawer) {
+            for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+            await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
+          }
+          await installMainStyle();
+          for (const [other] of BADGE_POSITIONS) {
+            const button = await queryMainClass(`itemx2-position-${other}`);
+            if (!button) continue;
+            if (other === key) await button.addClass('x-risu-itemx2-position-on');
+            else await button.removeClass('x-risu-itemx2-position-on');
+          }
+        }
+      })),
+      {
+        hook: 'itemx2-setting-toggle',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const next = !(await isEnabled(loaded.character));
+            await setEnabled(loaded.character, next);
+            uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+            await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
+          })
+      },
+      ...[
+        ['items', 'itemsEnabled', '무기·아이템'],
+        ['skills', 'skillsEnabled', '스킬'],
+        ['encounters', 'encountersEnabled', '전투 도감']
+      ].map(([domain, key, label]) => ({
+        hook: `itemx2-setting-domain-${domain}`,
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const current = await outputSettings(loaded.character),
+              value = !current[key];
+            await setDomainEnabled(loaded.character, domain, value);
+            pipelineState.cachedLoaded = null;
+            uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+            await openRootInventory({ open: true, tab: 'settings' });
+          })
+      })),
+      {
+        hook: 'itemx2-setting-debug',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const value = !(await outputSettings(loaded.character)).debugEnabled;
+            await setDebugEnabled(loaded.character, value);
+            pipelineState.cachedLoaded = null;
+            uiState.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
+            await openRootInventory({ open: true, tab: 'settings' });
+          })
+      },
+      {
+        hook: 'itemx2-setting-debug-clear',
+        run: async () => {
+          settingsState.debugEntries = [];
+          uiState.status = '디버그 로그 비움';
+          await openRootInventory({ open: true, tab: 'settings' });
+        }
+      },
+      {
+        hook: 'itemx2-setting-main',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const value = !(await outputSettings(loaded.character)).mainOutput;
+            await setMainOutput(loaded.character, value);
+            uiState.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
+            await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
+          })
+      },
+      ...[
+        [
+          'aux',
+          Object.keys(AUX_LABELS),
+          async (loaded, value) => {
+            await setAuxOutput(loaded.character, value);
+            uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
+          }
+        ],
+        [
+          'rarity',
+          Object.keys(RARITY_MODE_LABELS),
+          async (loaded, value) => {
+            await setRarityMode(loaded.character, value);
+            uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
+          }
+        ],
+        [
+          'skin',
+          SKIN_MODES,
+          async (loaded, value) => {
+            await setSkin(loaded.character, value);
+            loaded.skin = value;
+            uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+          }
+        ]
+      ].flatMap(([group, values, apply]) =>
+        values.map((value) => ({
+          hook: `itemx2-seg-${group}-${value}`,
+          run: () =>
+            applyRootSetting(async () => {
+              const loaded = await cachedOrRebuildCurrent();
+              if (!loaded) return;
+              await apply(loaded, value);
+              await openRootInventory({ open: true, tab: 'settings', loaded });
+            })
+        }))
+      ),
+      toggleSetting(
+        'itemx2-setting-effects',
+        (current) => current.effectsEnabled,
+        async (loaded, value) => {
+          await setEffectsEnabled(loaded.character, value);
+          loaded.effectsEnabled = value;
+        },
+        '시각 이펙트'
+      ),
+      {
+        hook: 'itemx2-setting-lorebook',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await cachedOrRebuildCurrent();
+            if (!loaded) return;
+            const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
+              .lorebookEncounterEnabled;
+            await setLorebookEncounterEnabled(loaded.character, value);
+            loaded.lorebookEncounterEnabled = value;
+            uiState.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
+            if (value) await scanLorebookEncounters({ refresh: true, silent: true });
+            await openRootInventory({ open: true, tab: 'settings' });
+          })
+      },
+      {
+        hook: 'itemx2-setting-lorebook-scan',
+        run: async () => {
+          await scanLorebookEncounters({ refresh: true });
+          await openRootInventory({ open: true, tab: 'settings' });
+        }
+      },
+      {
+        hook: 'itemx2-setting-module-assets',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await cachedOrRebuildCurrent();
+            if (!loaded) return;
+            const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
+            let value = false;
+            if (current.moduleAssetsEnabled) {
+              await setModuleAssetsEnabled(loaded.character, false);
+            } else {
+              value = await enableModuleAssets(loaded.character, loaded.chat);
+              if (!value)
+                await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
+            }
+            loaded.moduleAssetsEnabled = value;
+            uiState.status = value
+              ? '모듈 에셋 초상화 · ON'
+              : current.moduleAssetsEnabled
+                ? '모듈 에셋 초상화 · OFF'
+                : '모듈 에셋 권한 없음 · 이모지 폴백';
+            workQueue.remember('render', '');
+            await openRootInventory({ open: true, tab: 'settings', loaded });
+          })
+      },
+      ...[
+        ['small', '소'],
+        ['medium', '중'],
+        ['large', '대']
+      ].map(([value, label]) => ({
+        hook: `itemx2-setting-font-${value}`,
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await cachedOrRebuildCurrent();
+            if (!loaded) return;
+            await setFontScale(loaded.character, value);
+            loaded.fontScale = value;
+            uiState.status = `글자 크기 · ${label}`;
+            for (const scale of ['small', 'medium', 'large']) {
+              const button = await queryMainClass(`itemx2-setting-font-${scale}`);
+              if (!button) continue;
+              if (scale === value) await button.addClass('x-risu-itemx2-font-on');
+              else await button.removeClass('x-risu-itemx2-font-on');
+            }
+          })
+      })),
+      {
+        hook: 'itemx2-setting-storage-cleanup',
+        run: armed(
+          'storageCleanupArmedUntil',
+          async () => {
+            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
+            await showRootFeedback(
+              '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
+              'working',
+              6500
+            );
+          },
+          async () => {
+            uiState.status = '현재 채팅 저장소 최적화 중';
+            await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
+            try {
+              const result = await compactCurrentChatStorage();
+              await showRootFeedback(
+                `최적화 완료 · ${Math.round(result.savedBytes / 1024)} KiB 절감 · 구형 캐시 ${result.legacyKeysRemoved}개 정리`,
+                'success',
+                4200
+              );
+              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+            } catch (error) {
+              uiState.storageCleanupArmedUntil = 0;
+              uiState.status = '저장소 최적화 실패';
+              await showRootFeedback(`최적화 실패 · ${error.message || error}`, 'error', 4200);
+              await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
+            }
+          }
+        )
+      },
+      {
+        hook: 'itemx2-setting-cleanup',
+        run: armed(
+          'cleanupArmedUntil',
+          async () => {
+            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+            await showRootFeedback(
+              '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.',
+              'error',
+              6500
+            );
+          },
+          async () => {
+            uiState.status = '현재 채팅 ITEMX 기록 정리 중';
+            await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
+            try {
+              const result = await cleanCurrentChatItemx();
+              await showRootFeedback(
+                `정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`,
+                'success',
+                3600
+              );
+              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+            } catch (error) {
+              uiState.cleanupArmedUntil = 0;
+              uiState.status = '현재 채팅 정리 실패';
+              await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
+              await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
+            }
+          }
+        )
+      },
+      {
+        hook: 'itemx2-setting-rebuild',
+        run: async () => {
+          pipelineState.cachedLoaded = null;
+          const loaded = await rebuildCurrent();
+          if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
+        }
+      }
+    ];
+  }
+
+  async function toggleCurrentBot() {
+    const ctx = await context();
+    if (!ctx) return;
+    const next = !(await isEnabled(ctx.character));
+    await setEnabled(ctx.character, next);
+    uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+    await openRootInventory({ open: true, tab: 'settings' });
+  }
+
+  async function openSettingsFromRisuMenu() {
+    const active = await context();
+    if (!active) {
+      uiState.allowDrawerOverSettings = false;
+      invalidateHostSettingsVisibility();
+      uiState.status = '채팅 진입 대기';
+      const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
+      await notifyUser(message, 'error');
+      return;
+    }
+    pipelineState.activeContextKey = active.key;
+    uiState.allowDrawerOverSettings = true;
+    invalidateHostSettingsVisibility();
+    let styled = Boolean(hostState.mainDoc) || (await installMainStyle());
+    const loadingStarted = styled ? Date.now() : 0;
+    if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
+    await updateRootLoading('연결과 권한 확인 중…');
+    const connected = await installPipelineHooks({ prompt: true });
+    if (!styled) {
+      await delay(300);
+      styled = await installMainStyle();
+      if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
+    }
+    await updateRootLoading('인벤토리 상태 확인 중…');
+    uiState.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
+    if (loadingStarted) await delay(Math.max(0, 260 - (Date.now() - loadingStarted)));
+    if (styled) await openRootInventory({ open: true, tab: 'settings' });
+    else await openInventory('settings');
+  }
+
+
+  function characterAssetFingerprint(character) {
+    const additional = character?.additionalAssets || [],
+      emotions = character?.emotionImages || [],
+      cc = character?.ccAssets || [];
+    const last = additional[additional.length - 1];
+    return `${additional.length}:${emotions.length}:${cc.length}:${additional[0]?.[0] || ''}:${last?.[0] || ''}:${cc[0]?.name || ''}`;
+  }
+
+  function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
+    const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
+    if (portraitsState.characterAssetCache.key === key && Date.now() - portraitsState.characterAssetCache.at < 30000)
+      return portraitsState.characterAssetCache.rows;
+    const rows = ITEMXCodex.assetCatalog(character, max, true);
+    ITEMXCodex.portraitAssetIndex(rows);
+    portraitsState.characterAssetCache = { key, at: Date.now(), rows };
+    return rows;
+  }
+
+  function combinedPortraitAssets(character, moduleAssets = [], max = ITEMXCodex.ASSET_CATALOG_MAX) {
+    const extra = characterPortraitAssets(character, max);
+    if (!extra.length) {
+      const rows = moduleAssets || [];
+      return rows.length <= max ? rows : rows.slice(0, max);
+    }
+    if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
+    const combinedKey = `${portraitsState.characterAssetCache.key}|${portraitsState.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
+    if (portraitsState.combinedAssetCache.key === combinedKey && Date.now() - portraitsState.combinedAssetCache.at < 30000)
+      return portraitsState.combinedAssetCache.rows;
+    const rows = extra.slice(),
+      seen = new Set(rows.map((row) => row.name));
+    for (const row of moduleAssets) {
+      if (rows.length >= max || !row?.name || !row?.id || seen.has(row.name)) continue;
+      seen.add(row.name);
+      rows.push(row);
+    }
+    ITEMXCodex.portraitAssetIndex(rows);
+    portraitsState.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
+    return rows;
+  }
+
+  function encounterEntities(snapshot) {
+    const monsters = snapshot?.monsters;
+    return (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
+  }
+
+  function encounterRegistryFingerprint(snapshot) {
+    const monsters = snapshot?.monsters;
+    const rows = (monsters?.order || []).map((id) => monsters.entries?.[id]).filter(Boolean);
+    return ITEMXCore.fnv1a(JSON.stringify(rows));
+  }
+
+  async function modulePortraitAssets(settings, character, chat) {
+    if (!settings?.moduleAssetsEnabled || typeof Risuai.getDatabase !== 'function') return [];
+    const key = `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`;
+    if (portraitsState.moduleAssetCache.key === key && Date.now() - portraitsState.moduleAssetCache.at < 30000)
+      return portraitsState.moduleAssetCache.rows;
+    try {
+      const database = await Risuai.getDatabase([
+        'modules',
+        'enabledModules',
+        'moduleIntergration',
+        'personas',
+        'selectedPersona'
+      ]);
+      if (!database) {
+        hostState.permissions.db = false;
+        portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
+        return [];
+      }
+      hostState.permissions.db = true;
+      const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
+      ITEMXCodex.portraitAssetIndex(rows);
+      portraitsState.moduleAssetCache = { key, at: Date.now(), rows };
+      return rows;
+    } catch (error) {
+      hostState.permissions.db = false;
+      portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
+      debugRecord('module portrait assets', error?.message || String(error));
+      return [];
+    }
+  }
+
+  async function enableModuleAssets(character, chat) {
+    if (typeof Risuai.getDatabase !== 'function') return false;
+    try {
+      if (
+        typeof Risuai.requestPluginPermission === 'function' &&
+        (await Risuai.requestPluginPermission('db')) !== true
+      ) {
+        hostState.permissions.db = false;
+        return false;
+      }
+      const probe = await Risuai.getDatabase([
+        'modules',
+        'enabledModules',
+        'moduleIntergration',
+        'personas',
+        'selectedPersona'
+      ]);
+      if (!probe) {
+        hostState.permissions.db = false;
+        return false;
+      }
+      hostState.permissions.db = true;
+      await setModuleAssetsEnabled(character, true);
+      const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
+      ITEMXCodex.portraitAssetIndex(rows);
+      portraitsState.moduleAssetCache = {
+        key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`,
+        at: Date.now(),
+        rows
+      };
+      return true;
+    } catch (error) {
+      hostState.permissions.db = false;
+      debugRecord('module portrait permission', error?.message || String(error));
+      return false;
+    }
+  }
+
+  function prepareInlinePortraits(ctx, codexSnapshot, settings) {
+    if (
+      typeof Risuai.readImage !== 'function' ||
+      !codexSnapshot?.monsters?.order?.length ||
+      ctx.key !== pipelineState.activeContextKey
+    )
+      return;
+    const key = `${ctx.key}:${Number(settings.moduleAssetsEnabled)}:${encounterRegistryFingerprint(codexSnapshot)}`;
+    void dispatch('portraits', () => workQueue.attempt('portraits', key,
+      () => loadCodexPortraits(ctx.character, ctx.chat, codexSnapshot, settings, true)
+        .catch((error) => debugRecord('portrait preparation', error?.message || String(error))),
+      () => true, 30000));
+  }
+
+  async function portraitThumbnail(cacheKey, image) {
+    if (portraitsState.portraitThumbnailCache.has(cacheKey)) return portraitsState.portraitThumbnailCache.get(cacheKey);
+    const work = Promise.resolve().then(async () => {
+      let thumbnail = '';
+      try {
+        if (image.length <= 24576) thumbnail = image;
+        else if (typeof createImageBitmap === 'function' && typeof OffscreenCanvas === 'function') {
+          const match = /^data:(image\/[^;]+);base64,(.+)$/.exec(image);
+          if (match) {
+            const bytes = Uint8Array.from(atob(match[2]), (one) => one.charCodeAt(0));
+            const bitmap = await createImageBitmap(new Blob([bytes], { type: match[1] }));
+            try {
+              const canvas = new OffscreenCanvas(96, 96),
+                context = canvas.getContext('2d');
+              const side = Math.min(bitmap.width, bitmap.height);
+              context.drawImage(
+                bitmap,
+                (bitmap.width - side) / 2,
+                (bitmap.height - side) / 2,
+                side,
+                side,
+                0,
+                0,
+                96,
+                96
+              );
+              const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.72 });
+              const encoded = `data:${blob.type};base64,${btoa(String.fromCharCode(...new Uint8Array(await blob.arrayBuffer())))}`;
+              if (encoded.length <= 24576) thumbnail = encoded;
+            } finally {
+              bitmap.close();
+            }
+          }
+        }
+      } catch (error) {
+        debugRecord('portrait thumbnail', error?.message || String(error));
+      }
+      portraitsState.portraitThumbnailCache.set(cacheKey, thumbnail);
+      while (portraitsState.portraitThumbnailCache.size > 64)
+        portraitsState.portraitThumbnailCache.delete(portraitsState.portraitThumbnailCache.keys().next().value);
+      return thumbnail;
+    });
+    portraitsState.portraitThumbnailCache.set(cacheKey, work);
+    return work;
+  }
+
+  async function loadCodexPortraits(character, chat, codexSnapshot, settings, inlineOnly = false) {
+    const ownerKey = pipelineState.activeContextKey;
+    const result = {},
+      catalog = combinedPortraitAssets(
+        character,
+        await modulePortraitAssets(settings, character, chat),
+        ITEMXCodex.ASSET_CATALOG_MAX
+      );
+    if (typeof Risuai.readImage !== 'function') return result;
+    const asDataUrl = (value, ext = '') => {
+      if (typeof value === 'string')
+        return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
+      let bytes = null;
+      if (value instanceof Uint8Array) bytes = value;
+      else if (value instanceof ArrayBuffer) bytes = new Uint8Array(value);
+      else if (Array.isArray(value)) bytes = Uint8Array.from(value);
+      else if (value?.data instanceof Uint8Array) bytes = value.data;
+      if (!bytes?.length || bytes.length > 12 * 1024 * 1024) return '';
+      const lower = String(ext || '').toLowerCase();
+      const isoBrand =
+        bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+          ? String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11])
+          : '';
+      const mime =
+        bytes[0] === 0x89 && bytes[1] === 0x50
+          ? 'image/png'
+          : bytes[0] === 0xff && bytes[1] === 0xd8
+            ? 'image/jpeg'
+            : bytes[0] === 0x52 &&
+                bytes[1] === 0x49 &&
+                bytes[8] === 0x57 &&
+                bytes[9] === 0x45 &&
+                bytes[10] === 0x42 &&
+                bytes[11] === 0x50
+              ? 'image/webp'
+              : bytes[0] === 0x47 && bytes[1] === 0x49
+                ? 'image/gif'
+                : ['avif', 'avis', 'mif1', 'miaf'].includes(isoBrand)
+                  ? 'image/avif'
+                  : {
+                      png: 'image/png',
+                      jpg: 'image/jpeg',
+                      jpeg: 'image/jpeg',
+                      webp: 'image/webp',
+                      gif: 'image/gif',
+                      avif: 'image/avif'
+                    }[lower] || '';
+      if (!mime) return '';
+      let binary = '';
+      for (let offset = 0; offset < bytes.length; offset += 0x8000)
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+      return `data:${mime};base64,${btoa(binary)}`;
+    };
+    const monsters = (codexSnapshot?.monsters?.order || [])
+      .map((id) => codexSnapshot.monsters.entries[id])
+      .filter(Boolean)
+      .slice(0, 20);
+    const narrative = (chat?.message || [])
+      .slice(-8)
+      .map((message) => ITEMXCore.messageText(message))
+      .join('\n');
+    if (pipelineState.activeContextKey === ownerKey)
+      portraitsState.inlinePortraitCatalog = {
+        contextKey: ownerKey,
+        characterId: character?.chaId || character?.id || 'character',
+        catalog,
+        narrative
+      };
+    let portraitCursor = 0;
+    const loadNextPortrait = async () => {
+      while (portraitCursor < monsters.length) {
+        const monster = monsters[portraitCursor++];
+        const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
+        if (!asset) continue;
+        const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
+        if (inlineOnly && portraitsState.portraitThumbnailCache.has(cacheKey)) {
+          result[monster.id] = await portraitsState.portraitThumbnailCache.get(cacheKey);
+          continue;
+        }
+        if (portraitsState.portraitCache.has(cacheKey)) {
+          const image = portraitsState.portraitCache.get(cacheKey);
+          const thumbnail = await portraitThumbnail(cacheKey, image);
+          result[monster.id] = inlineOnly ? thumbnail : image;
+          continue;
+        }
+        try {
+          let raw = null;
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+              raw = await Risuai.readImage(asset.id);
+              if (raw) break;
+            } catch {
+              raw = null;
+            }
+            if (attempt < 2) await delay(280 * (attempt + 1));
+          }
+          const image = asDataUrl(raw, asset.ext);
+          if (image) {
+            const thumbnail = await portraitThumbnail(cacheKey, image);
+            result[monster.id] = inlineOnly ? thumbnail : image;
+            if (!inlineOnly && image.length <= 4 * 1024 * 1024) {
+              portraitsState.portraitCache.set(cacheKey, image);
+
+              while (portraitsState.portraitCache.size > 24 || [...portraitsState.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
+                const oldest = portraitsState.portraitCache.keys().next().value,
+                  removed = portraitsState.portraitCache.get(oldest) || '';
+                portraitsState.portraitCache.delete(oldest);
+
+              }
+            }
+          }
+        } catch {}
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, monsters.length) }, () => loadNextPortrait()));
+    return result;
+  }
+
 
   function refreshLatest(chat, lookup = buildMessageEventLookup(chat)) {
     loadMessageEventLedger(chat, lookup);
@@ -5853,151 +6810,6 @@ ${codexPageStyle()}
     })();
   }
 
-  function backupSettingsHtml(native) {
-    return setCard(
-      '백업 · 채팅 이사',
-      '아이템·스킬·조우와 기록 목록을 저장하고 새 채팅으로 가져옵니다.',
-      `<button class="itemx2-root-setting-button itemx2-setting-backup" data-action="backup" type="button">저장 / 불러오기</button>`
-    );
-  }
-
-  async function openBackupPanel() {
-    if (uiState.backupOpen) return;
-    const ctx = await context();
-    if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
-    uiState.backupOpen = true;
-    let preview = null,
-      url = '',
-      busy = false;
-    document.body.innerHTML = `<main id="itemx-backup"><header><h2>백업 · 채팅 이사</h2><button id="ix-close" type="button">닫기</button></header><p id="ix-target"></p><p>아이템·스킬·조우의 현재 상태와 기록 목록을 옮깁니다. 대화 본문·손요약·다른 모듈의 호감도/위치 변수·이미지 파일은 포함하지 않습니다. 초상은 같은 캐릭터/모듈 에셋이 있어야 표시됩니다.</p><section><h3>1. 지금 기록 저장</h3><button id="ix-export" type="button">백업 만들기</button><a id="ix-download" hidden>JSON 파일 저장</a><button id="ix-copy" type="button" disabled>텍스트 복사</button><textarea id="ix-export-text" aria-label="내보낸 백업" readonly placeholder="백업을 만들면 파일 저장 또는 텍스트 복사를 선택할 수 있습니다."></textarea></section><section><h3>2. 백업 불러오기</h3><label>불러오기 방식 <select id="ix-mode"><option value="empty">빈 채팅에 불러오기</option><option value="replace">기존 ITEMX 기록 덮어쓰기</option></select></label><p>덮어쓰기는 현재 ITEMX 기록을 백업 상태로 교체하고 기존 본문 카드를 제거합니다. 대화 글과 다른 모듈 데이터는 유지됩니다. 필요하면 먼저 현재 기록을 백업하세요.</p><label>백업 JSON 파일 <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="불러올 백업" placeholder="파일을 선택하거나 백업 텍스트를 붙여넣으세요."></textarea><button id="ix-preview" type="button">내용 확인</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>이 채팅에 불러오기</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
-    const style = document.createElement('style');
-    style.textContent =
-      'body{margin:0;background:#0c121c;color:#e4eaf4;font:15px/1.6 system-ui}#itemx-backup{max-width:680px;margin:auto;padding:20px;box-sizing:border-box}#itemx-backup header{display:flex;align-items:center;justify-content:space-between;gap:12px}#itemx-backup section{padding:16px;margin:16px 0;border:1px solid #33435d;border-radius:12px}#itemx-backup button,#itemx-backup a{display:inline-block;padding:10px;margin:4px;border:1px solid #536884;border-radius:8px;background:#1a2940;color:#eef3fc;font:inherit;cursor:pointer}#itemx-backup [hidden]{display:none}#itemx-backup button:disabled{opacity:.45;cursor:default}#itemx-backup textarea{display:block;box-sizing:border-box;width:100%;min-height:105px;margin:12px 0;padding:10px;background:#090e17;color:#d9e6fc;border:1px solid #40516c;border-radius:8px}#itemx-backup input,#itemx-backup select{max-width:100%}#itemx-backup select{padding:8px;background:#1a2940;color:#eef3fc;border:1px solid #536884;border-radius:8px}#itemx-backup p{overflow-wrap:anywhere}#ix-status{padding:10px;background:#142137}';
-    document.head.appendChild(style);
-    const get = (id) => document.getElementById(id);
-    get('ix-target').textContent = `현재 대상: ${ctx.character.name || '캐릭터'} · ${ctx.chat.name || '현재 채팅'}`;
-    const status = (text) => {
-      get('ix-status').textContent = text;
-    };
-    const countText = (value) => {
-      const [i, s, m] = ITEMXBackup.counts(value);
-      return `아이템 ${i} · 스킬 ${s} · 조우 ${m}`;
-    };
-    const run = async (work) => {
-      if (busy) return;
-      busy = true;
-      try {
-        await work();
-      } catch (error) {
-        status(error.message || String(error));
-      } finally {
-        busy = false;
-      }
-    };
-    const invalidate = () => {
-      preview = null;
-      get('ix-import').disabled = true;
-      get('ix-preview-text').textContent = '';
-    };
-    get('ix-close').onclick = entry(
-      'ui-action',
-      () =>
-        run(async () => {
-          if (url) URL.revokeObjectURL(url);
-          style.remove();
-          uiState.backupOpen = false;
-          await Risuai.hideContainer();
-          await openRootInventory({ open: true, tab: 'settings' });
-        }),
-      true
-    );
-    get('ix-export').onclick = entry(
-      'ui-action',
-      () =>
-        run(async () => {
-          const value = await exportCurrentBackup(ctx.key),
-            text = JSON.stringify(value);
-          get('ix-export-text').value = text;
-          if (url) URL.revokeObjectURL(url);
-          url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-          const link = get('ix-download');
-          link.href = url;
-          link.download = `itemx-backup-${new Date().toISOString().slice(0, 10)}.json`;
-          link.hidden = false;
-          get('ix-copy').disabled = false;
-          status(`${countText(value)} · 백업 준비 완료. 파일 저장이나 텍스트 복사를 눌러 보관하세요.`);
-        }),
-      true
-    );
-    get('ix-copy').onclick = entry(
-      'ui-action',
-      () =>
-        run(async () => {
-          const area = get('ix-export-text');
-          area.focus();
-          area.select();
-          try {
-            await navigator.clipboard.writeText(area.value);
-            status('백업 텍스트를 복사했습니다.');
-          } catch {
-            status('백업 텍스트를 선택했습니다. 기기의 복사 메뉴로 복사해 주세요.');
-          }
-        }),
-      true
-    );
-    get('ix-import-text').oninput = invalidate;
-    get('ix-mode').onchange = invalidate;
-    get('ix-file').onchange = () =>
-      run(async () => {
-        invalidate();
-        const file = get('ix-file').files[0];
-        if (!file) return;
-        get('ix-import-text').value = '';
-        if (file.size > ITEMXBackup.MAX_BYTES) throw new Error('백업 파일은 32 MiB 이하여야 합니다.');
-        get('ix-import-text').value = await file.text();
-        status('파일을 읽었습니다. 내용을 확인해 주세요.');
-      });
-    get('ix-preview').onclick = entry(
-      'ui-action',
-      () =>
-        run(async () => {
-          invalidate();
-          const text = get('ix-import-text').value;
-          const mode = get('ix-mode').value;
-          const prepared = await prepareBackupImport(text, ctx.key, mode);
-          if (get('ix-import-text').value !== text || get('ix-mode').value !== mode)
-            throw new Error('백업 텍스트가 변경되었습니다. 내용을 다시 확인해 주세요.');
-          preview = prepared;
-          get('ix-preview-text').textContent =
-            `${preview.value.source} · ${preview.value.createdAt} · ${countText(preview.value)}${mode === 'replace' ? ` · 교체 대상: 아이템 ${preview.previousCounts[0]} · 스킬 ${preview.previousCounts[1]} · 조우 ${preview.previousCounts[2]}` : ''}`;
-          get('ix-import').textContent = mode === 'replace' ? '기존 기록을 백업으로 덮어쓰기' : '이 채팅에 불러오기';
-          get('ix-import').disabled = false;
-          status('위 기록을 현재 채팅으로 가져옵니다. 확인 후 불러오기를 누르세요.');
-        }),
-      true
-    );
-    get('ix-import').onclick = entry(
-      'ui-action',
-      () =>
-        run(async () => {
-          if (!preview) return;
-          get('ix-import').disabled = true;
-          const ready = preview;
-          preview = null;
-          const value = await commitBackupImport(ready);
-          status(`${countText(value)} · 불러오기 완료. 닫은 뒤 CODEX에서 확인하세요.`);
-        }),
-      true
-    );
-    try {
-      await Risuai.showContainer('fullscreen');
-    } catch (error) {
-      uiState.backupOpen = false;
-      style.remove();
-      throw error;
-    }
-  }
-
   function cleanChatPluginData(chat) {
     const next = ITEMXCore.clone(chat),
       messages = Array.isArray(next?.message) ? next.message : [];
@@ -6186,6 +6998,7 @@ ${codexPageStyle()}
     uiState.status = `${label} · ${events.length}건`;
     return refresh ? rebuildCurrent() : null;
   }
+
 
   function modelText(result) {
     if (typeof result === 'string') return result;
@@ -6435,6 +7248,7 @@ ${codexPageStyle()}
 
   const LIGHTBOARD_DATA_RE =
     /(?:^|\n)[ \t]*---[ \t]*\r?\n[ \t]*\[LBDATA START\][\s\S]*?\[LBDATA END\][ \t]*\r?\n[ \t]*---[ \t]*(?=\r?\n|$)/gi;
+
   function stripAuxiliaryDataBlocks(value) {
     return String(value || '').replace(LIGHTBOARD_DATA_RE, '\n');
   }
@@ -6516,6 +7330,7 @@ ${codexPageStyle()}
       );
     return value;
   }
+
   function eventValueKey(value) {
     return JSON.stringify(stableEventValue(value));
   }
@@ -6609,6 +7424,7 @@ ${codexPageStyle()}
       return event;
     };
   }
+
   function itemEventState(reg, event) {
     const patch = event.patch || {};
     const ids = [
@@ -6621,6 +7437,7 @@ ${codexPageStyle()}
     ].filter(Boolean);
     return eventValueKey(ids.map((id) => reg.items[id] || null));
   }
+
   async function recoverAuxiliaryOutputNow({ messageIndex = null, force = false } = {}) {
     const ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return null;
@@ -6983,6 +7800,93 @@ ${codexPageStyle()}
       .finally(() => {});
   }
 
+
+  async function withTimeout(promise, timeoutMs, message) {
+    let timer = null;
+    try {
+      return await Promise.race([
+        promise,
+        new Promise((_, reject) => {
+          timer = globalThis.setTimeout(() => reject(new Error(message)), timeoutMs);
+        })
+      ]);
+    } finally {
+      if (timer) globalThis.clearTimeout(timer);
+    }
+  }
+
+  async function context() {
+    try {
+      const [characterIndex, chatIndex, character] = await Promise.all([
+        Risuai.getCurrentCharacterIndex(),
+        Risuai.getCurrentChatIndex(),
+        Risuai.getCharacter()
+      ]);
+      if (characterIndex == null || chatIndex == null || !character) return null;
+      const chat = await readChat(characterIndex, chatIndex);
+      if (!chat) return null;
+      return {
+        characterIndex,
+        chatIndex,
+        character,
+        chat,
+        key: `${character.chaId || characterIndex}:${chat.id || chatIndex}`
+      };
+    } catch (error) {
+      if (!/chatPage|current chat|undefined/i.test(String(error?.message || error))) fail('active chat context', error);
+      return null;
+    }
+  }
+
+  function itemxProtocolText(rarityMode = 'world') {
+    const policy =
+      rarityMode === 'itemx'
+        ? `## ITEMX Rarity Policy: FORCED\nITEMX rarity is an internal relative power and visual tier, not necessarily the world's printed grade name. Preserve the setting's local grade wording in display. An explicit user-requested ITEMX tier always wins. When the narrative conclusively establishes a newly appraised item as the setting's absolute highest grade, ultimate pinnacle, server/world-unique apex, or beyond the existing grade system, emit rarity=empyrean even if the setting calls that grade Epic; keep the local wording and distinction in display. Use mythical or legendary for clearly lower relative standings. Do not promote from ornate prose alone: the apex standing must be settled by the narrative.`
+        : `## ITEMX Rarity Policy: WORLD FIRST\nTreat the setting's literal item grade as authoritative. Map its stated grade to the nearest literal ITEMX rarity and do not promote it merely because it is described as the setting's best. Preserve the local grade wording in display.`;
+    return `${ITEMX_PROTOCOL_TEXT}\n\n${policy}`;
+  }
+
+  const enabledCodexDomains = (settings) =>
+    [settings.skillsEnabled && 'skill', settings.encountersEnabled && 'monster'].filter(Boolean);
+
+  const stripItemTransport = (content) =>
+    ITEMXCore.extractResponse(String(content || ''), ITEMXCore.newRegistry()).content.replace(ITEMXCore.MARKER_RE, '');
+
+  const stripAllTransport = (content) =>
+    ITEMXCodex.extractResponse(stripItemTransport(content), ITEMXCodex.snapshot(), {
+      enabledDomains: []
+    }).content.replace(ITEMXCodex.MARKER_RE, '');
+
+  const OWNED_TRANSPORT_HINT_RE =
+    /<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
+
+  function processTransportStripper(content) {
+    const source = ITEMXCore.stripInventoryEcho(content);
+    if (!OWNED_TRANSPORT_HINT_RE.test(source)) return source;
+    return stripAllTransport(source)
+      .replace(ITEMX_REF_RE, '')
+      .replace(ITEMX_CODEX_REF_RE, '')
+      .replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
+  }
+
+  function protocolForSettings(settings, character, moduleAssets = [], options = {}) {
+    const parts = [];
+    if (settings.itemsEnabled) parts.push(itemxProtocolText(settings.rarityMode));
+    const domains = enabledCodexDomains(settings);
+    if (domains.length) {
+      const portraitRows = domains.includes('monster')
+        ? combinedPortraitAssets(character, moduleAssets, ITEMXCodex.ASSET_CATALOG_MAX)
+        : [];
+      const names = ITEMXCodex.portraitProtocolNames(portraitRows, {
+        narrative: options.narrative || '',
+        entities: options.entities || [],
+        max: ITEMXCodex.PORTRAIT_PROTOCOL_MAX
+      });
+      parts.push(ITEMXCodex.protocol(names, { enabledDomains: domains, rarityMode: settings.rarityMode }));
+    }
+    return parts.join('\n\n');
+  }
+
   function mainRequestType(type) {
     return !/(translate|emotion|memory|otherax|aux|submodel|image|tts)/i.test(String(type || ''));
   }
@@ -7300,12 +8204,194 @@ ${codexPageStyle()}
   }
 
   const afterRequest = async (content, type) => processOutput(content, type);
+
   const outputFallback = async (content) => {
     const processed = await processOutput(content, 'main');
     if (hostState.hooks.listener === 'unsupported' && auxState.auxActive === 0)
       scheduleLegacyCommitRecovery();
     return processed;
   };
+
+  async function installPipelineHooks(options = {}) {
+    return installPipelineHooksNow(options);
+  }
+
+  async function installDisplayHooks() {
+    if (!hostState.hooks.process) {
+      await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
+      hostState.hooks.process = true;
+    }
+    if (!hostState.hooks.output) {
+      await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
+      hostState.hooks.output = true;
+    }
+    if (!hostState.hooks.display) {
+      await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
+      hostState.hooks.display = true;
+    }
+  }
+
+  async function refreshPipelineBindingsAfterResume() {
+    await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
+    await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
+    await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
+    if (hostState.permissions.replacer) {
+      await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
+      await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
+    }
+  }
+
+  async function installPipelineHooksNow({ prompt = false } = {}) {
+    try {
+      await installDisplayHooks();
+      const permission =
+        typeof Risuai.requestPluginPermission === 'function' ? await Risuai.requestPluginPermission('replacer') : true;
+      hostState.permissions.replacer = permission === true;
+      if (!hostState.permissions.replacer) {
+        if (hostState.hooks.before) {
+          try {
+            await Risuai.removeRisuReplacer('beforeRequest', pipelineEntries.before);
+          } catch {}
+        }
+        if (hostState.hooks.after) {
+          try {
+            await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
+          } catch {}
+        }
+        hostState.hooks.before = false;
+        hostState.hooks.after = false;
+        hostState.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
+        uiState.status = '모델 처리 권한 필요';
+      } else {
+        if (!hostState.hooks.before) {
+          await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
+          hostState.hooks.before = true;
+        }
+        if (!hostState.hooks.after) {
+          await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
+          hostState.hooks.after = true;
+        }
+      }
+      if (!hostState.hooks.listener) {
+        if (typeof Risuai.addRisuChatListener !== 'function') {
+          hostState.hooks.listener = 'unsupported';
+          log('chat listener unavailable; continuing with core request/output hooks');
+        } else
+          try {
+            await Risuai.addRisuChatListener('output', (output) => {
+              const loaded = pipelineState.cachedLoaded;
+              if (
+                output?.chat &&
+                loaded?.key === pipelineState.activeContextKey &&
+                output.characterIndex === loaded.characterIndex &&
+                output.chatIndex === loaded.chatIndex
+              )
+                commitEventBursts(output.chat);
+              void scheduleCommittedOutputSync();
+            });
+            hostState.hooks.listener = true;
+          } catch (error) {
+            const message = String(error?.message || error || '');
+            if (!/API method addRisuChatListener not found/i.test(message)) throw error;
+            hostState.hooks.listener = 'unsupported';
+            log('chat listener unavailable; continuing with core request/output hooks');
+          }
+      }
+      if (hostState.permissions.replacer) {
+        hostState.lastHookError = '';
+        uiState.status = prompt ? '모델 처리 권한 연결됨' : '정상';
+      }
+      if (workQueue.hasTimer('catchUpTimer')) armCatchUpWatchdog();
+      return hostState.permissions.replacer;
+    } catch (error) {
+      hostState.permissions.replacer = false;
+      hostState.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
+      uiState.status = '모델 연결 오류';
+      fail('pipeline hooks', error);
+      return false;
+    }
+  }
+
+  function armRemountWatchdog() {
+    if (hostState.unloading) return;
+    const interval = hostState.hostObserver || !pipelineState.activeContextKey ? 10000 : 1200;
+    workQueue.clearTimer('remountTimer');
+
+    workQueue.schedule(
+      'remountTimer',
+      () => {
+        if (!presentationState.bodyFxScrollActive) {
+          const now = Date.now();
+          if (!pipelineState.activeContextKey) {
+            return ensureRootInventory();
+          } else if (!hostState.hostObserver || workQueue.age('remount') >= 10000) {
+            return ensureRootInventory();
+          }
+        }
+      },
+      interval,
+      true
+    );
+  }
+
+  async function recoverAfterBrowserResume() {
+    if (hostState.unloading) return;
+    workQueue.cancel(intent => intent.kind === 'committed-output', false);
+    const pending = (async () => {
+      workQueue.clearTimer('bodyFxStartTimer');
+      workQueue.clearTimer('bodyFxScrollTimer');
+      presentationState.bodyFxScrollActive = false;
+      presentationState.bodyFxSawScroll = false;
+
+
+      if (presentationState.bodyFxClassOwner)
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+
+      await refreshPipelineBindingsAfterResume();
+      pipelineState.cachedLoaded = null;
+      pipelineState.generation += 1;
+      await installMainStyle();
+      await rebuildCurrent({ upgradeDisplayRefs: true });
+      await ensureRootInventory();
+      hostState.backgrounded = false;
+    })().catch((error) => fail('browser resume recovery', error));
+    return pending;
+  }
+
+  function queueBrowserResume() {
+    if (hostState.unloading || !hostState.backgrounded) return;
+    workQueue.clearTimer('resumeTimer');
+    workQueue.schedule(
+      'resumeTimer',
+      () => {
+        return recoverAfterBrowserResume();
+      },
+      80,
+      false
+    );
+  }
+
+  function installBrowserResumeHandlers() {
+    const bind = (target, type, handler) => {
+      if (!target || typeof target.addEventListener !== 'function') return;
+      target.addEventListener(type, handler);
+      hostState.resumeBindings.push({ target, type, handler });
+    };
+    const background = () => {
+      hostState.backgrounded = true;
+    };
+    const visible = () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'hidden') queueBrowserResume();
+    };
+    bind(globalThis, 'pagehide', background);
+    bind(globalThis, 'pageshow', visible);
+    bind(globalThis, 'focus', visible);
+    bind(typeof document === 'undefined' ? null : document, 'visibilitychange', () => {
+      if (document.visibilityState === 'hidden') background();
+      else queueBrowserResume();
+    });
+  }
+
 
   function codexInlineEventSignificant(payload) {
     const event = payload?.event;
@@ -7366,6 +8452,7 @@ ${codexPageStyle()}
     wind: 'haze',
     arcane: 'haze'
   };
+
   const codexInlineBody = (affinity) => {
     const kind = INLINE_BODY[affinity];
     return kind ? `<span class="itemx2-inline-body itemx2-inline-body-${kind}"></span>` : '';
@@ -7495,6 +8582,7 @@ ${codexPageStyle()}
   function eventBurstKey(payload) {
     return `e${ITEMXCore.fnv1a(pipelineState.activeContextKey)}_${ITEMXCore.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
   }
+
   function decorateInlineEvent(html, payload, domain) {
     const kind = ITEMXRenderer.eventKind(payload, domain);
     if (!kind || !html) return html;
@@ -7505,6 +8593,7 @@ ${codexPageStyle()}
       )
     );
   }
+
   function armEventBursts(text) {
     if (!presentationState.visualEffectsEnabled || hostState.unloading) return;
     for (const [key, candidate] of presentationState.eventBursts)
@@ -7517,9 +8606,11 @@ ${codexPageStyle()}
       presentationState.eventBursts.set(key, { expires: Date.now() + 30000, committed: false });
     }
   }
+
   function burstTimer(fn, ms) {
     return workQueue.later('burst', fn, ms);
   }
+
   function commitEventBursts(chat) {
     if (!presentationState.eventBursts.size || chat?.isStreaming) return;
     const message = chat?.message?.[assistantMessageIndex(chat)];
@@ -7534,6 +8625,7 @@ ${codexPageStyle()}
     }
     if (activated) for (const delayMs of [0, 350, 1000]) burstTimer(flushEventBursts, delayMs);
   }
+
   async function flushEventBursts() {
     if (hostState.unloading || !hostState.mainDoc || presentationState.bodyFxScrollActive || !presentationState.eventBursts.size) return;
 
@@ -7572,6 +8664,7 @@ ${codexPageStyle()}
       debugRecord('event burst', error?.message || String(error));
     }
   }
+
   function clearEventBursts() {
     workQueue.clearGroup('burst');
     presentationState.eventBursts.clear();
@@ -7600,6 +8693,7 @@ ${codexPageStyle()}
       }
     );
   }
+
   const displayHandler = (content, portraits = {}) => {
     const raw = ITEMXCore.stripInventoryEcho(content);
     if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return raw;
@@ -7816,100 +8910,6 @@ ${codexPageStyle()}
     }
   }
 
-  async function setSkin(character, value) {
-    const next = SKIN_MODES.includes(value) ? value : 'dark';
-    await writeSetting(character, 'skin', next);
-    updateCachedSettings(character, { skin: next });
-    await syncMainEffectsState();
-  }
-
-  async function syncMainEffectsState() {
-    if (!hostState.mainDoc) return;
-    try {
-      const body = await hostState.mainDoc.querySelector('body');
-      if (!body) return;
-      if (presentationState.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
-      else await body.addClass('x-risu-itemx2-effects-off');
-      for (const name of SKIN_NAMES) {
-        if (presentationState.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
-        else await body.removeClass(`x-risu-itemx2-skin-${name}`);
-      }
-    } catch (error) {
-      debugRecord('effect setting sync', error?.message || String(error));
-    }
-  }
-
-  async function syncRootFontScale(value) {
-    const root = uiState.rootDrawer;
-    if (!root) return;
-    for (const scale of ['small', 'medium', 'large']) {
-      try {
-        await root.removeClass(`x-risu-itemx2-font-${scale}`);
-      } catch {}
-    }
-    try {
-      await root.addClass(`x-risu-itemx2-font-${['small', 'medium', 'large'].includes(value) ? value : 'small'}`);
-    } catch {}
-  }
-
-  async function installMainStyle() {
-    try {
-      if (hostState.mainStyle && workQueue.revision('style-position') === uiState.badgePosition) {
-        try {
-          if (!(await hostState.mainStyle.getParent())) throw new Error('detached style owner');
-          hostState.permissions.mainDom = true;
-          hostState.lastDomError = '';
-          await installBodyEffectGovernor();
-          await syncMainEffectsState();
-          await installHostObserver();
-          return true;
-        } catch {
-          hostState.mainStyle = null;
-          hostState.mainDoc = null;
-          presentationState.bodyFxClassOwner = null;
-        }
-      }
-      const doc = await Risuai.getRootDocument();
-      if (!doc) {
-        hostState.permissions.mainDom = false;
-        hostState.lastDomError = '메인 문서 API가 null을 반환했습니다';
-        return false;
-      }
-      hostState.mainDoc = doc;
-      hostState.permissions.mainDom = true;
-      const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
-      if (existing) {
-        hostState.mainStyle = existing;
-        await existing.setTextContent(mainStyleText());
-        workQueue.remember('style-position', uiState.badgePosition);
-        await installBodyEffectGovernor();
-        await syncMainEffectsState();
-        await installHostObserver();
-        return true;
-      }
-      const style = await doc.createElement('style');
-      await style.setAttribute('x-itemx2-style', 'owner');
-      await style.setTextContent(mainStyleText());
-      const head = await doc.querySelector('head');
-      if (head) await head.appendChild(style);
-      else await doc.appendChild(style);
-      hostState.mainStyle = style;
-      workQueue.remember('style-position', uiState.badgePosition);
-      hostState.lastDomError = '';
-      await installBodyEffectGovernor();
-      await syncMainEffectsState();
-      await installHostObserver();
-      return true;
-    } catch (error) {
-      hostState.permissions.mainDom = false;
-      hostState.mainStyle = null;
-      workQueue.remember('style-position', '');
-      hostState.mainDoc = null;
-      hostState.lastDomError = String(error?.message || error || '알 수 없는 DOM 오류');
-      fail('main style connection', error);
-      return false;
-    }
-  }
 
   function itemsOf(snapshot) {
     const reg = snapshot?.registry || ITEMXCore.newRegistry();
@@ -7971,6 +8971,7 @@ ${codexPageStyle()}
     }
     return presentationState.presentationRecords.get(`${domain}:${id}`) || {};
   }
+
   function detailAnnotations(domain, entity) {
     const record = presentationRecord(domain, entity.id);
     const changes = ITEMXRenderer.changesHtml(record.previous, entity, domain);
@@ -8507,191 +9508,15 @@ ${codexPageStyle()}
     }
   }
 
-  function prepareInlinePortraits(ctx, codexSnapshot, settings) {
-    if (
-      typeof Risuai.readImage !== 'function' ||
-      !codexSnapshot?.monsters?.order?.length ||
-      ctx.key !== pipelineState.activeContextKey
-    )
-      return;
-    const key = `${ctx.key}:${Number(settings.moduleAssetsEnabled)}:${encounterRegistryFingerprint(codexSnapshot)}`;
-    void dispatch('portraits', () => workQueue.attempt('portraits', key,
-      () => loadCodexPortraits(ctx.character, ctx.chat, codexSnapshot, settings, true)
-        .catch((error) => debugRecord('portrait preparation', error?.message || String(error))),
-      () => true, 30000));
-  }
-
-  async function portraitThumbnail(cacheKey, image) {
-    if (portraitsState.portraitThumbnailCache.has(cacheKey)) return portraitsState.portraitThumbnailCache.get(cacheKey);
-    const work = Promise.resolve().then(async () => {
-      let thumbnail = '';
-      try {
-        if (image.length <= 24576) thumbnail = image;
-        else if (typeof createImageBitmap === 'function' && typeof OffscreenCanvas === 'function') {
-          const match = /^data:(image\/[^;]+);base64,(.+)$/.exec(image);
-          if (match) {
-            const bytes = Uint8Array.from(atob(match[2]), (one) => one.charCodeAt(0));
-            const bitmap = await createImageBitmap(new Blob([bytes], { type: match[1] }));
-            try {
-              const canvas = new OffscreenCanvas(96, 96),
-                context = canvas.getContext('2d');
-              const side = Math.min(bitmap.width, bitmap.height);
-              context.drawImage(
-                bitmap,
-                (bitmap.width - side) / 2,
-                (bitmap.height - side) / 2,
-                side,
-                side,
-                0,
-                0,
-                96,
-                96
-              );
-              const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.72 });
-              const encoded = `data:${blob.type};base64,${btoa(String.fromCharCode(...new Uint8Array(await blob.arrayBuffer())))}`;
-              if (encoded.length <= 24576) thumbnail = encoded;
-            } finally {
-              bitmap.close();
-            }
-          }
-        }
-      } catch (error) {
-        debugRecord('portrait thumbnail', error?.message || String(error));
-      }
-      portraitsState.portraitThumbnailCache.set(cacheKey, thumbnail);
-      while (portraitsState.portraitThumbnailCache.size > 64)
-        portraitsState.portraitThumbnailCache.delete(portraitsState.portraitThumbnailCache.keys().next().value);
-      return thumbnail;
-    });
-    portraitsState.portraitThumbnailCache.set(cacheKey, work);
-    return work;
-  }
-
-  async function loadCodexPortraits(character, chat, codexSnapshot, settings, inlineOnly = false) {
-    const ownerKey = pipelineState.activeContextKey;
-    const result = {},
-      catalog = combinedPortraitAssets(
-        character,
-        await modulePortraitAssets(settings, character, chat),
-        ITEMXCodex.ASSET_CATALOG_MAX
-      );
-    if (typeof Risuai.readImage !== 'function') return result;
-    const asDataUrl = (value, ext = '') => {
-      if (typeof value === 'string')
-        return /^(?:blob:|https?:|data:image\/(?:png|jpeg|webp|gif|avif);base64,)/i.test(value) ? value : '';
-      let bytes = null;
-      if (value instanceof Uint8Array) bytes = value;
-      else if (value instanceof ArrayBuffer) bytes = new Uint8Array(value);
-      else if (Array.isArray(value)) bytes = Uint8Array.from(value);
-      else if (value?.data instanceof Uint8Array) bytes = value.data;
-      if (!bytes?.length || bytes.length > 12 * 1024 * 1024) return '';
-      const lower = String(ext || '').toLowerCase();
-      const isoBrand =
-        bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
-          ? String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11])
-          : '';
-      const mime =
-        bytes[0] === 0x89 && bytes[1] === 0x50
-          ? 'image/png'
-          : bytes[0] === 0xff && bytes[1] === 0xd8
-            ? 'image/jpeg'
-            : bytes[0] === 0x52 &&
-                bytes[1] === 0x49 &&
-                bytes[8] === 0x57 &&
-                bytes[9] === 0x45 &&
-                bytes[10] === 0x42 &&
-                bytes[11] === 0x50
-              ? 'image/webp'
-              : bytes[0] === 0x47 && bytes[1] === 0x49
-                ? 'image/gif'
-                : ['avif', 'avis', 'mif1', 'miaf'].includes(isoBrand)
-                  ? 'image/avif'
-                  : {
-                      png: 'image/png',
-                      jpg: 'image/jpeg',
-                      jpeg: 'image/jpeg',
-                      webp: 'image/webp',
-                      gif: 'image/gif',
-                      avif: 'image/avif'
-                    }[lower] || '';
-      if (!mime) return '';
-      let binary = '';
-      for (let offset = 0; offset < bytes.length; offset += 0x8000)
-        binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
-      return `data:${mime};base64,${btoa(binary)}`;
-    };
-    const monsters = (codexSnapshot?.monsters?.order || [])
-      .map((id) => codexSnapshot.monsters.entries[id])
-      .filter(Boolean)
-      .slice(0, 20);
-    const narrative = (chat?.message || [])
-      .slice(-8)
-      .map((message) => ITEMXCore.messageText(message))
-      .join('\n');
-    if (pipelineState.activeContextKey === ownerKey)
-      portraitsState.inlinePortraitCatalog = {
-        contextKey: ownerKey,
-        characterId: character?.chaId || character?.id || 'character',
-        catalog,
-        narrative
-      };
-    let portraitCursor = 0;
-    const loadNextPortrait = async () => {
-      while (portraitCursor < monsters.length) {
-        const monster = monsters[portraitCursor++];
-        const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
-        if (!asset) continue;
-        const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
-        if (inlineOnly && portraitsState.portraitThumbnailCache.has(cacheKey)) {
-          result[monster.id] = await portraitsState.portraitThumbnailCache.get(cacheKey);
-          continue;
-        }
-        if (portraitsState.portraitCache.has(cacheKey)) {
-          const image = portraitsState.portraitCache.get(cacheKey);
-          const thumbnail = await portraitThumbnail(cacheKey, image);
-          result[monster.id] = inlineOnly ? thumbnail : image;
-          continue;
-        }
-        try {
-          let raw = null;
-          for (let attempt = 0; attempt < 3; attempt += 1) {
-            try {
-              raw = await Risuai.readImage(asset.id);
-              if (raw) break;
-            } catch {
-              raw = null;
-            }
-            if (attempt < 2) await delay(280 * (attempt + 1));
-          }
-          const image = asDataUrl(raw, asset.ext);
-          if (image) {
-            const thumbnail = await portraitThumbnail(cacheKey, image);
-            result[monster.id] = inlineOnly ? thumbnail : image;
-            if (!inlineOnly && image.length <= 4 * 1024 * 1024) {
-              portraitsState.portraitCache.set(cacheKey, image);
-
-              while (portraitsState.portraitCache.size > 24 || [...portraitsState.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
-                const oldest = portraitsState.portraitCache.keys().next().value,
-                  removed = portraitsState.portraitCache.get(oldest) || '';
-                portraitsState.portraitCache.delete(oldest);
-
-              }
-            }
-          }
-        } catch {}
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(4, monsters.length) }, () => loadNextPortrait()));
-    return result;
-  }
-
   const skillEmoji = (skill) => ITEMXCore.resolveSkillGlyph(skill);
+
   const encounterEmoji = (monster) => ITEMXCore.resolveMonsterGlyph(monster);
 
   const themeText = (value) =>
     String(value || '')
       .trim()
       .toLowerCase();
+
   function skillTheme(skill) {
     const value = themeText(`${skill.affinity || ''} ${skill.school || ''}`);
     if (/화염|불|fire|flame|ember/.test(value)) return 'fire';
@@ -8701,6 +9526,7 @@ ${codexPageStyle()}
     if (/빛|신성|광휘|light|holy|radiant/.test(value)) return 'light';
     return 'arcane';
   }
+
   function skillRankTier(rank, rarityMode = 'world') {
     const value = themeText(rank);
     const tiers = [
@@ -8717,6 +9543,7 @@ ${codexPageStyle()}
     if (matched) return matched[0];
     return rarityMode === 'itemx' ? 'normal' : 'magic';
   }
+
   function skillFxClasses(skill, rarityMode = 'world') {
     const type = ['active', 'passive', 'sealed'].includes(themeText(skill.type)) ? themeText(skill.type) : 'active';
     const status = ['learned', 'equipped', 'sealed', 'lost'].includes(themeText(skill.status))
@@ -8725,6 +9552,7 @@ ${codexPageStyle()}
     const tier = skillRankTier(skill.rank, rarityMode);
     return `itemx2-skill-theme-${skillTheme(skill)} itemx2-skill-rank-${tier} rarity-${tier} itemx2-skill-type-${type} itemx2-skill-status-${status}`;
   }
+
   function encounterTheme(monster) {
     const value = themeText(monster.kind);
     if (/용|dragon|drake|wyrm/.test(value)) return 'dragon';
@@ -8736,6 +9564,7 @@ ${codexPageStyle()}
     if (/인간|인물|사람|전사|기사|마법사|human|humanoid|person|warrior|knight|mage/.test(value)) return 'humanoid';
     return 'unknown';
   }
+
   function encounterThreatLevel(value) {
     const text = themeText(value);
     if (/최상|극위험|재앙|catastrophic|extreme|sss|\bss\b/.test(text)) return 3;
@@ -8743,6 +9572,7 @@ ${codexPageStyle()}
     if (/중간|중위험|medium|moderate/.test(text)) return 1;
     return 0;
   }
+
   function encounterFxClasses(monster) {
     const relation = themeText(monster.relation),
       status = themeText(monster.status);
@@ -8753,8 +9583,10 @@ ${codexPageStyle()}
       : '';
     return `itemx2-encounter-theme-${encounterTheme(monster)} itemx2-threat-${encounterThreatLevel(monster.threat)} ${warning} ${sparring} ${ended}`.trim();
   }
+
   const codexListFx = (domain, classes) =>
     `<span class="itemx2-codex-fx itemx2-codex-list-fx itemx2-${domain}-list-fx ${classes}" aria-hidden="true"></span>`;
+
   const codexHeroFx = (domain) =>
     `<span class="itemx2-codex-fx itemx2-codex-hero-fx itemx2-${domain}-hero-fx" aria-hidden="true"><i></i><b></b><em></em></span>`;
 
@@ -8812,12 +9644,14 @@ ${codexPageStyle()}
     String(html || '')
       .replace(/^<div class="itemx-codex-page itemx2-codex-page">/, '')
       .replace(/<\/div>$/, '');
+
   const portraitRevision = (portrait) => {
     const source = String(portrait || '');
     if (!source) return 'none';
     const sample = source.length <= 4096 ? source : `${source.slice(0, 2048)}${source.slice(-2048)}`;
     return `${source.length}:${ITEMXCore.fnv1a(sample)}`;
   };
+
   function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
     const record = presentationRecord(domain, entity?.id);
     const fingerprint = ITEMXCore.fnv1a(
@@ -8827,6 +9661,7 @@ ${codexPageStyle()}
       ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`
       : `monster:${entity?.id || ''}:${fingerprint}:${portraitRevision(portrait)}`;
   }
+
   function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 'world') {
     const key = codexDetailCacheKey(domain, entity, portrait, rarityMode);
     if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
@@ -9104,186 +9939,6 @@ ${codexPageStyle()}
     return true;
   }
 
-  const NATIVE_ACTION_ALIASES = { 'main-output': 'main', 'lorebook-toggle': 'lorebook', 'cleanup-chat': 'cleanup' };
-  const SETTINGS_SKINS = {
-    native: {
-      native: true,
-      hook: (action) => ` itemx2-setting-${NATIVE_ACTION_ALIASES[action] || action}`,
-      data: () => '',
-      segHook: (group, value) => ` itemx2-seg-${group}-${value}`,
-      segData: () => '',
-      choiceData: () => ''
-    },
-    frame: {
-      native: false,
-      hook: () => '',
-      data: (action) => ` data-action="${action}"`,
-      segHook: () => '',
-      segData: (group, value) => ` data-seg="${group}" data-value="${value}"`,
-      choiceData: (name, value) => ` data-${name}="${value}"`
-    }
-  };
-  const setCard = (title, note, control = '', extra = '') =>
-    `<section class="itemx2-root-setting-card"><span><strong>${title}</strong><small${extra}>${note}</small></span>${control}</section>`;
-  const setButton = (skin, action, label, extra = '') =>
-    `<button class="itemx2-root-setting-button${skin.hook(action)}${extra}" type="button"${skin.data(action)}>${label}</button>`;
-  const setSwitch = (skin, action, on) =>
-    `<button class="itemx2-root-setting-button itemx2-sw${skin.hook(action)}${on ? ' itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"${skin.data(action)}><i></i></button>`;
-  const setSegment = (skin, group, entries, current) =>
-    `<div class="itemx2-seg">${entries
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn${skin.segHook(group, value)}${current === value ? ' itemx2-seg-on' : ''}" type="button"${skin.segData(group, value)}>${label}</button>`
-      )
-      .join('')}</div>`;
-
-  function settingsPanelHtml(loaded, skin, parts) {
-    const enabled = loaded.enabled === true;
-    const connection = parts.connection;
-    const connectionCards = skin.native
-      ? setCard(
-          'Risu 연결',
-          '모델 응답을 읽고 화면에 카드를 그리려면 Risu의 허가가 필요합니다. 처음 한 번만 물어봅니다.',
-          setButton(
-            skin,
-            'connect',
-            workQueue.isActive('connect') ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기',
-            ` itemx2-root-setting-button-primary${workQueue.isActive('connect') ? ' itemx2-root-setting-button-busy' : ''}`
-          )
-        ).replace('</small>', `</small><span class="itemx2-status-row">${parts.chips}</span>`)
-      : // The fallback exists because main-document access was refused, so it
-        setCard(
-          '모델 처리 권한',
-          `${parts.permissionLabel} · 모델 응답을 읽고 원시 태그를 정리하려면 필요합니다.`,
-          setButton(skin, 'permissions', '권한 요청')
-        ) +
-        setCard(
-          '본문 카드 스타일',
-          `${parts.styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.`,
-          setButton(skin, 'style', '다시 연결')
-        );
-    return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4>${connectionCards}${setCard(
-      '보조 모델 상태',
-      ITEMXCore.esc(auxStatusText()),
-      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${auxState.auxActive > 0 ? 'disabled' : ''}>${auxState.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
-      ' class="itemx2-aux-setting-status"'
-    )}<h4 class="itemx2-set-group">기록</h4>${setCard(
-      '무엇을 기록할까요',
-      '끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.'
-    )}<div class="itemx2-domain-grid">${parts.domainControls}</div>${setCard(
-      '이 봇에서 사용',
-      enabled ? '활성 상태입니다.' : '끄면 이 봇에서만 멈춥니다. 다른 봇은 영향받지 않습니다.',
-      setSwitch(skin, 'toggle', enabled)
-    )}${setCard(
-      '메인 모델에 형식 알리기',
-      '대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.',
-      setSwitch(skin, 'main-output', loaded.mainOutput)
-    )}${setCard(
-      '보조 모델로 보완',
-      '메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.',
-      setSegment(skin, 'aux', Object.entries(AUX_LABELS), loaded.auxOutput)
-    )}${setCard(
-      '등급 판정 기준',
-      '세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.',
-      setSegment(skin, 'rarity', Object.entries(RARITY_MODE_LABELS), loaded.rarityMode)
-    )}${setCard(
-      '로어북에서 설명 채우기',
-      '이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.',
-      `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', '지금 스캔')}</span>`
-    )}${setCard(
-      '모듈 초상화 사용',
-      '활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.',
-      setSwitch(skin, 'module-assets', loaded.moduleAssetsEnabled)
-    )}<h4 class="itemx2-set-group">모양</h4>${setCard(
-      '화면 스킨',
-      '서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.',
-      setSegment(
-        skin,
-        'skin',
-        SKIN_MODES.map((mode) => [mode, SKIN_LABELS[mode]]),
-        loaded.skin || 'dark'
-      )
-    )}${setCard(
-      '이펙트',
-      '카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.',
-      setSwitch(skin, 'effects', loaded.effectsEnabled)
-    )}${setCard('글자 크기', '인벤토리·도감의 본문 글자에 바로 적용됩니다.')}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
-      '배지 위치',
-      '화면에서 CODEX 배지가 붙을 자리입니다.'
-    )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(skin.native)}${setCard(
-      '저장 공간',
-      `${parts.footprintLabel} · 최근 원장은 자동 순환됩니다.`,
-      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', '재구축')}${setButton(skin, 'storage-cleanup', parts.storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화', parts.storageCleanupArmed ? ' itemx2-setting-cleanup-armed' : '')}</span>`
-    )}<div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4>${setCard(
-      '이 채팅의 ITEMX 기록 지우기',
-      '본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.',
-      setButton(
-        skin,
-        'cleanup-chat',
-        parts.cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리',
-        parts.cleanupArmed ? ' itemx2-setting-cleanup-armed' : ''
-      )
-    )}</div>${parts.debugPanel}${setCard('플러그인', `ITEMX CODEX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
-  }
-
-  function settingsDomainControls(loaded, skin) {
-    return [
-      ['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'],
-      ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'],
-      ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']
-    ]
-      .map(
-        ([key, label, value, note]) =>
-          `<button class="itemx2-domain-card${skin.hook(`domain-${key}`)} ${value ? 'itemx2-setting-on' : ''}" type="button"${skin.data(`domain-${key}`)}><strong>${label}</strong><small>${note}</small><i>${value ? '기록 중' : '멈춤'}</i></button>`
-      )
-      .join('');
-  }
-
-  function settingsFontChoices(loaded, skin) {
-    return [
-      ['small', '작게'],
-      ['medium', '보통'],
-      ['large', '크게']
-    ]
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button"${skin.choiceData('font', value)}><em>가나다</em><span>${label}</span></button>`
-      )
-      .join('');
-  }
-
-  function settingsPositionChoices(skin) {
-    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === uiState.badgePosition) || BADGE_POSITIONS[0])[1];
-    return `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
-      ([key, label]) =>
-        `<button class="itemx2-position-choice itemx2-position-${key} ${uiState.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
-    ).join(
-      ''
-    )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`;
-  }
-
-  function settingsStorageParts(loaded) {
-    const footprint = itemxStorageFootprint(loaded.chat);
-    return {
-      cleanupArmed: uiState.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed: uiState.storageCleanupArmedUntil > Date.now(),
-      footprintLabel: `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`
-    };
-  }
-
-  function settingsDebugLog() {
-    return (
-      settingsState.debugEntries
-        .slice(-12)
-        .reverse()
-        .map(
-          (entry) =>
-            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
-        )
-        .join('\n\n') || '기록 없음'
-    );
-  }
-
   function frozenBannerHtml() { return ''; }
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
@@ -9510,341 +10165,6 @@ ${codexPageStyle()}
     );
   }
 
-  function rootSettingActions() {
-    const toggleSetting = (hook, read, write, label) => ({
-      hook,
-      run: () =>
-        applyRootSetting(async () => {
-          const loaded = await cachedOrRebuildCurrent();
-          if (!loaded) return;
-          const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
-          const value = !read(current);
-          await write(loaded, value);
-          uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
-          await openRootInventory({ open: true, tab: 'settings', loaded });
-        })
-    });
-    const armed = (key, arm, confirmed) => async () => {
-      if (runtime[key] <= Date.now()) {
-        runtime[key] = Date.now() + 7000;
-        await arm();
-        await openRootInventory({ open: true, tab: 'settings' });
-        return;
-      }
-      await confirmed();
-    };
-    return [
-      {
-        hook: 'itemx2-setting-connect',
-        run: async () => {
-          const restoreStage = workQueue.stage('connect');
-          uiState.status = '연결 및 권한 확인 중';
-          await updateConnectionUi();
-          await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
-          try {
-            const connected = await installPipelineHooks({ prompt: true });
-            const styled = await installMainStyle();
-            uiState.status =
-              connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
-            if (connected && styled) {
-              await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
-            } else {
-              await showRootFeedback(
-                `연결 확인 실패 · ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
-                'error',
-                3600
-              );
-            }
-            if (!connected || !styled)
-              await notifyUser(
-                `ITEMX CODEX 연결 확인 실패: ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
-                'error'
-              );
-          } finally {
-            restoreStage();
-            await updateConnectionUi();
-          }
-        }
-      },
-      {
-        hook: 'itemx2-setting-aux-run',
-        run: async () => {
-          if (auxState.auxActive > 0) return;
-          uiState.status = '보조 모델 수동 검사 중';
-          await recoverAuxiliaryOutput({ force: true });
-        }
-      },
-      ...BADGE_POSITIONS.map(([key, label]) => ({
-        hook: `itemx2-position-${key}`,
-        run: async () => {
-          uiState.badgePosition = key;
-          await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: key });
-          uiState.status = `배지 위치 · ${label}`;
-          if (uiState.rootDrawer) {
-            for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-            await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
-          }
-          await installMainStyle();
-          for (const [other] of BADGE_POSITIONS) {
-            const button = await queryMainClass(`itemx2-position-${other}`);
-            if (!button) continue;
-            if (other === key) await button.addClass('x-risu-itemx2-position-on');
-            else await button.removeClass('x-risu-itemx2-position-on');
-          }
-        }
-      })),
-      {
-        hook: 'itemx2-setting-toggle',
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await rebuildCurrent();
-            if (!loaded) return;
-            const next = !(await isEnabled(loaded.character));
-            await setEnabled(loaded.character, next);
-            uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
-            await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
-          })
-      },
-      ...[
-        ['items', 'itemsEnabled', '무기·아이템'],
-        ['skills', 'skillsEnabled', '스킬'],
-        ['encounters', 'encountersEnabled', '전투 도감']
-      ].map(([domain, key, label]) => ({
-        hook: `itemx2-setting-domain-${domain}`,
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await rebuildCurrent();
-            if (!loaded) return;
-            const current = await outputSettings(loaded.character),
-              value = !current[key];
-            await setDomainEnabled(loaded.character, domain, value);
-            pipelineState.cachedLoaded = null;
-            uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
-            await openRootInventory({ open: true, tab: 'settings' });
-          })
-      })),
-      {
-        hook: 'itemx2-setting-debug',
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await rebuildCurrent();
-            if (!loaded) return;
-            const value = !(await outputSettings(loaded.character)).debugEnabled;
-            await setDebugEnabled(loaded.character, value);
-            pipelineState.cachedLoaded = null;
-            uiState.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
-            await openRootInventory({ open: true, tab: 'settings' });
-          })
-      },
-      {
-        hook: 'itemx2-setting-debug-clear',
-        run: async () => {
-          settingsState.debugEntries = [];
-          uiState.status = '디버그 로그 비움';
-          await openRootInventory({ open: true, tab: 'settings' });
-        }
-      },
-      {
-        hook: 'itemx2-setting-main',
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await rebuildCurrent();
-            if (!loaded) return;
-            const value = !(await outputSettings(loaded.character)).mainOutput;
-            await setMainOutput(loaded.character, value);
-            uiState.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
-            await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
-          })
-      },
-      ...[
-        [
-          'aux',
-          Object.keys(AUX_LABELS),
-          async (loaded, value) => {
-            await setAuxOutput(loaded.character, value);
-            uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
-          }
-        ],
-        [
-          'rarity',
-          Object.keys(RARITY_MODE_LABELS),
-          async (loaded, value) => {
-            await setRarityMode(loaded.character, value);
-            uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
-          }
-        ],
-        [
-          'skin',
-          SKIN_MODES,
-          async (loaded, value) => {
-            await setSkin(loaded.character, value);
-            loaded.skin = value;
-            uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
-          }
-        ]
-      ].flatMap(([group, values, apply]) =>
-        values.map((value) => ({
-          hook: `itemx2-seg-${group}-${value}`,
-          run: () =>
-            applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent();
-              if (!loaded) return;
-              await apply(loaded, value);
-              await openRootInventory({ open: true, tab: 'settings', loaded });
-            })
-        }))
-      ),
-      toggleSetting(
-        'itemx2-setting-effects',
-        (current) => current.effectsEnabled,
-        async (loaded, value) => {
-          await setEffectsEnabled(loaded.character, value);
-          loaded.effectsEnabled = value;
-        },
-        '시각 이펙트'
-      ),
-      {
-        hook: 'itemx2-setting-lorebook',
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await cachedOrRebuildCurrent();
-            if (!loaded) return;
-            const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
-              .lorebookEncounterEnabled;
-            await setLorebookEncounterEnabled(loaded.character, value);
-            loaded.lorebookEncounterEnabled = value;
-            uiState.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
-            if (value) await scanLorebookEncounters({ refresh: true, silent: true });
-            await openRootInventory({ open: true, tab: 'settings' });
-          })
-      },
-      {
-        hook: 'itemx2-setting-lorebook-scan',
-        run: async () => {
-          await scanLorebookEncounters({ refresh: true });
-          await openRootInventory({ open: true, tab: 'settings' });
-        }
-      },
-      {
-        hook: 'itemx2-setting-module-assets',
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await cachedOrRebuildCurrent();
-            if (!loaded) return;
-            const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
-            let value = false;
-            if (current.moduleAssetsEnabled) {
-              await setModuleAssetsEnabled(loaded.character, false);
-            } else {
-              value = await enableModuleAssets(loaded.character, loaded.chat);
-              if (!value)
-                await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
-            }
-            loaded.moduleAssetsEnabled = value;
-            uiState.status = value
-              ? '모듈 에셋 초상화 · ON'
-              : current.moduleAssetsEnabled
-                ? '모듈 에셋 초상화 · OFF'
-                : '모듈 에셋 권한 없음 · 이모지 폴백';
-            workQueue.remember('render', '');
-            await openRootInventory({ open: true, tab: 'settings', loaded });
-          })
-      },
-      ...[
-        ['small', '소'],
-        ['medium', '중'],
-        ['large', '대']
-      ].map(([value, label]) => ({
-        hook: `itemx2-setting-font-${value}`,
-        run: () =>
-          applyRootSetting(async () => {
-            const loaded = await cachedOrRebuildCurrent();
-            if (!loaded) return;
-            await setFontScale(loaded.character, value);
-            loaded.fontScale = value;
-            uiState.status = `글자 크기 · ${label}`;
-            for (const scale of ['small', 'medium', 'large']) {
-              const button = await queryMainClass(`itemx2-setting-font-${scale}`);
-              if (!button) continue;
-              if (scale === value) await button.addClass('x-risu-itemx2-font-on');
-              else await button.removeClass('x-risu-itemx2-font-on');
-            }
-          })
-      })),
-      {
-        hook: 'itemx2-setting-storage-cleanup',
-        run: armed(
-          'storageCleanupArmedUntil',
-          async () => {
-            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
-            await showRootFeedback(
-              '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
-              'working',
-              6500
-            );
-          },
-          async () => {
-            uiState.status = '현재 채팅 저장소 최적화 중';
-            await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
-            try {
-              const result = await compactCurrentChatStorage();
-              await showRootFeedback(
-                `최적화 완료 · ${Math.round(result.savedBytes / 1024)} KiB 절감 · 구형 캐시 ${result.legacyKeysRemoved}개 정리`,
-                'success',
-                4200
-              );
-              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
-            } catch (error) {
-              uiState.storageCleanupArmedUntil = 0;
-              uiState.status = '저장소 최적화 실패';
-              await showRootFeedback(`최적화 실패 · ${error.message || error}`, 'error', 4200);
-              await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
-            }
-          }
-        )
-      },
-      {
-        hook: 'itemx2-setting-cleanup',
-        run: armed(
-          'cleanupArmedUntil',
-          async () => {
-            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
-            await showRootFeedback(
-              '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.',
-              'error',
-              6500
-            );
-          },
-          async () => {
-            uiState.status = '현재 채팅 ITEMX 기록 정리 중';
-            await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
-            try {
-              const result = await cleanCurrentChatItemx();
-              await showRootFeedback(
-                `정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`,
-                'success',
-                3600
-              );
-              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
-            } catch (error) {
-              uiState.cleanupArmedUntil = 0;
-              uiState.status = '현재 채팅 정리 실패';
-              await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
-              await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
-            }
-          }
-        )
-      },
-      {
-        hook: 'itemx2-setting-rebuild',
-        run: async () => {
-          pipelineState.cachedLoaded = null;
-          const loaded = await rebuildCurrent();
-          if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
-        }
-      }
-    ];
-  }
   async function installRootClickRouter(owner) {
     if (!owner || (uiState.rootClickBindings[0]?.owner === owner && uiState.rootClickBindings.length)) return;
     await removeRootClickRouter();
@@ -11012,7 +11332,7 @@ ${codexPageStyle()}
         uiState.status = 'PocketRisu 호환 모드';
         log('resizeContainer unavailable; using bounded fullscreen fallback');
       }
-      document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`;
+      document.head.innerHTML = fallbackDocumentHead();
       document.body.innerHTML = '<div id="itemx2-root"></div>';
       const loaded = await rebuildCurrent();
       if (!loaded) throw new Error('No active chat context');
@@ -11034,224 +11354,6 @@ ${codexPageStyle()}
     }
   }
 
-  async function toggleCurrentBot() {
-    const ctx = await context();
-    if (!ctx) return;
-    const next = !(await isEnabled(ctx.character));
-    await setEnabled(ctx.character, next);
-    uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
-    await openRootInventory({ open: true, tab: 'settings' });
-  }
-
-  async function openSettingsFromRisuMenu() {
-    const active = await context();
-    if (!active) {
-      uiState.allowDrawerOverSettings = false;
-      invalidateHostSettingsVisibility();
-      uiState.status = '채팅 진입 대기';
-      const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
-      await notifyUser(message, 'error');
-      return;
-    }
-    pipelineState.activeContextKey = active.key;
-    uiState.allowDrawerOverSettings = true;
-    invalidateHostSettingsVisibility();
-    let styled = Boolean(hostState.mainDoc) || (await installMainStyle());
-    const loadingStarted = styled ? Date.now() : 0;
-    if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
-    await updateRootLoading('연결과 권한 확인 중…');
-    const connected = await installPipelineHooks({ prompt: true });
-    if (!styled) {
-      await delay(300);
-      styled = await installMainStyle();
-      if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
-    }
-    await updateRootLoading('인벤토리 상태 확인 중…');
-    uiState.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
-    if (loadingStarted) await delay(Math.max(0, 260 - (Date.now() - loadingStarted)));
-    if (styled) await openRootInventory({ open: true, tab: 'settings' });
-    else await openInventory('settings');
-  }
-
-  async function installPipelineHooks(options = {}) {
-    return installPipelineHooksNow(options);
-  }
-
-  async function installDisplayHooks() {
-    if (!hostState.hooks.process) {
-      await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
-      hostState.hooks.process = true;
-    }
-    if (!hostState.hooks.output) {
-      await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
-      hostState.hooks.output = true;
-    }
-    if (!hostState.hooks.display) {
-      await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
-      hostState.hooks.display = true;
-    }
-  }
-
-  async function refreshPipelineBindingsAfterResume() {
-    await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
-    await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
-    await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
-    if (hostState.permissions.replacer) {
-      await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
-      await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
-    }
-  }
-
-  async function installPipelineHooksNow({ prompt = false } = {}) {
-    try {
-      await installDisplayHooks();
-      const permission =
-        typeof Risuai.requestPluginPermission === 'function' ? await Risuai.requestPluginPermission('replacer') : true;
-      hostState.permissions.replacer = permission === true;
-      if (!hostState.permissions.replacer) {
-        if (hostState.hooks.before) {
-          try {
-            await Risuai.removeRisuReplacer('beforeRequest', pipelineEntries.before);
-          } catch {}
-        }
-        if (hostState.hooks.after) {
-          try {
-            await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
-          } catch {}
-        }
-        hostState.hooks.before = false;
-        hostState.hooks.after = false;
-        hostState.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
-        uiState.status = '모델 처리 권한 필요';
-      } else {
-        if (!hostState.hooks.before) {
-          await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
-          hostState.hooks.before = true;
-        }
-        if (!hostState.hooks.after) {
-          await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
-          hostState.hooks.after = true;
-        }
-      }
-      if (!hostState.hooks.listener) {
-        if (typeof Risuai.addRisuChatListener !== 'function') {
-          hostState.hooks.listener = 'unsupported';
-          log('chat listener unavailable; continuing with core request/output hooks');
-        } else
-          try {
-            await Risuai.addRisuChatListener('output', (output) => {
-              const loaded = pipelineState.cachedLoaded;
-              if (
-                output?.chat &&
-                loaded?.key === pipelineState.activeContextKey &&
-                output.characterIndex === loaded.characterIndex &&
-                output.chatIndex === loaded.chatIndex
-              )
-                commitEventBursts(output.chat);
-              void scheduleCommittedOutputSync();
-            });
-            hostState.hooks.listener = true;
-          } catch (error) {
-            const message = String(error?.message || error || '');
-            if (!/API method addRisuChatListener not found/i.test(message)) throw error;
-            hostState.hooks.listener = 'unsupported';
-            log('chat listener unavailable; continuing with core request/output hooks');
-          }
-      }
-      if (hostState.permissions.replacer) {
-        hostState.lastHookError = '';
-        uiState.status = prompt ? '모델 처리 권한 연결됨' : '정상';
-      }
-      if (workQueue.hasTimer('catchUpTimer')) armCatchUpWatchdog();
-      return hostState.permissions.replacer;
-    } catch (error) {
-      hostState.permissions.replacer = false;
-      hostState.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
-      uiState.status = '모델 연결 오류';
-      fail('pipeline hooks', error);
-      return false;
-    }
-  }
-
-  function armRemountWatchdog() {
-    if (hostState.unloading) return;
-    const interval = hostState.hostObserver || !pipelineState.activeContextKey ? 10000 : 1200;
-    workQueue.clearTimer('remountTimer');
-
-    workQueue.schedule(
-      'remountTimer',
-      () => {
-        if (!presentationState.bodyFxScrollActive) {
-          const now = Date.now();
-          if (!pipelineState.activeContextKey) {
-            return ensureRootInventory();
-          } else if (!hostState.hostObserver || workQueue.age('remount') >= 10000) {
-            return ensureRootInventory();
-          }
-        }
-      },
-      interval,
-      true
-    );
-  }
-
-  async function recoverAfterBrowserResume() {
-    if (hostState.unloading) return;
-    workQueue.cancel(intent => intent.kind === 'committed-output', false);
-    const pending = (async () => {
-      workQueue.clearTimer('bodyFxStartTimer');
-      workQueue.clearTimer('bodyFxScrollTimer');
-      presentationState.bodyFxScrollActive = false;
-      presentationState.bodyFxSawScroll = false;
-
-
-      if (presentationState.bodyFxClassOwner)
-        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
-
-      await refreshPipelineBindingsAfterResume();
-      pipelineState.cachedLoaded = null;
-      pipelineState.generation += 1;
-      await installMainStyle();
-      await rebuildCurrent({ upgradeDisplayRefs: true });
-      await ensureRootInventory();
-      hostState.backgrounded = false;
-    })().catch((error) => fail('browser resume recovery', error));
-    return pending;
-  }
-
-  function queueBrowserResume() {
-    if (hostState.unloading || !hostState.backgrounded) return;
-    workQueue.clearTimer('resumeTimer');
-    workQueue.schedule(
-      'resumeTimer',
-      () => {
-        return recoverAfterBrowserResume();
-      },
-      80,
-      false
-    );
-  }
-
-  function installBrowserResumeHandlers() {
-    const bind = (target, type, handler) => {
-      if (!target || typeof target.addEventListener !== 'function') return;
-      target.addEventListener(type, handler);
-      hostState.resumeBindings.push({ target, type, handler });
-    };
-    const background = () => {
-      hostState.backgrounded = true;
-    };
-    const visible = () => {
-      if (typeof document === 'undefined' || document.visibilityState !== 'hidden') queueBrowserResume();
-    };
-    bind(globalThis, 'pagehide', background);
-    bind(globalThis, 'pageshow', visible);
-    bind(globalThis, 'focus', visible);
-    bind(typeof document === 'undefined' ? null : document, 'visibilitychange', () => {
-      if (document.visibilityState === 'hidden') background();
-      else queueBrowserResume();
-    });
-  }
 
   const pipelineEntries = {
     process: entry('process', processHandler, true),

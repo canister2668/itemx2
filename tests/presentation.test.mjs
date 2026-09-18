@@ -1,3 +1,4 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -194,14 +195,14 @@ test('review metadata survives compact fallback without altering event replay', 
 });
 
 test('item detail keeps cards and annotations in one vertical flex child', async () => {
-  const runtime = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
-  const css = await readFile(new URL('../src/presentation.css', import.meta.url), 'utf8');
+  const runtime = await runtimeSource();
+  const css = await styleSources().then(styles => styles.presentation);
   assert.match(runtime, /class="itemx2-detail-stack">\$\{ITEMXRenderer\.renderCard/);
   assert.match(css, /\.itemx2-detail-stack\s*\{[^}]*flex-direction: column;[^}]*width: 100%;/);
 });
 
 test('new visual decorations honor reduced motion and effects off with no will-change promotion', async () => {
-  const css = await readFile(new URL('../src/presentation.css', import.meta.url), 'utf8');
+  const css = await styleSources().then(styles => styles.presentation);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /\.itemx2-effects-off \.itemx2-event-burst/);
   assert.ok(!css.includes('will-change'));

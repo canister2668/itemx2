@@ -319,7 +319,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(/renderCard\(item, \{ motion: index < 2/.test(source), false);
   const displayHandler = source.slice(
     source.indexOf('const displayHandler ='),
-    source.indexOf('async function installMainStyle')
+    source.indexOf('function displayWithPortraits')
   );
   assert.equal(displayHandler.includes("motion = cards < 2 ? 'full' : 'off'"), false);
   assert.match(displayHandler, /const markerMotion = \(key\) =>/);
@@ -495,7 +495,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(source.includes('hostSettingsTimer'), false);
   const ensureRoot = source.slice(
     source.indexOf('async function ensureRootInventory'),
-    source.indexOf('async function loadCodexPortraits')
+    source.indexOf('const skillEmoji')
   );
   assert.ok(ensureRoot.indexOf('const active = await context()') < ensureRoot.indexOf('auxState.auxActive > 0'));
   assert.match(source, /async function resetRuntimeForContext\(active\)/);

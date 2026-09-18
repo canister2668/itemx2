@@ -1,3 +1,4 @@
+import { runtimeSource, styleSources } from './runtime-source.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +12,7 @@ const [protocol, core, quality, codex, lorebook, renderer, runtime, packageRaw] 
   readFile(resolve(root, 'src/codex.js'), 'utf8'),
   readFile(resolve(root, 'src/lorebook.js'), 'utf8'),
   readFile(resolve(root, 'src/renderer.js'), 'utf8'),
-  readFile(resolve(root, 'src/runtime.js'), 'utf8'),
+  runtimeSource(),
   readFile(resolve(root, 'package.json'), 'utf8')
 ]);
 const packageVersion = JSON.parse(packageRaw).version;
@@ -24,16 +25,14 @@ if (updateUrl && !/^https:\/\//i.test(updateUrl)) throw new Error('ITEMX update 
 // `shell.css` is the iframe-fallback shell (.stage) plus mockup chrome and is
 // scoped to the plugin's own document; `cards.css` is the card surface that is
 // also rescoped into the chat body; `presentation.css` is the chat-body layer.
-const shellCss = await readFile(resolve(root, 'src/shell.css'), 'utf8');
-const cardsCss = await readFile(resolve(root, 'src/cards.css'), 'utf8');
-const presentationCss = await readFile(resolve(root, 'src/presentation.css'), 'utf8');
+const { shell: shellCss, cards: cardsCss, presentation: presentationCss } = await styleSources();
 const workQueue = await readFile(resolve(root, 'src/work-queue.js'), 'utf8');
 const state = await readFile(resolve(root, 'src/state.js'), 'utf8');
 const storage = await readFile(resolve(root, 'src/storage.js'), 'utf8');
 const settingsStore = await readFile(resolve(root, 'src/settings-store.js'), 'utf8');
 const history = await readFile(resolve(root, 'src/history.js'), 'utf8');
 const backup = await readFile(resolve(root, 'src/backup.js'), 'utf8');
-if (!cardsCss.startsWith('    .itemx-panel')) throw new Error('src/cards.css must begin at the .itemx-panel surface');
+if (!cardsCss.startsWith('    .itemx-panel')) throw new Error('src/style.css card section must begin at the .itemx-panel surface');
 const css = `${shellCss}${cardsCss}\n${presentationCss.trim()}`;
 const chatCss = `${cardsCss}\n${presentationCss.trim()}`
   .replace(/\.stage\b/g, '.itemx2-never-stage')

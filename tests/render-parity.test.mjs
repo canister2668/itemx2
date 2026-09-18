@@ -1,9 +1,10 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 
-const src = () => readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+const src = () => runtimeSource();
 
 const LOADED = {
   key: 'c0:ch0', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
@@ -89,7 +90,8 @@ test('the settings surface is styled in both documents', async () => {
   // drawer-only stylesheet any more.
   assert.match(source, /const ITEMX_SETTINGS_STYLE = `/);
   assert.match(source, /\$\{ITEMX_SETTINGS_STYLE\}/);
-  const iframeStyle = source.slice(source.indexOf('document.head.innerHTML'));
+  assert.match(source, /document.head.innerHTML = fallbackDocumentHead\(\)/);
+  const iframeStyle = source.slice(source.indexOf('function fallbackDocumentHead'));
   assert.ok(iframeStyle.includes('${ITEMX_SETTINGS_STYLE}'), 'the iframe must include the shared surface');
   // The radio-tab mechanism that hides the pane stays with the drawer.
   assert.ok(!/const ITEMX_SETTINGS_STYLE = `[^`]*itemx2-root-settings\{[^}]*display:none/.test(source));
@@ -109,8 +111,8 @@ test('the freeze banner is rendered from one shared function', async () => {
 });
 
 test('the iframe shell layer never reaches the shipped chat scope', async () => {
-  const shell = await readFile(new URL('../src/shell.css', import.meta.url), 'utf8');
-  const cardsCss = await readFile(new URL('../src/cards.css', import.meta.url), 'utf8');
+  const shell = await styleSources().then(styles => styles.shell);
+  const cardsCss = await styleSources().then(styles => styles.cards);
   const bundle = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
   assert.ok(shell.includes('.stage '), 'shell.css must own the iframe stage layout');
   assert.ok(!cardsCss.includes('.lab-title'), 'preview chrome leaked into the shipped card surface');
@@ -121,5 +123,5 @@ test('the iframe shell layer never reaches the shipped chat scope', async () => 
 test('the build no longer reads the design mockup', async () => {
   const build = await readFile(new URL('../scripts/build.mjs', import.meta.url), 'utf8');
   assert.ok(!build.includes('itemx-multi-affinity-demo'), 'mockup must not be a build input');
-  assert.ok(build.includes('src/cards.css'), 'card styling must come from src/');
+  assert.ok(build.includes('styleSources()'), 'card styling must come from src/');
 });

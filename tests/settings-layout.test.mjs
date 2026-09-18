@@ -1,3 +1,4 @@
+import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 
 test('grouped settings actions cannot shrink into vertical text', async () => {
-  const css = await readFile(new URL('../src/presentation.css', import.meta.url), 'utf8');
+  const css = await styleSources().then(styles => styles.presentation);
   // Both screens render one vocabulary now, so one rule covers both.
   assert.match(css, /\.itemx2-root-setting-card > \.itemx2-manager-actions \{[\s\S]*?flex: 0 0 100%/);
   assert.match(css, /\.itemx2-root-setting-card \.itemx2-root-setting-button \{[\s\S]*?white-space: nowrap/);
@@ -18,7 +19,7 @@ test(
     skip: process.env.ITEMX_SETTINGS_BROWSER !== '1'
   },
   async () => {
-    const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
+    const source = await runtimeSource();
     const p = await presentationRuntime();
     const iframeStart = source.indexOf('.itemx-settings{');
     const iframeCss = source.slice(iframeStart, source.indexOf('</style>', iframeStart));
