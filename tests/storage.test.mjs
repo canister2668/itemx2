@@ -43,3 +43,25 @@ test('settings use one document, preserve other characters and centralize every 
   assert.equal(document.characters.two.skillsEnabled, true);
   assert.equal(reads, 3);
 });
+
+
+test('reimporting an identical backup appends a fresh reset without discarding earlier facts', async () => {
+  const { core, codex } = await presentationRuntime();
+  const registry = core.newRegistry();
+  core.applyEvent(registry, { kind: 'exam', item: core.normalizeItem({ id: 'pill', name: '약', count: 1 }).item });
+  const checkpoint = { v: 2, item: { registry, history: {} }, codex: { ...codex.snapshot(), history: { skill: {}, monster: {} } }, boundary: -1, sealedThroughId: '', restored: true, rows: [], manual: [] };
+  let chat = store.persist({ message: [], scriptstate: { [store.DTO.baseline]: JSON.stringify(checkpoint) } });
+  chat = store.hydrate(chat);
+  chat.scriptstate[store.DTO.manual] = JSON.stringify([{ at: 1, afterIndex: -1, event: { kind: 'patch', patch: { id: 'pill', action: 'consume', quantity: 1, fields: {} } } }]);
+  chat = store.persist(chat);
+  assert.equal(store.replay(chat).item.registry.items.pill.count, 0);
+  const before = plain(store.log(chat).rows);
+  chat = store.hydrate(chat);
+  chat.scriptstate[store.DTO.baseline] = JSON.stringify(checkpoint);
+  chat.scriptstate[store.DTO.manual] = '[]';
+  chat = store.persist(chat);
+  assert.equal(store.replay(chat).item.registry.items.pill.count, 1);
+  assert.deepEqual(plain(store.log(chat).rows.slice(0, before.length)), before);
+  assert.equal(store.log(chat).rows.length, before.length + 1);
+  assert.equal(store.persist(store.hydrate(chat)).scriptstate[store.LOG], chat.scriptstate[store.LOG]);
+});

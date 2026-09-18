@@ -30,6 +30,8 @@ Six sequential gates on `structural/2.2.0`; no push is part of this work.
   markers and their compact refs are aliases of the same fact.
 - A one-time imported baseline preserves already-folded state. New backups
   imported in replace mode append a reset baseline, retaining the preceding log.
+  Repeating an identical restore also appends a new baseline; content deduplication
+  cannot erase the reset operation. This regression was reproduced before the fix.
 - Legacy orphan refs are retained as inactive historical facts, so importing
   them does not resurrect entities already removed from the old replay.
 - History preferences are canonical. Auxiliary guards, snapshots and enrichment
@@ -64,14 +66,14 @@ settings backup together with the old plugin; replacing only the bundle cannot
 restore the old storage representation. The converter refuses a second apply.
 
 Step-6 deployed SHA-256:
-`b8e5caad6b45e5d84376a2f4e68b22b0e4f27c0d3dfc5690e7a3ca5f210ad04a`
+`586bf44ba56e7164dab269275eeb305eea98343bf643602e2a2668a8afdcbb86`
 
 Step-6 plugin backup:
-`/volume2/risu/backups/itemx2-production/production-itemx-20260919-080231.json`
+`/volume2/risu/backups/itemx2-production/production-itemx-20260919-080640.json`
 
 Both deployments verified the canonical plugin script and `system.plugins`
 projection against the local bundle. The production HTTP endpoint returned 200.
-The final gate passed **229 tests, zero failures and zero skips**, including the
+The final gate passed **230 tests, zero failures and zero skips**, including the
 previously optional Chromium settings layout gate. The old eight keys totalled
 132,204 UTF-8 bytes; the converted three documents total 98,255 bytes.
 

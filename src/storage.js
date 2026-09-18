@@ -24,7 +24,9 @@ const ITEMXStorage = (() => {
     if (checkpoint && !rows.some(row => row.id === checkpoint.logId)) {
       if (![1, 2].includes(checkpoint.v) || !checkpoint.item?.registry || !checkpoint.codex?.skills) throw new Error('Cannot import unreadable authoritative checkpoint');
       const event = { kind: 'baseline', item: checkpoint.item, codex: checkpoint.codex, boundary: checkpoint.boundary, sealedThroughId: checkpoint.sealedThroughId || '', restored: Boolean(checkpoint.restored), storage: checkpoint.storage || {} };
-      append(rows, { id: `baseline:${ITEMXCore.fnv1a(JSON.stringify(event))}`, domain: 'baseline', event });
+      // Import is an operation, even when its state equals an earlier import.
+      // Hydrated baselines are identified by logId above and are never appended twice.
+      append(rows, { id: `baseline:${rows.length}:${ITEMXCore.fnv1a(JSON.stringify(event))}`, domain: 'baseline', event });
     }
     const messageRows = [...(legacy ? checkpoint?.rows || [] : []), ...parse(state[DTO.messages], [])];
     for (const row of messageRows) if (row.payload?.event) {
