@@ -107,8 +107,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   // Multi-choice settings are segmented controls, one class per option.
   assert.match(source, /itemx2-seg-rarity-\$\{value\}|itemx2-seg-\$\{group\}-\$\{value\}/);
   for (const group of ['aux', 'rarity', 'skin']) assert.match(source, new RegExp(`'${group}',`));
-  // The fallback now offers every option through data-seg instead of one cycling button.
-  assert.match(source, /data-seg="rarity"/);
+  // The fallback now offers every option through data-seg instead of one cycling
+  // button. Both segment groups come from the shared renderer, so assert on what
+  // it actually renders rather than on a literal in the source.
+  assert.match(source, /data-seg="\$\{group\}"/);
   assert.match(source, /rarityMode:\$\{id\}/);
   assert.match(source, /effectsEnabled:\$\{id\}/);
   assert.match(source, /fontScale:\$\{id\}/);
@@ -147,11 +149,15 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /itemx2-setting-effects/);
   // The drawer and the iframe fallback must offer the same controls.
   assert.match(source, /const ITEMX_CONTROL_STYLE =/);
-  assert.match(source, /data-seg="skin"/);
-  assert.match(source, /data-position=/);
-  assert.match(source, /data-font=/);
-  assert.match(source, /data-action="effects"/);
-  assert.match(source, /이펙트<\/strong>/);
+  assert.match(source, /setSegment\(\s*skin,\s*'skin',/);
+  // The fallback's bindings are emitted by the shared renderer's frame skin,
+  // so assert the generators exist rather than one hand-written literal each.
+  assert.match(source, /choiceData: \(name, value\) => ` data-\$\{name\}="\$\{value\}"`/);
+  assert.match(source, /data: \(action\) => ` data-action="\$\{action\}"`/);
+  assert.match(source, /settingsPositionChoices\(skin\)/);
+  assert.match(source, /settingsFontChoices\(loaded, skin\)/);
+  assert.match(source, /setSwitch\(skin, 'effects', loaded\.effectsEnabled\)/);
+  assert.match(source, /setCard\(\s*'이펙트',/);
   assert.match(source, /settingsCache: new Map\(\)/);
   assert.match(source, /settingsLoadPromises: new Map\(\)/);
   assert.match(source, /await outputSettings\(initial\.character\)/);
@@ -187,7 +193,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /보조 검사 완료/);
   assert.match(source, /connectionBusy: false/);
   assert.match(source, /async function updateConnectionUi/);
-  const connectionHandler = source.slice(source.indexOf('const connect ='), source.indexOf('const auxRun ='));
+  // The connect control is a row in the drawer's action table now; slice the
+  // row rather than a local variable that no longer exists.
+  const connectionHandler = source.slice(
+    source.indexOf("hook: 'itemx2-setting-connect'"),
+    source.indexOf("hook: 'itemx2-setting-aux-run'")
+  );
+  assert.ok(connectionHandler.length > 200, 'connect action row not found');
   assert.match(connectionHandler, /if \(runtime\.connectionBusy\) return/);
   assert.match(connectionHandler, /await updateConnectionUi\(\)/);
   assert.equal(connectionHandler.includes('openRootInventory'), false);
@@ -205,10 +217,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /if \(\/itemx\/i\.test\(key\)/);
   assert.match(source, /runtime\.uiRemountAfter = Date\.now\(\) \+ 1200/);
   assert.match(source, /Date\.now\(\) < runtime\.uiRemountAfter/);
+  // Toggling the bot patches the one switch it changed; it must not re-render the
+  // whole panel or kick off a recovery pass.
   const rootToggleHandler = source.slice(
-    source.indexOf('const toggle = runtime.mainDoc'),
-    source.indexOf('const main = runtime.mainDoc')
+    source.indexOf("hook: 'itemx2-setting-toggle'"),
+    source.indexOf("['items', 'itemsEnabled'")
   );
+  assert.ok(rootToggleHandler.length > 100, 'toggle action row not found');
   assert.match(rootToggleHandler, /updateRootSettingButton/);
   assert.equal(rootToggleHandler.includes('openRootInventory'), false);
   assert.equal(rootToggleHandler.includes('recoverAuxiliaryOutput'), false);
@@ -218,10 +233,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.match(iframeSegHandler, /setAuxOutput\(loaded\.character, value\)/);
   assert.equal(iframeSegHandler.includes('recoverAuxiliaryOutput'), false);
+  // Manual auxiliary check forces a pass and refreshes in place, never by
+  // re-opening the panel.
   const auxRunHandler = source.slice(
-    source.indexOf('const auxRun ='),
-    source.indexOf('for (const [key, label] of BADGE_POSITIONS)')
+    source.indexOf("hook: 'itemx2-setting-aux-run'"),
+    source.indexOf('...BADGE_POSITIONS.map')
   );
+  assert.ok(auxRunHandler.length > 80, 'aux-run action row not found');
   assert.match(auxRunHandler, /recoverAuxiliaryOutput\(\{ force: true \}\)/);
   assert.equal(auxRunHandler.includes('openRootInventory'), false);
   assert.match(source, /runButton\.setTextContent\(runtime\.auxActive > 0\s*\?\s*'처리 중…'\s*:\s*'지금 검사'\)/);
@@ -546,10 +564,13 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /if \(!attached\) \{\s*await removeRootDrawer\(\)/);
   assert.match(source, /await setRootOpen\(false\)/);
   assert.match(source, /itemx2-root-drawer\.itemx2-is-open \.itemx2-root-panel/);
+  // Moving the badge restyles the main document in place; re-opening the panel
+  // here would fight the drawer's own open animation.
   const positionHandler = source.slice(
-    source.indexOf('for (const [key, label] of BADGE_POSITIONS)'),
-    source.indexOf('const toggle = runtime.mainDoc')
+    source.indexOf('...BADGE_POSITIONS.map'),
+    source.indexOf("hook: 'itemx2-setting-toggle'")
   );
+  assert.ok(positionHandler.length > 200, 'badge position action rows not found');
   assert.equal(positionHandler.includes('installMainStyle'), true);
   assert.equal(positionHandler.includes('openRootInventory'), false);
   assert.match(source, /data-tab="settings"/);

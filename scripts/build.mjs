@@ -3,10 +3,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const demoPath = resolve(root, 'design/itemx-multi-affinity-demo.html');
 const protocolPath = resolve(root, 'src/main-protocol.txt');
-const [demo, protocol, core, quality, codex, lorebook, renderer, runtime, packageRaw] = await Promise.all([
-  readFile(demoPath, 'utf8'),
+const [protocol, core, quality, codex, lorebook, renderer, runtime, packageRaw] = await Promise.all([
   readFile(protocolPath, 'utf8'),
   readFile(resolve(root, 'src/core.js'), 'utf8'),
   readFile(resolve(root, 'src/quality.js'), 'utf8'),
@@ -22,16 +20,18 @@ const displayVersion = beta ? `${beta[1]}.${beta[2]} · BETA ${beta[3]}` : packa
 const updateUrl = String(process.env.ITEMX_UPDATE_URL || JSON.parse(packageRaw).itemxUpdateUrl || '').trim();
 if (updateUrl && !/^https:\/\//i.test(updateUrl)) throw new Error('ITEMX update URL must use HTTPS');
 
-const rawCss = demo.match(/<style>([\s\S]*?)<\/style>/i)?.[1];
-if (!rawCss) throw new Error(`style block not found: ${demoPath}`);
+// Stylesheets are source files, not something scraped out of a design mockup.
+// `shell.css` is the iframe-fallback shell (.stage) plus mockup chrome and is
+// scoped to the plugin's own document; `cards.css` is the card surface that is
+// also rescoped into the chat body; `presentation.css` is the chat-body layer.
+const shellCss = await readFile(resolve(root, 'src/shell.css'), 'utf8');
+const cardsCss = await readFile(resolve(root, 'src/cards.css'), 'utf8');
 const presentationCss = await readFile(resolve(root, 'src/presentation.css'), 'utf8');
 const history = await readFile(resolve(root, 'src/history.js'), 'utf8');
 const backup = await readFile(resolve(root, 'src/backup.js'), 'utf8');
-const css = `${rawCss.replace(/[ \t]+$/gm, '').trim()}\n${presentationCss.trim()}`;
-const cardStart = css.indexOf('    .itemx-panel');
-if (cardStart < 0) throw new Error('ITEMX design selectors not found');
-const chatCss = css
-  .slice(cardStart)
+if (!cardsCss.startsWith('    .itemx-panel')) throw new Error('src/cards.css must begin at the .itemx-panel surface');
+const css = `${shellCss}${cardsCss}\n${presentationCss.trim()}`;
+const chatCss = `${cardsCss}\n${presentationCss.trim()}`
   .replace(/\.stage\b/g, '.itemx2-never-stage')
   .replace(/\.risu-topbar\b/g, '.itemx2-never-topbar')
   .replace(/\.demo-note\b/g, '.itemx2-never-note')

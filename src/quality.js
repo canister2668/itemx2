@@ -2,7 +2,7 @@
 const ITEMXQuality = (() => {
   'use strict';
   const REVISION = 3;
-  const DETAIL_FIELDS = ['power', 'effects', 'augments', 'required', 'durability', 'cost'];
+  const DETAIL_FIELDS = ITEMXCore.DETAIL_FIELDS;
   const clean = (value) =>
     String(value ?? '')
       .replace(/\s+/g, ' ')

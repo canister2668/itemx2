@@ -21,7 +21,7 @@ export async function presentationRuntime(overrides = {}, extra = '') {
   await vm.runInContext(
     source.replace(
       anchor,
-      `${extra}\n  globalThis.preview = { runtime, ui, refreshLatest, presentationRecord, itemDetailHtml, skillPageHtml, monsterPageHtml, codexInlineEventHtml, displayHandler, armEventBursts, commitEventBursts, flushEventBursts, clearEventBursts, eventBurstKey, repairOneItem, embeddedViewCode, inlineViewPayload, core: ITEMXCore, renderer: ITEMXRenderer, codex: ITEMXCodex, style: ITEMX_STYLE + rootDrawerStyle() };\n  return;\n${anchor}`
+      `${extra}\n  globalThis.preview = { runtime, ui, refreshLatest, presentationRecord, itemDetailHtml, skillPageHtml, monsterPageHtml, codexInlineEventHtml, displayHandler, armEventBursts, commitEventBursts, flushEventBursts, clearEventBursts, eventBurstKey, repairOneItem, embeddedViewCode, inlineViewPayload, readCheckpointRecord, replayCheckpoint, checkpointFrozen, checkpointStatus, createCheckpoint, checkpointReplay, frozenBannerHtml, rootSettingActions, eventHitsMainClass, settingsPanelHtml, SETTINGS_SKINS, settingsDomainControls, settingsFontChoices, settingsPositionChoices, settingsStorageParts, settingsDebugLog, backupSettingsHtml, core: ITEMXCore, renderer: ITEMXRenderer, codex: ITEMXCodex, backup: ITEMXBackup, quality: ITEMXQuality, style: ITEMX_STYLE + rootDrawerStyle() };\n  return;\n${anchor}`
     ),
     sandbox
   );

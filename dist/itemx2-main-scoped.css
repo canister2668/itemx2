@@ -92,25 +92,25 @@
   color: #a9b6c8;
 }.chattext .x-risu-itemx2-history-row .x-risu-itemx2-history-actions{
   margin-top: 7px;
-}.chattext .x-risu-itemx2-root-settings > .x-risu-itemx2-root-setting-card, .chattext .x-risu-itemx-settings > .x-risu-itemx-setting-card{
+}.chattext .x-risu-itemx2-root-settings > .x-risu-itemx2-root-setting-card{
   flex-direction: row;
   flex-wrap: wrap;
-}.chattext .x-risu-itemx2-root-setting-card > span:first-child, .chattext .x-risu-itemx-setting-card > span:first-child{
+}.chattext .x-risu-itemx2-root-setting-card > span:first-child{
   flex: 1 1 180px;
   min-width: 0;
   overflow-wrap: anywhere;
-}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions, .chattext .x-risu-itemx-setting-card > .x-risu-itemx-manager-actions{
+}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions{
   display: flex;
   flex: 0 0 100%;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
-}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-root-setting-button, .chattext .x-risu-itemx-setting-card .x-risu-itemx-tool, .chattext .x-risu-itemx-setting-card > .x-risu-itemx-position-select{
+}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-root-setting-button{
   flex-shrink: 0;
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
-}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions > button, .chattext .x-risu-itemx-setting-card > .x-risu-itemx-manager-actions > button{
+}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions > button{
   flex: 0 0 auto;
   min-height: 38px;
 }.chattext .x-risu-itemx2-detail-stack{
@@ -350,4 +350,4 @@
     display: none !important;
     animation: none !important;
   }
-}
+}.chattext .x-risu-itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}.chattext .x-risu-itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}.chattext .x-risu-itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong{color:#a8341f}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong{color:#94301c}

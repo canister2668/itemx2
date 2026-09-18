@@ -119,36 +119,30 @@
   margin-top: 7px;
 }
 
-.itemx2-root-settings > .itemx2-root-setting-card,
-.itemx-settings > .itemx-setting-card {
+.itemx2-root-settings > .itemx2-root-setting-card {
   flex-direction: row;
   flex-wrap: wrap;
 }
-.itemx2-root-setting-card > span:first-child,
-.itemx-setting-card > span:first-child {
+.itemx2-root-setting-card > span:first-child {
   flex: 1 1 180px;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 /* Grouped actions belong below the copy, not in a shrinking side column. */
-.itemx2-root-setting-card > .itemx2-manager-actions,
-.itemx-setting-card > .itemx-manager-actions {
+.itemx2-root-setting-card > .itemx2-manager-actions {
   display: flex;
   flex: 0 0 100%;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
-.itemx2-root-setting-card .itemx2-root-setting-button,
-.itemx-setting-card .itemx-tool,
-.itemx-setting-card > .itemx-position-select {
+.itemx2-root-setting-card .itemx2-root-setting-button {
   flex-shrink: 0;
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
 }
-.itemx2-root-setting-card > .itemx2-manager-actions > button,
-.itemx-setting-card > .itemx-manager-actions > button {
+.itemx2-root-setting-card > .itemx2-manager-actions > button {
   flex: 0 0 auto;
   min-height: 38px;
 }
@@ -437,3 +431,13 @@
     animation: none !important;
   }
 }
+
+/* Read-only freeze: a present-but-unreadable checkpoint. Reading and backup
+   export stay available; every ledger rewrite is refused. */
+.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}
+.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}
+.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}
+.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}
+.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}
+.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}
+.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}

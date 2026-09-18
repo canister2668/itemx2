@@ -36,60 +36,124 @@ const ITEMXCore = (() => {
     mythical: '신화',
     empyrean: '창천'
   };
-  const FIELD_ALIASES = {
-    id: 'id',
-    name: 'name',
-    이름: 'name',
-    type: 'type',
-    분류: 'type',
-    종류: 'type',
-    emoji: 'emoji',
-    rarity: 'internalrarity',
-    internalrarity: 'internalrarity',
-    grade: 'internalrarity',
-    등급: 'internalrarity',
-    display: 'displayrarity',
-    displayrarity: 'displayrarity',
-    표기: 'displayrarity',
-    power: 'power',
-    위력: 'power',
-    required: 'required',
-    요구: 'required',
-    durability: 'durability',
-    내구: 'durability',
-    내구도: 'durability',
-    cost: 'cost',
-    price: 'cost',
-    value: 'cost',
-    가치: 'cost',
-    possession: 'possession',
-    location: 'location',
-    count: 'count',
-    slot: 'slot',
-    pin: 'pin',
-    theme: 'theme',
-    craft: 'theme',
-    affinity: 'affinity',
-    affinity2: 'affinity2',
-    condition: 'condition',
-    effects: 'effects',
-    effect: 'effects',
-    augments: 'augments',
-    augment: 'augments',
-    trivia: 'trivia',
-    desc: 'trivia',
-    description: 'trivia',
-    action: 'action',
-    op: 'op',
-    quantity: 'quantity',
-    destination: 'destination',
-    reason: 'reason',
-    사유: 'reason',
-    inputs: 'inputs',
-    outputs: 'outputs',
-    equip: 'equip',
-    unequip: 'unequip'
+  // ---------------------------------------------------------------------------
+  // One declaration of the item field surface. Five consumers derive from it:
+  // transport aliases, residual-tag cleanup, the request anchor, portable
+  // backups and recovery quality. Adding a field used to mean editing six
+  // places, where missing one failed silently (a leaked raw tag, or a field
+  // quietly dropped from every backup).
+  //   key       - property name on a stored item
+  //   transport - canonical name the model emits
+  //   aliases   - other accepted input names (attribute or tag)
+  //   tags      - regex alternatives contributed to residual-tag cleanup
+  //   anchor    - 'required' always injected, 'optional' injected when present
+  //   backup    - carried by portable backups
+  //   detail    - an appraisal detail recovery quality must verify
+  // ---------------------------------------------------------------------------
+  const ITEM_FIELDS = [
+    { key: 'id', transport: 'id', tags: ['id'], anchor: 'required', backup: true },
+    { key: 'name', transport: 'name', aliases: ['이름'], tags: ['name'], anchor: 'required', backup: true },
+    { key: 'itemType', transport: 'type', aliases: ['분류', '종류'], tags: ['type'], anchor: 'required', backup: true },
+    { key: 'emoji', transport: 'emoji', tags: ['emoji'], backup: true },
+    {
+      key: 'rarity',
+      transport: 'internalrarity',
+      aliases: ['rarity', 'grade', '등급'],
+      tags: ['internalrarity'],
+      anchor: 'required',
+      backup: true
+    },
+    {
+      key: 'displayRarity',
+      transport: 'displayrarity',
+      aliases: ['display', '표기'],
+      tags: ['displayrarity'],
+      backup: true
+    },
+    { key: 'power', transport: 'power', aliases: ['위력'], tags: ['power'], anchor: 'optional', backup: true, detail: true },
+    { key: 'required', transport: 'required', aliases: ['요구'], tags: ['required'], backup: true, detail: true },
+    {
+      key: 'durability',
+      transport: 'durability',
+      aliases: ['내구', '내구도'],
+      tags: ['durability'],
+      anchor: 'optional',
+      backup: true,
+      detail: true
+    },
+    { key: 'cost', transport: 'cost', aliases: ['price', 'value', '가치'], tags: ['cost'], backup: true, detail: true },
+    { key: 'possession', transport: 'possession', tags: ['possession'], anchor: 'required', backup: true },
+    { key: 'location', transport: 'location', tags: ['location'], anchor: 'required', backup: true },
+    { key: 'count', transport: 'count', tags: ['count'], anchor: 'required', backup: true },
+    { key: 'slot', transport: 'slot', tags: ['slot'], anchor: 'optional', backup: true },
+    { key: 'pin', transport: 'pin', tags: ['pin'], backup: true },
+    { key: 'theme', transport: 'theme', aliases: ['craft'], tags: ['theme', 'craft'], anchor: 'optional', backup: true },
+    { key: 'affinity', transport: 'affinity', tags: ['affinity2?'], anchor: 'optional', backup: true },
+    { key: 'affinity2', transport: 'affinity2', anchor: 'optional', backup: true },
+    { key: 'condition', transport: 'condition', tags: ['condition'], anchor: 'optional', backup: true },
+    { key: 'trivia', transport: 'trivia', aliases: ['desc', 'description'], tags: ['trivia'], backup: true },
+    {
+      key: 'effects',
+      transport: 'effects',
+      aliases: ['effect'],
+      tags: ['effects?', 'effectname', 'effectdesc'],
+      backup: true,
+      detail: true
+    },
+    {
+      key: 'augments',
+      transport: 'augments',
+      aliases: ['augment'],
+      tags: ['augments?', 'augmentname', 'augmentdesc'],
+      backup: true,
+      detail: true
+    },
+    { key: 'action', transport: 'action', tags: ['action'] },
+    { key: 'op', transport: 'op', tags: ['op'] },
+    { key: 'quantity', transport: 'quantity', tags: ['quantity'] },
+    { key: 'destination', transport: 'destination', tags: ['destination'] },
+    { key: 'reason', transport: 'reason', aliases: ['사유'], tags: ['reason'] },
+    { key: 'inputs', transport: 'inputs', tags: ['inputs'] },
+    { key: 'outputs', transport: 'outputs', tags: ['outputs'] },
+    { key: 'equip', transport: 'equip', tags: ['equip'] },
+    { key: 'unequip', transport: 'unequip', tags: ['unequip'] }
+  ];
+  const FIELD_ALIASES = Object.fromEntries(
+    ITEM_FIELDS.flatMap((field) => [field.transport, ...(field.aliases || [])].map((name) => [name, field.transport]))
+  );
+  const TRANSPORT_TAG_ALT = ITEM_FIELDS.flatMap((field) => field.tags || []).join('|');
+  const ANCHOR_REQUIRED = ITEM_FIELDS.filter((f) => f.anchor === 'required').map((f) => f.key);
+  // Membership comes from the schema; the orders below are presentation and are
+  // asserted to be exact permutations of it, so a new field cannot be added
+  // without deciding where it appears. ANCHOR_OPTIONAL_ORDER is prompt text and
+  // BACKUP_FIELD_ORDER is the key order of every exported backup.
+  const ANCHOR_OPTIONAL_ORDER = ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition'];
+  const BACKUP_FIELD_ORDER =
+    'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin trivia theme affinity affinity2 condition effects augments'.split(
+      ' '
+    );
+  const DETAIL_FIELD_ORDER = ['power', 'effects', 'augments', 'required', 'durability', 'cost'];
+  const ordered = (order, members, label) => {
+    const set = new Set(members);
+    if (order.length !== set.size || order.some((key) => !set.has(key)))
+      throw new Error(`ITEM_FIELDS ${label} order is not a permutation of the schema`);
+    return order;
   };
+  const ANCHOR_OPTIONAL = ordered(
+    ANCHOR_OPTIONAL_ORDER,
+    ITEM_FIELDS.filter((f) => f.anchor === 'optional').map((f) => f.key),
+    'anchor'
+  );
+  const BACKUP_FIELDS = ordered(
+    BACKUP_FIELD_ORDER,
+    ITEM_FIELDS.filter((f) => f.backup).map((f) => f.key),
+    'backup'
+  );
+  const DETAIL_FIELDS = ordered(
+    DETAIL_FIELD_ORDER,
+    ITEM_FIELDS.filter((f) => f.detail).map((f) => f.key),
+    'detail'
+  );
 
   const clone = (value) => (value == null ? value : JSON.parse(JSON.stringify(value)));
   const clean = (value, max = 800) => {
@@ -745,7 +809,7 @@ const ITEMXCore = (() => {
       while (boundary >= 0) {
         const suffix = out.slice(boundary + 2).trimStart();
         if (
-          !/^<\/?(?:id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip)\b/i.test(
+          !new RegExp(`^</?(?:${TRANSPORT_TAG_ALT})\\b`, 'i').test(
             suffix
           )
         )
@@ -1023,7 +1087,7 @@ const ITEMXCore = (() => {
         `location=${item.location}`,
         `count=${item.count || 0}`
       ];
-      for (const key of ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition'])
+      for (const key of ANCHOR_OPTIONAL)
         if (item[key]) bits.push(`${key}=${item[key]}`);
       if (item.effects?.length)
         bits.push(
@@ -1069,6 +1133,11 @@ const ITEMXCore = (() => {
     writeSnapshot,
     requestView,
     anchor,
+    ITEM_FIELDS,
+    BACKUP_FIELDS,
+    DETAIL_FIELDS,
+    ANCHOR_OPTIONAL,
+    TRANSPORT_TAG_ALT,
     messageText,
     clone,
     isUsableGlyph,

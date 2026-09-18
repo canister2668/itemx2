@@ -4,7 +4,9 @@ const ITEMXBackup = (() => {
   const MAX_BYTES = 32 * 1024 * 1024;
   const domains = ['item', 'skill', 'monster'];
   const fields = {
-    item: 'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin trivia theme affinity affinity2 condition effects augments',
+    // Derived from the item schema in core.js. A field added there is carried by
+    // backups automatically instead of being silently dropped from every export.
+    item: ITEMXCore.BACKUP_FIELDS.join(' '),
     skill:
       'id name glyph rank school type status level mastery cost cooldown target affinity description effects growth _inferred _placeholder',
     monster:

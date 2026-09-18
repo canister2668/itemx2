@@ -13,6 +13,36 @@ const ITEMXCodex = (() => {
   const ITEMX_SKILL_RANKS = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
   const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
   const OPS = new Set(['merge', 'remove', 'restore']);
+  // One registry owns every per-domain fact. Routing by `startsWith('skill')`
+  // sent any future tag silently into the encounter store; an unknown tag must
+  // be an error, never a default domain.
+  const DOMAINS = {
+    skill: {
+      exam: 'skillExam',
+      patch: 'skillPatch',
+      store: (state) => state?.skills,
+      actions: SKILL_ACTIONS,
+      terminalStatus: 'lost'
+    },
+    monster: {
+      exam: 'monsterExam',
+      patch: 'monsterPatch',
+      store: (state) => state?.monsters,
+      actions: MONSTER_ACTIONS,
+      terminalStatus: 'ended'
+    }
+  };
+  const DOMAIN_NAMES = Object.keys(DOMAINS);
+  const TRANSPORT_TAGS = DOMAIN_NAMES.flatMap((name) => [DOMAINS[name].exam, DOMAINS[name].patch]);
+  const TRANSPORT_ALT = TRANSPORT_TAGS.join('|');
+  const TAG_ROUTE = new Map(
+    DOMAIN_NAMES.flatMap((name) => [
+      [DOMAINS[name].exam.toLowerCase(), { domain: name, kind: 'exam' }],
+      [DOMAINS[name].patch.toLowerCase(), { domain: name, kind: 'patch' }]
+    ])
+  );
+  const routeTag = (tag) => TAG_ROUTE.get(String(tag).toLowerCase()) || null;
+  const storeFor = (state, domain) => DOMAINS[domain]?.store(state);
   const ASSET_CATALOG_MAX = 30000;
   const PORTRAIT_PROTOCOL_MAX = 180;
   const REPRESENTATIVE_KINDS = ['standing', 'default', 'neutral', 'normal', 'idle', 'indifferent', 'serious'];
@@ -258,10 +288,11 @@ const ITEMXCodex = (() => {
       const value = scalar(body, a, key);
       raw[key] = ['type', 'status', 'relation', 'action', 'op'].includes(key) ? value.toLowerCase() : value;
     }
-    const lower = tag.toLowerCase();
-    if (lower === 'skillexam') return normalizeSkillExam(raw, seed);
-    if (lower === 'monsterexam') return normalizeMonsterExam(raw, seed);
-    return normalizePatch(lower.startsWith('skill') ? 'skill' : 'monster', raw);
+    const route = routeTag(tag);
+    if (!route) return { error: 'unknown_transport' };
+    if (route.kind === 'exam')
+      return route.domain === 'skill' ? normalizeSkillExam(raw, seed) : normalizeMonsterExam(raw, seed);
+    return normalizePatch(route.domain, raw);
   }
   function registry() {
     return { order: [], entries: {}, diagnostics: [] };
@@ -276,7 +307,7 @@ const ITEMXCodex = (() => {
   }
   function applyEvent(state, event) {
     if (!event || !['skill', 'monster'].includes(event.domain)) return null;
-    const reg = event.domain === 'skill' ? state.skills : state.monsters;
+    const reg = storeFor(state, event.domain);
     if (event.kind === 'exam') {
       if (!event.entity?.id || !ID_RE.test(event.entity.id)) {
         reg.diagnostics.push({ code: 'exam_invalid' });
@@ -365,7 +396,7 @@ const ITEMXCodex = (() => {
       return null;
     }
     const { action = null, op = null, fields = {} } = event.patch || {};
-    const allowedActions = event.domain === 'skill' ? SKILL_ACTIONS : MONSTER_ACTIONS;
+    const allowedActions = DOMAINS[event.domain]?.actions || new Set();
     if ((action && !allowedActions.has(action)) || (op && !OPS.has(op)) || (action && op) || (!action && !op)) {
       reg.diagnostics.push({ code: 'patch_bad_operation', id: entity.id });
       return null;
@@ -441,7 +472,7 @@ const ITEMXCodex = (() => {
   }
   function collect(text) {
     const out = [],
-      re = /<(skillExam|skillPatch|monsterExam|monsterPatch)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
+      re = new RegExp(`<(${TRANSPORT_ALT})\\b([^>]*)>([\\s\\S]*?)</\\1\\s*>`, 'gi');
     let m;
     while ((m = re.exec(String(text))))
       out.push({ start: m.index, end: re.lastIndex, raw: m[0], tag: m[1], attrs: m[2], body: m[3] });
@@ -449,7 +480,7 @@ const ITEMXCodex = (() => {
   }
   function stripResidual(text) {
     let out = String(text),
-      hit = /<(?:skillExam|skillPatch|monsterExam|monsterPatch)\b/i.exec(out);
+      hit = new RegExp(`<(?:${TRANSPORT_ALT})\\b`, 'i').exec(out);
     if (hit) {
       let boundary = out.indexOf('\n\n', hit.index);
       while (boundary >= 0) {
@@ -465,7 +496,7 @@ const ITEMXCodex = (() => {
       out = boundary < 0 ? out.slice(0, hit.index) : out.slice(0, hit.index) + out.slice(boundary + 2);
     }
     return out
-      .replace(/<\/?(?:skillExam|skillPatch|monsterExam|monsterPatch)\b[^>]*>?/gi, '')
+      .replace(new RegExp(`</?(?:${TRANSPORT_ALT})\\b[^>]*>?`, 'gi'), '')
       .replace(/^\s*```(?:xml)?\s*$/gim, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
@@ -658,11 +689,15 @@ const ITEMXCodex = (() => {
     };
     if (options.reconcileExistingSkills) Object.values(state.skills.entries).forEach(indexSkill);
     let cursor = 0;
-    if (!parts.length && !/<\/?(?:skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(text))
+    if (!parts.length && !new RegExp(`</?(?:${TRANSPORT_ALT})\\b`, 'i').test(text))
       return { content: text, snapshot: state, events, errors };
     parts.forEach((part, index) => {
       output.push(text.slice(cursor, part.start));
-      const domain = part.tag.toLowerCase().startsWith('skill') ? 'skill' : 'monster';
+      const domain = routeTag(part.tag)?.domain;
+      if (!domain) {
+        cursor = part.end;
+        return;
+      }
       if (!enabled.has(domain)) {
         cursor = part.end;
         return;
@@ -715,7 +750,7 @@ const ITEMXCodex = (() => {
           priorSkill: state.skills.entries[parsed.event.entity?.id]
         });
       if (parsed.event) {
-        const reg = parsed.event.domain === 'skill' ? state.skills : state.monsters;
+        const reg = storeFor(state, parsed.event.domain);
         const id = parsed.event.kind === 'exam' ? parsed.event.entity?.id : parsed.event.patch?.id;
         const previous = id && reg.entries[id] ? clone(reg.entries[id]) : null;
         const view = clone(applyEvent(state, parsed.event));
@@ -1107,6 +1142,10 @@ const ITEMXCodex = (() => {
     VERSION,
     STATE_KEY,
     MARKER_RE,
+    DOMAINS,
+    DOMAIN_NAMES,
+    routeTag,
+    storeFor,
     ASSET_CATALOG_MAX,
     PORTRAIT_PROTOCOL_MAX,
     esc,

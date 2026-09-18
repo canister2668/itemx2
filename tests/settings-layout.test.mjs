@@ -6,8 +6,10 @@ import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 
 test('grouped settings actions cannot shrink into vertical text', async () => {
   const css = await readFile(new URL('../src/presentation.css', import.meta.url), 'utf8');
-  assert.match(css, /\.itemx2-root-setting-card > \.itemx2-manager-actions,[\s\S]*?flex: 0 0 100%/);
-  assert.match(css, /\.itemx-setting-card \.itemx-tool,[\s\S]*?white-space: nowrap/);
+  // Both screens render one vocabulary now, so one rule covers both.
+  assert.match(css, /\.itemx2-root-setting-card > \.itemx2-manager-actions \{[\s\S]*?flex: 0 0 100%/);
+  assert.match(css, /\.itemx2-root-setting-card \.itemx2-root-setting-button \{[\s\S]*?white-space: nowrap/);
+  assert.ok(!css.includes('.itemx-setting-card'), 'the retired fallback vocabulary must not linger');
 });
 
 test(
@@ -20,14 +22,31 @@ test(
     const p = await presentationRuntime();
     const iframeStart = source.indexOf('.itemx-settings{');
     const iframeCss = source.slice(iframeStart, source.indexOf('</style>', iframeStart));
-    const cases = ['itemx2-root', 'itemx'].map((prefix) => {
-      const marker = `<section class="${prefix}-setting-card"><span><strong>조우 로어북 보완</strong>`;
-      const start = source.indexOf(marker);
+    // Both screens now come out of one renderer, so the fixture is its real
+    // output for each skin rather than two hand-sliced template fragments.
+    const LOADED = {
+      key: 'k', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
+      itemsEnabled: true, skillsEnabled: true, encountersEnabled: false,
+      lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsEnabled: true,
+      debugEnabled: false, fontScale: 'small', skin: 'dark',
+      character: { name: 'T' }, chat: { message: [], scriptstate: {} },
+      snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },
+      codexSnapshot: {
+        skills: { order: [], entries: {} }, monsters: { order: [], entries: {} },
+        history: { skill: {}, monster: {} }, fingerprint: 'b'
+      }
+    };
+    const cases = ['native', 'frame'].map((which) => {
+      const skin = p.SETTINGS_SKINS[which];
+      const html = p.settingsPanelHtml(LOADED, skin, {
+        connection: { ready: false }, chips: '', permissionLabel: '허용', styleLabel: '고정',
+        domainControls: '', fontChoices: '', positionChoices: '', manager: '', debugPanel: '',
+        ...p.settingsStorageParts(LOADED)
+      });
+      const start = html.indexOf('<section class="itemx2-root-setting-card"><span><strong>로어북에서 설명 채우기</strong>');
       assert.ok(start >= 0);
-      const section = source
-        .slice(start, source.indexOf('</section>', start) + 10)
-        .replace(/\$\{loaded\.lorebookEncounterEnabled \? '([^']*)' : '[^']*'\}/g, '$1');
-      return { prefix, html: `<div class="${prefix}-settings">${section}</div>` };
+      const section = html.slice(start, html.indexOf('</section>', start) + 10);
+      return { prefix: which, html: `<div class="itemx2-root-settings">${section}</div>` };
     });
     const script = `const {chromium}=require('playwright-core');
     (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});

@@ -56,9 +56,9 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .itemx2-inline-event.itemx2-inline-appraisal{border-radius:13px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rk,#a58add) 40%,transparent),inset 0 0 30px rgba(0,0,0,.5),0 6px 18px rgba(0,0,0,.26),0 0 16px color-mix(in srgb,var(--rk,#a58add) 18%,transparent)}
 .itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:11px;align-items:start;padding:12px 13px 10px;min-height:0}
 .itemx2-inline-appraisal .itemx2-inline-icon{align-self:start;width:46px;height:46px;min-width:46px;min-height:46px;border-radius:12px;font-size:1.3rem}
-.itemx2-inline-appraisal .itemx2-inline-name{display:block;margin:2px 0 3px;font-size:1.02rem;font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.itemx2-inline-appraisal .itemx2-inline-name{display:block;margin:2px 0 3px;font-size:1.02rem;font-weight:700;letter-spacing:-.005em;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.32}
 .itemx2-inline-appraisal .itemx2-inline-kicker{color:color-mix(in srgb,var(--rk,#a58add) 64%,#9f9586)}
-.itemx2-inline-appraisal .itemx2-inline-meta{display:block;font-size:.63rem;color:var(--ix-dim,#9f9586)}
+.itemx2-inline-appraisal .itemx2-inline-meta{display:block;font-size:.63rem;line-height:1.6;color:var(--ix-dim,#9f9586);white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 .itemx2-inline-appraisal .itemx2-inline-state{align-self:start;margin-top:2px}
 /* Compact chips replace the fixed four-cell grid. */
 .itemx2-inline-appraisal .itemx2-inline-quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;grid-template-columns:none}
@@ -69,9 +69,9 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .itemx2-inline-appraisal .itemx2-inline-stat-changed>s{color:var(--ix-dim,#9f9586);text-decoration:none;opacity:.8}
 .itemx2-inline-appraisal .itemx2-inline-stat-changed>u{color:var(--ix-dim,#9f9586);text-decoration:none;margin:0 1px}
 .itemx2-inline-appraisal .itemx2-inline-stat-changed>em{font-style:normal;font-weight:800;color:color-mix(in srgb,var(--rk,#a58add) 76%,var(--ix-fg,#e8e0d2))}
-.itemx2-inline-appraisal .itemx2-inline-foot{display:flex;align-items:center;gap:9px;padding:8px 13px;border-top:1px solid var(--ix-line,#544936);background:rgba(8,7,6,.42);font-size:.66rem}
+.itemx2-inline-appraisal .itemx2-inline-foot{display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 9px;padding:9px 13px 10px;border-top:1px solid var(--ix-line,#544936);background:rgba(8,7,6,.42);font-size:.66rem;line-height:1.7}
 .itemx2-inline-appraisal .itemx2-inline-foot>b{flex:0 0 auto;color:color-mix(in srgb,var(--rk,#a58add) 70%,#9f9586);font-size:.56rem;font-weight:900;letter-spacing:.1em}
-.itemx2-inline-appraisal .itemx2-inline-foot>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.itemx2-inline-appraisal .itemx2-inline-foot>span{flex:1 1 200px;min-width:0;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}.itemx2-inline-appraisal .itemx2-inline-foot>b{padding-top:1px}
 .itemx2-inline-more{flex:0 0 auto;font-style:normal;font-size:.6rem;font-weight:800;color:color-mix(in srgb,var(--rk,#a58add) 72%,var(--ix-fg,#e8e0d2));opacity:.85}
 /* Affinity body layer, one per card. */
 .itemx2-inline-body{position:absolute;inset:0;pointer-events:none;z-index:0}
@@ -87,7 +87,7 @@ const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
 .itemx2-inline-scan{position:absolute;left:0;right:0;top:0;height:1.5px;pointer-events:none;z-index:1;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--rk,#d64b60) 85%,#fff 8%),transparent);box-shadow:0 0 10px color-mix(in srgb,var(--rk,#d64b60) 55%,transparent);animation:itemx2-inline-scan 3.6s ease-in-out infinite}
 @keyframes itemx2-inline-scan{0%,100%{transform:translateY(4px);opacity:.14}50%{transform:translateY(84px);opacity:.9}}
 .itemx2-inline-seal{position:absolute;right:12px;top:50%;z-index:3;padding:3px 8px;background:rgba(10,9,8,.62);border:1.5px solid color-mix(in srgb,var(--rk,#6c7686) 55%,transparent);border-radius:5px;font-family:"Nanum Myeongjo","Noto Serif KR",serif;font-size:.62rem;font-weight:900;letter-spacing:.22em;color:color-mix(in srgb,var(--rk,#6c7686) 72%,#9f9586);opacity:.8;transform:translateY(-50%) rotate(-8deg)}
-.itemx2-inline-ended .itemx2-inline-state{display:none}
+.itemx2-inline-ended .itemx2-inline-state{display:none}.itemx2-inline-ended .itemx2-inline-copy{padding-right:64px}
 .itemx2-inline-ended .itemx2-inline-body{display:none}
 .motion-off .itemx2-inline-body,.motion-off .itemx2-inline-scan,.itemx2-inline-event.motion-off .itemx2-inline-icon::after{animation:none!important}
 @media(prefers-reduced-motion:reduce){.itemx2-inline-body,.itemx2-inline-scan{animation:none!important}}
@@ -112,6 +112,22 @@ const ITEMX_AUX_SETTLE_MS = 1500;
 const ITEMX_AUX_PROMPT_REVISION = 2;
 const ITEMX_ROOT_PAGE_SIZE = 16;
 const ITEMX_CHECKPOINT_VERSION = 2;
+// Upgrade a stored checkpoint one version forward. A checkpoint replaces an
+// event prefix whose markers compaction already stripped from the message
+// bodies, so an unreadable checkpoint is unrecoverable: every version we ever
+// wrote must keep a path to the current shape.
+const ITEMX_CHECKPOINT_MIGRATIONS = {
+  // v1 sealed the prefix by marker fingerprint instead of a message id. The
+  // stored registries are already current; only the seal anchor changed.
+  1: (value) => ({
+    ...value,
+    v: 2,
+    sealedThroughId: typeof value.sealedThroughId === 'string' ? value.sealedThroughId : '',
+    rows: Array.isArray(value.rows) ? value.rows : [],
+    manual: Array.isArray(value.manual) ? value.manual : [],
+    storage: value.storage && typeof value.storage === 'object' ? value.storage : undefined
+  })
+};
 const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
 const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
 const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
@@ -242,6 +258,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     activeContextKey: '',
     checkpointCacheRaw: null,
     checkpointCache: null,
+    checkpointCacheRecord: null,
+    frozen: false,
+    frozenReason: '',
     auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null },
     update: { checking: false, checkedAt: 0, latest: '', available: false },
     debugEnabled: false,
@@ -802,6 +821,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-effects-off .itemx2-codex-fx{display:none!important;animation:none!important}.itemx2-effects-off .itemx2-codex-fx *{animation:none!important}@media(prefers-reduced-motion:reduce){.itemx2-codex-fx,.itemx2-codex-fx *,.itemx2-skill-weapon-fx,.itemx2-skill-weapon-fx *{animation:none!important}}
 `;
 
+  // The settings surface is shared with the iframe fallback, which renders the
+  // same markup. Only the drawer's radio-tab mechanism stays behind.
+  const ITEMX_SETTINGS_STYLE = `.itemx2-root-empty{padding:2rem;text-align:center;color:#77839c}.itemx2-root-settings{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.itemx2-position-choice,.itemx2-font-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-font-choice.itemx2-font-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-position-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-root-setting-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx2-root-setting-card span{display:grid;gap:3px}.itemx2-root-setting-card small{color:#77839c;line-height:1.4}.itemx2-root-setting-button{min-height:36px;padding:0 11px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9;cursor:pointer}.itemx2-status-row{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:5px!important;margin-top:3px}.itemx2-status-chip{display:inline-flex!important;padding:3px 7px;border:1px solid #354157;border-radius:999px;background:#131a26;color:#93a2ba;font-size:.66rem;font-weight:800;font-style:normal}.itemx2-status-chip-warn{border-color:#6a5530;color:#e8c987;background:#241d10}.itemx2-root-setting-button-primary{border-color:#6e5a32;background:#2a2316;color:#f0d79d}.itemx2-setting-on{border-color:#4e8968!important;background:#12241a!important;color:#a9e6c2!important}.itemx2-setting-cleanup{border-color:#65333a!important;background:#241216!important;color:#ffadb5!important}.itemx2-root-setting-button:disabled,.itemx2-root-setting-button-busy{opacity:.58;cursor:default;pointer-events:none}.itemx2-manager-fold{border:1px solid #283247;border-radius:12px;background:#0b1019;overflow:hidden}.itemx2-manager-fold summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;cursor:pointer;color:#f0d79d;font-weight:800;list-style:none}.itemx2-manager-fold summary::-webkit-details-marker{display:none}.itemx2-manager-fold summary::after{content:'＋';color:#8291aa}.itemx2-manager-fold[open] summary::after{content:'－'}.itemx2-manager-body{display:grid;gap:10px;padding:0 12px 12px}.itemx2-manager-label{display:grid;gap:5px;color:#8592a8;font-size:.72rem}.itemx2-manager-editor{min-height:58px;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}.itemx2-manager-editor:focus{border-color:#637ba3}.itemx2-manager-list{display:grid;gap:7px}.itemx2-manager-actions{display:flex;gap:5px}.itemx2-manager-actions button{min-height:31px;padding:0 8px;border:1px solid #344159;border-radius:7px;background:#172131;color:#cbd7e9;cursor:pointer}.itemx2-manager-actions .itemx2-manager-remove{border-color:#65333a;color:#ffadb5}.itemx2-manager-create{display:grid;gap:7px;padding-top:3px;border-top:1px solid #1d2737}.itemx2-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-domain-card{display:grid;gap:5px;padding:10px;border:1px solid #273247;border-radius:10px;background:#101722;color:#dce5f2;text-align:left}.itemx2-domain-card small{color:#718199;font-size:.62rem}.itemx2-debug-fold{border-color:#334056}.itemx2-debug-body{display:grid;gap:8px;padding:0 12px 12px}.itemx2-debug-grid{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 8px;font-size:.64rem}.itemx2-debug-grid b{color:#718199}.itemx2-debug-grid span{color:#c4cfdf;overflow-wrap:anywhere}.itemx2-debug-log{display:grid;gap:4px;max-height:180px;overflow:auto;padding:8px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere}`;
   const rootDrawerStyle = () => `
 .itemx2-root-drawer,.itemx2-root-drawer *{box-sizing:border-box}
 .itemx2-root-drawer{--itemx-ui-scale:1;--itemx-text-xs:calc(.62rem * var(--itemx-ui-scale));--itemx-text-sm:calc(.70rem * var(--itemx-ui-scale));--itemx-text-md:calc(.82rem * var(--itemx-ui-scale));--itemx-text-lg:calc(1.08rem * var(--itemx-ui-scale));position:fixed;inset:0;z-index:49;pointer-events:none;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif;color:#e6ebf4}.itemx2-root-drawer.itemx2-font-medium{--itemx-ui-scale:1.12}.itemx2-root-drawer.itemx2-font-large{--itemx-ui-scale:1.25}
@@ -828,7 +850,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-root-drawer.itemx2-is-open .itemx2-root-panel{animation:itemx2-root-in .19s cubic-bezier(.2,.78,.2,1) both}.itemx2-root-drawer:not(.itemx2-is-open) .itemx2-root-layer{opacity:0;visibility:hidden;transition:opacity .14s ease,visibility 0s .14s}
 .itemx2-root-drawer:not(.itemx2-is-open) .itemx2-root-panel{pointer-events:none;animation:itemx2-root-out .14s ease both}
 .itemx2-root-drawer:not(.itemx2-is-open) .itemx-card *{animation-play-state:paused!important}
-.itemx2-root-close,.itemx2-root-back{cursor:pointer}.itemx2-root-empty{padding:2rem;text-align:center;color:#77839c}
+.itemx2-root-close,.itemx2-root-back{cursor:pointer}${ITEMX_SETTINGS_STYLE}
 .itemx-main-tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #171d2b}.itemx-main-tab{min-height:44px;display:grid;place-items:center;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;cursor:pointer;font-size:.72rem;font-weight:800}
 .itemx2-root-skills,.itemx2-root-bestiary{display:none;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:12px;background:#090e16}.itemx2-tab-skills:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-skills:checked~.itemx2-root-layer .itemx2-root-settings,.itemx2-tab-bestiary:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-bestiary:checked~.itemx2-root-layer .itemx2-root-settings{display:none}.itemx2-tab-skills:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-bestiary:checked~.itemx2-root-layer .itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-tab-inventory:checked~.itemx2-root-layer label[for="itemx2-tab-inventory"],.itemx2-tab-skills:checked~.itemx2-root-layer label[for="itemx2-tab-skills"],.itemx2-tab-bestiary:checked~.itemx2-root-layer label[for="itemx2-tab-bestiary"],.itemx2-tab-settings:checked~.itemx2-root-layer label[for="itemx2-tab-settings"]{border-bottom-color:#d4af6e;color:#f3dcaa;background:#121925}
 .itemx2-codex-card{position:relative;display:block;min-height:70px;border:1px solid #263247;border-radius:12px;background:linear-gradient(145deg,#121a28,#0b111b);overflow:hidden}.itemx2-codex-summary{position:relative;z-index:1;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(72px,auto);gap:10px;align-items:center;min-height:70px;padding:10px;cursor:pointer;list-style:none}.itemx2-codex-summary::-webkit-details-marker{display:none}.itemx2-codex-summary::after{content:'＋';position:absolute;right:8px;bottom:5px;color:#66758d;font-size:var(--itemx-text-sm,.7rem)}.itemx2-codex-card[open]>.itemx2-codex-summary::after{content:'－';color:#d4af6e}.itemx2-codex-glyph{display:grid;place-items:center;width:48px;height:48px;border:1px solid #40506b;border-radius:11px;background:#0b111c;color:#dbe8ff;font-size:1.45rem}.itemx2-codex-copy{display:grid;gap:3px;min-width:0}.itemx2-codex-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#edf2fb;font-size:var(--itemx-text-md,.82rem)}.itemx2-codex-copy small{color:#8494ad;font-size:var(--itemx-text-xs,.66rem)}.itemx2-codex-tags{display:flex;flex-wrap:wrap;gap:4px}.itemx2-codex-tags i{padding:2px 5px;border:1px solid #344259;border-radius:999px;color:#aebbd0;font-size:calc(var(--itemx-text-xs,.62rem) * .94);font-style:normal}.itemx2-codex-detail{position:relative;z-index:1;display:grid;gap:8px;padding:10px 12px 12px;border-top:1px solid #202b3c;background:rgba(7,11,18,.72);color:#b8c4d7;font-size:var(--itemx-text-sm,.68rem);line-height:1.55}.itemx2-codex-detail p{margin:0;color:#c8d2e1;white-space:pre-wrap}.itemx2-codex-detail-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px}.itemx2-codex-detail-row b{color:#74849d;font-size:var(--itemx-text-xs,.62rem)}.itemx2-codex-detail-row span{overflow-wrap:anywhere}.itemx2-skill-meta{position:relative;z-index:1;display:grid;grid-template-columns:auto auto;gap:2px 5px;align-items:center;padding:6px 7px;border:1px solid #2e3a50;border-radius:9px;background:rgba(9,14,23,.82);font-size:var(--itemx-text-xs,.58rem)}.itemx2-skill-meta small{color:#6f809a}.itemx2-skill-meta b{color:#dce6f5;font-size:var(--itemx-text-xs,.62rem);text-align:right}.itemx2-mastery{grid-column:2/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.itemx2-mastery i{height:5px;border-radius:6px;background:#202a3a;overflow:hidden}.itemx2-mastery i.on{background:linear-gradient(90deg,#66b8ff,#a985ff);box-shadow:0 0 8px rgba(102,184,255,.35)}.itemx2-bestiary-card.active{border-color:#70404a;box-shadow:inset 3px 0 #b55b68}.itemx2-bestiary-card img{width:48px;height:48px;border-radius:11px;object-fit:cover}.itemx2-codex-empty{padding:34px 16px;text-align:center;color:#6f7e96;font-size:var(--itemx-text-sm,.75rem)}.itemx2-codex-note{padding:9px 10px;border:1px solid #1c2635;border-radius:9px;background:#0c121c;color:#8594aa;font-size:var(--itemx-text-xs,.66rem);line-height:1.45}.itemx2-root-drawer.itemx2-font-large .itemx2-codex-card,.itemx2-root-drawer.itemx2-font-large .itemx2-codex-summary{min-height:76px}
@@ -836,16 +858,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 .itemx2-root-inventory{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-inventory>.itemx-body{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding-bottom:calc(.95em + env(safe-area-inset-bottom,0px))}
 .itemx2-root-inventory>.itemx-pf{display:flex;align-items:center;justify-content:space-between;gap:8px}.itemx2-root-pager{display:inline-flex;align-items:center;gap:7px}.itemx2-root-pager button{width:30px;height:28px;border:1px solid #2d394c;border-radius:7px;background:#151d2a;color:#d9e4f3;font:inherit;font-weight:900}.itemx2-root-pager button:disabled{opacity:.3}.itemx2-root-pager b{min-width:42px;color:#9eabc0;font-size:.65rem;text-align:center}
 .itemx2-root-item{display:block}.itemx2-root-tile-label{display:block;cursor:pointer}.itemx2-root-tile-label .itemx-tile{width:100%;pointer-events:none}
-.itemx2-root-detail{display:none}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-filters,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-tools,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-pf{display:none}
-.itemx2-root-settings{display:none;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-bestiary{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-settings{display:grid;gap:10px}
-.itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}
-.itemx2-position-choice,.itemx2-font-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}
-.itemx2-font-choice.itemx2-font-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}
-.itemx2-position-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}
-.itemx2-root-setting-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx2-root-setting-card span{display:grid;gap:3px}.itemx2-root-setting-card small{color:#77839c;line-height:1.4}.itemx2-root-setting-button{min-height:36px;padding:0 11px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9;cursor:pointer}
-.itemx2-status-row{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:5px!important;margin-top:3px}.itemx2-status-chip{display:inline-flex!important;padding:3px 7px;border:1px solid #354157;border-radius:999px;background:#131a26;color:#93a2ba;font-size:.66rem;font-weight:800;font-style:normal}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-warn{border-color:#6a5530;color:#e8c987;background:#241d10}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-root-setting-button-primary{border-color:#6e5a32;background:#2a2316;color:#f0d79d}.itemx2-setting-on{border-color:#4e8968!important;background:#12241a!important;color:#a9e6c2!important}.itemx2-setting-cleanup{border-color:#65333a!important;background:#241216!important;color:#ffadb5!important}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-root-setting-button:disabled,.itemx2-root-setting-button-busy{opacity:.58;cursor:default;pointer-events:none}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}
-.itemx2-manager-fold{border:1px solid #283247;border-radius:12px;background:#0b1019;overflow:hidden}.itemx2-manager-fold summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;cursor:pointer;color:#f0d79d;font-weight:800;list-style:none}.itemx2-manager-fold summary::-webkit-details-marker{display:none}.itemx2-manager-fold summary::after{content:'＋';color:#8291aa}.itemx2-manager-fold[open] summary::after{content:'－'}.itemx2-manager-body{display:grid;gap:10px;padding:0 12px 12px}.itemx2-manager-label{display:grid;gap:5px;color:#8592a8;font-size:.72rem}.itemx2-manager-editor{min-height:58px;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}.itemx2-manager-editor:focus{border-color:#637ba3}.itemx2-manager-list{display:grid;gap:7px}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#6f7e96;font-size:.67rem}.itemx2-manager-actions{display:flex;gap:5px}.itemx2-manager-actions button{min-height:31px;padding:0 8px;border:1px solid #344159;border-radius:7px;background:#172131;color:#cbd7e9;cursor:pointer}.itemx2-manager-actions .itemx2-manager-remove{border-color:#65333a;color:#ffadb5}.itemx2-manager-create{display:grid;gap:7px;padding-top:3px;border-top:1px solid #1d2737}
-.itemx2-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-domain-card{display:grid;gap:5px;padding:10px;border:1px solid #273247;border-radius:10px;background:#101722;color:#dce5f2;text-align:left}.itemx2-domain-card small{color:#718199;font-size:.62rem}.itemx2-debug-fold{border-color:#334056}.itemx2-debug-body{display:grid;gap:8px;padding:0 12px 12px}.itemx2-debug-grid{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 8px;font-size:.64rem}.itemx2-debug-grid b{color:#718199}.itemx2-debug-grid span{color:#c4cfdf;overflow-wrap:anywhere}.itemx2-debug-log{display:grid;gap:4px;max-height:180px;overflow:auto;padding:8px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.itemx2-root-detail{display:none}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-filters,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-tools,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-pf{display:none}.itemx2-root-settings{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-bestiary{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-settings{display:grid;gap:10px}
+.itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#6f7e96;font-size:.67rem}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item{display:none}.itemx2-root-panel .itemx2-root-item:has(.itemx2-root-detail-choice:checked){display:block}.itemx2-root-detail-choice:checked~.itemx2-root-tile-label{display:none}.itemx2-root-detail-choice:checked~.itemx2-root-detail{display:block}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-grid{grid-template-columns:minmax(0,1fr)}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item:has(.itemx2-root-detail-choice:checked){grid-column:1/-1;width:100%;min-width:0}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-detail{width:100%}
 .itemx2-root-filter-owned:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-owned),.itemx2-root-filter-equipped:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-equipped),.itemx2-root-filter-observed:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-observed),.itemx2-root-filter-removed:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-removed){display:none}
@@ -1075,10 +1089,10 @@ ${codexPageStyle()}
       `${S} .itemx-monster-hero{border-color:${c.dangerLine};background:radial-gradient(circle at 50% 40%,rgba(${c.dangerRGB},.16),transparent 34%),linear-gradient(145deg,${c.dangerA},${c.dangerB} 72%);box-shadow:inset 0 0 54px rgba(${c.dangerRGB},.1),0 12px 34px rgba(${c.shadowRGB},.22)}`,
       `${S} .itemx-threat-banner{border-color:rgba(${c.dangerRGB},.45);background:${c.dangerBanner};color:${c.dangerInk}}`,
       // Settings and history surfaces.
-      `${S} .itemx2-root-setting-card,${S} .itemx-setting-card{border-color:${line('.28')};background:${c.raise}}`,
-      `${S} .itemx-setting-card strong{color:${c.ink3}}`,
-      `${S} .itemx-setting-card small,${S} .itemx-setting-note{color:${c.dim2}}`,
-      `${S} .itemx2-root-setting-button,${S} .itemx-position-select{border-color:${line('.36')};background:${c.input};color:${c.btnInk}}`,
+      `${S} .itemx2-root-setting-card{border-color:${line('.28')};background:${c.raise}}`,
+      `${S} .itemx2-root-setting-card strong{color:${c.ink3}}`,
+      `${S} .itemx2-root-setting-card small{color:${c.dim2}}`,
+      `${S} .itemx2-root-setting-button{border-color:${line('.36')};background:${c.input};color:${c.btnInk}}`,
       `${S} .itemx-setting-on{border-color:#5f8f6d;color:#2f6144}`,
       `${S} .itemx-manager{border-color:${line('.34')};background:${c.manager}}`,
       `${S} .itemx-manager-title{color:${c.accent}}`,
@@ -1226,29 +1240,88 @@ ${codexPageStyle()}
     }
   }
 
-  function replayCheckpoint(chat) {
-    try {
-      const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
-      if (typeof raw === 'string' && raw === runtime.checkpointCacheRaw) return runtime.checkpointCache;
-      const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (
-        ![1, ITEMX_CHECKPOINT_VERSION].includes(value?.v) ||
-        !Number.isInteger(value.boundary) ||
-        !value.item?.registry ||
-        !value.codex?.skills ||
-        !Array.isArray(value.rows) ||
-        !Array.isArray(value.manual)
-      )
-        return null;
-      if (typeof raw === 'string') {
-        runtime.checkpointCacheRaw = raw;
-        runtime.checkpointCache = value;
-      }
-      return value;
-    } catch {
-      return null;
-    }
+  function checkpointShapeValid(value) {
+    return Boolean(
+      value &&
+        Number.isInteger(value.boundary) &&
+        value.item?.registry &&
+        value.codex?.skills &&
+        Array.isArray(value.rows) &&
+        Array.isArray(value.manual)
+    );
   }
+
+  // Classify the stored checkpoint instead of collapsing every failure to null.
+  // `unreadable` means a checkpoint is present but this build cannot fold it:
+  // the caller must freeze rather than reseal, because the event prefix it
+  // replaced no longer exists in the message bodies.
+  function readCheckpointRecord(chat) {
+    const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
+    if (raw === undefined || raw === null || raw === '') return { status: 'absent', value: null, reason: '' };
+    if (typeof raw === 'string' && raw === runtime.checkpointCacheRaw && runtime.checkpointCacheRecord)
+      return runtime.checkpointCacheRecord;
+    let record;
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+        record = { status: 'unreadable', value: null, reason: 'checkpoint_not_object' };
+      else if (!Number.isInteger(parsed.v))
+        record = { status: 'unreadable', value: null, reason: 'checkpoint_no_version' };
+      else if (parsed.v > ITEMX_CHECKPOINT_VERSION)
+        record = { status: 'unreadable', value: null, reason: `checkpoint_from_newer_build_v${parsed.v}` };
+      else {
+        let value = parsed;
+        while (value.v < ITEMX_CHECKPOINT_VERSION) {
+          const migrate = ITEMX_CHECKPOINT_MIGRATIONS[value.v];
+          if (typeof migrate !== 'function') {
+            value = null;
+            break;
+          }
+          const next = migrate(value);
+          if (!next || next.v <= value.v) {
+            value = null;
+            break;
+          }
+          value = next;
+        }
+        if (!value) record = { status: 'unreadable', value: null, reason: `checkpoint_no_migration_v${parsed.v}` };
+        else if (!checkpointShapeValid(value))
+          record = { status: 'unreadable', value: null, reason: 'checkpoint_shape_invalid' };
+        else record = { status: 'ok', value, reason: '' };
+      }
+    } catch {
+      record = { status: 'unreadable', value: null, reason: 'checkpoint_unparsable' };
+    }
+    if (typeof raw === 'string') {
+      runtime.checkpointCacheRaw = raw;
+      runtime.checkpointCache = record.value;
+      runtime.checkpointCacheRecord = record;
+    }
+    return record;
+  }
+
+  function replayCheckpoint(chat) {
+    return readCheckpointRecord(chat).value;
+  }
+
+  // A present-but-unreadable checkpoint freezes this chat. Reading, rendering
+  // and backup export stay available; anything that would reseal or rewrite the
+  // ledger is refused, because the prefix it replaced cannot be reconstructed.
+  function checkpointFrozen(chat) {
+    const record = readCheckpointRecord(chat);
+    const frozen = record.status === 'unreadable';
+    if (frozen && runtime.frozenReason !== record.reason) {
+      runtime.frozenReason = record.reason;
+      debugRecord('checkpoint frozen', record.reason);
+      log('checkpoint unreadable, chat frozen read-only:', record.reason);
+    }
+    if (!frozen && runtime.frozen) runtime.frozenReason = '';
+    runtime.frozen = frozen;
+    return frozen;
+  }
+
+  const FROZEN_MESSAGE =
+    'ITEMX 기록을 이 버전에서 읽을 수 없어 안전을 위해 읽기 전용으로 잠갔습니다. 설정 → 백업에서 먼저 백업을 내려받으세요.';
 
   function prefixMarkerFingerprint(chat, boundary) {
     let source = `b:${boundary}`;
@@ -1670,7 +1743,7 @@ ${codexPageStyle()}
         // fold over stored facts, never a second interpretation of prose.
         const domain = event.domain,
           id = event.entity?.id || event.patch?.id;
-        const registry = domain === 'skill' ? state.skills : state.monsters;
+        const registry = ITEMXCodex.storeFor(state, domain);
         const before = registry.entries[id] ? { ...registry.entries[id] } : null;
         const applied = ITEMXCodex.applyEvent(state, event);
         if (applied != null)
@@ -1746,6 +1819,9 @@ ${codexPageStyle()}
     const messagePressure = tailMessages >= ITEMX_CHECKPOINT_TRIGGER_MESSAGES;
     const ledgerBytes = storageBytes(JSON.stringify(liveRows)) + storageBytes(JSON.stringify(liveManual));
     const bytePressure = ledgerBytes >= ITEMX_CHECKPOINT_TAIL_BYTES;
+    // Never reseal a frozen chat: resealing folds the live tail onto a
+    // checkpoint we could not read, which silently drops the sealed prefix.
+    if (checkpointFrozen(chat)) return chat;
     if (!options.force && !eventPressure && !messagePressure && !bytePressure && !(status.checkpoint && !status.valid))
       return chat;
     const keepMessages = Math.max(
@@ -1929,6 +2005,7 @@ ${codexPageStyle()}
       if (!latestChat) return null;
       if (
         upgradeDisplayRefs &&
+        !checkpointFrozen(latestChat) &&
         !latestChat.isStreaming &&
         !(latestChat.message || []).some((message) => message?.isStreaming)
       ) {
@@ -1939,6 +2016,7 @@ ${codexPageStyle()}
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
       }
+      checkpointFrozen(latestChat);
       const lookup = buildMessageEventLookup(latestChat);
       const checkpoint = checkpointStatus(latestChat);
       const usableCheckpoint =
@@ -2110,6 +2188,8 @@ ${codexPageStyle()}
       runtime.cachedLoaded = null;
       runtime.cachedGeneration = -1;
       runtime.checkpointCacheRaw = null;
+    runtime.checkpointCacheRecord = null;
+      runtime.checkpointCacheRecord = null;
       runtime.checkpointCache = null;
       runtime.markerHtmlCache.clear();
       runtime.detailHtmlCache.clear();
@@ -2124,7 +2204,11 @@ ${codexPageStyle()}
   }
 
   function backupSettingsHtml(native) {
-    return `<section class="${native ? 'itemx2-root-setting-card' : 'itemx-setting-card'}"><span><strong>백업 · 채팅 이사</strong><small>아이템·스킬·조우와 기록 목록을 저장하고 새 채팅으로 가져옵니다.</small></span><button class="itemx2-setting-backup" data-action="backup" type="button">저장 / 불러오기</button></section>`;
+    return setCard(
+      '백업 · 채팅 이사',
+      '아이템·스킬·조우와 기록 목록을 저장하고 새 채팅으로 가져옵니다.',
+      `<button class="itemx2-root-setting-button itemx2-setting-backup" data-action="backup" type="button">저장 / 불러오기</button>`
+    );
   }
 
   async function openBackupPanel() {
@@ -2347,6 +2431,7 @@ ${codexPageStyle()}
       if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue))
         throw new Error('출력 스트리밍이 끝난 뒤 최적화할 수 있습니다.');
+      if (checkpointFrozen(latest)) throw new Error(FROZEN_MESSAGE);
       const before = itemxStorageFootprint(latest);
       const compacted = checkpointReplay(latest, { force: true, keepMessages: 8 });
       const aux = auxiliaryHistory(compacted);
@@ -2362,6 +2447,7 @@ ${codexPageStyle()}
     runtime.cachedLoaded = null;
     runtime.cachedGeneration = -1;
     runtime.checkpointCacheRaw = null;
+    runtime.checkpointCacheRecord = null;
     runtime.checkpointCache = null;
     runtime.eventPayloads = new Map();
     runtime.markerHtmlCache.clear();
@@ -2403,6 +2489,7 @@ ${codexPageStyle()}
     if (!loaded || !Array.isArray(events) || !events.length) throw new Error('No manual events to commit');
     const latest = await Risuai.getChatFromIndex(loaded.characterIndex, loaded.chatIndex);
     if (!latest) throw new Error('Chat disappeared during manual operation');
+    if (checkpointFrozen(latest)) throw new Error(FROZEN_MESSAGE);
     if (loaded.expectedChat && JSON.stringify(latest) !== JSON.stringify(loaded.expectedChat))
       throw new Error('저장 직전 대화가 변경되어 보완을 취소했습니다.');
     const ledger = manualLedger(latest);
@@ -2792,6 +2879,7 @@ ${codexPageStyle()}
 
   async function recoverAuxiliaryOutput(options = {}) {
     if (runtime.auxRecoveryPromise) return runtime.auxRecoveryPromise;
+    if (runtime.frozen) return null;
     const pending = recoverAuxiliaryOutputNow(options).finally(() => {
       if (runtime.auxRecoveryPromise === pending) runtime.auxRecoveryPromise = null;
     });
@@ -2919,6 +3007,9 @@ ${codexPageStyle()}
   async function recoverAuxiliaryOutputNow({ messageIndex = null, force = false } = {}) {
     const ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return null;
+    // Re-check against this chat rather than the cached flag: recovery commits
+    // straight to the chat and must never land on an unreadable ledger.
+    if (checkpointFrozen(ctx.chat)) return null;
     const settings = await outputSettings(ctx.character);
     runtime.debugEnabled = settings.debugEnabled;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
@@ -3413,6 +3504,7 @@ ${codexPageStyle()}
   }
 
   async function repairCommittedTransport(ctx, index, source) {
+    if (checkpointFrozen(ctx?.chat)) return null;
     const settings = await outputSettings(ctx.character);
     const lookup = buildMessageEventLookup(ctx.chat);
     const base = rebuildWithManual(ctx.chat, lookup).registry;
@@ -5528,6 +5620,203 @@ ${codexPageStyle()}
     return true;
   }
 
+  // ---------------------------------------------------------------------------
+  // One settings renderer, two skins. The native drawer and the iframe fallback
+  // differ only in how a control is bound: the main-document router finds
+  // elements by class, the iframe listens for data-action. Everything else - the
+  // markup, the grouping, the copy - is shared, so the two screens can no longer
+  // drift apart the way they did through 2.0.23, 2.0.25 and 2.0.26.
+  // ---------------------------------------------------------------------------
+  const NATIVE_ACTION_ALIASES = { 'main-output': 'main', 'lorebook-toggle': 'lorebook', 'cleanup-chat': 'cleanup' };
+  const SETTINGS_SKINS = {
+    native: {
+      native: true,
+      hook: (action) => ` itemx2-setting-${NATIVE_ACTION_ALIASES[action] || action}`,
+      data: () => '',
+      segHook: (group, value) => ` itemx2-seg-${group}-${value}`,
+      segData: () => '',
+      choiceData: () => ''
+    },
+    frame: {
+      native: false,
+      hook: () => '',
+      data: (action) => ` data-action="${action}"`,
+      segHook: () => '',
+      segData: (group, value) => ` data-seg="${group}" data-value="${value}"`,
+      choiceData: (name, value) => ` data-${name}="${value}"`
+    }
+  };
+  const setCard = (title, note, control = '', extra = '') =>
+    `<section class="itemx2-root-setting-card"><span><strong>${title}</strong><small${extra}>${note}</small></span>${control}</section>`;
+  const setButton = (skin, action, label, extra = '') =>
+    `<button class="itemx2-root-setting-button${skin.hook(action)}${extra}" type="button"${skin.data(action)}>${label}</button>`;
+  const setSwitch = (skin, action, on) =>
+    `<button class="itemx2-root-setting-button itemx2-sw${skin.hook(action)}${on ? ' itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"${skin.data(action)}><i></i></button>`;
+  const setSegment = (skin, group, entries, current) =>
+    `<div class="itemx2-seg">${entries
+      .map(
+        ([value, label]) =>
+          `<button class="itemx2-seg-btn${skin.segHook(group, value)}${current === value ? ' itemx2-seg-on' : ''}" type="button"${skin.segData(group, value)}>${label}</button>`
+      )
+      .join('')}</div>`;
+
+  function settingsPanelHtml(loaded, skin, parts) {
+    const enabled = loaded.enabled === true;
+    const connection = parts.connection;
+    const connectionCards = skin.native
+      ? setCard(
+          'Risu 연결',
+          '모델 응답을 읽고 화면에 카드를 그리려면 Risu의 허가가 필요합니다. 처음 한 번만 물어봅니다.',
+          setButton(
+            skin,
+            'connect',
+            runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기',
+            ` itemx2-root-setting-button-primary${runtime.connectionBusy ? ' itemx2-root-setting-button-busy' : ''}`
+          )
+        ).replace('</small>', `</small><span class="itemx2-status-row">${parts.chips}</span>`)
+      : // The fallback exists because main-document access was refused, so it
+        // offers the two repair actions the drawer never has to show.
+        setCard(
+          '모델 처리 권한',
+          `${parts.permissionLabel} · 모델 응답을 읽고 원시 태그를 정리하려면 필요합니다.`,
+          setButton(skin, 'permissions', '권한 요청')
+        ) +
+        setCard(
+          '본문 카드 스타일',
+          `${parts.styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.`,
+          setButton(skin, 'style', '다시 연결')
+        );
+    return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4>${connectionCards}${setCard(
+      '보조 모델 상태',
+      ITEMXCore.esc(auxStatusText()),
+      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
+      ' class="itemx2-aux-setting-status"'
+    )}<h4 class="itemx2-set-group">기록</h4>${setCard(
+      '무엇을 기록할까요',
+      '끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.'
+    )}<div class="itemx2-domain-grid">${parts.domainControls}</div>${setCard(
+      '이 봇에서 사용',
+      enabled ? '활성 상태입니다.' : '끄면 이 봇에서만 멈춥니다. 다른 봇은 영향받지 않습니다.',
+      setSwitch(skin, 'toggle', enabled)
+    )}${setCard(
+      '메인 모델에 형식 알리기',
+      '대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.',
+      setSwitch(skin, 'main-output', loaded.mainOutput)
+    )}${setCard(
+      '보조 모델로 보완',
+      '메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.',
+      setSegment(skin, 'aux', Object.entries(AUX_LABELS), loaded.auxOutput)
+    )}${setCard(
+      '등급 판정 기준',
+      '세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.',
+      setSegment(skin, 'rarity', Object.entries(RARITY_MODE_LABELS), loaded.rarityMode)
+    )}${setCard(
+      '로어북에서 설명 채우기',
+      '이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.',
+      `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', '지금 스캔')}</span>`
+    )}${setCard(
+      '모듈 초상화 사용',
+      '활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.',
+      setSwitch(skin, 'module-assets', loaded.moduleAssetsEnabled)
+    )}<h4 class="itemx2-set-group">모양</h4>${setCard(
+      '화면 스킨',
+      '서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.',
+      setSegment(
+        skin,
+        'skin',
+        SKIN_MODES.map((mode) => [mode, SKIN_LABELS[mode]]),
+        loaded.skin || 'dark'
+      )
+    )}${setCard(
+      '이펙트',
+      '카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.',
+      setSwitch(skin, 'effects', loaded.effectsEnabled)
+    )}${setCard('글자 크기', '인벤토리·도감의 본문 글자에 바로 적용됩니다.')}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
+      '배지 위치',
+      '화면에서 CODEX 배지가 붙을 자리입니다.'
+    )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(skin.native)}${setCard(
+      '저장 공간',
+      `${parts.footprintLabel} · 최근 원장은 자동 순환됩니다.`,
+      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', '재구축')}${setButton(skin, 'storage-cleanup', parts.storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화', parts.storageCleanupArmed ? ' itemx2-setting-cleanup-armed' : '')}</span>`
+    )}<div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4>${setCard(
+      '이 채팅의 ITEMX 기록 지우기',
+      '본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.',
+      setButton(
+        skin,
+        'cleanup-chat',
+        parts.cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리',
+        parts.cleanupArmed ? ' itemx2-setting-cleanup-armed' : ''
+      )
+    )}</div>${parts.debugPanel}${setCard('플러그인', `ITEMX CODEX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  }
+
+  function settingsDomainControls(loaded, skin) {
+    return [
+      ['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'],
+      ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'],
+      ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']
+    ]
+      .map(
+        ([key, label, value, note]) =>
+          `<button class="itemx2-domain-card${skin.hook(`domain-${key}`)} ${value ? 'itemx2-setting-on' : ''}" type="button"${skin.data(`domain-${key}`)}><strong>${label}</strong><small>${note}</small><i>${value ? '기록 중' : '멈춤'}</i></button>`
+      )
+      .join('');
+  }
+
+  function settingsFontChoices(loaded, skin) {
+    return [
+      ['small', '작게'],
+      ['medium', '보통'],
+      ['large', '크게']
+    ]
+      .map(
+        ([value, label]) =>
+          `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button"${skin.choiceData('font', value)}><em>가나다</em><span>${label}</span></button>`
+      )
+      .join('');
+  }
+
+  function settingsPositionChoices(skin) {
+    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === runtime.badgePosition) || BADGE_POSITIONS[0])[1];
+    // A map of the screen beats six abbreviations: the slot sits where the badge will.
+    return `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
+      ([key, label]) =>
+        `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
+    ).join(
+      ''
+    )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`;
+  }
+
+  function settingsStorageParts(loaded) {
+    const footprint = itemxStorageFootprint(loaded.chat);
+    return {
+      cleanupArmed: runtime.cleanupArmedUntil > Date.now(),
+      storageCleanupArmed: runtime.storageCleanupArmedUntil > Date.now(),
+      footprintLabel: `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`
+    };
+  }
+
+  function settingsDebugLog() {
+    return (
+      runtime.debugEntries
+        .slice(-12)
+        .reverse()
+        .map(
+          (entry) =>
+            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
+        )
+        .join('\n\n') || '기록 없음'
+    );
+  }
+
+  // One banner, both render paths. The only difference between the native
+  // drawer and the iframe fallback is the class prefix, so it is a parameter.
+  function frozenBannerHtml(native) {
+    if (!runtime.frozen) return '';
+    const cls = native ? 'itemx2-root-frozen' : 'itemx-frozen';
+    return `<div class="itemx2-frozen-banner ${cls}" role="alert"><strong>읽기 전용으로 잠김</strong><small>${ITEMXCore.esc(FROZEN_MESSAGE)}</small></div>`;
+  }
+
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open)
       return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
@@ -5602,30 +5891,13 @@ ${codexPageStyle()}
             .join('') || '<div class="itemx2-root-empty">표시할 아이템이 없답니다.</div>'
         : '';
     const enabled = loaded.enabled === true;
-    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === runtime.badgePosition) || BADGE_POSITIONS[0])[1];
+    const skin = SETTINGS_SKINS.native;
+    const positionChoices = tab === 'settings' ? settingsPositionChoices(skin) : '';
+    const fontChoices = tab === 'settings' ? settingsFontChoices(loaded, skin) : '';
+    const domainControls = settingsDomainControls(loaded, skin);
+    const debugLog = settingsDebugLog();
+    const storageParts = settingsStorageParts(loaded);
     // A map of the screen beats six abbreviations: the slot sits where the badge will.
-    const positionChoices =
-      tab === 'settings'
-        ? `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
-            ([key, label]) =>
-              `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button" aria-label="${label}"></button>`
-          ).join(
-            ''
-          )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`
-        : '';
-    const fontChoices =
-      tab === 'settings'
-        ? [
-            ['small', '작게'],
-            ['medium', '보통'],
-            ['large', '크게']
-          ]
-            .map(
-              ([value, label]) =>
-                `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button"><em>가나다</em><span>${label}</span></button>`
-            )
-            .join('')
-        : '';
     const managerRows =
       tab === 'settings'
         ? all
@@ -5647,58 +5919,17 @@ ${codexPageStyle()}
           `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
       )
       .join('');
-    const domainControls = [
-      ['items', '무기·아이템', loaded.itemsEnabled, '감정·손상·소실'],
-      ['skills', '스킬', loaded.skillsEnabled, '습득·숙련·봉인'],
-      ['encounters', '전투 도감', loaded.encountersEnabled, '적대·대련·전투']
-    ]
-      .map(
-        ([key, label, value, note]) =>
-          `<button class="itemx2-domain-card itemx2-setting-domain-${key} ${value ? 'itemx2-setting-on' : ''}" type="button"><strong>${label}</strong><small>${note}</small><i>${value ? '기록 중' : '멈춤'}</i></button>`
-      )
-      .join('');
-    const debugLog =
-      runtime.debugEntries
-        .slice(-12)
-        .reverse()
-        .map(
-          (entry) =>
-            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
-        )
-        .join('\n\n') || '기록 없음';
     const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
-    const cleanupArmed = runtime.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed = runtime.storageCleanupArmedUntil > Date.now(),
-      footprint = itemxStorageFootprint(loaded.chat),
-      footprintLabel = `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`;
-    const settings = `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4><section class="itemx2-root-setting-card"><span><strong>Risu 연결</strong><small>모델 응답을 읽고 화면에 카드를 그리려면 Risu의 허가가 필요합니다. 처음 한 번만 물어봅니다.</small><span class="itemx2-status-row">${chips}</span></span><button class="itemx2-root-setting-button itemx2-root-setting-button-primary itemx2-setting-connect ${runtime.connectionBusy ? 'itemx2-root-setting-button-busy' : ''}">${runtime.connectionBusy ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기'}</button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델 상태</strong><small class="itemx2-aux-setting-status">${ITEMXCore.esc(auxStatusText())}</small></span><button class="itemx2-root-setting-button itemx2-setting-aux-run" ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button></section><h4 class="itemx2-set-group">기록</h4><section class="itemx2-root-setting-card"><span><strong>무엇을 기록할까요</strong><small>끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.</small></span></section><div class="itemx2-domain-grid">${domainControls}</div><section class="itemx2-root-setting-card"><span><strong>이 봇에서 사용</strong><small>${enabled ? '활성 상태입니다.' : '현재 봇에서 비활성 상태입니다.'}</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-toggle ${enabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${enabled ? 'true' : 'false'}"><i></i></button></section><section class="itemx2-root-setting-card"><span><strong>메인 모델에 형식 알리기</strong><small>대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-main ${loaded.mainOutput ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.mainOutput ? 'true' : 'false'}"><i></i></button></section><section class="itemx2-root-setting-card"><span><strong>보조 모델로 보완</strong><small>메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.</small></span><div class="itemx2-seg">${Object.entries(
-      AUX_LABELS
-    )
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn itemx2-seg-aux-${value} ${loaded.auxOutput === value ? 'itemx2-seg-on' : ''}" type="button">${label}</button>`
-      )
-      .join(
-        ''
-      )}</div></section><section class="itemx2-root-setting-card"><span><strong>등급 판정 기준</strong><small>세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.</small></span><div class="itemx2-seg">${Object.entries(
-      RARITY_MODE_LABELS
-    )
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn itemx2-seg-rarity-${value} ${loaded.rarityMode === value ? 'itemx2-seg-on' : ''}" type="button">${label}</button>`
-      )
-      .join(
-        ''
-      )}</div></section><section class="itemx2-root-setting-card"><span><strong>로어북에서 설명 채우기</strong><small>이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-lorebook ${loaded.lorebookEncounterEnabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.lorebookEncounterEnabled ? 'true' : 'false'}"><i></i></button><button class="itemx2-root-setting-button itemx2-setting-lorebook-scan" type="button">지금 스캔</button></span></section><section class="itemx2-root-setting-card"><span><strong>모듈 초상화 사용</strong><small>활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-module-assets ${loaded.moduleAssetsEnabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.moduleAssetsEnabled ? 'true' : 'false'}"><i></i></button></section><h4 class="itemx2-set-group">모양</h4><section class="itemx2-root-setting-card"><span><strong>화면 스킨</strong><small>서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.</small></span><div class="itemx2-seg">${SKIN_MODES.map(
-      (mode) => [mode, SKIN_LABELS[mode]]
-    )
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn itemx2-seg-skin-${value} ${(loaded.skin || 'dark') === value ? 'itemx2-seg-on' : ''}" type="button">${label}</button>`
-      )
-      .join(
-        ''
-      )}</div></section><section class="itemx2-root-setting-card"><span><strong>이펙트</strong><small>카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.</small></span><button class="itemx2-root-setting-button itemx2-sw itemx2-setting-effects ${loaded.effectsEnabled ? 'itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${loaded.effectsEnabled ? 'true' : 'false'}"><i></i></button></section><section class="itemx2-root-setting-card"><span><strong>글자 크기</strong><small>인벤토리·도감의 본문 글자에 바로 적용됩니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx2-root-setting-card"><span><strong>배지 위치</strong><small>화면에서 CODEX 배지가 붙을 자리입니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div>${manager}<h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(true)}<section class="itemx2-root-setting-card"><span><strong>저장 공간</strong><small>${footprintLabel} · 최근 원장은 자동 순환됩니다.</small></span><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-rebuild">재구축</button><button class="itemx2-root-setting-button itemx2-setting-storage-cleanup ${storageCleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화'}</button></span></section><div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4><section class="itemx2-root-setting-card"><span><strong>이 채팅의 ITEMX 기록 지우기</strong><small>본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.</small></span><button class="itemx2-root-setting-button itemx2-setting-cleanup ${cleanupArmed ? 'itemx2-setting-cleanup-armed' : ''}">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section></div>${debugPanel}<section class="itemx2-root-setting-card"><span><strong>플러그인</strong><small>ITEMX CODEX ${ITEMX_PLUGIN_VERSION}</small></span></section></div>`;
+    const settings = settingsPanelHtml(loaded, skin, {
+      connection,
+      chips,
+      domainControls,
+      fontChoices,
+      positionChoices,
+      manager,
+      debugPanel,
+      ...storageParts
+    });
     const pager =
       pageCount > 1
         ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
@@ -5727,7 +5958,7 @@ ${codexPageStyle()}
       )
       .join('');
     const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
-    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
   function rootInventoryRegions(html) {
@@ -5778,6 +6009,7 @@ ${codexPageStyle()}
       Number(loaded.moduleAssetsEnabled),
       Number(loaded.lorebookEncounterEnabled),
       Number(loaded.debugEnabled),
+      Number(runtime.frozen),
       JSON.stringify(ITEMXHistory.preferences(loaded.chat)),
       ITEMXHistory.completedTurns(loaded.chat).total
     ].join(':');
@@ -5811,6 +6043,353 @@ ${codexPageStyle()}
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Every drawer setting is one row: the class the router hit-tests, and what
+  // running it does. The main document only gives us a document-level click with
+  // coordinates, so dispatch is a hit test either way - but it used to be 450
+  // lines of hand-written `clientX >= rect.left && ...`, repeated 24 times, and
+  // adding a control meant appending another copy to the chain. Order is
+  // first-match-wins and must stay as listed.
+  // ---------------------------------------------------------------------------
+  function rootSettingActions() {
+    const toggleSetting = (hook, read, write, label) => ({
+      hook,
+      run: () =>
+        applyRootSetting(async () => {
+          const loaded = await cachedOrRebuildCurrent();
+          if (!loaded) return;
+          const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
+          const value = !read(current);
+          await write(loaded, value);
+          runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+          await openRootInventory({ open: true, tab: 'settings', loaded });
+        })
+    });
+    const armed = (key, arm, confirmed) => async () => {
+      if (runtime[key] <= Date.now()) {
+        runtime[key] = Date.now() + 7000;
+        await arm();
+        await openRootInventory({ open: true, tab: 'settings' });
+        return;
+      }
+      await confirmed();
+    };
+    return [
+      {
+        hook: 'itemx2-setting-connect',
+        run: async () => {
+          if (runtime.connectionBusy) return;
+          runtime.connectionBusy = true;
+          runtime.status = '연결 및 권한 확인 중';
+          await updateConnectionUi();
+          await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
+          try {
+            const connected = await installPipelineHooks({ prompt: true });
+            const styled = await installMainStyle();
+            runtime.status =
+              connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
+            if (connected && styled) {
+              await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
+            } else {
+              await showRootFeedback(
+                `연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                'error',
+                3600
+              );
+            }
+            if (!connected || !styled)
+              await notifyUser(
+                `ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                'error'
+              );
+          } finally {
+            runtime.connectionBusy = false;
+            await updateConnectionUi();
+          }
+        }
+      },
+      {
+        hook: 'itemx2-setting-aux-run',
+        run: async () => {
+          if (runtime.auxActive > 0) return;
+          runtime.status = '보조 모델 수동 검사 중';
+          await recoverAuxiliaryOutput({ force: true });
+        }
+      },
+      ...BADGE_POSITIONS.map(([key, label]) => ({
+        hook: `itemx2-position-${key}`,
+        run: async () => {
+          runtime.badgePosition = key;
+          await Risuai.pluginStorage.setItem('badgePosition', key);
+          runtime.status = `배지 위치 · ${label}`;
+          if (runtime.rootDrawer) {
+            for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+            await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
+          }
+          await installMainStyle();
+          for (const [other] of BADGE_POSITIONS) {
+            const button = await queryMainClass(`itemx2-position-${other}`);
+            if (!button) continue;
+            if (other === key) await button.addClass('x-risu-itemx2-position-on');
+            else await button.removeClass('x-risu-itemx2-position-on');
+          }
+        }
+      })),
+      {
+        hook: 'itemx2-setting-toggle',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const next = !(await isEnabled(loaded.character));
+            await setEnabled(loaded.character, next);
+            runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+            await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
+          })
+      },
+      ...[
+        ['items', 'itemsEnabled', '무기·아이템'],
+        ['skills', 'skillsEnabled', '스킬'],
+        ['encounters', 'encountersEnabled', '전투 도감']
+      ].map(([domain, key, label]) => ({
+        hook: `itemx2-setting-domain-${domain}`,
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const current = await outputSettings(loaded.character),
+              value = !current[key];
+            await setDomainEnabled(loaded.character, domain, value);
+            runtime.cachedLoaded = null;
+            runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+            await openRootInventory({ open: true, tab: 'settings' });
+          })
+      })),
+      {
+        hook: 'itemx2-setting-debug',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const value = !(await outputSettings(loaded.character)).debugEnabled;
+            await setDebugEnabled(loaded.character, value);
+            runtime.cachedLoaded = null;
+            runtime.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
+            await openRootInventory({ open: true, tab: 'settings' });
+          })
+      },
+      {
+        hook: 'itemx2-setting-debug-clear',
+        run: async () => {
+          runtime.debugEntries = [];
+          runtime.status = '디버그 로그 비움';
+          await openRootInventory({ open: true, tab: 'settings' });
+        }
+      },
+      {
+        hook: 'itemx2-setting-main',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await rebuildCurrent();
+            if (!loaded) return;
+            const value = !(await outputSettings(loaded.character)).mainOutput;
+            await setMainOutput(loaded.character, value);
+            runtime.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
+            await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
+          })
+      },
+      // Multi-choice settings render every option, so one row per option.
+      ...[
+        [
+          'aux',
+          Object.keys(AUX_LABELS),
+          async (loaded, value) => {
+            await setAuxOutput(loaded.character, value);
+            runtime.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
+          }
+        ],
+        [
+          'rarity',
+          Object.keys(RARITY_MODE_LABELS),
+          async (loaded, value) => {
+            await setRarityMode(loaded.character, value);
+            runtime.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
+          }
+        ],
+        [
+          'skin',
+          SKIN_MODES,
+          async (loaded, value) => {
+            await setSkin(loaded.character, value);
+            loaded.skin = value;
+            runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+          }
+        ]
+      ].flatMap(([group, values, apply]) =>
+        values.map((value) => ({
+          hook: `itemx2-seg-${group}-${value}`,
+          run: () =>
+            applyRootSetting(async () => {
+              const loaded = await cachedOrRebuildCurrent();
+              if (!loaded) return;
+              await apply(loaded, value);
+              await openRootInventory({ open: true, tab: 'settings', loaded });
+            })
+        }))
+      ),
+      toggleSetting(
+        'itemx2-setting-effects',
+        (current) => current.effectsEnabled,
+        async (loaded, value) => {
+          await setEffectsEnabled(loaded.character, value);
+          loaded.effectsEnabled = value;
+        },
+        '시각 이펙트'
+      ),
+      {
+        hook: 'itemx2-setting-lorebook',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await cachedOrRebuildCurrent();
+            if (!loaded) return;
+            const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
+              .lorebookEncounterEnabled;
+            await setLorebookEncounterEnabled(loaded.character, value);
+            loaded.lorebookEncounterEnabled = value;
+            runtime.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
+            if (value) await scanLorebookEncounters({ refresh: true, silent: true });
+            await openRootInventory({ open: true, tab: 'settings' });
+          })
+      },
+      {
+        hook: 'itemx2-setting-lorebook-scan',
+        run: async () => {
+          await scanLorebookEncounters({ refresh: true });
+          await openRootInventory({ open: true, tab: 'settings' });
+        }
+      },
+      {
+        // Not a plain toggle: turning it on asks the host for module access and
+        // can come back refused, which is a third outcome the status must say.
+        hook: 'itemx2-setting-module-assets',
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await cachedOrRebuildCurrent();
+            if (!loaded) return;
+            const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
+            let value = false;
+            if (current.moduleAssetsEnabled) {
+              await setModuleAssetsEnabled(loaded.character, false);
+            } else {
+              value = await enableModuleAssets(loaded.character, loaded.chat);
+              if (!value)
+                await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
+            }
+            loaded.moduleAssetsEnabled = value;
+            runtime.status = value
+              ? '모듈 에셋 초상화 · ON'
+              : current.moduleAssetsEnabled
+                ? '모듈 에셋 초상화 · OFF'
+                : '모듈 에셋 권한 없음 · 이모지 폴백';
+            runtime.rootFingerprint = '';
+            await openRootInventory({ open: true, tab: 'settings', loaded });
+          })
+      },
+      ...[
+        ['small', '소'],
+        ['medium', '중'],
+        ['large', '대']
+      ].map(([value, label]) => ({
+        hook: `itemx2-setting-font-${value}`,
+        run: () =>
+          applyRootSetting(async () => {
+            const loaded = await cachedOrRebuildCurrent();
+            if (!loaded) return;
+            await setFontScale(loaded.character, value);
+            loaded.fontScale = value;
+            runtime.status = `글자 크기 · ${label}`;
+            for (const scale of ['small', 'medium', 'large']) {
+              const button = await queryMainClass(`itemx2-setting-font-${scale}`);
+              if (!button) continue;
+              if (scale === value) await button.addClass('x-risu-itemx2-font-on');
+              else await button.removeClass('x-risu-itemx2-font-on');
+            }
+          })
+      })),
+      {
+        hook: 'itemx2-setting-storage-cleanup',
+        run: armed(
+          'storageCleanupArmedUntil',
+          async () => {
+            runtime.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
+            await showRootFeedback(
+              '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
+              'working',
+              6500
+            );
+          },
+          async () => {
+            runtime.status = '현재 채팅 저장소 최적화 중';
+            await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
+            try {
+              const result = await compactCurrentChatStorage();
+              await showRootFeedback(
+                `최적화 완료 · ${Math.round(result.savedBytes / 1024)} KiB 절감 · 구형 캐시 ${result.legacyKeysRemoved}개 정리`,
+                'success',
+                4200
+              );
+              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+            } catch (error) {
+              runtime.storageCleanupArmedUntil = 0;
+              runtime.status = '저장소 최적화 실패';
+              await showRootFeedback(`최적화 실패 · ${error.message || error}`, 'error', 4200);
+              await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
+            }
+          }
+        )
+      },
+      {
+        hook: 'itemx2-setting-cleanup',
+        run: armed(
+          'cleanupArmedUntil',
+          async () => {
+            runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+            await showRootFeedback(
+              '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.',
+              'error',
+              6500
+            );
+          },
+          async () => {
+            runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+            await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
+            try {
+              const result = await cleanCurrentChatItemx();
+              await showRootFeedback(
+                `정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`,
+                'success',
+                3600
+              );
+              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+            } catch (error) {
+              runtime.cleanupArmedUntil = 0;
+              runtime.status = '현재 채팅 정리 실패';
+              await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
+              await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
+            }
+          }
+        )
+      },
+      {
+        hook: 'itemx2-setting-rebuild',
+        run: async () => {
+          runtime.cachedLoaded = null;
+          const loaded = await rebuildCurrent();
+          if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
+        }
+      }
+    ];
+  }
   async function installRootClickRouter(owner) {
     if (!owner || (runtime.rootClickOwner === owner && runtime.rootClickBindings.length)) return;
     await removeRootClickRouter();
@@ -5902,24 +6481,13 @@ ${codexPageStyle()}
           return;
         }
         if (await routeHistoryControls(event)) return;
-        const backupButton = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-backup'));
-        if (backupButton) {
-          const rect = await backupButton.getBoundingClientRect();
-          if (
-            rect.width > 0 &&
-            rect.height > 0 &&
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            try {
-              await openBackupPanel();
-            } catch (error) {
-              await notifyUser(error.message, 'error');
-            }
-            return;
+        if (await eventHitsMainClass(event, 'itemx2-setting-backup')) {
+          try {
+            await openBackupPanel();
+          } catch (error) {
+            await notifyUser(error.message, 'error');
           }
+          return;
         }
         for (const [direction, selector] of [
           [-1, '.x-risu-itemx2-root-page-prev'],
@@ -6083,492 +6651,31 @@ ${codexPageStyle()}
                   return;
                 }
               }
-              const create =
-                runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-button'));
-              if (create) {
-                const rect = await create.getBoundingClientRect();
-                if (
-                  event.clientX >= rect.left &&
-                  event.clientX <= rect.right &&
-                  event.clientY >= rect.top &&
-                  event.clientY <= rect.bottom
-                ) {
-                  const createNoteElement =
-                    runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-create-note'));
-                  const createNote = (await createNoteElement?.textContent())?.trim() || '';
-                  if (!createNote) {
-                    await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error');
-                    return;
-                  }
-                  runtime.status = '신규 아이템 생성 중';
-                  try {
-                    const itemEvent = await runItemModel('create', loaded, null, createNote);
-                    await commitManualEvents(loaded, [itemEvent], '신규 생성');
-                  } catch (error) {
-                    runtime.status = '아이템 생성 실패';
-                    await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
-                  }
-                  await openRootInventory({ open: true, tab: 'settings' });
+              if (await eventHitsMainClass(event, 'itemx2-manager-create-button')) {
+                const createNoteElement = await queryMainClass('itemx2-manager-create-note');
+                const createNote = (await createNoteElement?.textContent())?.trim() || '';
+                if (!createNote) {
+                  await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error');
                   return;
                 }
+                runtime.status = '신규 아이템 생성 중';
+                try {
+                  const itemEvent = await runItemModel('create', loaded, null, createNote);
+                  await commitManualEvents(loaded, [itemEvent], '신규 생성');
+                } catch (error) {
+                  runtime.status = '아이템 생성 실패';
+                  await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+                }
+                await openRootInventory({ open: true, tab: 'settings' });
+                return;
               }
             }
           }
         }
-        const connect = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-connect'));
-        if (connect) {
-          const rect = await connect.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            if (runtime.connectionBusy) return;
-            runtime.connectionBusy = true;
-            runtime.status = '연결 및 권한 확인 중';
-            await updateConnectionUi();
-            await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
-            try {
-              const connected = await installPipelineHooks({ prompt: true });
-              const styled = await installMainStyle();
-              runtime.status =
-                connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
-              if (connected && styled) {
-                await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
-              } else {
-                await showRootFeedback(
-                  `연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
-                  'error',
-                  3600
-                );
-              }
-              if (!connected || !styled)
-                await notifyUser(
-                  `ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
-                  'error'
-                );
-            } finally {
-              runtime.connectionBusy = false;
-              await updateConnectionUi();
-            }
-            return;
-          }
-        }
-        const auxRun = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run'));
-        if (auxRun) {
-          const rect = await auxRun.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            if (runtime.auxActive > 0) return;
-            runtime.status = '보조 모델 수동 검사 중';
-            await recoverAuxiliaryOutput({ force: true });
-            return;
-          }
-        }
-        for (const [key, label] of BADGE_POSITIONS) {
-          const choice = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-position-${key}`));
-          if (!choice) continue;
-          const rect = await choice.getBoundingClientRect();
-          if (
-            event.clientX < rect.left ||
-            event.clientX > rect.right ||
-            event.clientY < rect.top ||
-            event.clientY > rect.bottom
-          )
-            continue;
-          runtime.badgePosition = key;
-          await Risuai.pluginStorage.setItem('badgePosition', key);
-          runtime.status = `배지 위치 · ${label}`;
-          if (runtime.rootDrawer) {
-            for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-            await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
-          }
-          await installMainStyle();
-          for (const [other] of BADGE_POSITIONS) {
-            const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-position-${other}`));
-            if (!button) continue;
-            if (other === key) await button.addClass('x-risu-itemx2-position-on');
-            else await button.removeClass('x-risu-itemx2-position-on');
-          }
+        for (const action of rootSettingActions()) {
+          if (!(await eventHitsMainClass(event, action.hook))) continue;
+          await action.run();
           return;
-        }
-        const toggle = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-toggle'));
-        if (toggle) {
-          const rect = await toggle.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await applyRootSetting(async () => {
-              const loaded = await rebuildCurrent();
-              if (!loaded) return;
-              const next = !(await isEnabled(loaded.character));
-              await setEnabled(loaded.character, next);
-              runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
-              await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
-            });
-            return;
-          }
-        }
-        const main = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-main'));
-        for (const [domain, key, label] of [
-          ['items', 'itemsEnabled', '무기·아이템'],
-          ['skills', 'skillsEnabled', '스킬'],
-          ['encounters', 'encountersEnabled', '전투 도감']
-        ]) {
-          const button =
-            runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-domain-${domain}`));
-          if (!button) continue;
-          const rect = await button.getBoundingClientRect();
-          if (
-            event.clientX < rect.left ||
-            event.clientX > rect.right ||
-            event.clientY < rect.top ||
-            event.clientY > rect.bottom
-          )
-            continue;
-          await applyRootSetting(async () => {
-            const loaded = await rebuildCurrent();
-            if (!loaded) return;
-            const current = await outputSettings(loaded.character),
-              value = !current[key];
-            await setDomainEnabled(loaded.character, domain, value);
-            runtime.cachedLoaded = null;
-            runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
-            await openRootInventory({ open: true, tab: 'settings' });
-          });
-          return;
-        }
-        const debug = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-debug'));
-        if (debug) {
-          const rect = await debug.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await applyRootSetting(async () => {
-              const loaded = await rebuildCurrent();
-              if (!loaded) return;
-              const value = !(await outputSettings(loaded.character)).debugEnabled;
-              await setDebugEnabled(loaded.character, value);
-              runtime.cachedLoaded = null;
-              runtime.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
-              await openRootInventory({ open: true, tab: 'settings' });
-            });
-            return;
-          }
-        }
-        const debugClear =
-          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-debug-clear'));
-        if (debugClear) {
-          const rect = await debugClear.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            runtime.debugEntries = [];
-            runtime.status = '디버그 로그 비움';
-            await openRootInventory({ open: true, tab: 'settings' });
-            return;
-          }
-        }
-        if (main) {
-          const rect = await main.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await applyRootSetting(async () => {
-              const loaded = await rebuildCurrent();
-              if (!loaded) return;
-              const value = !(await outputSettings(loaded.character)).mainOutput;
-              await setMainOutput(loaded.character, value);
-              runtime.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
-              await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
-            });
-            return;
-          }
-        }
-        // Multi-choice settings render every option, so one hit test per option.
-        const segmentGroups = [
-          [
-            'aux',
-            Object.keys(AUX_LABELS),
-            async (loaded, value) => {
-              await setAuxOutput(loaded.character, value);
-              runtime.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
-            }
-          ],
-          [
-            'rarity',
-            Object.keys(RARITY_MODE_LABELS),
-            async (loaded, value) => {
-              await setRarityMode(loaded.character, value);
-              runtime.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
-            }
-          ],
-          [
-            'skin',
-            SKIN_MODES,
-            async (loaded, value) => {
-              await setSkin(loaded.character, value);
-              loaded.skin = value;
-              runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
-            }
-          ]
-        ];
-        for (const [group, values, apply] of segmentGroups) {
-          for (const value of values) {
-            const option =
-              runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-seg-${group}-${value}`));
-            if (!option) continue;
-            const rect = await option.getBoundingClientRect();
-            if (
-              event.clientX < rect.left ||
-              event.clientX > rect.right ||
-              event.clientY < rect.top ||
-              event.clientY > rect.bottom
-            )
-              continue;
-            await applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent();
-              if (!loaded) return;
-              await apply(loaded, value);
-              await openRootInventory({ open: true, tab: 'settings', loaded });
-            });
-            return;
-          }
-        }
-        const effects = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-effects'));
-        if (effects) {
-          const rect = await effects.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent();
-              if (!loaded) return;
-              const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
-                .effectsEnabled;
-              await setEffectsEnabled(loaded.character, value);
-              loaded.effectsEnabled = value;
-              runtime.status = `시각 이펙트 · ${value ? 'ON' : 'OFF'}`;
-              await openRootInventory({ open: true, tab: 'settings', loaded });
-            });
-            return;
-          }
-        }
-        const moduleAssets =
-          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-module-assets'));
-        const lorebookToggle =
-          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook'));
-        if (lorebookToggle) {
-          const rect = await lorebookToggle.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent();
-              if (!loaded) return;
-              const value = !(cachedSettings(loaded.character) || (await outputSettings(loaded.character)))
-                .lorebookEncounterEnabled;
-              await setLorebookEncounterEnabled(loaded.character, value);
-              loaded.lorebookEncounterEnabled = value;
-              runtime.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
-              if (value) await scanLorebookEncounters({ refresh: true, silent: true });
-              await openRootInventory({ open: true, tab: 'settings' });
-            });
-            return;
-          }
-        }
-        const lorebookScan =
-          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-lorebook-scan'));
-        if (lorebookScan) {
-          const rect = await lorebookScan.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await scanLorebookEncounters({ refresh: true });
-            await openRootInventory({ open: true, tab: 'settings' });
-            return;
-          }
-        }
-        if (moduleAssets) {
-          const rect = await moduleAssets.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            await applyRootSetting(async () => {
-              const loaded = await cachedOrRebuildCurrent();
-              if (!loaded) return;
-              const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
-              let value = false;
-              if (current.moduleAssetsEnabled) {
-                await setModuleAssetsEnabled(loaded.character, false);
-              } else {
-                value = await enableModuleAssets(loaded.character, loaded.chat);
-                if (!value)
-                  await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
-              }
-              loaded.moduleAssetsEnabled = value;
-              runtime.status = value
-                ? '모듈 에셋 초상화 · ON'
-                : current.moduleAssetsEnabled
-                  ? '모듈 에셋 초상화 · OFF'
-                  : '모듈 에셋 권한 없음 · 이모지 폴백';
-              runtime.rootFingerprint = '';
-              await openRootInventory({ open: true, tab: 'settings', loaded });
-            });
-            return;
-          }
-        }
-        for (const [value, label] of [
-          ['small', '소'],
-          ['medium', '중'],
-          ['large', '대']
-        ]) {
-          const font = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-font-${value}`));
-          if (!font) continue;
-          const rect = await font.getBoundingClientRect();
-          if (
-            event.clientX < rect.left ||
-            event.clientX > rect.right ||
-            event.clientY < rect.top ||
-            event.clientY > rect.bottom
-          )
-            continue;
-          await applyRootSetting(async () => {
-            const loaded = await cachedOrRebuildCurrent();
-            if (!loaded) return;
-            await setFontScale(loaded.character, value);
-            loaded.fontScale = value;
-            runtime.status = `글자 크기 · ${label}`;
-            for (const scale of ['small', 'medium', 'large']) {
-              const button = await runtime.mainDoc.querySelector(`.x-risu-itemx2-setting-font-${scale}`);
-              if (!button) continue;
-              if (scale === value) await button.addClass('x-risu-itemx2-font-on');
-              else await button.removeClass('x-risu-itemx2-font-on');
-            }
-          });
-          return;
-        }
-        const storageCleanup =
-          runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-storage-cleanup'));
-        if (storageCleanup) {
-          const rect = await storageCleanup.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            if (runtime.storageCleanupArmedUntil <= Date.now()) {
-              runtime.storageCleanupArmedUntil = Date.now() + 7000;
-              runtime.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
-              await showRootFeedback(
-                '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
-                'working',
-                6500
-              );
-              await openRootInventory({ open: true, tab: 'settings' });
-              return;
-            }
-            runtime.status = '현재 채팅 저장소 최적화 중';
-            await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
-            try {
-              const result = await compactCurrentChatStorage();
-              await showRootFeedback(
-                `최적화 완료 · ${Math.round(result.savedBytes / 1024)} KiB 절감 · 구형 캐시 ${result.legacyKeysRemoved}개 정리`,
-                'success',
-                4200
-              );
-              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
-            } catch (error) {
-              runtime.storageCleanupArmedUntil = 0;
-              runtime.status = '저장소 최적화 실패';
-              await showRootFeedback(`최적화 실패 · ${error.message || error}`, 'error', 4200);
-              await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
-            }
-            return;
-          }
-        }
-        const cleanup = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-cleanup'));
-        if (cleanup) {
-          const rect = await cleanup.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            if (runtime.cleanupArmedUntil <= Date.now()) {
-              runtime.cleanupArmedUntil = Date.now() + 7000;
-              runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
-              await showRootFeedback(
-                '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 제거합니다.',
-                'error',
-                6500
-              );
-              await openRootInventory({ open: true, tab: 'settings' });
-              return;
-            }
-            runtime.status = '현재 채팅 ITEMX 기록 정리 중';
-            await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
-            try {
-              const result = await cleanCurrentChatItemx();
-              await showRootFeedback(
-                `정리 완료 · 본문 ${result.cleanedMessages}개 · 마커 ${result.removedMarkers}개`,
-                'success',
-                3600
-              );
-              if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
-            } catch (error) {
-              runtime.cleanupArmedUntil = 0;
-              runtime.status = '현재 채팅 정리 실패';
-              await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
-              await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
-            }
-            return;
-          }
-        }
-        const rebuild = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-rebuild'));
-        if (rebuild) {
-          const rect = await rebuild.getBoundingClientRect();
-          if (
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom
-          ) {
-            runtime.cachedLoaded = null;
-            const loaded = await rebuildCurrent();
-            if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
-          }
         }
       } catch (error) {
         fail('native setting click', error);
@@ -6748,77 +6855,25 @@ ${codexPageStyle()}
         : runtime.permissions.mainDom === false
           ? '본문 폴백'
           : '확인 중';
-    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === runtime.badgePosition) || BADGE_POSITIONS[0])[1];
     // Same controls as the drawer: a map of the screen and real size previews.
-    const positionChoices = `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
-      ([value, label]) =>
-        `<button class="itemx2-position-choice itemx2-position-${value} ${runtime.badgePosition === value ? 'itemx2-position-on' : ''}" type="button" data-position="${value}" aria-label="${label}"></button>`
-    ).join(
-      ''
-    )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`;
-    const fontChoices = [
-      ['small', '작게'],
-      ['medium', '보통'],
-      ['large', '크게']
-    ]
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-font-choice itemx2-setting-font-${value} ${loaded.fontScale === value ? 'itemx2-font-on' : ''}" type="button" data-font="${value}"><em>가나다</em><span>${label}</span></button>`
-      )
-      .join('');
+    const skin = SETTINGS_SKINS.frame;
+    const positionChoices = settingsPositionChoices(skin);
+    const fontChoices = settingsFontChoices(loaded, skin);
+    const domainControls = settingsDomainControls(loaded, skin);
+    const debugLog = settingsDebugLog();
+    const storageParts = settingsStorageParts(loaded);
     const managerContent = `<section class="itemx-manager"><div class="itemx-manager-title">아이템 운영 도구</div><label class="itemx-manager-field"><span>대상 아이템</span><select data-action="manage-select" ${all.length ? '' : 'disabled'}>${manageOptions || '<option>아이템 없음</option>'}</select></label><label class="itemx-manager-field"><span>수정 지시 · 비워두면 순수 재감정</span><textarea data-action="manage-note" placeholder="예: 이름은 그대로 두고 내구도를 31/100으로, 화염 속성은 제거"></textarea></label><div class="itemx-manager-actions"><button class="itemx-tool" data-action="manage-reroll" ${managed ? '' : 'disabled'}>🔄 정보 수정·재감정</button><button class="itemx-tool itemx-manager-danger" data-action="manage-remove" ${managed && managed.possession !== 'removed' ? '' : 'disabled'}>🗑 수동 제거</button></div><div class="itemx-manager-current">${managed ? `${ITEMXCore.esc(managed.name)} · ${ITEMXCore.esc(managed.displayRarity || managed.rarity)} · ${ITEMXCore.esc(managed.possession)} / ${ITEMXCore.esc(managed.location)}` : '선택 가능한 아이템이 없습니다.'}</div><label class="itemx-manager-field"><span>신규 아이템 생성 지시</span><textarea data-action="create-note" placeholder="예: 주인공이 획득한 번개 속성의 희귀 장검"></textarea></label><button class="itemx-tool" data-action="manage-create">＋ 신규 아이템 생성 시도</button><small class="itemx-manager-help">보조 모델 결과는 ITEMX 엄격 파서와 id 검증을 통과한 경우에만 채팅별 사건 원장에 반영됩니다.</small></section>`;
-    const domainControls = [
-      ['items', '무기·아이템', loaded.itemsEnabled],
-      ['skills', '스킬', loaded.skillsEnabled],
-      ['encounters', '전투 도감', loaded.encountersEnabled]
-    ]
-      .map(
-        ([key, label, value]) =>
-          `<button class="itemx-tool ${value ? 'itemx-setting-on' : ''}" data-action="domain-${key}">${label} ${value ? 'ON' : 'OFF'}</button>`
-      )
-      .join('');
-    const debugLog =
-      runtime.debugEntries
-        .slice(-12)
-        .reverse()
-        .map(
-          (entry) =>
-            `${new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false })} ${entry.where}\n${entry.detail}`
-        )
-        .join('\n\n') || '기록 없음';
     const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
-    const cleanupArmed = runtime.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed = runtime.storageCleanupArmedUntil > Date.now(),
-      footprint = itemxStorageFootprint(loaded.chat),
-      footprintLabel = `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`;
-    const settingsContent = `<div class="itemx-settings"><h4 class="itemx2-set-group">연결</h4><section class="itemx-setting-card"><span><strong>모델 처리 권한</strong><small>${permissionLabel} · 모델 응답을 읽고 원시 태그를 정리하려면 필요합니다.</small></span><button class="itemx-tool" data-action="permissions">권한 요청</button></section><section class="itemx-setting-card"><span><strong>본문 카드 스타일</strong><small>${styleLabel} · 거부되어도 메시지별 스타일로 표시합니다.</small></span><button class="itemx-tool" data-action="style">다시 연결</button></section><h4 class="itemx2-set-group">기록</h4><section class="itemx-setting-card"><span><strong>무엇을 기록할까요</strong><small>끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.</small></span></section><div class="itemx-domain-controls">${domainControls}</div><section class="itemx-setting-card"><span><strong>이 봇에서 사용</strong><small>${enabled ? '활성 상태입니다.' : '끄면 이 봇에서만 멈춥니다. 다른 봇은 영향받지 않습니다.'}</small></span><button class="itemx-tool itemx2-sw ${enabled ? 'itemx-setting-on' : ''}" data-action="toggle" role="switch" aria-checked="${enabled ? 'true' : 'false'}"><i></i></button></section><section class="itemx-setting-card"><span><strong>메인 모델에 형식 알리기</strong><small>대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.</small></span><button class="itemx-tool itemx2-sw ${loaded.mainOutput ? 'itemx-setting-on' : ''}" data-action="main-output" role="switch" aria-checked="${loaded.mainOutput ? 'true' : 'false'}"><i></i></button></section><section class="itemx-setting-card"><span><strong>보조 모델로 보완</strong><small>메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.</small></span><div class="itemx2-seg">${Object.entries(
-      AUX_LABELS
-    )
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn ${loaded.auxOutput === value ? 'itemx2-seg-on' : ''}" type="button" data-seg="aux" data-value="${value}">${label}</button>`
-      )
-      .join(
-        ''
-      )}</div></section><section class="itemx-setting-card"><span><strong>등급 판정 기준</strong><small>세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.</small></span><div class="itemx2-seg">${Object.entries(
-      RARITY_MODE_LABELS
-    )
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn ${loaded.rarityMode === value ? 'itemx2-seg-on' : ''}" type="button" data-seg="rarity" data-value="${value}">${label}</button>`
-      )
-      .join(
-        ''
-      )}</div></section><section class="itemx-setting-card"><span><strong>로어북에서 설명 채우기</strong><small>이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.</small></span><span class="itemx-manager-actions"><button class="itemx-tool itemx2-sw ${loaded.lorebookEncounterEnabled ? 'itemx-setting-on' : ''}" data-action="lorebook-toggle" role="switch" aria-checked="${loaded.lorebookEncounterEnabled ? 'true' : 'false'}"><i></i></button><button class="itemx-tool" data-action="lorebook-scan">지금 스캔</button></span></section><section class="itemx-setting-card"><span><strong>모듈 초상화 사용</strong><small>활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.</small></span><button class="itemx-tool itemx2-sw ${loaded.moduleAssetsEnabled ? 'itemx-setting-on' : ''}" data-action="module-assets" role="switch" aria-checked="${loaded.moduleAssetsEnabled ? 'true' : 'false'}"><i></i></button></section><h4 class="itemx2-set-group">모양</h4><section class="itemx-setting-card"><span><strong>화면 스킨</strong><small>서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다.</small></span><div class="itemx2-seg">${SKIN_MODES.map(
-      (mode) => [mode, SKIN_LABELS[mode]]
-    )
-      .map(
-        ([value, label]) =>
-          `<button class="itemx2-seg-btn ${(loaded.skin || 'dark') === value ? 'itemx2-seg-on' : ''}" type="button" data-seg="skin" data-value="${value}">${label}</button>`
-      )
-      .join(
-        ''
-      )}</div></section><section class="itemx-setting-card"><span><strong>이펙트</strong><small>카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.</small></span><button class="itemx-tool itemx2-sw ${loaded.effectsEnabled ? 'itemx-setting-on' : ''}" data-action="effects" role="switch" aria-checked="${loaded.effectsEnabled ? 'true' : 'false'}"><i></i></button></section><section class="itemx-setting-card"><span><strong>글자 크기</strong><small>인벤토리·도감의 본문 글자에 바로 적용됩니다.</small></span></section><div class="itemx2-font-grid">${fontChoices}</div><section class="itemx-setting-card"><span><strong>배지 위치</strong><small>화면에서 CODEX 배지가 붙을 자리입니다.</small></span></section><div class="itemx2-position-grid">${positionChoices}</div><h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(false)}${managerContent}<section class="itemx-setting-card"><span><strong>저장 공간</strong><small>${footprintLabel} · 오래된 원장은 자동으로 정리됩니다.</small></span><span class="itemx-manager-actions"><button class="itemx-tool" data-action="rebuild">재구축</button><button class="itemx-tool" data-action="storage-cleanup">${storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화'}</button></span></section><div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4><section class="itemx-setting-card"><span><strong>이 채팅의 ITEMX 기록 지우기</strong><small>본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.</small></span><button class="itemx-tool itemx-manager-danger" data-action="cleanup-chat">${cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리'}</button></section></div>${debugContent}<p class="itemx-setting-note">보조 복구는 활성화된 도메인의 검증된 마커만 반영합니다.</p></div>`;
+    const settingsContent = settingsPanelHtml(loaded, skin, {
+      permissionLabel,
+      styleLabel,
+      domainControls,
+      fontChoices,
+      positionChoices,
+      manager: managerContent,
+      debugPanel: debugContent,
+      ...storageParts
+    });
     const iframeSkills =
       ui.tab === 'skills'
         ? (loaded.codexSnapshot?.skills?.order || [])
@@ -6851,7 +6906,7 @@ ${codexPageStyle()}
           : ui.tab === 'bestiary'
             ? bestiaryContent
             : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav><div class="itemx2-iframe-content">${content}</div></section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${frozenBannerHtml(false)}<div class="itemx2-iframe-content">${content}</div></section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener('click', () => {
       runtime.historyView.open = false;
       void closeInventory();
@@ -6919,6 +6974,19 @@ ${codexPageStyle()}
       runtime.debugEntries = [];
       runtime.status = '디버그 로그 비움';
       drawInventory(loaded);
+    });
+    root.querySelector('[data-action="aux-run"]')?.addEventListener('click', async () => {
+      if (runtime.auxActive > 0) return;
+      runtime.status = '보조 모델 수동 검사 중';
+      drawInventory(loaded);
+      try {
+        await recoverAuxiliaryOutput({ force: true });
+      } catch (error) {
+        runtime.status = '보조 모델 검사 실패';
+        await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+      }
+      const next = await rebuildCurrent();
+      drawInventory(next || loaded);
     });
     root.querySelector('[data-action="main-output"]')?.addEventListener('click', async () => {
       loaded.mainOutput = !loaded.mainOutput;
@@ -7251,7 +7319,7 @@ ${codexPageStyle()}
         runtime.status = 'PocketRisu 호환 모드';
         log('resizeContainer unavailable; using bounded fullscreen fallback');
       }
-      document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx-setting-card span{display:grid;gap:4px}.itemx-setting-card strong{color:#edf2fb}.itemx-setting-card small,.itemx-setting-note{color:#77839c;line-height:1.45}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-position-select{min-height:38px;padding:0 10px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9}.itemx-setting-note{margin:2px 4px 0;font-size:.72rem}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-domain-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-setting-card{align-items:flex-start;flex-direction:column}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions,.itemx-domain-controls{grid-template-columns:1fr}}</style>`;
+      document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`;
       document.body.innerHTML = '<div id="itemx2-root"></div>';
       const loaded = await rebuildCurrent();
       if (!loaded) throw new Error('No active chat context');

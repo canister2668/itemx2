@@ -31,7 +31,16 @@ assert len(rows) == 1 and rows[0]['setting_key'] == 'plugins', 'ambiguous target
 old = rows[0]
 old_version = tuple(map(int, old['plugin_version'].split('.')))
 new_version = tuple(map(int, meta('version').split('.')))
-assert old_version < new_version or (old_version == new_version and '--replace-same-version' in sys.argv), 'not a forward deployment (same-version hotfix requires --replace-same-version)'
+# Deployments move forward by default. A same-version hotfix or a deliberate
+# rollback/renumber has to be asked for explicitly, and is recorded in the audit
+# row below either way.
+forward = old_version < new_version
+same = old_version == new_version and '--replace-same-version' in sys.argv
+downgrade = old_version > new_version and '--allow-downgrade' in sys.argv
+assert forward or same or downgrade, (
+    f'not a forward deployment ({".".join(map(str, old_version))} -> {".".join(map(str, new_version))}); '
+    'same-version hotfix requires --replace-same-version, rollback requires --allow-downgrade'
+)
 nodes = json.loads(sql("""SELECT json_agg(v ORDER BY node_id) FROM system.setting_values v
 WHERE setting_key='plugins' AND parent_node_id=(SELECT parent_node_id FROM system.setting_values
 WHERE setting_key='plugins' AND member_key='name' AND text_value='itemx2');"""))

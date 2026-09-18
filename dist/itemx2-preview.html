@@ -384,36 +384,30 @@
   margin-top: 7px;
 }
 
-.itemx2-root-settings > .itemx2-root-setting-card,
-.itemx-settings > .itemx-setting-card {
+.itemx2-root-settings > .itemx2-root-setting-card {
   flex-direction: row;
   flex-wrap: wrap;
 }
-.itemx2-root-setting-card > span:first-child,
-.itemx-setting-card > span:first-child {
+.itemx2-root-setting-card > span:first-child {
   flex: 1 1 180px;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 /* Grouped actions belong below the copy, not in a shrinking side column. */
-.itemx2-root-setting-card > .itemx2-manager-actions,
-.itemx-setting-card > .itemx-manager-actions {
+.itemx2-root-setting-card > .itemx2-manager-actions {
   display: flex;
   flex: 0 0 100%;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
-.itemx2-root-setting-card .itemx2-root-setting-button,
-.itemx-setting-card .itemx-tool,
-.itemx-setting-card > .itemx-position-select {
+.itemx2-root-setting-card .itemx2-root-setting-button {
   flex-shrink: 0;
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
 }
-.itemx2-root-setting-card > .itemx2-manager-actions > button,
-.itemx-setting-card > .itemx-manager-actions > button {
+.itemx2-root-setting-card > .itemx2-manager-actions > button {
   flex: 0 0 auto;
   min-height: 38px;
 }
@@ -702,7 +696,17 @@
     animation: none !important;
   }
 }
-.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.1.1</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
+
+/* Read-only freeze: a present-but-unreadable checkpoint. Reading and backup
+   export stay available; every ledger rewrite is refused. */
+.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}
+.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}
+.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}
+.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}
+.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}
+.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}
+.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}
+.preview-actions{display:flex;gap:8px;margin:0 auto 12px;width:min(560px,100%)}.preview-actions button{padding:8px 12px;border:1px solid #31394a;border-radius:8px;background:#171c28;color:#d9dfeb;cursor:pointer}</style></head><body><div class="risu-shell"><header class="risu-topbar"><strong>ITEMX CODEX 2.2.0</strong><span>World Inventory & Encounter Archive</span></header><main class="stage"><div class="demo-note"><b>PLUGIN PREVIEW</b><span>본문과 인벤토리가 같은 JavaScript 렌더러와 같은 CSS를 사용합니다.</span></div><div class="preview-actions"><button id="list">인벤토리</button><button id="single">단일 속성</button><button id="multi">다중 속성</button></div><div id="app"></div></main></div><script>/* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 const ITEMXCore = (() => {
   'use strict';
 
@@ -740,60 +744,124 @@ const ITEMXCore = (() => {
     mythical: '신화',
     empyrean: '창천'
   };
-  const FIELD_ALIASES = {
-    id: 'id',
-    name: 'name',
-    이름: 'name',
-    type: 'type',
-    분류: 'type',
-    종류: 'type',
-    emoji: 'emoji',
-    rarity: 'internalrarity',
-    internalrarity: 'internalrarity',
-    grade: 'internalrarity',
-    등급: 'internalrarity',
-    display: 'displayrarity',
-    displayrarity: 'displayrarity',
-    표기: 'displayrarity',
-    power: 'power',
-    위력: 'power',
-    required: 'required',
-    요구: 'required',
-    durability: 'durability',
-    내구: 'durability',
-    내구도: 'durability',
-    cost: 'cost',
-    price: 'cost',
-    value: 'cost',
-    가치: 'cost',
-    possession: 'possession',
-    location: 'location',
-    count: 'count',
-    slot: 'slot',
-    pin: 'pin',
-    theme: 'theme',
-    craft: 'theme',
-    affinity: 'affinity',
-    affinity2: 'affinity2',
-    condition: 'condition',
-    effects: 'effects',
-    effect: 'effects',
-    augments: 'augments',
-    augment: 'augments',
-    trivia: 'trivia',
-    desc: 'trivia',
-    description: 'trivia',
-    action: 'action',
-    op: 'op',
-    quantity: 'quantity',
-    destination: 'destination',
-    reason: 'reason',
-    사유: 'reason',
-    inputs: 'inputs',
-    outputs: 'outputs',
-    equip: 'equip',
-    unequip: 'unequip'
+  // ---------------------------------------------------------------------------
+  // One declaration of the item field surface. Five consumers derive from it:
+  // transport aliases, residual-tag cleanup, the request anchor, portable
+  // backups and recovery quality. Adding a field used to mean editing six
+  // places, where missing one failed silently (a leaked raw tag, or a field
+  // quietly dropped from every backup).
+  //   key       - property name on a stored item
+  //   transport - canonical name the model emits
+  //   aliases   - other accepted input names (attribute or tag)
+  //   tags      - regex alternatives contributed to residual-tag cleanup
+  //   anchor    - 'required' always injected, 'optional' injected when present
+  //   backup    - carried by portable backups
+  //   detail    - an appraisal detail recovery quality must verify
+  // ---------------------------------------------------------------------------
+  const ITEM_FIELDS = [
+    { key: 'id', transport: 'id', tags: ['id'], anchor: 'required', backup: true },
+    { key: 'name', transport: 'name', aliases: ['이름'], tags: ['name'], anchor: 'required', backup: true },
+    { key: 'itemType', transport: 'type', aliases: ['분류', '종류'], tags: ['type'], anchor: 'required', backup: true },
+    { key: 'emoji', transport: 'emoji', tags: ['emoji'], backup: true },
+    {
+      key: 'rarity',
+      transport: 'internalrarity',
+      aliases: ['rarity', 'grade', '등급'],
+      tags: ['internalrarity'],
+      anchor: 'required',
+      backup: true
+    },
+    {
+      key: 'displayRarity',
+      transport: 'displayrarity',
+      aliases: ['display', '표기'],
+      tags: ['displayrarity'],
+      backup: true
+    },
+    { key: 'power', transport: 'power', aliases: ['위력'], tags: ['power'], anchor: 'optional', backup: true, detail: true },
+    { key: 'required', transport: 'required', aliases: ['요구'], tags: ['required'], backup: true, detail: true },
+    {
+      key: 'durability',
+      transport: 'durability',
+      aliases: ['내구', '내구도'],
+      tags: ['durability'],
+      anchor: 'optional',
+      backup: true,
+      detail: true
+    },
+    { key: 'cost', transport: 'cost', aliases: ['price', 'value', '가치'], tags: ['cost'], backup: true, detail: true },
+    { key: 'possession', transport: 'possession', tags: ['possession'], anchor: 'required', backup: true },
+    { key: 'location', transport: 'location', tags: ['location'], anchor: 'required', backup: true },
+    { key: 'count', transport: 'count', tags: ['count'], anchor: 'required', backup: true },
+    { key: 'slot', transport: 'slot', tags: ['slot'], anchor: 'optional', backup: true },
+    { key: 'pin', transport: 'pin', tags: ['pin'], backup: true },
+    { key: 'theme', transport: 'theme', aliases: ['craft'], tags: ['theme', 'craft'], anchor: 'optional', backup: true },
+    { key: 'affinity', transport: 'affinity', tags: ['affinity2?'], anchor: 'optional', backup: true },
+    { key: 'affinity2', transport: 'affinity2', anchor: 'optional', backup: true },
+    { key: 'condition', transport: 'condition', tags: ['condition'], anchor: 'optional', backup: true },
+    { key: 'trivia', transport: 'trivia', aliases: ['desc', 'description'], tags: ['trivia'], backup: true },
+    {
+      key: 'effects',
+      transport: 'effects',
+      aliases: ['effect'],
+      tags: ['effects?', 'effectname', 'effectdesc'],
+      backup: true,
+      detail: true
+    },
+    {
+      key: 'augments',
+      transport: 'augments',
+      aliases: ['augment'],
+      tags: ['augments?', 'augmentname', 'augmentdesc'],
+      backup: true,
+      detail: true
+    },
+    { key: 'action', transport: 'action', tags: ['action'] },
+    { key: 'op', transport: 'op', tags: ['op'] },
+    { key: 'quantity', transport: 'quantity', tags: ['quantity'] },
+    { key: 'destination', transport: 'destination', tags: ['destination'] },
+    { key: 'reason', transport: 'reason', aliases: ['사유'], tags: ['reason'] },
+    { key: 'inputs', transport: 'inputs', tags: ['inputs'] },
+    { key: 'outputs', transport: 'outputs', tags: ['outputs'] },
+    { key: 'equip', transport: 'equip', tags: ['equip'] },
+    { key: 'unequip', transport: 'unequip', tags: ['unequip'] }
+  ];
+  const FIELD_ALIASES = Object.fromEntries(
+    ITEM_FIELDS.flatMap((field) => [field.transport, ...(field.aliases || [])].map((name) => [name, field.transport]))
+  );
+  const TRANSPORT_TAG_ALT = ITEM_FIELDS.flatMap((field) => field.tags || []).join('|');
+  const ANCHOR_REQUIRED = ITEM_FIELDS.filter((f) => f.anchor === 'required').map((f) => f.key);
+  // Membership comes from the schema; the orders below are presentation and are
+  // asserted to be exact permutations of it, so a new field cannot be added
+  // without deciding where it appears. ANCHOR_OPTIONAL_ORDER is prompt text and
+  // BACKUP_FIELD_ORDER is the key order of every exported backup.
+  const ANCHOR_OPTIONAL_ORDER = ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition'];
+  const BACKUP_FIELD_ORDER =
+    'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin trivia theme affinity affinity2 condition effects augments'.split(
+      ' '
+    );
+  const DETAIL_FIELD_ORDER = ['power', 'effects', 'augments', 'required', 'durability', 'cost'];
+  const ordered = (order, members, label) => {
+    const set = new Set(members);
+    if (order.length !== set.size || order.some((key) => !set.has(key)))
+      throw new Error(`ITEM_FIELDS ${label} order is not a permutation of the schema`);
+    return order;
   };
+  const ANCHOR_OPTIONAL = ordered(
+    ANCHOR_OPTIONAL_ORDER,
+    ITEM_FIELDS.filter((f) => f.anchor === 'optional').map((f) => f.key),
+    'anchor'
+  );
+  const BACKUP_FIELDS = ordered(
+    BACKUP_FIELD_ORDER,
+    ITEM_FIELDS.filter((f) => f.backup).map((f) => f.key),
+    'backup'
+  );
+  const DETAIL_FIELDS = ordered(
+    DETAIL_FIELD_ORDER,
+    ITEM_FIELDS.filter((f) => f.detail).map((f) => f.key),
+    'detail'
+  );
 
   const clone = (value) => (value == null ? value : JSON.parse(JSON.stringify(value)));
   const clean = (value, max = 800) => {
@@ -1449,7 +1517,7 @@ const ITEMXCore = (() => {
       while (boundary >= 0) {
         const suffix = out.slice(boundary + 2).trimStart();
         if (
-          !/^<\/?(?:id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip)\b/i.test(
+          !new RegExp(`^</?(?:${TRANSPORT_TAG_ALT})\\b`, 'i').test(
             suffix
           )
         )
@@ -1727,7 +1795,7 @@ const ITEMXCore = (() => {
         `location=${item.location}`,
         `count=${item.count || 0}`
       ];
-      for (const key of ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition'])
+      for (const key of ANCHOR_OPTIONAL)
         if (item[key]) bits.push(`${key}=${item[key]}`);
       if (item.effects?.length)
         bits.push(
@@ -1773,6 +1841,11 @@ const ITEMXCore = (() => {
     writeSnapshot,
     requestView,
     anchor,
+    ITEM_FIELDS,
+    BACKUP_FIELDS,
+    DETAIL_FIELDS,
+    ANCHOR_OPTIONAL,
+    TRANSPORT_TAG_ALT,
     messageText,
     clone,
     isUsableGlyph,
@@ -2292,4 +2365,4 @@ const ITEMXRenderer = (() => {
 
 if (typeof globalThis !== 'undefined') globalThis.ITEMXRenderer = ITEMXRenderer;
 
-const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.1.1</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
+const items=[{"id":"yanggeom_chiyang","emoji":"⚔️","name":"치양의 양검","rarity":"legendary","displayRarity":"전설","theme":"oriental","affinity":"fire","affinity2":"wind","itemType":"장검","possession":"owned","location":"equipped","power":"7600-9400","durability":"77 / 100","effects":[{"name":"화염폭풍","desc":"불티가 바람의 궤도를 타고 휘몰아친다."}],"trivia":"검신을 따라 치양의 열기와 청람이 교차한다."},{"id":"frostbolt","emoji":"🔱","name":"빙뢰의 청람창","rarity":"mythical","displayRarity":"신화","theme":"arcane","affinity":"ice","affinity2":"lightning","itemType":"장창","possession":"owned","location":"inventory","power":"17600-24400","durability":"95 / 100","effects":[{"name":"극뢰","desc":"빙결된 대상 사이로 번개가 연쇄 전도된다."}]},{"id":"starter_linen","emoji":"👕","name":"초보자의 린넨 세트","rarity":"normal","displayRarity":"일반","theme":"forged","itemType":"천 방어구","possession":"owned","location":"equipped","power":"5-8","durability":"25 / 25","effects":[]},{"id":"mana_potion","emoji":"🧪","name":"하급 마나 회복 물약","rarity":"magic","displayRarity":"매직","theme":"arcane","affinity":"light","itemType":"소모품","possession":"owned","location":"inventory","count":3,"power":"120-180","durability":"해당 없음","effects":[{"name":"마나 회복","desc":"소량의 마나를 즉시 회복한다."}]}];const app=document.querySelector('#app');function list(){app.innerHTML='<section class="itemx-panel"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · 2.2.0</span><span class="itemx-ph-title">인벤토리</span><span class="itemx-ph-sub">보유 4 · 장착 2 · 관찰 0</span></span><span class="itemx-ph-btn">✕</span></header><nav class="itemx-seg"><span class="itemx-seg-i itemx-seg-on">전체 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">보유 <span class="itemx-seg-n">4</span></span><span class="itemx-seg-i">장착 <span class="itemx-seg-n">2</span></span></nav><div class="itemx-tools"><span class="itemx-tool">⇅ 최근</span><span class="itemx-search">검색</span></div><div class="itemx-body"><div class="itemx-grid">'+items.map(ITEMXRenderer.renderTile).join('')+'</div></div><footer class="itemx-pf">4점 표시 · 실제 렌더러</footer></section>';document.querySelectorAll('[data-item-id]').forEach((el)=>el.onclick=()=>card(items.find((x)=>x.id===el.dataset.itemId)))}function card(item){app.innerHTML='<div class="itemx-detail">'+ITEMXRenderer.renderCard(item,{motion:'full'})+'</div>'}document.querySelector('#list').onclick=list;document.querySelector('#single').onclick=()=>card(items[3]);document.querySelector('#multi').onclick=()=>card(items[0]);list();</script></body></html>
