@@ -72,7 +72,7 @@ test('resizeContainer rejection executes the bounded fullscreen fallback', async
   const end = source.indexOf('      document.head.innerHTML', start);
   const runtime = { compactContainer: true };
   await vm.runInNewContext(`(async () => {${source.slice(start, end)}})()`, {
-    runtime, panelHeight: 600, panelWidth: 400, log() {},
+    uiState: runtime, panelHeight: 600, panelWidth: 400, log() {},
     Risuai: { resizeContainer: async () => { throw new Error('API method resizeContainer not found'); } }
   });
   assert.equal(runtime.compactContainer, false);

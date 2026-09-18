@@ -37,7 +37,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.equal(source.includes('ITEMXCodex.requestView(ITEMXCore.requestView(message.content))'), false);
   assert.match(source, /API method addRisuChatListener not found/);
-  assert.match(source, /runtime\.hooks\.listener = 'unsupported'/);
+  assert.match(source, /hostState\.hooks\.listener = 'unsupported'/);
   assert.match(source, /scheduleLegacyCommitRecovery/);
   assert.match(source, /연결 및 권한/);
   assert.match(source, /ITEMX CODEX 연결 및 권한 확인 완료/);
@@ -84,7 +84,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source,
     /p:\s*view\.power,\s*q:\s*view\.required,\s*u:\s*view\.durability,\s*c:\s*view\.cost,\s*o:\s*view\.possession,\s*l:\s*view\.location/
   );
-  assert.match(source, /runtime\.eventPayloads\.get\(`item:\$\{ref\}`\) \|\| inlineViewPayload\(inline, 'item'\)/);
+  assert.match(source, /pipelineState\.eventPayloads\.get\(`item:\$\{ref\}`\) \|\| inlineViewPayload\(inline, 'item'\)/);
   assert.match(source, /if \(!open\)\s*return `\$\{rootBadgeHtml\(\)\}[\s\S]*?itemx2-open-loading/);
   assert.match(source, /const ITEMX_UPDATE_CHECK_MS = 30 \* 60 \* 1000/);
   assert.match(source, /headers: \{ Range: 'bytes=0-2047' \}/);
@@ -97,7 +97,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.equal((rootRouter.match(/addEventListener\(\s*'click'/g) || []).length, 1);
   assert.match(rootRouter, /rootClickBindings = \[\{ owner, type: 'click', id, capture: true \}\]/);
-  assert.match(rootRouter, /if \(!runtime\.rootOpen\) return;/);
+  assert.match(rootRouter, /if \(!uiState\.rootOpen\) return;/);
   assert.match(rootRouter, /itemx2-root-detail-body-/);
   assert.match(source, /ITEMX CODEX · 권한 및 설정/);
   assert.match(source, /itemx2-host-settings/);
@@ -189,7 +189,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.match(source, /모듈 에셋 권한이 허용되지 않았습니다\. 조우 초상화는 이모지로 표시됩니다/);
   assert.match(source, /const visual = portrait\s*\?\s*`<img[^`]+`\s*:\s*`<span class="itemx2-codex-glyph">/);
-  assert.match(source, /runtime\.moduleAssetCache = \{ key, at: Date\.now\(\), rows: \[\] \}/);
+  assert.match(source, /portraitsState\.moduleAssetCache = \{ key, at: Date\.now\(\), rows: \[\] \}/);
   assert.match(source, /보조 검사 완료/);
   assert.match(source, /workQueue\.isActive\('connect'\)/);
   assert.match(source, /async function updateConnectionUi/);
@@ -207,8 +207,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /보조 모델이 90초 안에 응답하지 않았습니다/);
   assert.match(source, /const result = await workQueue\.external/);
   assert.match(source, /automaticAuxReady\(ctx\.chat, index, source\)/);
-  assert.match(source, /if \(runtime\.auxActive > 0\) return/);
-  assert.match(source, /runtime\.auxActive === 0/);
+  assert.match(source, /if \(auxState\.auxActive > 0\) return/);
+  assert.match(source, /auxState\.auxActive === 0/);
   assert.match(source, /await rememberAuxiliaryZero\(ctx, guardKey\)/);
   assert.match(source, /ITEMX context-aware auxiliary regeneration pass/);
   assert.match(source, /TRIGGERING USER TURN/);
@@ -242,7 +242,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.ok(auxRunHandler.length > 80, 'aux-run action row not found');
   assert.match(auxRunHandler, /recoverAuxiliaryOutput\(\{ force: true \}\)/);
   assert.equal(auxRunHandler.includes('openRootInventory'), false);
-  assert.match(source, /runButton\.setTextContent\(runtime\.auxActive > 0\s*\?\s*'처리 중…'\s*:\s*'지금 검사'\)/);
+  assert.match(source, /runButton\.setTextContent\(auxState\.auxActive > 0\s*\?\s*'처리 중…'\s*:\s*'지금 검사'\)/);
   assert.match(
     source,
     /\.itemx2-root-inventory\{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden\}/
@@ -275,7 +275,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(rootInventoryBuilder, /상세 정보를 불러오는 중…/);
   assert.match(source, /Array\.from\(\{ length: Math\.min\(4, monsters\.length\) \}, \(\) => loadNextPortrait\(\)\)/);
   assert.equal(source.includes('Promise.all(monsters.map'), false);
-  assert.match(source, /runtime\.hooks\.listener === true \? 45000 : 4500/);
+  assert.match(source, /hostState\.hooks\.listener === true \? 45000 : 4500/);
   assert.match(
     source,
     /addRisuChatListener\('output',\s*\(output\) => \{[\s\S]{0,700}void scheduleCommittedOutputSync\(\);\s*\}\)/
@@ -285,7 +285,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source.indexOf('function armCatchUpWatchdog')
   );
   assert.equal((outputSync.match(/ensureRootInventory\(\)/g) || []).length, 1);
-  assert.match(source, /now - runtime\.hostSettingsCache\.at < 750/);
+  assert.match(source, /now - hostState\.hostSettingsCache\.at < 750/);
   assert.match(source, /\.itemx2-threat-3 \.itemx2-encounter-hero-fx\{filter:brightness/);
   assert.equal(/\.itemx2-threat-3\{filter:brightness/.test(source), false);
   assert.match(
@@ -314,7 +314,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /width:min\(400px,calc\(100% - 8px\)\)/);
   assert.match(source, /\.itemx2-inline-event \.itemx2-inline-state\{display:inline-flex/);
   assert.match(source, /ENCOUNTER RESOLVED/);
-  assert.match(source, /!inline && !runtime\.latestMarkers\.has\(`CODEX2@\$\{ref\}`\)/);
+  assert.match(source, /!inline && !pipelineState\.latestMarkers\.has\(`CODEX2@\$\{ref\}`\)/);
   assert.match(source, /markerHtmlCache: new Map\(\)/);
   assert.equal(/renderCard\(item, \{ motion: index < 2/.test(source), false);
   const displayHandler = source.slice(
@@ -323,12 +323,12 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.equal(displayHandler.includes("motion = cards < 2 ? 'full' : 'off'"), false);
   assert.match(displayHandler, /const markerMotion = \(key\) =>/);
-  assert.match(displayHandler, /return runtime\.latestMarkers\.has\(key\) \? 'lite' : 'off'/);
+  assert.match(displayHandler, /return pipelineState\.latestMarkers\.has\(key\) \? 'lite' : 'off'/);
   assert.match(displayHandler, /renderPayload\(`item:\$\{code\}`, payload, motion\)/);
   assert.match(displayHandler, /renderPayload\(`item-ref:\$\{ref\}`, payload, motion\)/);
   assert.match(source, /cachedOrRebuildCurrent\(\)/);
   assert.match(source, /portraitCache: new Map\(\)/);
-  assert.match(source, /workQueue\.revision\('style-position'\) === runtime\.badgePosition/);
+  assert.match(source, /workQueue\.revision\('style-position'\) === uiState\.badgePosition/);
   assert.match(source, /content-visibility:auto/);
   assert.match(source, /async function installBodyEffectGovernor/);
   assert.equal(source.includes('getBoundingClientRect();\n        const active = rect.bottom'), false);
@@ -337,7 +337,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /itemx2-inline-main::before/);
   assert.match(source, /mix-blend-mode:normal!important/);
   assert.match(source, /contain-intrinsic-size:auto 128px/);
-  assert.match(source, /ready: \(\) => !runtime\.bodyFxScrollActive/);
+  assert.match(source, /ready: \(\) => !presentationState\.bodyFxScrollActive/);
   assert.match(
     source,
     /workQueue\.schedule\('hostSyncTimer'/
@@ -355,14 +355,14 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /registerSetting\(\s*'ITEMX CODEX · 권한 및 설정',\s*entry\('settings', openSettingsFromRisuMenu\)/);
   assert.equal(source.includes('requestPermission: false'), false);
   assert.match(source, /requestPluginPermission\('replacer'\)/);
-  assert.match(source, /runtime\.permissions\.replacer = permission === true/);
-  assert.match(source, /return runtime\.permissions\.replacer/);
+  assert.match(source, /hostState\.permissions\.replacer = permission === true/);
+  assert.match(source, /return hostState\.permissions\.replacer/);
   assert.equal(source.includes('itemx2PermissionVersion'), false);
   assert.match(source, /itemx2-native-badge/);
-  assert.match(source, /showContainer\(runtime\.compactContainer \? 'floating' : 'fullscreen'\)/);
+  assert.match(source, /showContainer\(uiState\.compactContainer \? 'floating' : 'fullscreen'\)/);
   assert.match(source, /resizeContainer\(panelHeight, panelWidth\)/);
   assert.match(source, /resizeContainer unavailable; using bounded fullscreen fallback/);
-  assert.match(source, /runtime\.compactContainer \? 'floating' : 'fullscreen'/);
+  assert.match(source, /uiState\.compactContainer \? 'floating' : 'fullscreen'/);
   assert.match(source, /itemx-plugin-stage-fallback/);
   assert.match(source, /x-itemx2-badge="launcher"/);
   assert.match(source, /width="48" height="176"/);
@@ -371,7 +371,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /@keyframes itemx-plugin-panel-in/);
   assert.match(source, /@keyframes itemx-plugin-panel-out/);
   assert.match(source, /entry\(\s*'ui-action'/);
-  assert.match(source, /if \(runtime\.panelOpen\) return/);
+  assert.match(source, /if \(uiState\.panelOpen\) return/);
   assert.equal(/pluginStorage\.setItem\([^\n]*(panelOpen|inventoryOpen)/.test(source), false);
   const outputPipeline = source.slice(
     source.indexOf('async function processOutput'),
@@ -410,7 +410,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /removeRisuReplacer\('beforeRequest', pipelineEntries\.before\)/);
   assert.match(source, /removeRisuReplacer\('afterRequest', pipelineEntries\.after\)/);
   assert.match(source, /validationRegistry = ITEMXCore\.clone\(snapshot\.registry\)/);
-  assert.match(source, /const interval = runtime\.hooks\.listener === true \? 45000 : 4500/);
+  assert.match(source, /const interval = hostState\.hooks\.listener === true \? 45000 : 4500/);
   assert.match(source, /workQueue\.schedule\(\s*'catchUpTimer',\s*\(\) => \{\s*return catchUpLatestOutput\(\)/);
   assert.match(source, /including an earlier misspelling/);
   assert.match(source, /itemPatch op=merge/);
@@ -476,7 +476,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   );
   assert.equal(source.includes('itemx-batch'), false);
   assert.match(source, /function armRemountWatchdog\(\)/);
-  assert.match(source, /runtime\.hostObserver \|\| !runtime\.activeContextKey \? 10000 : 1200/);
+  assert.match(source, /hostState\.hostObserver \|\| !pipelineState\.activeContextKey \? 10000 : 1200/);
   assert.match(source, /workQueue\.schedule\(\s*'remountTimer'/);
   assert.match(source, /row\.ms === ms/);
   assert.match(source, /workQueue\.clearTimer\('remountTimer'\)/);
@@ -497,16 +497,16 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source.indexOf('async function ensureRootInventory'),
     source.indexOf('async function loadCodexPortraits')
   );
-  assert.ok(ensureRoot.indexOf('const active = await context()') < ensureRoot.indexOf('runtime.auxActive > 0'));
+  assert.ok(ensureRoot.indexOf('const active = await context()') < ensureRoot.indexOf('auxState.auxActive > 0'));
   assert.match(source, /async function resetRuntimeForContext\(active\)/);
   const resetRuntime = source.slice(
     source.indexOf('async function resetRuntimeForContext'),
     source.indexOf('async function ensureRootInventory')
   );
-  assert.equal(resetRuntime.includes('runtime.eventPayloads = new Map()'), false);
+  assert.equal(resetRuntime.includes('pipelineState.eventPayloads = new Map()'), false);
   assert.match(resetRuntime, /refreshLatest\(active\?\.chat/);
-  assert.match(source, /runtime\.markerHtmlCache\.clear\(\)/);
-  assert.match(source, /runtime\.lastDomError/);
+  assert.match(source, /presentationState\.markerHtmlCache\.clear\(\)/);
+  assert.match(source, /hostState\.lastDomError/);
   assert.match(source, /await delay\(300\)/);
   assert.equal(source.includes("registerSetting('ITEMX CODEX · 설정', () => openInventory('settings')"), false);
   const withoutBackupPanel =
@@ -526,12 +526,12 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /button\[aria-label="ITEMX"\]/);
   assert.match(source, /badgePosition/);
   assert.match(source, /badgePosition: 'rm'/);
-  assert.match(source, /positions\[runtime\.badgePosition\] \|\| positions\.rm/);
+  assert.match(source, /positions\[uiState\.badgePosition\] \|\| positions\.rm/);
   assert.match(source, /좌하/);
   assert.match(source, /우상/);
-  assert.match(source, /await runtime\.rootDrawer\.addClass\(`x-risu-itemx2-pos-\$\{key\}`\)/);
-  assert.match(source, /drawerAttached = Boolean\(await runtime\.rootDrawer\.getParent\(\)\)/);
-  assert.match(source, /styleAttached = Boolean\(await runtime\.mainStyle\.getParent\(\)\)/);
+  assert.match(source, /await uiState\.rootDrawer\.addClass\(`x-risu-itemx2-pos-\$\{key\}`\)/);
+  assert.match(source, /drawerAttached = Boolean\(await uiState\.rootDrawer\.getParent\(\)\)/);
+  assert.match(source, /styleAttached = Boolean\(await hostState\.mainStyle\.getParent\(\)\)/);
   assert.equal(source.includes('const positionControls ='), false);
   assert.equal(source.includes('itemx2-root-open"'), false);
   assert.match(source, /async function setRootOpen\(open\)/);
@@ -546,7 +546,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source.indexOf('async function mountRootLoading')
   );
   assert.ok(
-    removeRoot.indexOf('await removeRootClickRouter()') < removeRoot.indexOf('await runtime.rootDrawer.remove()')
+    removeRoot.indexOf('await removeRootClickRouter()') < removeRoot.indexOf('await uiState.rootDrawer.remove()')
   );
   assert.match(source, /target\.matches\('\[x-itemx2-drawer="owner"\], \[x-itemx2-drawer="owner"\] \*'\)/);
   assert.match(source, /const lookup = buildMessageEventLookup\(latestChat\)/);
@@ -583,7 +583,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.ok(
     bootstrap.indexOf('const initial = await context()') < bootstrap.indexOf('connected = await installPipelineHooks()')
   );
-  assert.match(bootstrap, /runtime\.status = '채팅 진입 대기'/);
+  assert.match(bootstrap, /uiState\.status = '채팅 진입 대기'/);
   assert.match(source, /const styled = await installMainStyle\(\)/);
   assert.match(source, /getRootDocument\(/);
   assert.match(source, /setChatToIndex\(/);
@@ -591,7 +591,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /async function cleanCurrentChatItemx\(\)/);
   assert.match(source, /const CHAT_DATA_KEYS = \[/);
   assert.match(source, /await setEnabled\(ctx\.character, false\)/);
-  assert.match(source, /runtime\.cleanupArmedUntil = Date\.now\(\) \+ 7000/);
+  assert.match(source, /uiState\.cleanupArmedUntil = Date\.now\(\) \+ 7000/);
   assert.match(source, /function reconcileStoredRefViews\(chat, preferredLatestIndex = null\)/);
   assert.match(source, /const keepInline = index === latestIndex/);
   assert.match(source, /\.chattext \.x-risu-itemx-card/);

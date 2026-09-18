@@ -160,11 +160,10 @@ test('stabilization requires an unchanged candidate for the whole quiet period',
   now = 2999; assert.equal(queue.settled('aux', 'b', 1500), true);
 });
 
-test('runtime keeps at most 60 fields including dynamically added fields', async () => {
-  const runtime = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
-  const declaration = runtime.slice(runtime.indexOf('  const runtime = {'), runtime.indexOf('\n  };', runtime.indexOf('  const runtime = {')));
-  const fields = new Set([...declaration.matchAll(/^    (\w+):/gm)].map(match => match[1]));
-  for (const match of runtime.matchAll(/\bruntime\.(\w+)/g)) fields.add(match[1]);
-  assert.ok(fields.size <= 60, `${fields.size} runtime fields`);
-  assert.ok(![...fields].some(name => /Busy$|Promise$|Pending$|Fingerprint$/.test(name)), 'coordination belongs to the queue');
+test('domain state keeps at most 60 fields without runtime coordination flags', async () => {
+  const source = await readFile(new URL('../src/state.js', import.meta.url), 'utf8');
+  const owners = vm.runInNewContext(source + '\nITEMXState.create();');
+  const fields = Object.values(owners).flatMap(owner => Object.keys(owner)).filter(key => key !== 'view');
+  assert.ok(fields.length <= 60, `${fields.length} runtime fields`);
+  assert.ok(!fields.some(name => /Busy$|Promise$|Pending$|Fingerprint$/.test(name)), 'coordination belongs to the queue');
 });

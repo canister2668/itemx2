@@ -3825,6 +3825,107 @@ const ITEMXWorkQueue = (() => {
   return { create };
 })();
 
+const ITEMXState = (() => {
+  function owner(initial) {
+    const ports = {};
+    for (const key of Object.keys(initial)) Object.defineProperty(ports, key, {
+      enumerable: true, get: () => initial[key], set: value => { initial[key] = value; }
+    });
+    return Object.freeze(ports);
+  }
+  function create() {
+    return Object.freeze({
+      host: owner({
+        mainDoc: null,
+        mainStyle: null,
+        uiParts: [],
+        hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
+        permissions: { replacer: null, mainDom: null, db: null },
+        backgrounded: false,
+        resumeBindings: [],
+        hostObserver: null,
+        hostSettingsCache: { at: 0, visible: false },
+        lastDomError: '',
+        lastHookError: '',
+        unloading: false,
+        update: { checking: false, checkedAt: 0, latest: '', available: false }
+      }),
+      pipeline: owner({
+        latestMarkers: new Set(),
+        eventPayloads: new Map(),
+        cachedLoaded: null,
+        generation: 0,
+        activeContextKey: '',
+        lorebookCache: { key: '', at: 0, rows: [] }
+      }),
+      aux: owner({
+        auxActive: 0,
+        auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null }
+      }),
+      presentation: owner({
+        eventBursts: new Map(),
+        eventBurstSeen: new Set(),
+        eventBurstOwners: new Set(),
+        markerHtmlCache: new Map(),
+        detailHtmlCache: new Map(),
+        presentationRecords: null,
+        bodyFxClassOwner: null,
+        bodyFxEventIds: [],
+        bodyFxSawScroll: false,
+        bodyFxScrollActive: false,
+        visualEffectsEnabled: true,
+        visualSkin: 'dark'
+      }),
+      portraits: owner({
+        portraitCache: new Map(),
+        portraitThumbnailCache: new Map(),
+        inlinePortraitCatalog: null,
+        moduleAssetCache: { key: '', at: 0, rows: [] },
+        characterAssetCache: { key: '', at: 0, rows: [] },
+        combinedAssetCache: { key: '', at: 0, rows: [] }
+      }),
+      storage: owner({
+        checkpointCacheRecord: null,
+        frozen: false,
+        frozenReason: ''
+      }),
+      settings: owner({
+        settingsCache: new Map(),
+        debugEnabled: false,
+        debugEntries: []
+      }),
+      ui: owner({
+        rootDrawer: null,
+        rootOpen: false,
+        activeRootTab: 'inventory',
+        rootItemPage: 0,
+        rootClickBindings: [],
+        status: 'UI 준비',
+        badgePosition: 'rm',
+        compactContainer: true,
+        panelOpen: false,
+        allowDrawerOverSettings: false,
+        backupOpen: false,
+        cleanupArmedUntil: 0,
+        storageCleanupArmedUntil: 0,
+        historyView: { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 },
+        historyRows: [],
+        view: {
+    tab: 'inventory',
+    filter: 'all',
+    query: '',
+    selected: null,
+    selectedSkill: null,
+    selectedMonster: null,
+    manageId: null,
+    motion: true
+  }
+      }),
+    });
+  }
+  return { create };
+})();
+
 const ITEMX_STYLE = ":root { color-scheme: dark; font-family: Inter, Pretendard, \"Noto Sans KR\", sans-serif; }\n    * { box-sizing: border-box; }\n    body { margin: 0; min-height: 100vh; background: #080a10; color: #e6ebf4; }\n    button, select { font: inherit; }\n    button { color: inherit; }\n\n    .risu-shell { min-height: 100vh; background: radial-gradient(900px 560px at 50% 20%, #171b27 0, #0b0e15 55%, #07090e 100%); }\n    .risu-topbar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #202532; background: rgba(12,15,23,.94); color: #aeb7c9; font-size: 13px; }\n    .risu-topbar strong { color: #f2f4f8; font-size: 14px; }\n    .stage { width: min(920px, 100%); margin: 0 auto; padding: 22px 18px 64px; }\n    .demo-note { display: flex; align-items: center; gap: 9px; margin: 0 auto 14px; width: min(760px,100%); padding: 9px 12px; border: 1px solid #30394a; border-radius: 10px; background: #111622; color: #919db2; font-size: 12px; line-height: 1.45; }\n    .demo-note b { color: #d8b25c; white-space: nowrap; }\n\n    .lab { width: min(760px, 100%); margin: 0 auto 14px; padding: 12px; border: 1px solid #252c3a; border-radius: 13px; background: rgba(13,17,26,.96); }\n    .lab-title { margin-bottom: 9px; color: #8e9ab0; font-size: 10px; font-weight: 800; letter-spacing: .22em; }\n    .lab-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }\n    .lab label { display: grid; gap: 5px; color: #79869d; font-size: 11px; }\n    .lab select, .lab button { min-height: 34px; border: 1px solid #31394a; border-radius: 8px; background: #171c28; color: #d9dfeb; padding: 0 9px; }\n    .lab button { cursor: pointer; }\n    .lab button[aria-pressed=\"true\"] { border-color: #806a3d; background: #2a2418; color: #f0d79d; }\n\n    \n    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
 const ITEMX_CHAT_STYLE = "    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .itemx2-never-stage{padding:12px 8px 40px}.itemx2-never-topbar{padding:0 12px}.itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.itemx2-never-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
 const ITEMX_MAIN_STYLE = ".chattext .x-risu-itemx-panel{ display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }.chattext .x-risu-itemx-ph{ display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }.chattext .x-risu-itemx-ph-text{ display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }.chattext .x-risu-itemx-ph-eyebrow{ color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }.chattext .x-risu-itemx-ph-title{ color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }.chattext .x-risu-itemx-ph-sub{ color: #77839c; font-size: .72rem; }.chattext .x-risu-itemx-ph-btn{ width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }.chattext .x-risu-itemx-seg{ display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }.chattext .x-risu-itemx-seg-i{ flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }.chattext .x-risu-itemx-seg-on{ border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }.chattext .x-risu-itemx-seg-n{ opacity: .65; font-size: .92em; }.chattext .x-risu-itemx-tools{ display: flex; gap: .4em; margin: .6em 1.05em 0; }.chattext .x-risu-itemx-tool, .chattext .x-risu-itemx-search{ min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }.chattext .x-risu-itemx-search{ flex: 1; color: #64718c; }.chattext .x-risu-itemx-body{ padding: .75em 1.05em .95em; }.chattext .x-risu-itemx-grid{ display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }.chattext .x-risu-itemx-tile{ --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }.chattext .x-risu-itemx-tile:hover, .chattext .x-risu-itemx-tile:focus-visible{ border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }.chattext .x-risu-itemx-tile-bar{ position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }.chattext .x-risu-itemx-tile-eq{ position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }.chattext .x-risu-itemx-tile-em{ grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }.chattext .x-risu-itemx-tile-nm{ align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }.chattext .x-risu-itemx-tile-meta{ display: flex; justify-content: space-between; gap: .5em; align-self: end; }.chattext .x-risu-itemx-tile-rk{ color: var(--rk); font-size: .7rem; font-weight: 700; }.chattext .x-risu-itemx-tile-lc{ color: #67748c; font-size: .7rem; }.chattext .x-risu-itemx-tile-aff{ position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }.chattext .x-risu-itemx-pf{ padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }.chattext .x-risu-itemx-card{ content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }.chattext .x-risu-itemx-back{ display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }.chattext .x-risu-itemx-detail{ display: flex; justify-content: center; }.chattext .x-risu-itemx-card{ --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }.chattext .x-risu-craft-forged{ --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }.chattext .x-risu-craft-oriental{ --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }.chattext .x-risu-craft-clockwork{ --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }.chattext .x-risu-craft-synthetic{ --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }.chattext .x-risu-craft-celestial{ --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }.chattext .x-risu-craft-organic{ --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }.chattext .x-risu-craft-forged .x-risu-itemx-medallion, .chattext .x-risu-craft-oriental .x-risu-itemx-medallion{border-radius:3px}.chattext .x-risu-craft-synthetic .x-risu-itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.chattext .x-risu-craft-organic .x-risu-itemx-medallion{border-radius:60% 12% 60% 12%}.chattext .x-risu-craft-celestial .x-risu-itemx-medallion{border-radius:50%}.chattext .x-risu-craft-oriental .x-risu-itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.chattext .x-risu-craft-oriental .x-risu-itemx-badge, .chattext .x-risu-craft-oriental .x-risu-itemx-subline{color:#aaa194}.chattext .x-risu-craft-oriental .x-risu-itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.chattext .x-risu-craft-oriental .x-risu-itemx-head{padding-right:2.55em}.chattext .x-risu-craft-oriental .x-risu-itemx-effect, .chattext .x-risu-craft-oriental .x-risu-itemx-stat{background:rgba(7,9,9,.38)}.chattext .x-risu-itemx-oriental-paper, .chattext .x-risu-itemx-oriental-ink, .chattext .x-risu-itemx-oriental-frame, .chattext .x-risu-itemx-oriental-seal{display:none;position:absolute;pointer-events:none}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::before, .chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}.chattext .x-risu-craft-oriental .x-risu-itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}.chattext .x-risu-itemx-card::before{ content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }.chattext .x-risu-itemx2-strong{ animation:itemx2-aura 3.8s ease-in-out infinite; }.chattext .x-risu-itemx2-strong:has(.x-risu-lightning-flash){ animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }.chattext .x-risu-itemx-edge{ position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }.chattext .x-risu-itemx-edge::before{ content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }.chattext .x-risu-motion-off.x-risu-itemx-card, .chattext .x-risu-motion-off .x-risu-itemx-edge::before{ animation:none!important; }.chattext .x-risu-itemx-fx, .chattext .x-risu-itemx-cond{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }.chattext .x-risu-itemx-fx{ z-index:1; }.chattext .x-risu-itemx-cond{ z-index:2; }.chattext .x-risu-craft-oriental .x-risu-itemx-fx{z-index:2}.chattext .x-risu-craft-oriental .x-risu-current-fx{opacity:.42}.chattext .x-risu-craft-oriental .x-risu-current-fog{opacity:.28}.chattext .x-risu-craft-oriental .x-risu-current-veil, .chattext .x-risu-craft-oriental .x-risu-current-rays{opacity:.44}.chattext .x-risu-craft-oriental .x-risu-affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}.chattext .x-risu-current-fx, .chattext .x-risu-affinity-fx{ position:absolute; inset:0; overflow:hidden; }.chattext .x-risu-current-rays{ position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }.chattext .x-risu-current-rays i{ position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }.chattext .x-risu-current-veil{ position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }.chattext .x-risu-current-veil-visual{ position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }.chattext .x-risu-craft-mote{ position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }.chattext .x-risu-craft-mote.x-risu-diamond{ height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }.chattext .x-risu-craft-mote.x-risu-shape-ash{ height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }.chattext .x-risu-craft-mote.x-risu-shape-petal{ height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }.chattext .x-risu-craft-mote.x-risu-shape-block{ height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }.chattext .x-risu-craft-mote.x-risu-shape-streak{ width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }.chattext .x-risu-craft-mote.x-risu-shape-cross{ height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }.chattext .x-risu-craft-mote.x-risu-shape-cross::after{ content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }.chattext .x-risu-craft-mote.x-risu-shape-gear{ height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }.chattext .x-risu-craft-mote.x-risu-shape-gear::before{ content:\"⚙\";position:absolute;inset:0; }.chattext .x-risu-path-drift{animation-name:existing-drift}.chattext .x-risu-path-pulse{animation-name:existing-pulse}.chattext .x-risu-path-sway{animation-name:existing-sway}.chattext .x-risu-path-turn{animation-name:existing-turn}.chattext .x-risu-path-jitter{animation-name:existing-jitter}.chattext .x-risu-current-fog{ position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }.chattext .x-risu-current-fog-visual{ position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }.chattext .x-risu-current-scan{ position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }.chattext .x-risu-affinity-fx{ z-index:2; }.chattext .x-risu-afx{ position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }.chattext .x-risu-afx-secondary{ opacity:.68; clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx i{ position:absolute; display:block; color:var(--ac); }.chattext .x-risu-afx-fire i{ left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-flames{ position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }.chattext .x-risu-affinity-flames.x-risu-secondary{ clip-path:inset(0 0 0 46%); opacity:.6; }.chattext .x-risu-affinity-flames b{ position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }.chattext .x-risu-affinity-flames .x-risu-af-f1{ filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }.chattext .x-risu-affinity-flames .x-risu-af-f2{ height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }.chattext .x-risu-affinity-flames .x-risu-af-f3{ height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }.chattext .x-risu-afx-ice i{ left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-lightning b{ position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }.chattext .x-risu-lightning-flash{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }.chattext .x-risu-lightning-flash.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx-wind i{ left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-earth i{ left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-light i{ left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }.chattext .x-risu-afx-dark i{ left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }.chattext .x-risu-afx-poison i{ left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-body{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }.chattext .x-risu-affinity-body.x-risu-secondary{ clip-path:inset(0 0 0 46%); opacity:.62; }.chattext .x-risu-body-wind{ background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }@keyframes itemx2-gust{ from{transform:translateX(-11%)} to{transform:translateX(11%)} }.chattext .x-risu-body-earth{ inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }@keyframes itemx2-sediment{ from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }.chattext .x-risu-body-dark{ mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }@keyframes itemx2-encroach{ from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }.chattext .x-risu-body-arcane{ background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }@keyframes itemx2-sigil{ to{transform:rotate(360deg)} }.chattext .x-risu-body-blood{ inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }@keyframes itemx2-pool{ from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }.chattext .x-risu-body-void{ background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }@keyframes itemx2-collapse{ 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }.chattext .x-risu-poison-miasma{ position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }.chattext .x-risu-poison-miasma.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-afx-blood i{ left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }.chattext .x-risu-afx-void i{ left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }.chattext .x-risu-affinity-signature{ position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }.chattext .x-risu-affinity-signature-visual{ position:absolute;inset:0;display:block; }.chattext .x-risu-affinity-signature.x-risu-secondary{ opacity:.48; clip-path:inset(0 0 0 48%); }.chattext .x-risu-sig-fire{ animation:sig-fire 5.2s linear infinite; }.chattext .x-risu-sig-fire>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }.chattext .x-risu-ice-cracks{ position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }.chattext .x-risu-sig-lightning{ background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }.chattext .x-risu-lightning-field{ position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }.chattext .x-risu-sig-wind{ transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }.chattext .x-risu-sig-wind>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }.chattext .x-risu-sig-earth{ animation:sig-earth 6s ease-in-out infinite alternate; }.chattext .x-risu-sig-earth>.x-risu-affinity-signature-visual{ background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }.chattext .x-risu-sig-light{ animation:sig-light 7s ease-in-out infinite alternate; }.chattext .x-risu-sig-light>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }.chattext .x-risu-light-veilfall{ position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }.chattext .x-risu-light-veilfall::before{ content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }.chattext .x-risu-light-veilfall.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-light-ground{ position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }.chattext .x-risu-light-ground.x-risu-secondary{ clip-path:inset(0 0 0 46%); }.chattext .x-risu-sig-dark{ animation:sig-dark 7.5s ease-in-out infinite alternate; }.chattext .x-risu-sig-dark>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }.chattext .x-risu-sig-poison{ animation:sig-poison 8s ease-in-out infinite alternate; }.chattext .x-risu-sig-poison>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }.chattext .x-risu-sig-blood{ animation:sig-blood 5.8s ease-in-out infinite alternate; }.chattext .x-risu-sig-blood>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }.chattext .x-risu-sig-void{ animation:sig-void 4.9s step-end infinite; }.chattext .x-risu-sig-void>.x-risu-affinity-signature-visual{ background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }.chattext .x-risu-itemx-content{ position:relative; z-index:4; padding:1.35em; }.chattext .x-risu-itemx-head{ display:flex; align-items:flex-start; gap:.85em; }.chattext .x-risu-itemx-medallion{ flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }.chattext .x-risu-itemx-emoji{ font-size:1.6em; }.chattext .x-risu-itemx-titles{ flex:1; min-width:0; }.chattext .x-risu-itemx-eyebrow{ color:var(--dim); font-size:.74em; letter-spacing:.2em; }.chattext .x-risu-itemx-name{ display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }.chattext .x-risu-itemx-tier{ display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }.chattext .x-risu-itemx-subline{ display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }.chattext .x-risu-itemx-subline span+span::before{ content:\"·\"; margin:0 .55em; color:var(--line); }.chattext .x-risu-affinity-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }.chattext .x-risu-affinity-chip{ display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }.chattext .x-risu-affinity-chip small{ opacity:.62; font-size:9px; }.chattext .x-risu-reaction-chip{ border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }.chattext .x-risu-itemx-rule{ height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }.chattext .x-risu-itemx-stats{ display:flex; gap:.45em; }.chattext .x-risu-itemx-stat{ flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }.chattext .x-risu-itemx-statk{ display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }.chattext .x-risu-itemx-statv{ display:block; margin-top:.1em; font-weight:700; }.chattext .x-risu-itemx-gap{ height:1.1em; }.chattext .x-risu-itemx-section-label{ margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }.chattext .x-risu-itemx-effects{ display:grid; gap:.7em; }.chattext .x-risu-itemx-effect{ position:relative; padding-left:1.1em; }.chattext .x-risu-itemx-effect::before{ content:\"❧\"; position:absolute; left:0; color:var(--s); }.chattext .x-risu-itemx-efname{ color:var(--p); font-weight:700; }.chattext .x-risu-itemx-flavor{ margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }.chattext .x-risu-motion-off *{ animation:none!important; }.chattext .x-risu-rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.chattext .x-risu-rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.chattext .x-risu-rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.chattext .x-risu-rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.chattext .x-risu-rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.chattext .x-risu-rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.chattext .x-risu-rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.chattext .x-risu-rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}.chattext .x-risu-rarity-epic .x-risu-itemx-medallion, .chattext .x-risu-rarity-legendary .x-risu-itemx-medallion, .chattext .x-risu-rarity-mythical .x-risu-itemx-medallion, .chattext .x-risu-rarity-empyrean .x-risu-itemx-medallion{ border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }.chattext .x-risu-rarity-epic .x-risu-itemx-name, .chattext .x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }.chattext .x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ font-weight:900; letter-spacing:.012em; }.chattext .x-risu-rarity-empyrean .x-risu-itemx-name{ text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }.chattext .x-risu-craft-oriental.x-risu-rarity-epic .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-legendary .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-mythical .x-risu-itemx-name, .chattext .x-risu-craft-oriental.x-risu-rarity-empyrean .x-risu-itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}.chattext .x-risu-condition-cursed .x-risu-itemx-cond{ background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }.chattext .x-risu-condition-blessed .x-risu-itemx-cond{ background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }.chattext .x-risu-condition-corrupted .x-risu-itemx-cond{ background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }@keyframes existing-spin{ to { transform:rotate(360deg); } }@keyframes existing-veil{ 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }@keyframes existing-rise{ 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }@keyframes existing-drift{ 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }@keyframes existing-pulse{ 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }@keyframes existing-sway{ 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }@keyframes existing-turn{ 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }@keyframes existing-jitter{ 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }@keyframes existing-fog{ from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }@keyframes existing-scan{ from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }@keyframes aff-fire{ 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }@keyframes aff-ice{ 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }@keyframes aff-lightning{ 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }@keyframes aff-wind{ 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }@keyframes aff-earth{ 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }@keyframes aff-light{ from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }@keyframes aff-dark{ from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }@keyframes aff-poison{ 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }@keyframes aff-blood{ 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }@keyframes aff-void{ 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }@keyframes sig-fire{ from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }@keyframes ice-cracks{ 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }@keyframes sig-lightning{ 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }@keyframes lightning-field{ 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }@keyframes sig-wind{ to{transform:translateX(28%)} }@keyframes sig-earth{ from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }@keyframes sig-light{ from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }@keyframes sig-dark{ from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }@keyframes sig-poison{ from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }@keyframes sig-blood{ from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }@keyframes sig-void{ 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }@keyframes itemx2-aura{ 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }@keyframes itemx2-edge{ to{transform:translate(-50%,-50%) rotate(360deg)} }@keyframes itemx2-jolt{ 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }@keyframes itemx2-flick1{ 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }@keyframes itemx2-flick2{ from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }@keyframes itemx2-flick3{ 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }@keyframes itemx2-boltflash{ 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }@keyframes itemx2-miasma{ from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }@keyframes itemx2-veilfall{ 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }@keyframes itemx2-ground{ from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }@media (prefers-reduced-motion:reduce){.chattext .x-risu-itemx-card:not(.x-risu-force-motion), .chattext .x-risu-itemx-card:not(.x-risu-force-motion) *{ animation:none!important; } }@media (max-width:620px){.chattext .x-risu-itemx2-never-stage{padding:12px 8px 40px}.chattext .x-risu-itemx2-never-topbar{padding:0 12px}.chattext .x-risu-itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.chattext .x-risu-itemx-grid{grid-template-columns:1fr}.chattext .x-risu-itemx-panel{border-radius:12px}.chattext .x-risu-itemx2-never-note{align-items:flex-start}.chattext .x-risu-itemx-card{font-size:.86rem}.chattext .x-risu-itemx-content{padding:1.05em} }.chattext .x-risu-itemx2-panel-actions{\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}.chattext .x-risu-itemx2-panel-actions > button{\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}.chattext .x-risu-itemx2-panel-actions > .x-risu-itemx2-history-open{\n  font-size: 11px;\n  color: #b7c4d8;\n}.chattext .x-risu-itemx-ph-text > span{\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}.chattext .x-risu-itemx2-history-pane button{\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}.chattext .x-risu-itemx2-root-tab-body, .chattext .x-risu-itemx2-iframe-content{\n  position: relative;\n}.chattext .x-risu-itemx2-iframe-content{\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}.chattext .x-risu-itemx2-iframe-content > .x-risu-itemx-body{\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}.chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane), .chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *{\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}.chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *::before, .chattext .x-risu-itemx2-history-opened > :not(.x-risu-itemx2-history-pane) *::after{\n  animation-play-state: paused !important;\n}.chattext .x-risu-itemx2-root-tab-body > .x-risu-itemx2-history-pane, .chattext .x-risu-itemx2-iframe-content > .x-risu-itemx2-history-pane{\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}.chattext .x-risu-itemx2-history-heading, .chattext .x-risu-itemx2-history-filters, .chattext .x-risu-itemx2-history-actions{\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}.chattext .x-risu-itemx2-history-pane .x-risu-itemx2-history-filter-on{\n  border-color: #b69961;\n  color: #f0d79d;\n}.chattext .x-risu-itemx2-history-policy{\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}.chattext .x-risu-itemx2-history-policy small{\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}.chattext .x-risu-itemx2-history-list{\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}.chattext .x-risu-itemx2-history-row{\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}.chattext .x-risu-itemx2-history-row > button{\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-history-row small{\n  color: #a9b6c8;\n}.chattext .x-risu-itemx2-history-row .x-risu-itemx2-history-actions{\n  margin-top: 7px;\n}.chattext .x-risu-itemx2-root-settings > .x-risu-itemx2-root-setting-card{\n  flex-direction: row;\n  flex-wrap: wrap;\n}.chattext .x-risu-itemx2-root-setting-card > span:first-child{\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions{\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-root-setting-button{\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions > button{\n  flex: 0 0 auto;\n  min-height: 38px;\n}.chattext .x-risu-itemx2-detail-stack{\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}.chattext .x-risu-itemx2-detail-stack > *{\n  flex-shrink: 0;\n}.chattext .x-risu-itemx2-change-note, .chattext .x-risu-itemx2-review-note{\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}.chattext .x-risu-itemx2-change-note > strong{\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}.chattext .x-risu-itemx2-change-note > span{\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}.chattext .x-risu-itemx2-change-note small{\n  color: #9eacbf;\n  min-width: 48px;\n}.chattext .x-risu-itemx2-change-note del{\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}.chattext .x-risu-itemx2-change-note em{\n  font-style: normal;\n  color: #f1e0b6;\n}.chattext .x-risu-itemx2-change-note b{\n  color: #8494aa;\n}.chattext .x-risu-itemx2-review-note{\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}.chattext .x-risu-itemx2-review-note small{\n  font-size: inherit;\n}.chattext .x-risu-itemx2-review-partial{\n  border-left: 3px solid #bf9461;\n}.chattext .x-risu-itemx2-review-partial strong{\n  color: #ecc99a;\n}.chattext .x-risu-itemx2-repair-one{\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}.chattext .x-risu-itemx2-technique-material{\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}.chattext .x-risu-itemx2-skill-form-slash .x-risu-itemx2-technique-material{\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}.chattext .x-risu-itemx2-skill-form-ward .x-risu-itemx2-technique-material{\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}.chattext .x-risu-itemx2-skill-form-heal .x-risu-itemx2-technique-material{\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}.chattext .x-risu-itemx2-skill-form-shadow .x-risu-itemx2-technique-material{\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}@keyframes itemx2-technique-shear{\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}@keyframes itemx2-technique-ward{\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}@keyframes itemx2-technique-rise{\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}@keyframes itemx2-technique-shadow{\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}.chattext .x-risu-itemx2-skill-type-passive .x-risu-itemx2-technique-material{\n  animation-duration: 16s;\n}.chattext .x-risu-itemx2-skill-type-sealed .x-risu-itemx2-technique-material, .chattext .x-risu-itemx2-skill-status-sealed .x-risu-itemx2-technique-material{\n  animation: none;\n  opacity: 0.22;\n}.chattext .x-risu-itemx2-skill-status-lost .x-risu-itemx2-technique-material{\n  animation: none;\n  opacity: 0.1;\n}.chattext .x-risu-itemx2-blend-fire-ice .x-risu-affinity-fx::after{\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}.chattext .x-risu-itemx2-blend-dark-lightning .x-risu-lightning-field{\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}.chattext .x-risu-itemx2-blend-fire-wind .x-risu-sig-fire{\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}.chattext .x-risu-itemx2-blend-ice-light .x-risu-ice-cracks{\n  background-color: rgba(235, 240, 216, 0.025);\n}.chattext .x-risu-itemx2-event-burst{\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}.chattext .x-risu-itemx2-burst-active > .x-risu-itemx2-event-burst{\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}.chattext .x-risu-itemx2-burst-enhanced{\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}.chattext .x-risu-itemx2-burst-damage{\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}.chattext .x-risu-itemx2-burst-learned{\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}.chattext .x-risu-itemx2-burst-resolved{\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}@keyframes itemx2-event-reveal{\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}@keyframes itemx2-event-resolve{\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}.chattext .x-risu-motion-off .x-risu-itemx2-event-burst, .chattext .x-risu-itemx2-effects-off .x-risu-itemx2-event-burst, .chattext .x-risu-itemx2-effects-off .x-risu-itemx2-technique-material, .chattext .x-risu-itemx-body-scrolling .x-risu-itemx2-event-burst{\n  display: none !important;\n  animation: none !important;\n}@media (prefers-reduced-motion: reduce){.chattext .x-risu-itemx2-technique-material{\n    animation: none !important;\n  }.chattext .x-risu-itemx2-event-burst{\n    display: none !important;\n    animation: none !important;\n  }\n}.chattext .x-risu-itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}.chattext .x-risu-itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}.chattext .x-risu-itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}.chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-frost .x-risu-itemx2-frozen-banner strong{color:#a8341f}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}.chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong, .chattext .x-risu-itemx2-skin-hanji .x-risu-itemx2-frozen-banner strong{color:#94301c}";
@@ -3975,89 +4076,16 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     workQueue.assertCurrent();
     return Risuai.setChatToIndex(...args);
   };
-  const ui = {
-    tab: 'inventory',
-    filter: 'all',
-    query: '',
-    selected: null,
-    selectedSkill: null,
-    selectedMonster: null,
-    manageId: null,
-    motion: true
-  };
-  const runtime = {
-    latestMarkers: new Set(),
-    eventPayloads: new Map(),
-    presentationRecords: null,
-    eventBursts: new Map(),
-    eventBurstSeen: new Set(),
-    eventBurstOwners: new Set(),
-
-    markerHtmlCache: new Map(),
-    detailHtmlCache: new Map(),
-    settingsCache: new Map(),
-    cachedLoaded: null,
-    portraitCache: new Map(),
-    portraitThumbnailCache: new Map(),
-    inlinePortraitCatalog: null,
-    mainStyle: null,
-    mainDoc: null,
-    rootDrawer: null,
-    rootOpen: false,
-    activeRootTab: 'inventory',
-    rootItemPage: 0,
-
-    rootClickBindings: [],
-    bodyFxEventIds: [],
-    bodyFxClassOwner: null,
-    bodyFxScrollActive: false,
-    bodyFxSawScroll: false,
-    uiParts: [],
-    generation: 0,
-    backgrounded: false,
-    resumeBindings: [],
-    hostObserver: null,
-
-    hostSettingsCache: { at: 0, visible: false },
-
-
-    status: 'UI 준비',
-    lastDomError: '',
-    lastHookError: '',
-    unloading: false,
-    hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
-    permissions: { replacer: null, mainDom: null, db: null },
-    badgePosition: 'rm',
-    compactContainer: true,
-    moduleAssetCache: { key: '', at: 0, rows: [] },
-    characterAssetCache: { key: '', at: 0, rows: [] },
-    combinedAssetCache: { key: '', at: 0, rows: [] },
-    lorebookCache: { key: '', at: 0, rows: [] },
-    panelOpen: false,
-    auxActive: 0,
-    allowDrawerOverSettings: false,
-    activeContextKey: '',
-    checkpointCacheRecord: null,
-    frozen: false,
-    frozenReason: '',
-    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null },
-    update: { checking: false, checkedAt: 0, latest: '', available: false },
-    debugEnabled: false,
-    visualEffectsEnabled: true,
-    visualSkin: 'dark',
-    debugEntries: [],
-    backupOpen: false,
-    cleanupArmedUntil: 0,
-    storageCleanupArmedUntil: 0
-  };
-  runtime.historyView = { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 };
+  const stateOwners = ITEMXState.create();
+  const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
+  const ui = uiState.view;
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
   const debugRecord = (where, detail = '') => {
-    if (!runtime.debugEnabled) return;
+    if (!settingsState.debugEnabled) return;
     const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
-    runtime.debugEntries.push({ at: Date.now(), where: String(where), detail: String(text || '').slice(0, 500) });
-    if (runtime.debugEntries.length > 30) runtime.debugEntries.splice(0, runtime.debugEntries.length - 30);
+    settingsState.debugEntries.push({ at: Date.now(), where: String(where), detail: String(text || '').slice(0, 500) });
+    if (settingsState.debugEntries.length > 30) settingsState.debugEntries.splice(0, settingsState.debugEntries.length - 30);
     console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
   };
   const fail = (where, error) => {
@@ -4108,33 +4136,33 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     return 0;
   }
   async function syncUpdateIndicator() {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return;
     try {
-      const current = await runtime.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
-      const currentLabel = await runtime.mainDoc.querySelector('.x-risu-itemx2-update-label');
-      if (!runtime.update.available) {
+      const current = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
+      const currentLabel = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-label');
+      if (!hostState.update.available) {
         if (current) await current.remove();
         if (currentLabel) await currentLabel.remove();
         return;
       }
       if (current) {
-        await current.setAttribute('x-itemx2-update', runtime.update.latest);
+        await current.setAttribute('x-itemx2-update', hostState.update.latest);
       } else {
-        const badge = await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge');
+        const badge = await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge');
         if (badge) {
-          const indicator = await runtime.mainDoc.createElement('span');
+          const indicator = await hostState.mainDoc.createElement('span');
           await indicator.setClassName('x-risu-itemx2-update-indicator');
-          await indicator.setAttribute('x-itemx2-update', runtime.update.latest);
+          await indicator.setAttribute('x-itemx2-update', hostState.update.latest);
           await indicator.setTextContent('↑');
           await badge.appendChild(indicator);
         }
       }
       if (!currentLabel) {
-        const eyebrow = await runtime.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
+        const eyebrow = await hostState.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
         if (eyebrow) {
-          const label = await runtime.mainDoc.createElement('span');
+          const label = await hostState.mainDoc.createElement('span');
           await label.setClassName('x-risu-itemx2-update-label');
-          await label.setAttribute('x-itemx2-update', runtime.update.latest);
+          await label.setAttribute('x-itemx2-update', hostState.update.latest);
           await label.setTextContent('UPDATE');
           await eyebrow.appendChild(label);
         }
@@ -4144,20 +4172,20 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     }
   }
   async function checkForUpdate() {
-    if (runtime.update.checking || !runtime.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
-    runtime.update.checking = true;
+    if (hostState.update.checking || !pipelineState.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
+    hostState.update.checking = true;
     try {
       let cached = null;
       try {
         cached = JSON.parse((await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY)) || 'null');
       } catch {}
       if (cached?.latest) {
-        runtime.update.checkedAt = Number(cached.checkedAt) || 0;
-        runtime.update.latest = String(cached.latest);
-        runtime.update.available = compareVersions(runtime.update.latest, ITEMX_PLUGIN_VERSION) > 0;
+        hostState.update.checkedAt = Number(cached.checkedAt) || 0;
+        hostState.update.latest = String(cached.latest);
+        hostState.update.available = compareVersions(hostState.update.latest, ITEMX_PLUGIN_VERSION) > 0;
         await syncUpdateIndicator();
       }
-      if (Date.now() - runtime.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
+      if (Date.now() - hostState.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
       const response = await withTimeout(
         Risuai.nativeFetch(ITEMX_UPDATE_URL, {
           method: 'GET',
@@ -4171,20 +4199,20 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       const header = String((await response.text()) || '');
       const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
       if (!latest) throw new Error('업데이트 버전 헤더를 찾지 못했습니다');
-      runtime.update.checkedAt = Date.now();
-      runtime.update.latest = latest;
-      runtime.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
+      hostState.update.checkedAt = Date.now();
+      hostState.update.latest = latest;
+      hostState.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
       try {
         await Risuai.safeLocalStorage.setItem(
           ITEMX_UPDATE_CACHE_KEY,
-          JSON.stringify({ checkedAt: runtime.update.checkedAt, latest })
+          JSON.stringify({ checkedAt: hostState.update.checkedAt, latest })
         );
       } catch {}
       await syncUpdateIndicator();
     } catch (error) {
       debugRecord('update check', error?.message || String(error));
     } finally {
-      runtime.update.checking = false;
+      hostState.update.checking = false;
     }
   }
   const messageData = (message) => ITEMXCore.messageText(message);
@@ -4233,18 +4261,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   const settingsId = (character) => character?.chaId || 'unknown';
-  const cachedSettings = (character) => runtime.settingsCache.get(settingsId(character));
+  const cachedSettings = (character) => settingsState.settingsCache.get(settingsId(character));
   function updateCachedSettings(character, patch) {
     const id = settingsId(character),
-      current = runtime.settingsCache.get(id);
-    if (current) runtime.settingsCache.set(id, { ...current, ...patch });
-    if ('effectsEnabled' in patch) runtime.visualEffectsEnabled = Boolean(patch.effectsEnabled);
-    if ('skin' in patch) runtime.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
+      current = settingsState.settingsCache.get(id);
+    if (current) settingsState.settingsCache.set(id, { ...current, ...patch });
+    if ('effectsEnabled' in patch) presentationState.visualEffectsEnabled = Boolean(patch.effectsEnabled);
+    if ('skin' in patch) presentationState.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
   }
 
   async function outputSettings(character, { refresh = false } = {}) {
     const id = character?.chaId || 'unknown';
-    if (!refresh && runtime.settingsCache.has(id)) return { ...runtime.settingsCache.get(id) };
+    if (!refresh && settingsState.settingsCache.has(id)) return { ...settingsState.settingsCache.get(id) };
     const loading = Promise.all([
       Risuai.pluginStorage.getItem(`enabled:${id}`),
       Risuai.pluginStorage.getItem(`mainOutput:${id}`),
@@ -4290,9 +4318,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
           lorebookEncounterEnabled: lorebookEncounter === '1',
           skin: SKIN_MODES.includes(skin) ? skin : 'dark'
         };
-        runtime.settingsCache.set(id, settings);
-        runtime.visualEffectsEnabled = settings.effectsEnabled;
-        runtime.visualSkin = settings.skin;
+        settingsState.settingsCache.set(id, settings);
+        presentationState.visualEffectsEnabled = settings.effectsEnabled;
+        presentationState.visualSkin = settings.skin;
         return settings;
       }
     );
@@ -4318,7 +4346,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   async function setDebugEnabled(character, value) {
-    runtime.debugEnabled = Boolean(value);
+    settingsState.debugEnabled = Boolean(value);
     await Risuai.pluginStorage.setItem(`debugEnabled:${character?.chaId || 'unknown'}`, value ? '1' : '0');
     updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');
@@ -4346,8 +4374,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function setEffectsEnabled(character, value) {
     await Risuai.pluginStorage.setItem(`effectsEnabled:${settingsId(character)}`, value ? '1' : '0');
     updateCachedSettings(character, { effectsEnabled: Boolean(value) });
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
     await syncMainEffectsState();
   }
 
@@ -4361,7 +4389,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function setModuleAssetsEnabled(character, value) {
     await Risuai.pluginStorage.setItem(`moduleAssetsEnabled:${settingsId(character)}`, value ? '1' : '0');
     updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
-    runtime.moduleAssetCache = { key: '', at: 0, rows: [] };
+    portraitsState.moduleAssetCache = { key: '', at: 0, rows: [] };
   }
 
   async function setLorebookEncounterEnabled(character, value) {
@@ -4409,11 +4437,11 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
     const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
-    if (runtime.characterAssetCache.key === key && Date.now() - runtime.characterAssetCache.at < 30000)
-      return runtime.characterAssetCache.rows;
+    if (portraitsState.characterAssetCache.key === key && Date.now() - portraitsState.characterAssetCache.at < 30000)
+      return portraitsState.characterAssetCache.rows;
     const rows = ITEMXCodex.assetCatalog(character, max, true);
     ITEMXCodex.portraitAssetIndex(rows);
-    runtime.characterAssetCache = { key, at: Date.now(), rows };
+    portraitsState.characterAssetCache = { key, at: Date.now(), rows };
     return rows;
   }
 
@@ -4424,9 +4452,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       return rows.length <= max ? rows : rows.slice(0, max);
     }
     if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
-    const combinedKey = `${runtime.characterAssetCache.key}|${runtime.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
-    if (runtime.combinedAssetCache.key === combinedKey && Date.now() - runtime.combinedAssetCache.at < 30000)
-      return runtime.combinedAssetCache.rows;
+    const combinedKey = `${portraitsState.characterAssetCache.key}|${portraitsState.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
+    if (portraitsState.combinedAssetCache.key === combinedKey && Date.now() - portraitsState.combinedAssetCache.at < 30000)
+      return portraitsState.combinedAssetCache.rows;
     const rows = extra.slice(),
       seen = new Set(rows.map((row) => row.name));
     for (const row of moduleAssets) {
@@ -4435,7 +4463,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       rows.push(row);
     }
     ITEMXCodex.portraitAssetIndex(rows);
-    runtime.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
+    portraitsState.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
     return rows;
   }
 
@@ -4453,8 +4481,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function modulePortraitAssets(settings, character, chat) {
     if (!settings?.moduleAssetsEnabled || typeof Risuai.getDatabase !== 'function') return [];
     const key = `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`;
-    if (runtime.moduleAssetCache.key === key && Date.now() - runtime.moduleAssetCache.at < 30000)
-      return runtime.moduleAssetCache.rows;
+    if (portraitsState.moduleAssetCache.key === key && Date.now() - portraitsState.moduleAssetCache.at < 30000)
+      return portraitsState.moduleAssetCache.rows;
     try {
       const database = await Risuai.getDatabase([
         'modules',
@@ -4464,18 +4492,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         'selectedPersona'
       ]);
       if (!database) {
-        runtime.permissions.db = false;
-        runtime.moduleAssetCache = { key, at: Date.now(), rows: [] };
+        hostState.permissions.db = false;
+        portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
         return [];
       }
-      runtime.permissions.db = true;
+      hostState.permissions.db = true;
       const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
       ITEMXCodex.portraitAssetIndex(rows);
-      runtime.moduleAssetCache = { key, at: Date.now(), rows };
+      portraitsState.moduleAssetCache = { key, at: Date.now(), rows };
       return rows;
     } catch (error) {
-      runtime.permissions.db = false;
-      runtime.moduleAssetCache = { key, at: Date.now(), rows: [] };
+      hostState.permissions.db = false;
+      portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
       debugRecord('module portrait assets', error?.message || String(error));
       return [];
     }
@@ -4488,7 +4516,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         typeof Risuai.requestPluginPermission === 'function' &&
         (await Risuai.requestPluginPermission('db')) !== true
       ) {
-        runtime.permissions.db = false;
+        hostState.permissions.db = false;
         return false;
       }
       const probe = await Risuai.getDatabase([
@@ -4499,21 +4527,21 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         'selectedPersona'
       ]);
       if (!probe) {
-        runtime.permissions.db = false;
+        hostState.permissions.db = false;
         return false;
       }
-      runtime.permissions.db = true;
+      hostState.permissions.db = true;
       await setModuleAssetsEnabled(character, true);
       const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
       ITEMXCodex.portraitAssetIndex(rows);
-      runtime.moduleAssetCache = {
+      portraitsState.moduleAssetCache = {
         key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`,
         at: Date.now(),
         rows
       };
       return true;
     } catch (error) {
-      runtime.permissions.db = false;
+      hostState.permissions.db = false;
       debugRecord('module portrait permission', error?.message || String(error));
       return false;
     }
@@ -4548,7 +4576,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function loadBadgePosition() {
     const saved = await Risuai.pluginStorage.getItem('badgePosition');
-    if (BADGE_POSITIONS.some(([value]) => value === saved)) runtime.badgePosition = saved;
+    if (BADGE_POSITIONS.some(([value]) => value === saved)) uiState.badgePosition = saved;
   }
 
   function badgeStyle() {
@@ -4568,7 +4596,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       'button[aria-label="ITEMX CODEX"]>div,button[aria-label="ITEMX"]>div,button:has(img[src*="ITEMX%20CODEX"])>div,button:has(img[src*="ITEMX%20inventory"])>div';
     const images =
       'button[aria-label="ITEMX CODEX"] img,button[aria-label="ITEMX"] img,button:has(img[src*="ITEMX%20CODEX"]) img[src*="ITEMX%20CODEX"],button:has(img[src*="ITEMX%20inventory"]) img[src*="ITEMX%20inventory"]';
-    return `${button}{${positions[runtime.badgePosition] || positions.rm};display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;outline:0!important;background:none!important;background-color:transparent!important;box-shadow:none!important;cursor:pointer!important;touch-action:manipulation!important;z-index:50!important}${states}{background:none!important;background-color:transparent!important;box-shadow:none!important}${wrappers}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}${images}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;max-width:48px!important;max-height:176px!important;border-radius:0!important;object-fit:contain!important}`;
+    return `${button}{${positions[uiState.badgePosition] || positions.rm};display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;outline:0!important;background:none!important;background-color:transparent!important;box-shadow:none!important;cursor:pointer!important;touch-action:manipulation!important;z-index:50!important}${states}{background:none!important;background-color:transparent!important;box-shadow:none!important}${wrappers}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}${images}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;max-width:48px!important;max-height:176px!important;border-radius:0!important;object-fit:contain!important}`;
   }
 
   const codexPageStyle = () => `
@@ -4933,7 +4961,7 @@ ${codexPageStyle()}
 
     const persisted = markerCodes(latest);
     for (const marker of workQueue.recent('uncommitted-markers', 12000) || []) persisted.add(marker);
-    runtime.latestMarkers = persisted;
+    pipelineState.latestMarkers = persisted;
   }
 
   function manualLedger(chat) {
@@ -4980,8 +5008,8 @@ ${codexPageStyle()}
   function readCheckpointRecord(chat) {
     const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
     if (raw === undefined || raw === null || raw === '') return { status: 'absent', value: null, reason: '' };
-    if (typeof raw === 'string' && raw === runtime.checkpointCacheRecord?.raw)
-      return runtime.checkpointCacheRecord.record;
+    if (typeof raw === 'string' && raw === storageState.checkpointCacheRecord?.raw)
+      return storageState.checkpointCacheRecord.record;
     let record;
     try {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -5015,7 +5043,7 @@ ${codexPageStyle()}
       record = { status: 'unreadable', value: null, reason: 'checkpoint_unparsable' };
     }
     if (typeof raw === 'string') {
-      runtime.checkpointCacheRecord = { raw, record };
+      storageState.checkpointCacheRecord = { raw, record };
     }
     return record;
   }
@@ -5027,13 +5055,13 @@ ${codexPageStyle()}
   function checkpointFrozen(chat) {
     const record = readCheckpointRecord(chat);
     const frozen = record.status === 'unreadable';
-    if (frozen && runtime.frozenReason !== record.reason) {
-      runtime.frozenReason = record.reason;
+    if (frozen && storageState.frozenReason !== record.reason) {
+      storageState.frozenReason = record.reason;
       debugRecord('checkpoint frozen', record.reason);
       log('checkpoint unreadable, chat frozen read-only:', record.reason);
     }
-    if (!frozen && runtime.frozen) runtime.frozenReason = '';
-    runtime.frozen = frozen;
+    if (!frozen && storageState.frozen) storageState.frozenReason = '';
+    storageState.frozen = frozen;
     return frozen;
   }
 
@@ -5099,8 +5127,8 @@ ${codexPageStyle()}
   }
 
   function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
-    runtime.eventPayloads = new Map(lookup.payloads);
-    runtime.presentationRecords = null;
+    pipelineState.eventPayloads = new Map(lookup.payloads);
+    presentationState.presentationRecords = null;
   }
 
   const storageBytes = (value) => {
@@ -5343,7 +5371,7 @@ ${codexPageStyle()}
     if (full) return ITEMXCore.decodePayload(full[1]);
     const ref = String(marker || '').match(/^<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->$/);
     if (!ref) return null;
-    return runtime.eventPayloads.get(`item:${ref[1]}`) || inlineViewPayload(ref[2], 'item') || null;
+    return pipelineState.eventPayloads.get(`item:${ref[1]}`) || inlineViewPayload(ref[2], 'item') || null;
   }
 
   function itemPayloadId(payload) {
@@ -5717,7 +5745,7 @@ ${codexPageStyle()}
         !(latestChat.message || []).some((message) => message?.isStreaming)
       ) {
         const reconciled = reconcileStoredRefViews(latestChat);
-        if (reconciled.changed && runtime.activeContextKey === ctx.key) {
+        if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
           await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat);
           latestChat = reconciled.chat;
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
@@ -5754,7 +5782,7 @@ ${codexPageStyle()}
         ]
           .filter(Boolean)
           .join(' · ') || '정상';
-      runtime.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
+      uiState.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
       const loaded = {
         ...ctx,
         chat: latestChat,
@@ -5765,8 +5793,8 @@ ${codexPageStyle()}
         ...settings
       };
       prepareInlinePortraits(loaded, codexSnapshot, settings);
-      runtime.cachedLoaded = loaded;
-      workQueue.remember('loaded-generation', runtime.generation);
+      pipelineState.cachedLoaded = loaded;
+      workQueue.remember('loaded-generation', pipelineState.generation);
       return loaded;
     })();
   }
@@ -5889,17 +5917,17 @@ ${codexPageStyle()}
       )
         throw new Error('저장 직전 채팅이 변경되어 불러오기를 취소했습니다.');
       await saveChat(ctx.characterIndex, ctx.chatIndex, next);
-      runtime.cachedLoaded = null;
+      pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
 
-      runtime.checkpointCacheRecord = null;
-      runtime.checkpointCacheRecord = null;
+      storageState.checkpointCacheRecord = null;
+      storageState.checkpointCacheRecord = null;
 
-      runtime.markerHtmlCache.clear();
-      runtime.detailHtmlCache.clear();
-      runtime.generation++;
+      presentationState.markerHtmlCache.clear();
+      presentationState.detailHtmlCache.clear();
+      pipelineState.generation++;
       refreshLatest(next);
-      runtime.status =
+      uiState.status =
         preview.mode === 'replace'
           ? '덮어쓰기 완료 · 백업 기록으로 교체했습니다'
           : '채팅 이사 완료 · 백업 기록을 불러왔습니다';
@@ -5916,10 +5944,10 @@ ${codexPageStyle()}
   }
 
   async function openBackupPanel() {
-    if (runtime.backupOpen) return;
+    if (uiState.backupOpen) return;
     const ctx = await context();
     if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
-    runtime.backupOpen = true;
+    uiState.backupOpen = true;
     let preview = null,
       url = '',
       busy = false;
@@ -5959,7 +5987,7 @@ ${codexPageStyle()}
         run(async () => {
           if (url) URL.revokeObjectURL(url);
           style.remove();
-          runtime.backupOpen = false;
+          uiState.backupOpen = false;
           await Risuai.hideContainer();
           await openRootInventory({ open: true, tab: 'settings' });
         }),
@@ -6046,7 +6074,7 @@ ${codexPageStyle()}
     try {
       await Risuai.showContainer('fullscreen');
     } catch (error) {
-      runtime.backupOpen = false;
+      uiState.backupOpen = false;
       style.remove();
       throw error;
     }
@@ -6098,19 +6126,19 @@ ${codexPageStyle()}
       await setEnabled(ctx.character, false);
       return cleaned;
     })();
-    runtime.cleanupArmedUntil = 0;
-    runtime.latestMarkers.clear();
+    uiState.cleanupArmedUntil = 0;
+    pipelineState.latestMarkers.clear();
 
     workQueue.forget('uncommitted-markers');
-    runtime.eventPayloads = new Map();
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
+    pipelineState.eventPayloads = new Map();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
-    runtime.cachedLoaded = null;
+    pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
-    runtime.generation += 1;
-    runtime.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
+    pipelineState.generation += 1;
+    uiState.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
     const loaded = await rebuildCurrent();
     if (loaded) loaded.enabled = false;
     return { ...result, loaded };
@@ -6158,18 +6186,18 @@ ${codexPageStyle()}
       const legacyKeysRemoved = await removeLegacyPluginStorage();
       return { chat: compacted, before, after: itemxStorageFootprint(compacted), legacyKeysRemoved };
     })();
-    runtime.storageCleanupArmedUntil = 0;
-    runtime.cachedLoaded = null;
+    uiState.storageCleanupArmedUntil = 0;
+    pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
 
-    runtime.checkpointCacheRecord = null;
+    storageState.checkpointCacheRecord = null;
 
-    runtime.eventPayloads = new Map();
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
-    runtime.generation += 1;
+    pipelineState.eventPayloads = new Map();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
+    pipelineState.generation += 1;
     const saved = Math.max(0, result.before.totalBytes - result.after.totalBytes);
-    runtime.status = `저장소 최적화 완료 · ${Math.round(saved / 1024)} KiB 절감`;
+    uiState.status = `저장소 최적화 완료 · ${Math.round(saved / 1024)} KiB 절감`;
     const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
     return { ...result, savedBytes: saved, loaded };
   }
@@ -6177,10 +6205,10 @@ ${codexPageStyle()}
   async function cachedOrRebuildCurrent() {
     const active = await context();
     if (!active) return null;
-    const cached = runtime.cachedLoaded;
+    const cached = pipelineState.cachedLoaded;
     if (
       cached?.key === active.key &&
-      workQueue.revision('loaded-generation') === runtime.generation &&
+      workQueue.revision('loaded-generation') === pipelineState.generation &&
       cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
       return { ...cached, chat: active.chat };
@@ -6190,10 +6218,10 @@ ${codexPageStyle()}
   async function cachedRequestState() {
     const active = await context();
     if (!active) return null;
-    const cached = runtime.cachedLoaded;
+    const cached = pipelineState.cachedLoaded;
     if (
       cached?.key === active.key &&
-      workQueue.revision('loaded-generation') === runtime.generation &&
+      workQueue.revision('loaded-generation') === pipelineState.generation &&
       cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
       return { ...cached, chat: active.chat };
@@ -6237,7 +6265,7 @@ ${codexPageStyle()}
         : {}
     );
     await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
-    runtime.status = `${label} · ${events.length}건`;
+    uiState.status = `${label} · ${events.length}건`;
     return refresh ? rebuildCurrent() : null;
   }
 
@@ -6265,8 +6293,8 @@ ${codexPageStyle()}
   }
 
   function auxStatusText() {
-    if (runtime.auxActive > 0) return auxWorkingLabel() || '보조 모델 처리 중';
-    const last = runtime.auxLast;
+    if (auxState.auxActive > 0) return auxWorkingLabel() || '보조 모델 처리 중';
+    const last = auxState.auxLast;
     if (!last?.at) return '아직 실행 기록 없음';
     const time = new Date(last.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return `${last.label} · ${time}`;
@@ -6274,33 +6302,33 @@ ${codexPageStyle()}
 
   function connectionSummary() {
     const hook =
-      runtime.permissions.replacer === true
+      hostState.permissions.replacer === true
         ? ['모델 훅 연결', 'on']
-        : runtime.permissions.replacer === false
+        : hostState.permissions.replacer === false
           ? ['모델 훅 오류', 'off']
           : ['모델 훅 확인 전', 'warn'];
     const dom =
-      runtime.permissions.mainDom === true
+      hostState.permissions.mainDom === true
         ? ['화면 연결', 'on']
-        : runtime.permissions.mainDom === false
+        : hostState.permissions.mainDom === false
           ? ['화면 권한 필요', 'off']
           : ['화면 확인 전', 'warn'];
     const listener =
-      runtime.hooks.listener === 'unsupported'
+      hostState.hooks.listener === 'unsupported'
         ? ['Pocket 호환', 'warn']
-        : runtime.hooks.listener
+        : hostState.hooks.listener
           ? ['커밋 감지', 'on']
           : ['커밋 감지 전', 'warn'];
     return {
       hook,
       dom,
       listener,
-      ready: runtime.permissions.replacer === true && runtime.permissions.mainDom === true
+      ready: hostState.permissions.replacer === true && hostState.permissions.mainDom === true
     };
   }
 
   async function updateConnectionUi() {
-    if (!runtime.mainDoc) return;
+    if (!hostState.mainDoc) return;
     const connection = connectionSummary();
     const chips = [
       ['hook', connection.hook],
@@ -6308,7 +6336,7 @@ ${codexPageStyle()}
       ['listener', connection.listener]
     ];
     for (const [key, [label, tone]] of chips) {
-      const chip = await runtime.mainDoc.querySelector(`.x-risu-itemx2-connection-${key}`);
+      const chip = await hostState.mainDoc.querySelector(`.x-risu-itemx2-connection-${key}`);
       if (!chip) continue;
       await chip.setTextContent(label);
       await chip.removeClass('x-risu-itemx2-status-chip-on');
@@ -6316,7 +6344,7 @@ ${codexPageStyle()}
       await chip.removeClass('x-risu-itemx2-status-chip-off');
       await chip.addClass(`x-risu-itemx2-status-chip-${tone}`);
     }
-    const button = await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-connect');
+    const button = await hostState.mainDoc.querySelector('.x-risu-itemx2-setting-connect');
     if (!button) return;
     await button.setTextContent(workQueue.isActive('connect') ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기');
     if (workQueue.isActive('connect')) await button.addClass('x-risu-itemx2-root-setting-button-busy');
@@ -6324,8 +6352,8 @@ ${codexPageStyle()}
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {
-    if (!runtime.mainDoc) return;
-    const button = await runtime.mainDoc.querySelector(selector);
+    if (!hostState.mainDoc) return;
+    const button = await hostState.mainDoc.querySelector(selector);
     if (!button) return;
     await button.setTextContent(label);
     if (enabled === true) await button.addClass('x-risu-itemx2-setting-on');
@@ -6336,10 +6364,10 @@ ${codexPageStyle()}
     return change();
   }
 
-  const auxWorkingLabel = () => runtime.auxLast.state === 'idle' ? '보조 모델 처리 중' : runtime.auxLast.label;
+  const auxWorkingLabel = () => auxState.auxLast.state === 'idle' ? '보조 모델 처리 중' : auxState.auxLast.label;
 
   async function setAuxOutcome(state, label, events = null) {
-    runtime.auxLast = { state, label, events, at: Date.now() };
+    auxState.auxLast = { state, label, events, at: Date.now() };
     await syncAuxIndicator();
     workQueue.clearTimer('auxToastTimer');
     workQueue.schedule(
@@ -6354,26 +6382,26 @@ ${codexPageStyle()}
 
   async function syncAuxIndicator() {
     try {
-      if (!runtime.mainDoc) return;
-      const indicator = await runtime.mainDoc.querySelector('.x-risu-itemx2-aux-status');
+      if (!hostState.mainDoc) return;
+      const indicator = await hostState.mainDoc.querySelector('.x-risu-itemx2-aux-status');
       if (!indicator) return;
       const label = await indicator.querySelector('.x-risu-itemx2-aux-status-label');
-      if (label) await label.setTextContent(runtime.auxActive > 0 ? auxWorkingLabel() : runtime.auxLast.label);
-      const settingLabel = await runtime.mainDoc.querySelector('.x-risu-itemx2-aux-setting-status');
+      if (label) await label.setTextContent(auxState.auxActive > 0 ? auxWorkingLabel() : auxState.auxLast.label);
+      const settingLabel = await hostState.mainDoc.querySelector('.x-risu-itemx2-aux-setting-status');
       if (settingLabel) await settingLabel.setTextContent(auxStatusText());
-      const runButton = await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run');
+      const runButton = await hostState.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run');
       if (runButton) {
-        await runButton.setTextContent(runtime.auxActive > 0 ? '처리 중…' : '지금 검사');
-        if (runtime.auxActive > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
+        await runButton.setTextContent(auxState.auxActive > 0 ? '처리 중…' : '지금 검사');
+        if (auxState.auxActive > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
         else await runButton.removeClass('x-risu-itemx2-root-setting-button-busy');
       }
-      const recent = runtime.auxLast.at && Date.now() - runtime.auxLast.at < 2600;
-      if (runtime.auxActive > 0 || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
+      const recent = auxState.auxLast.at && Date.now() - auxState.auxLast.at < 2600;
+      if (auxState.auxActive > 0 || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
       else await indicator.removeClass('x-risu-itemx2-aux-status-on');
-      if (runtime.auxLast.state === 'done' && runtime.auxActive === 0)
+      if (auxState.auxLast.state === 'done' && auxState.auxActive === 0)
         await indicator.addClass('x-risu-itemx2-aux-status-done');
       else await indicator.removeClass('x-risu-itemx2-aux-status-done');
-      if (runtime.auxLast.state === 'failed' && runtime.auxActive === 0)
+      if (auxState.auxLast.state === 'failed' && auxState.auxActive === 0)
         await indicator.addClass('x-risu-itemx2-aux-status-failed');
       else await indicator.removeClass('x-risu-itemx2-aux-status-failed');
     } catch (error) {
@@ -6383,9 +6411,9 @@ ${codexPageStyle()}
 
   async function runAuxModel(prompt, label = '보조 모델 처리 중') {
     if (typeof Risuai.runLLMModel !== 'function') throw new Error('이 PocketRisu에는 runLLMModel API가 없습니다.');
-    runtime.auxActive += 1;
-    runtime.auxLast = { state: 'running', label, at: Date.now(), events: null };
-    runtime.status = label;
+    auxState.auxActive += 1;
+    auxState.auxLast = { state: 'running', label, at: Date.now(), events: null };
+    uiState.status = label;
     await syncAuxIndicator();
     try {
       const result = await workQueue.external(() =>
@@ -6399,20 +6427,20 @@ ${codexPageStyle()}
       if (providerError) throw providerError;
       workQueue.forget('aux-provider');
 
-      runtime.auxLast = { state: 'done', label: '보조 모델 응답 수신', at: Date.now(), events: null };
+      auxState.auxLast = { state: 'done', label: '보조 모델 응답 수신', at: Date.now(), events: null };
       return result;
     } catch (error) {
       const providerError = auxiliaryProviderError(error) || error;
       if (providerError?.code === 'AUX_PROVIDER_UNAVAILABLE') {
         workQueue.remember('aux-provider', 'unavailable');
       }
-      runtime.auxLast = { state: 'failed', label: '보조 모델 호출 실패', at: Date.now(), events: null };
+      auxState.auxLast = { state: 'failed', label: '보조 모델 호출 실패', at: Date.now(), events: null };
       throw providerError;
     } finally {
-      runtime.auxActive = Math.max(0, runtime.auxActive - 1);
+      auxState.auxActive = Math.max(0, auxState.auxActive - 1);
       await syncAuxIndicator();
-      if (runtime.auxActive === 0)
-        await setAuxOutcome(runtime.auxLast.state, runtime.auxLast.label, runtime.auxLast.events);
+      if (auxState.auxActive === 0)
+        await setAuxOutcome(auxState.auxLast.state, auxState.auxLast.label, auxState.auxLast.events);
     }
   }
 
@@ -6583,7 +6611,7 @@ ${codexPageStyle()}
   }
 
   async function recoverAuxiliaryOutput(options = {}) {
-    if (runtime.frozen) return null;
+    if (storageState.frozen) return null;
     return recoverAuxiliaryOutputNow(options);
   }
 
@@ -6707,7 +6735,7 @@ ${codexPageStyle()}
     if (!ctx || !(await isEnabled(ctx.character))) return null;
     if (checkpointFrozen(ctx.chat)) return null;
     const settings = await outputSettings(ctx.character);
-    runtime.debugEnabled = settings.debugEnabled;
+    settingsState.debugEnabled = settings.debugEnabled;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
     if (settings.auxOutput === 'off' && !force) return [];
     if ((workQueue.revision('aux-provider') === 'unavailable') && !force) return [];
@@ -6761,7 +6789,7 @@ ${codexPageStyle()}
         ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.`
         : '';
       const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
-      runtime.status = '보조 출력 검토 중';
+      uiState.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
       const raw = modelText(response);
       if (!raw) throw new Error('보조 출력이 비어 있습니다.');
@@ -6883,15 +6911,15 @@ ${codexPageStyle()}
             [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(history, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
           };
           await saveChat(ctx.characterIndex, ctx.chatIndex, next);
-          if (runtime.activeContextKey === ctx.key) {
-            runtime.status = '보조 출력 · 근거 불충분';
+          if (pipelineState.activeContextKey === ctx.key) {
+            uiState.status = '보조 출력 · 근거 불충분';
             await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0);
           }
           return [];
         }
         await rememberAuxiliaryZero(ctx, guardKey);
-        if (runtime.activeContextKey === ctx.key) {
-          runtime.status = '보조 출력 · 누락 없음';
+        if (pipelineState.activeContextKey === ctx.key) {
+          uiState.status = '보조 출력 · 누락 없음';
           await setAuxOutcome('done', '보조 검사 완료 · 누락 없음', 0);
         }
         return valid;
@@ -6939,7 +6967,7 @@ ${codexPageStyle()}
       const compacted = compactMessageTransports(next, index).chat;
       const compactedLookup = buildMessageEventLookup(compacted);
       const rebuilt = rebuildWithManual(compacted, compactedLookup);
-      const stillActive = runtime.activeContextKey === ctx.key;
+      const stillActive = pipelineState.activeContextKey === ctx.key;
       if (stillActive) {
         refreshLatest(compacted, compactedLookup);
 
@@ -6948,10 +6976,10 @@ ${codexPageStyle()}
       if (stillActive) {
         armEventBursts(markerText);
         commitEventBursts(compacted);
-        runtime.cachedLoaded = null;
-        runtime.generation += 1;
+        pipelineState.cachedLoaded = null;
+        pipelineState.generation += 1;
 
-        runtime.status = `보조 출력 · ${valid.length}건 복구`;
+        uiState.status = `보조 출력 · ${valid.length}건 복구`;
       }
       if (stillActive)
         await setAuxOutcome(
@@ -6964,8 +6992,8 @@ ${codexPageStyle()}
       return valid;
     })().catch(async (error) => {
       fail('auxiliary recovery', error);
-      if (runtime.activeContextKey === ctx.key) {
-        runtime.status = '보조 출력 실패';
+      if (pipelineState.activeContextKey === ctx.key) {
+        uiState.status = '보조 출력 실패';
         await setAuxOutcome('failed', `보조 검사 실패 · ${String(error?.message || error).slice(0, 80)}`);
       }
       return error?.code === 'AUX_PROVIDER_UNAVAILABLE' ? [] : null;
@@ -7004,7 +7032,7 @@ ${codexPageStyle()}
 
   async function repairOneItem(loaded, id) {
     if (!loaded?.itemsEnabled) throw new Error('아이템 기능을 먼저 활성화하세요.');
-    if (!loaded || runtime.auxActive) throw new Error('이미 보조 모델이 처리 중입니다.');
+    if (!loaded || auxState.auxActive) throw new Error('이미 보조 모델이 처리 중입니다.');
     const record = presentationRecord('item', id);
     const missing = record.review?.missing || [];
     if (!missing.length) throw new Error('이 아이템에 기록된 미해결 필드가 없습니다.');
@@ -7048,7 +7076,7 @@ ${codexPageStyle()}
         { source: 'auxiliary', checked: true, missing: remaining, evidenceIndex: sourceIndex },
         false
       );
-      if (runtime.activeContextKey === loaded.key)
+      if (pipelineState.activeContextKey === loaded.key)
         await setAuxOutcome(
           remaining.length ? 'failed' : 'done',
           remaining.length ? `일부 보완 완료 · 미해결 ${remaining.length}개 필드` : '누락 정보 보완 완료',
@@ -7057,7 +7085,7 @@ ${codexPageStyle()}
     })()
       .then(() => rebuildCurrent())
       .catch(async (error) => {
-        if (runtime.activeContextKey === loaded.key && !runtime.unloading)
+        if (pipelineState.activeContextKey === loaded.key && !hostState.unloading)
           await setAuxOutcome('failed', '누락 정보 보완 실패 · 기존 정보 보존', 0);
         throw error;
       })
@@ -7167,7 +7195,7 @@ ${codexPageStyle()}
   }
 
   function scheduleLegacyCommitRecovery(confirm = false) {
-    if (runtime.auxActive > 0) return;
+    if (auxState.auxActive > 0) return;
     workQueue.clearTimer('legacyCommitTimer');
     workQueue.schedule(
       'legacyCommitTimer',
@@ -7179,7 +7207,7 @@ ${codexPageStyle()}
           if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled)
             await scanLorebookEncounters({ silent: true });
           await ensureRootInventory();
-          if (!confirm && runtime.auxActive === 0) scheduleLegacyCommitRecovery(true);
+          if (!confirm && auxState.auxActive === 0) scheduleLegacyCommitRecovery(true);
         } catch (error) {
           fail('legacy commit recovery', error);
         }
@@ -7219,23 +7247,23 @@ ${codexPageStyle()}
     const compactedSource = messageData(compacted.message?.[index]);
     const compactedLookup = buildMessageEventLookup(compacted);
     const snapshot = rebuildWithManual(compacted, compactedLookup);
-    const stillActive = runtime.activeContextKey === ctx.key;
+    const stillActive = pipelineState.activeContextKey === ctx.key;
     if (stillActive) {
       refreshLatest(compacted, compactedLookup);
       workQueue.remember('render', '');
-      runtime.cachedLoaded = null;
-      runtime.generation += 1;
+      pipelineState.cachedLoaded = null;
+      pipelineState.generation += 1;
 
     }
     await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot));
     const errors = parsed.errors.length + codexParsed.errors.length,
       events = parsed.events.length + codexParsed.events.length;
-    if (stillActive) runtime.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
+    if (stillActive) uiState.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
     return { ctx: { ...ctx, chat: compacted }, source: compactedSource };
   }
 
   async function catchUpLatestOutput({ syncUi = true } = {}) {
-    if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.bodyFxScrollActive)
+    if (!pipelineState.activeContextKey || auxState.auxActive > 0 || presentationState.bodyFxScrollActive)
       return;
     let ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return;
@@ -7248,7 +7276,7 @@ ${codexPageStyle()}
     if (!repaired) return;
     source = repaired.source;
     ctx = repaired.ctx;
-    if (runtime.activeContextKey !== ctx.key) return;
+    if (pipelineState.activeContextKey !== ctx.key) return;
     const messageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
     const fingerprint = `${ctx.key}:${index}:msg-${messageId}`;
     const attempt = await workQueue.attempt('catch-up', fingerprint,
@@ -7269,13 +7297,13 @@ ${codexPageStyle()}
       if (loaded) commitEventBursts(loaded.chat);
       if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
       await ensureRootInventory();
-    }, false, { ready: () => !runtime.bodyFxScrollActive }).catch((error) => fail('chat listener', error));
+    }, false, { ready: () => !presentationState.bodyFxScrollActive }).catch((error) => fail('chat listener', error));
   }
 
   function armCatchUpWatchdog() {
-    if (runtime.unloading) return;
+    if (hostState.unloading) return;
     workQueue.clearTimer('catchUpTimer');
-    const interval = runtime.hooks.listener === true ? 45000 : 4500;
+    const interval = hostState.hooks.listener === true ? 45000 : 4500;
     workQueue.schedule(
       'catchUpTimer',
       () => {
@@ -7297,7 +7325,7 @@ ${codexPageStyle()}
       const loaded = await cachedRequestState();
       if (!loaded || !(await isEnabled(loaded.character))) return safeMessages;
       const settings = await outputSettings(loaded.character);
-      runtime.debugEnabled = settings.debugEnabled;
+      settingsState.debugEnabled = settings.debugEnabled;
       if (!settings.mainOutput) return safeMessages;
       if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return safeMessages;
       const recent = safeMessages
@@ -7332,7 +7360,7 @@ ${codexPageStyle()}
       if (!ctx) return content;
       const enabled = await isEnabled(ctx.character);
       const settings = await outputSettings(ctx.character);
-      runtime.debugEnabled = settings.debugEnabled;
+      settingsState.debugEnabled = settings.debugEnabled;
       if (!enabled || !settings.mainOutput) return stripAllTransport(content);
       const lookup = buildMessageEventLookup(ctx.chat);
       const base = rebuildWithManual(ctx.chat, lookup).registry;
@@ -7361,12 +7389,12 @@ ${codexPageStyle()}
         codexResult.errors.length ||
         codexResult.content !== content
       ) {
-        runtime.latestMarkers = markerCodes(positioned);
-        workQueue.remember('uncommitted-markers', new Set(runtime.latestMarkers));
+        pipelineState.latestMarkers = markerCodes(positioned);
+        workQueue.remember('uncommitted-markers', new Set(pipelineState.latestMarkers));
         const errors = result.errors.length + codexResult.errors.length,
           events = result.events.length + codexResult.events.length;
-        runtime.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
-        runtime.generation += 1;
+        uiState.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
+        pipelineState.generation += 1;
         debugRecord('processOutput', {
           itemEvents: result.events.length,
           codexEvents: codexResult.events.length,
@@ -7383,7 +7411,7 @@ ${codexPageStyle()}
   const afterRequest = async (content, type) => processOutput(content, type);
   const outputFallback = async (content) => {
     const processed = await processOutput(content, 'main');
-    if (runtime.hooks.listener === 'unsupported' && runtime.auxActive === 0)
+    if (hostState.hooks.listener === 'unsupported' && auxState.auxActive === 0)
       scheduleLegacyCommitRecovery();
     return processed;
   };
@@ -7564,7 +7592,7 @@ ${codexPageStyle()}
         const domain = prefix === 'ITEMX2' ? 'item' : 'codex';
         const payload = code
           ? (domain === 'item' ? ITEMXCore : ITEMXCodex).decodePayload(code)
-          : runtime.eventPayloads.get(`${domain}:${ref}`) || inlineViewPayload(inline, domain);
+          : pipelineState.eventPayloads.get(`${domain}:${ref}`) || inlineViewPayload(inline, domain);
         if (payload?.view && !payload.error)
           rows.push({ payload, domain: domain === 'codex' ? payload.event?.domain : 'item', at });
         return raw;
@@ -7574,7 +7602,7 @@ ${codexPageStyle()}
   }
 
   function eventBurstKey(payload) {
-    return `e${ITEMXCore.fnv1a(runtime.activeContextKey)}_${ITEMXCore.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
+    return `e${ITEMXCore.fnv1a(pipelineState.activeContextKey)}_${ITEMXCore.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
   }
   function decorateInlineEvent(html, payload, domain) {
     const kind = ITEMXRenderer.eventKind(payload, domain);
@@ -7587,27 +7615,27 @@ ${codexPageStyle()}
     );
   }
   function armEventBursts(text) {
-    if (!runtime.visualEffectsEnabled || runtime.unloading) return;
-    for (const [key, candidate] of runtime.eventBursts)
-      if (candidate.expires < Date.now()) runtime.eventBursts.delete(key);
+    if (!presentationState.visualEffectsEnabled || hostState.unloading) return;
+    for (const [key, candidate] of presentationState.eventBursts)
+      if (candidate.expires < Date.now()) presentationState.eventBursts.delete(key);
     for (const { payload, domain } of presentationPayloads(text)) {
       if (!ITEMXRenderer.eventKind(payload, domain)) continue;
       const key = eventBurstKey(payload);
-      if (runtime.eventBurstSeen.has(key) || runtime.eventBursts.has(key)) continue;
-      if (runtime.eventBursts.size >= 8) break;
-      runtime.eventBursts.set(key, { expires: Date.now() + 30000, committed: false });
+      if (presentationState.eventBurstSeen.has(key) || presentationState.eventBursts.has(key)) continue;
+      if (presentationState.eventBursts.size >= 8) break;
+      presentationState.eventBursts.set(key, { expires: Date.now() + 30000, committed: false });
     }
   }
   function burstTimer(fn, ms) {
     return workQueue.later('burst', fn, ms);
   }
   function commitEventBursts(chat) {
-    if (!runtime.eventBursts.size || chat?.isStreaming) return;
+    if (!presentationState.eventBursts.size || chat?.isStreaming) return;
     const message = chat?.message?.[assistantMessageIndex(chat)];
     if (!message || message.isStreaming || message.bgContinue) return;
     let activated = false;
     for (const { payload } of presentationPayloads(messageData(message))) {
-      const candidate = runtime.eventBursts.get(eventBurstKey(payload));
+      const candidate = presentationState.eventBursts.get(eventBurstKey(payload));
       if (!candidate || candidate.committed || candidate.expires < Date.now()) continue;
       candidate.committed = true;
       candidate.expires = Date.now() + 3000;
@@ -7616,29 +7644,29 @@ ${codexPageStyle()}
     if (activated) for (const delayMs of [0, 350, 1000]) burstTimer(flushEventBursts, delayMs);
   }
   async function flushEventBursts() {
-    if (runtime.unloading || !runtime.mainDoc || runtime.bodyFxScrollActive || !runtime.eventBursts.size) return;
+    if (hostState.unloading || !hostState.mainDoc || presentationState.bodyFxScrollActive || !presentationState.eventBursts.size) return;
 
-    const key = runtime.activeContextKey;
+    const key = pipelineState.activeContextKey;
     try {
       let played = 0;
-      for (const [id, candidate] of runtime.eventBursts) {
-        if (candidate.expires < Date.now() || !runtime.visualEffectsEnabled) {
-          runtime.eventBursts.delete(id);
+      for (const [id, candidate] of presentationState.eventBursts) {
+        if (candidate.expires < Date.now() || !presentationState.visualEffectsEnabled) {
+          presentationState.eventBursts.delete(id);
           continue;
         }
         if (!candidate.committed || played >= 2) continue;
-        const element = await runtime.mainDoc.querySelector(`[x-itemx2-event="${id}"]`);
-        if (runtime.unloading || key !== runtime.activeContextKey) return;
+        const element = await hostState.mainDoc.querySelector(`[x-itemx2-event="${id}"]`);
+        if (hostState.unloading || key !== pipelineState.activeContextKey) return;
         if (!element) continue;
-        runtime.eventBursts.delete(id);
-        runtime.eventBurstSeen.add(id);
-        while (runtime.eventBurstSeen.size > 256)
-          runtime.eventBurstSeen.delete(runtime.eventBurstSeen.values().next().value);
-        runtime.eventBurstOwners.add(element);
+        presentationState.eventBursts.delete(id);
+        presentationState.eventBurstSeen.add(id);
+        while (presentationState.eventBurstSeen.size > 256)
+          presentationState.eventBurstSeen.delete(presentationState.eventBurstSeen.values().next().value);
+        presentationState.eventBurstOwners.add(element);
         await element.addClass('x-risu-itemx2-burst-active');
-        if (runtime.unloading || key !== runtime.activeContextKey) {
+        if (hostState.unloading || key !== pipelineState.activeContextKey) {
           await element.removeClass('x-risu-itemx2-burst-active');
-          runtime.eventBurstOwners.delete(element);
+          presentationState.eventBurstOwners.delete(element);
           return;
         }
         played++;
@@ -7646,7 +7674,7 @@ ${codexPageStyle()}
           try {
             await element.removeClass('x-risu-itemx2-burst-active');
           } catch {}
-          runtime.eventBurstOwners.delete(element);
+          presentationState.eventBurstOwners.delete(element);
         }, 1350);
       }
     } catch (error) {
@@ -7655,10 +7683,10 @@ ${codexPageStyle()}
   }
   function clearEventBursts() {
     workQueue.clearGroup('burst');
-    runtime.eventBursts.clear();
-    for (const element of runtime.eventBurstOwners)
+    presentationState.eventBursts.clear();
+    for (const element of presentationState.eventBurstOwners)
       void element.removeClass('x-risu-itemx2-burst-active').catch(() => {});
-    runtime.eventBurstOwners.clear();
+    presentationState.eventBurstOwners.clear();
   }
 
   function suppressRepeatedDisplayStates(content) {
@@ -7670,7 +7698,7 @@ ${codexPageStyle()}
         const payload =
           mode === ':'
             ? ITEMXCore.decodePayload(code)
-            : runtime.eventPayloads.get(`${domain}:${code}`) || inlineViewPayload(inline, domain);
+            : pipelineState.eventPayloads.get(`${domain}:${code}`) || inlineViewPayload(inline, domain);
         const view = payload?.view;
         if (!view?.id || payload.error) return raw;
         const key = `${domain}:${payload.event?.domain || 'item'}:${view.id}`;
@@ -7692,21 +7720,21 @@ ${codexPageStyle()}
       hasCodexCard = false;
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;
-      if (runtime.markerHtmlCache.has(key)) return runtime.markerHtmlCache.get(key);
+      if (presentationState.markerHtmlCache.has(key)) return presentationState.markerHtmlCache.get(key);
       const html = decorateInlineEvent(
         ITEMXRenderer.renderMarkerPayload(payload, { inline: true, motion }),
         payload,
         'item'
       );
-      runtime.markerHtmlCache.set(key, html);
-      while (runtime.markerHtmlCache.size > 64)
-        runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
+      presentationState.markerHtmlCache.set(key, html);
+      while (presentationState.markerHtmlCache.size > 64)
+        presentationState.markerHtmlCache.delete(presentationState.markerHtmlCache.keys().next().value);
       return html;
     };
     const markerMotion = (key) => {
-      if (!runtime.visualEffectsEnabled) return 'off';
-      if (!runtime.latestMarkers.size) return 'lite';
-      return runtime.latestMarkers.has(key) ? 'lite' : 'off';
+      if (!presentationState.visualEffectsEnabled) return 'off';
+      if (!pipelineState.latestMarkers.size) return 'lite';
+      return pipelineState.latestMarkers.has(key) ? 'lite' : 'off';
     };
     const rendered = source
       .replace(ITEMXCore.MARKER_RE, (_, code) => {
@@ -7745,7 +7773,7 @@ ${codexPageStyle()}
       })
       .replace(ITEMX_REF_RE, (_, ref, inline) => {
         found = true;
-        const payload = runtime.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
+        const payload = pipelineState.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
         if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
         const motion = markerMotion(`ITEMX2@${ref}`);
         const html = renderPayload(`item-ref:${ref}`, payload, motion);
@@ -7760,8 +7788,8 @@ ${codexPageStyle()}
       })
       .replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
         found = true;
-        if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
-        const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
+        if (!inline && !pipelineState.latestMarkers.has(`CODEX2@${ref}`)) return '';
+        const payload = pipelineState.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
         if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
         const html = decorateInlineEvent(
           codexInlineEventHtml(
@@ -7779,7 +7807,7 @@ ${codexPageStyle()}
         return '';
       });
     if (!found) return source;
-    if (runtime.mainStyle) return rendered;
+    if (hostState.mainStyle) return rendered;
     return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
   };
 
@@ -7795,17 +7823,17 @@ ${codexPageStyle()}
       return '';
     });
     String(content || '').replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
-      collect(runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
+      collect(pipelineState.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
       return '';
     });
     const portraits = {},
-      cached = runtime.inlinePortraitCatalog;
-    if (cached?.contextKey === runtime.activeContextKey) {
+      cached = portraitsState.inlinePortraitCatalog;
+    if (cached?.contextKey === pipelineState.activeContextKey) {
       for (const entity of Object.values(monsters)) {
         const asset = ITEMXCodex.assetForEntity(cached.catalog, entity, cached.narrative);
         if (!asset) continue;
         const cacheKey = `${cached.characterId}:${asset.id}:${asset.ext || ''}`;
-        const image = runtime.portraitThumbnailCache.get(cacheKey);
+        const image = portraitsState.portraitThumbnailCache.get(cacheKey);
         if (typeof image === 'string' && image) portraits[entity.id] = image;
       }
     }
@@ -7813,7 +7841,7 @@ ${codexPageStyle()}
   }
 
   function beginBodyScrollEffects() {
-    runtime.bodyFxSawScroll = false;
+    presentationState.bodyFxSawScroll = false;
     workQueue.clearTimer('bodyFxStartTimer');
     workQueue.schedule(
       'bodyFxStartTimer',
@@ -7826,13 +7854,13 @@ ${codexPageStyle()}
   }
 
   function activateBodyScrollEffects() {
-    if (runtime.bodyFxScrollActive || !runtime.bodyFxClassOwner) return;
-    runtime.bodyFxScrollActive = true;
-    void runtime.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
+    if (presentationState.bodyFxScrollActive || !presentationState.bodyFxClassOwner) return;
+    presentationState.bodyFxScrollActive = true;
+    void presentationState.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
   }
 
   function continueBodyScrollEffects() {
-    runtime.bodyFxSawScroll = true;
+    presentationState.bodyFxSawScroll = true;
     workQueue.clearTimer('bodyFxStartTimer');
     activateBodyScrollEffects();
     endBodyScrollEffects(220);
@@ -7844,10 +7872,10 @@ ${codexPageStyle()}
     workQueue.schedule(
       'bodyFxScrollTimer',
       () => {
-        if (!runtime.bodyFxScrollActive) return;
-        runtime.bodyFxScrollActive = false;
-        if (runtime.bodyFxClassOwner)
-          void runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+        if (!presentationState.bodyFxScrollActive) return;
+        presentationState.bodyFxScrollActive = false;
+        if (presentationState.bodyFxClassOwner)
+          void presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
         scheduleHostDomSync(180);
         workQueue.wake();
       },
@@ -7857,40 +7885,40 @@ ${codexPageStyle()}
   }
 
   async function removeBodyEffectGovernor() {
-    const owner = runtime.bodyFxEventIds[0]?.owner;
+    const owner = presentationState.bodyFxEventIds[0]?.owner;
     if (owner)
-      for (const binding of runtime.bodyFxEventIds) {
+      for (const binding of presentationState.bodyFxEventIds) {
         try {
           await owner.removeEventListener(binding.type, binding.id, true);
         } catch (error) {
           debugRecord('body effect listener remove', error?.message || String(error));
         }
       }
-    runtime.bodyFxEventIds = [];
+    presentationState.bodyFxEventIds = [];
   }
 
   async function installBodyEffectGovernor() {
-    if (!runtime.mainDoc) return;
+    if (!hostState.mainDoc) return;
     try {
-      runtime.bodyFxClassOwner = (await runtime.mainDoc.querySelector('.chattext')) || runtime.bodyFxClassOwner;
-      if (runtime.bodyFxEventIds[0]?.owner) {
+      presentationState.bodyFxClassOwner = (await hostState.mainDoc.querySelector('.chattext')) || presentationState.bodyFxClassOwner;
+      if (presentationState.bodyFxEventIds[0]?.owner) {
         try {
-          if (await runtime.bodyFxEventIds[0]?.owner.getParent()) return;
+          if (await presentationState.bodyFxEventIds[0]?.owner.getParent()) return;
         } catch {}
         await removeBodyEffectGovernor();
       }
-      const body = await runtime.mainDoc.querySelector('body');
+      const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
       const bindings = [
         ['pointerdown', beginBodyScrollEffects],
         ['scroll', continueBodyScrollEffects],
-        ['pointerup', () => endBodyScrollEffects(runtime.bodyFxSawScroll ? 220 : 40)],
-        ['pointercancel', () => endBodyScrollEffects(runtime.bodyFxSawScroll ? 220 : 40)],
+        ['pointerup', () => endBodyScrollEffects(presentationState.bodyFxSawScroll ? 220 : 40)],
+        ['pointercancel', () => endBodyScrollEffects(presentationState.bodyFxSawScroll ? 220 : 40)],
         ['scrollend', () => endBodyScrollEffects(40)]
       ];
       for (const [type, handler] of bindings) {
         const id = await body.addEventListener(type, entry('scroll', handler), true);
-        runtime.bodyFxEventIds.push({ owner: body, type, id });
+        presentationState.bodyFxEventIds.push({ owner: body, type, id });
       }
     } catch (error) {
       debugRecord('body effect governor install', error?.message || String(error));
@@ -7905,14 +7933,14 @@ ${codexPageStyle()}
   }
 
   async function syncMainEffectsState() {
-    if (!runtime.mainDoc) return;
+    if (!hostState.mainDoc) return;
     try {
-      const body = await runtime.mainDoc.querySelector('body');
+      const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      if (runtime.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
+      if (presentationState.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
       else await body.addClass('x-risu-itemx2-effects-off');
       for (const name of SKIN_NAMES) {
-        if (runtime.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
+        if (presentationState.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
         else await body.removeClass(`x-risu-itemx2-skin-${name}`);
       }
     } catch (error) {
@@ -7921,7 +7949,7 @@ ${codexPageStyle()}
   }
 
   async function syncRootFontScale(value) {
-    const root = runtime.rootDrawer;
+    const root = uiState.rootDrawer;
     if (!root) return;
     for (const scale of ['small', 'medium', 'large']) {
       try {
@@ -7935,34 +7963,34 @@ ${codexPageStyle()}
 
   async function installMainStyle() {
     try {
-      if (runtime.mainStyle && workQueue.revision('style-position') === runtime.badgePosition) {
+      if (hostState.mainStyle && workQueue.revision('style-position') === uiState.badgePosition) {
         try {
-          if (!(await runtime.mainStyle.getParent())) throw new Error('detached style owner');
-          runtime.permissions.mainDom = true;
-          runtime.lastDomError = '';
+          if (!(await hostState.mainStyle.getParent())) throw new Error('detached style owner');
+          hostState.permissions.mainDom = true;
+          hostState.lastDomError = '';
           await installBodyEffectGovernor();
           await syncMainEffectsState();
           await installHostObserver();
           return true;
         } catch {
-          runtime.mainStyle = null;
-          runtime.mainDoc = null;
-          runtime.bodyFxClassOwner = null;
+          hostState.mainStyle = null;
+          hostState.mainDoc = null;
+          presentationState.bodyFxClassOwner = null;
         }
       }
       const doc = await Risuai.getRootDocument();
       if (!doc) {
-        runtime.permissions.mainDom = false;
-        runtime.lastDomError = '메인 문서 API가 null을 반환했습니다';
+        hostState.permissions.mainDom = false;
+        hostState.lastDomError = '메인 문서 API가 null을 반환했습니다';
         return false;
       }
-      runtime.mainDoc = doc;
-      runtime.permissions.mainDom = true;
+      hostState.mainDoc = doc;
+      hostState.permissions.mainDom = true;
       const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
       if (existing) {
-        runtime.mainStyle = existing;
+        hostState.mainStyle = existing;
         await existing.setTextContent(mainStyleText());
-        workQueue.remember('style-position', runtime.badgePosition);
+        workQueue.remember('style-position', uiState.badgePosition);
         await installBodyEffectGovernor();
         await syncMainEffectsState();
         await installHostObserver();
@@ -7974,19 +8002,19 @@ ${codexPageStyle()}
       const head = await doc.querySelector('head');
       if (head) await head.appendChild(style);
       else await doc.appendChild(style);
-      runtime.mainStyle = style;
-      workQueue.remember('style-position', runtime.badgePosition);
-      runtime.lastDomError = '';
+      hostState.mainStyle = style;
+      workQueue.remember('style-position', uiState.badgePosition);
+      hostState.lastDomError = '';
       await installBodyEffectGovernor();
       await syncMainEffectsState();
       await installHostObserver();
       return true;
     } catch (error) {
-      runtime.permissions.mainDom = false;
-      runtime.mainStyle = null;
+      hostState.permissions.mainDom = false;
+      hostState.mainStyle = null;
       workQueue.remember('style-position', '');
-      runtime.mainDoc = null;
-      runtime.lastDomError = String(error?.message || error || '알 수 없는 DOM 오류');
+      hostState.mainDoc = null;
+      hostState.lastDomError = String(error?.message || error || '알 수 없는 DOM 오류');
       fail('main style connection', error);
       return false;
     }
@@ -8002,15 +8030,15 @@ ${codexPageStyle()}
       .filter((item) => !ITEMXHistory.terminal('item', item))
       .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
-    runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
-    const start = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
+    uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
+    const start = uiState.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
     return all.slice(start, start + ITEMX_ROOT_PAGE_SIZE);
   }
 
   function presentationRecord(domain, id) {
-    if (!runtime.presentationRecords) {
+    if (!presentationState.presentationRecords) {
       const records = new Map(),
-        chat = runtime.cachedLoaded?.chat;
+        chat = pipelineState.cachedLoaded?.chat;
       const manual = [...(replayCheckpoint(chat)?.manual || []), ...manualLedger(chat)];
       const manualByIndex = new Map();
       for (const row of manual) {
@@ -8048,9 +8076,9 @@ ${codexPageStyle()}
         for (const row of presentationPayloads(messageData(chat.message[index]))) put(row.payload, row.domain, index);
         putManual(index);
       }
-      runtime.presentationRecords = records;
+      presentationState.presentationRecords = records;
     }
-    return runtime.presentationRecords.get(`${domain}:${id}`) || {};
+    return presentationState.presentationRecords.get(`${domain}:${id}`) || {};
   }
   function detailAnnotations(domain, entity) {
     const record = presentationRecord(domain, entity.id);
@@ -8064,22 +8092,22 @@ ${codexPageStyle()}
   }
 
   function itemDetailHtml(item) {
-    const motion = runtime.visualEffectsEnabled ? 'full' : 'off';
+    const motion = presentationState.visualEffectsEnabled ? 'full' : 'off';
     const record = presentationRecord('item', item.id);
     const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
-    if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
+    if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
     const html = `<div class="itemx2-detail-stack">${ITEMXRenderer.renderCard(item, { motion })}${detailAnnotations('item', item)}</div>`;
-    runtime.detailHtmlCache.set(key, html);
-    while (runtime.detailHtmlCache.size > 60)
-      runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    presentationState.detailHtmlCache.set(key, html);
+    while (presentationState.detailHtmlCache.size > 60)
+      presentationState.detailHtmlCache.delete(presentationState.detailHtmlCache.keys().next().value);
     return html;
   }
 
   async function hydrateCheckedItemDetail(loaded) {
-    if (!runtime.mainDoc || !loaded) return false;
+    if (!hostState.mainDoc || !loaded) return false;
     const detailItems = rootPageItems(loaded);
     for (let index = 0; index < detailItems.length; index += 1) {
-      const selected = await runtime.mainDoc.querySelector(`#itemx2-detail-${index}:checked`);
+      const selected = await hostState.mainDoc.querySelector(`#itemx2-detail-${index}:checked`);
       if (!selected) continue;
       const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
       if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
@@ -8093,8 +8121,8 @@ ${codexPageStyle()}
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
-    if (!runtime.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
-    const marker = await runtime.mainDoc.querySelector(
+    if (!hostState.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
+    const marker = await hostState.mainDoc.querySelector(
       `.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`
     );
     if (!marker) return false;
@@ -8111,7 +8139,7 @@ ${codexPageStyle()}
       );
       portrait = portraits[entity.id] || '';
     }
-    if (loaded.key !== runtime.activeContextKey) return false;
+    if (loaded.key !== pipelineState.activeContextKey) return false;
     const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
     if (workQueue.revision('detail') === detailKey) return true;
     const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
@@ -8124,16 +8152,16 @@ ${codexPageStyle()}
   }
 
   async function queryMainClass(className) {
-    if (!runtime.mainDoc) return null;
+    if (!hostState.mainDoc) return null;
     return (
-      (await runtime.mainDoc.querySelector(`.x-risu-${className}`)) ||
-      (await runtime.mainDoc.querySelector(`.${className}`))
+      (await hostState.mainDoc.querySelector(`.x-risu-${className}`)) ||
+      (await hostState.mainDoc.querySelector(`.${className}`))
     );
   }
 
   async function removeRootClickRouter() {
-    const owner = runtime.rootClickBindings[0]?.owner;
-    const bindings = runtime.rootClickBindings.slice();
+    const owner = uiState.rootClickBindings[0]?.owner;
+    const bindings = uiState.rootClickBindings.slice();
     if (owner)
       for (const binding of bindings) {
         try {
@@ -8142,19 +8170,19 @@ ${codexPageStyle()}
           debugRecord('root click remove', error?.message || String(error));
         }
       }
-    runtime.rootClickBindings = [];
+    uiState.rootClickBindings = [];
   }
 
   async function removeRootDrawer() {
-    runtime.historyView.open = false;
+    uiState.historyView.open = false;
     workQueue.clearTimer('feedbackTimer');
     await removeRootClickRouter();
     try {
-      if (runtime.rootDrawer) await runtime.rootDrawer.remove();
+      if (uiState.rootDrawer) await uiState.rootDrawer.remove();
     } catch {}
-    if (runtime.mainDoc) {
+    if (hostState.mainDoc) {
       try {
-        const safeRoots = await runtime.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
+        const safeRoots = await hostState.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
         const roots = await Risuai.unwarpSafeArray(safeRoots);
         for (const root of roots) {
           try {
@@ -8165,32 +8193,32 @@ ${codexPageStyle()}
         fail('remove duplicate root drawers', error);
       }
     }
-    runtime.rootDrawer = null;
-    runtime.rootOpen = false;
+    uiState.rootDrawer = null;
+    uiState.rootOpen = false;
     workQueue.remember('render', '');
   }
 
   async function mountRootLoading(label = 'ITEMX CODEX 초기화 중…') {
-    if (!runtime.mainDoc) return false;
+    if (!hostState.mainDoc) return false;
     await removeRootDrawer();
-    const root = await runtime.mainDoc.createElement('div');
+    const root = await hostState.mainDoc.createElement('div');
     await root.setAttribute('x-itemx2-drawer', 'owner');
     await root.setClassName('x-risu-itemx2-root-drawer x-risu-itemx2-booting');
     await root.setInnerHTML(
       `<div class="itemx2-boot-card" role="status" aria-live="polite"><i></i><span><strong>${ITEMXCore.esc(label)}</strong><small>화면과 모델 연결을 준비하고 있습니다.</small></span></div>`
     );
-    const body = await runtime.mainDoc.querySelector('body');
+    const body = await hostState.mainDoc.querySelector('body');
     if (!body) return false;
     await body.appendChild(root);
-    runtime.rootDrawer = root;
+    uiState.rootDrawer = root;
     workQueue.forget('render');
     return true;
   }
 
   async function updateRootLoading(label) {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return;
     try {
-      const target = await runtime.mainDoc.querySelector('.x-risu-itemx2-boot-card strong');
+      const target = await hostState.mainDoc.querySelector('.x-risu-itemx2-boot-card strong');
       if (target) await target.setTextContent(label);
     } catch (error) {
       fail('loading label', error);
@@ -8198,9 +8226,9 @@ ${codexPageStyle()}
   }
 
   async function showRootFeedback(message, tone = 'success', timeoutMs = 2600) {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return false;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return false;
     try {
-      const toast = await runtime.mainDoc.querySelector('.x-risu-itemx2-feedback');
+      const toast = await hostState.mainDoc.querySelector('.x-risu-itemx2-feedback');
       if (!toast) return false;
       workQueue.clearTimer('feedbackTimer');
       await toast.setTextContent(message);
@@ -8240,11 +8268,11 @@ ${codexPageStyle()}
   async function lorebookEntries(contextKey, { refresh = false } = {}) {
     if (
       !refresh &&
-      runtime.lorebookCache.key === contextKey &&
-      runtime.lorebookCache.at &&
-      Date.now() - runtime.lorebookCache.at < 10000
+      pipelineState.lorebookCache.key === contextKey &&
+      pipelineState.lorebookCache.at &&
+      Date.now() - pipelineState.lorebookCache.at < 10000
     )
-      return runtime.lorebookCache.rows;
+      return pipelineState.lorebookCache.rows;
     const response = await callOptionalRisuApi('getCurrentLorebookEntries');
     if (!response.available) {
       const error = new Error('현재 RisuAI에서 로어북 조회 API를 지원하지 않습니다.');
@@ -8258,7 +8286,7 @@ ${codexPageStyle()}
         : Array.isArray(response.value?.lorebook)
           ? response.value.lorebook
           : [];
-    runtime.lorebookCache = { key: contextKey, at: Date.now(), rows };
+    pipelineState.lorebookCache = { key: contextKey, at: Date.now(), rows };
     return rows;
   }
 
@@ -8297,18 +8325,18 @@ ${codexPageStyle()}
         };
       })();
       const current = await context();
-      if (runtime.unloading || current?.key !== ctx.key) return scanResult;
+      if (hostState.unloading || current?.key !== ctx.key) return scanResult;
       if (scanResult.changed) {
-        runtime.cachedLoaded = null;
-        runtime.detailHtmlCache.clear();
+        pipelineState.cachedLoaded = null;
+        presentationState.detailHtmlCache.clear();
         workQueue.remember('render', '');
-        runtime.generation += 1;
+        pipelineState.generation += 1;
         await rebuildCurrent();
       }
       const summary = scanResult.result;
       workQueue.remember('lorebook', scanResult.sourceFingerprint);
       if (!silent || summary.enriched || summary.removed)
-        runtime.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
+        uiState.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
       debugRecord('lorebook scan', summary);
       if (!silent)
         await notifyUser(
@@ -8349,17 +8377,17 @@ ${codexPageStyle()}
       } catch (error) {
         debugRecord('host DOM sync', error?.message || String(error));
       }
-    }, delayMs, false, () => !runtime.bodyFxScrollActive);
+    }, delayMs, false, () => !presentationState.bodyFxScrollActive);
   }
 
   async function installHostObserver() {
-    if (!runtime.mainDoc || runtime.hostObserver || typeof Risuai.createMutationObserver !== 'function') return;
+    if (!hostState.mainDoc || hostState.hostObserver || typeof Risuai.createMutationObserver !== 'function') return;
     try {
-      const body = await runtime.mainDoc.querySelector('body');
+      const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      runtime.hostObserver = await Risuai.createMutationObserver(
+      hostState.hostObserver = await Risuai.createMutationObserver(
         entry('host-observer', (recordsSafe) => {
-          if (runtime.bodyFxScrollActive) {
+          if (presentationState.bodyFxScrollActive) {
             scheduleHostDomSync();
             return;
           }
@@ -8384,29 +8412,29 @@ ${codexPageStyle()}
           })();
         })
       );
-      if (!runtime.hostObserver?.observe) throw new Error('Mutation observer unavailable');
-      await runtime.hostObserver.observe(body, { childList: true, subtree: true });
+      if (!hostState.hostObserver?.observe) throw new Error('Mutation observer unavailable');
+      await hostState.hostObserver.observe(body, { childList: true, subtree: true });
       armRemountWatchdog();
     } catch (error) {
       try {
-        await runtime.hostObserver?.disconnect();
+        await hostState.hostObserver?.disconnect();
       } catch {}
-      runtime.hostObserver = null;
+      hostState.hostObserver = null;
       armRemountWatchdog();
       debugRecord('host observer install', error?.message || String(error));
     }
   }
 
   function invalidateHostSettingsVisibility() {
-    runtime.hostSettingsCache.at = 0;
+    hostState.hostSettingsCache.at = 0;
   }
 
   async function hostPluginSettingsVisible() {
-    if (!runtime.mainDoc || runtime.allowDrawerOverSettings) return false;
+    if (!hostState.mainDoc || uiState.allowDrawerOverSettings) return false;
     const now = Date.now();
-    if (now - runtime.hostSettingsCache.at < 750) return runtime.hostSettingsCache.visible;
+    if (now - hostState.hostSettingsCache.at < 750) return hostState.hostSettingsCache.visible;
     try {
-      const safeTargets = await runtime.mainDoc.querySelectorAll('button,[role="button"]');
+      const safeTargets = await hostState.mainDoc.querySelectorAll('button,[role="button"]');
       const targets = await Risuai.unwarpSafeArray(safeTargets);
       for (const target of targets.slice(0, 96)) {
         const text = String((await target.textContent()) || '')
@@ -8415,46 +8443,46 @@ ${codexPageStyle()}
         if (!text.includes('ITEMX CODEX · 권한 및 설정')) continue;
         const rect = await target.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
-          runtime.hostSettingsCache = { at: now, visible: true };
+          hostState.hostSettingsCache = { at: now, visible: true };
           return true;
         }
       }
     } catch (error) {
       fail('host settings visibility', error);
     }
-    runtime.hostSettingsCache = { at: now, visible: false };
+    hostState.hostSettingsCache = { at: now, visible: false };
     return false;
   }
 
   async function syncHostSettingsVisibility() {
-    if (!runtime.rootDrawer) return;
+    if (!uiState.rootDrawer) return;
     const visible = await hostPluginSettingsVisible();
     if (Boolean(workQueue.revision('host-settings')) === visible) return;
     workQueue.remember('host-settings', visible);
     try {
-      if (visible) await runtime.rootDrawer.addClass('x-risu-itemx2-host-settings');
-      else await runtime.rootDrawer.removeClass('x-risu-itemx2-host-settings');
+      if (visible) await uiState.rootDrawer.addClass('x-risu-itemx2-host-settings');
+      else await uiState.rootDrawer.removeClass('x-risu-itemx2-host-settings');
     } catch (error) {
       fail('host settings badge visibility', error);
     }
   }
 
   async function setRootOpen(open) {
-    if (!runtime.rootDrawer) return false;
+    if (!uiState.rootDrawer) return false;
     try {
-      if (!(await runtime.rootDrawer.getParent())) {
-        runtime.rootOpen = false;
+      if (!(await uiState.rootDrawer.getParent())) {
+        uiState.rootOpen = false;
         return false;
       }
-      if (open) await runtime.rootDrawer.addClass('x-risu-itemx2-is-open');
+      if (open) await uiState.rootDrawer.addClass('x-risu-itemx2-is-open');
       else {
-        await runtime.rootDrawer.removeClass('x-risu-itemx2-is-open');
-        runtime.rootOpen = false;
-        runtime.allowDrawerOverSettings = false;
+        await uiState.rootDrawer.removeClass('x-risu-itemx2-is-open');
+        uiState.rootOpen = false;
+        uiState.allowDrawerOverSettings = false;
         invalidateHostSettingsVisibility();
         await syncHostSettingsVisibility();
       }
-      runtime.rootOpen = Boolean(open);
+      uiState.rootOpen = Boolean(open);
       return true;
     } catch {
       return false;
@@ -8463,113 +8491,113 @@ ${codexPageStyle()}
 
   async function resetRuntimeForContext(active) {
     const nextKey = active?.key || '';
-    if (runtime.activeContextKey === nextKey) return false;
-    runtime.activeContextKey = nextKey;
-    runtime.inlinePortraitCatalog = null;
-    runtime.historyView = { open: false, key: nextKey, domain: 'item', filter: 'recent', selected: null, page: 0 };
+    if (pipelineState.activeContextKey === nextKey) return false;
+    pipelineState.activeContextKey = nextKey;
+    portraitsState.inlinePortraitCatalog = null;
+    uiState.historyView = { open: false, key: nextKey, domain: 'item', filter: 'recent', selected: null, page: 0 };
     clearEventBursts();
     armRemountWatchdog();
-    runtime.rootItemPage = 0;
+    uiState.rootItemPage = 0;
     workQueue.remember('detail', '');
     invalidateHostSettingsVisibility();
-    runtime.cachedLoaded = null;
+    pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
     workQueue.forget('uncommitted-markers');
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
     workQueue.remember('lorebook', '');
-    runtime.cleanupArmedUntil = 0;
+    uiState.cleanupArmedUntil = 0;
 
     workQueue.clearTimer('legacyCommitTimer');
     workQueue.clearTimer('bodyFxStartTimer');
     workQueue.clearTimer('bodyFxScrollTimer');
-    if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
+    if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
-        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
       } catch {}
     }
-    runtime.bodyFxScrollActive = false;
-    runtime.bodyFxSawScroll = false;
+    presentationState.bodyFxScrollActive = false;
+    presentationState.bodyFxSawScroll = false;
 
 
-    runtime.bodyFxClassOwner = null;
+    presentationState.bodyFxClassOwner = null;
     refreshLatest(active?.chat || { message: [], scriptstate: {} });
     await removeRootDrawer();
     return true;
   }
 
   function ensureRootInventory() {
-    if (runtime.unloading || runtime.bodyFxScrollActive) return Promise.resolve();
+    if (hostState.unloading || presentationState.bodyFxScrollActive) return Promise.resolve();
     return ensureRootInventoryNow();
   }
 
   async function ensureRootInventoryNow() {
-    if (runtime.backupOpen) return;
-    if (runtime.bodyFxScrollActive) return;
+    if (uiState.backupOpen) return;
+    if (presentationState.bodyFxScrollActive) return;
     workQueue.remember('remount', 'checked');
     const active = await context();
     const contextChanged = await resetRuntimeForContext(active);
     if (!active) {
-      runtime.status = '채팅 진입 대기';
+      uiState.status = '채팅 진입 대기';
       return;
     }
-    const cached = runtime.cachedLoaded;
+    const cached = pipelineState.cachedLoaded;
     const replayChanged =
       !contextChanged &&
       cached?.key === active.key &&
       cached.replayFingerprint !== replaySourceFingerprint(active.chat);
 
-    if (!contextChanged && (runtime.auxActive > 0))
+    if (!contextChanged && (auxState.auxActive > 0))
       return;
 
     try {
-      if (!runtime.hooks.output || !runtime.hooks.display || !runtime.hooks.before || !runtime.hooks.after)
+      if (!hostState.hooks.output || !hostState.hooks.display || !hostState.hooks.before || !hostState.hooks.after)
         await installPipelineHooks();
       if (contextChanged) {
-        if (!runtime.mainDoc && !(await installMainStyle())) return;
+        if (!hostState.mainDoc && !(await installMainStyle())) return;
         const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
         if (loaded) await openRootInventory({ open: false, loaded });
         void dispatch('update', checkForUpdate);
         return;
       }
-      if (!runtime.mainDoc && !(await installMainStyle())) return;
+      if (!hostState.mainDoc && !(await installMainStyle())) return;
       let drawerAttached = false;
-      if (runtime.rootDrawer) {
+      if (uiState.rootDrawer) {
         try {
-          drawerAttached = Boolean(await runtime.rootDrawer.getParent());
+          drawerAttached = Boolean(await uiState.rootDrawer.getParent());
         } catch {
-          runtime.rootDrawer = null;
+          uiState.rootDrawer = null;
         }
       }
       if (!drawerAttached) {
-        const safeMounted = await runtime.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
+        const safeMounted = await hostState.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
         const mounted = await Risuai.unwarpSafeArray(safeMounted);
         if (mounted.length === 1) {
-          runtime.rootDrawer = mounted[0];
-          runtime.rootOpen = Boolean(await runtime.rootDrawer.matches('.x-risu-itemx2-is-open'));
-          await installRootClickRouter(runtime.rootDrawer);
+          uiState.rootDrawer = mounted[0];
+          uiState.rootOpen = Boolean(await uiState.rootDrawer.matches('.x-risu-itemx2-is-open'));
+          await installRootClickRouter(uiState.rootDrawer);
         } else {
           await removeRootClickRouter();
-          runtime.rootDrawer = null;
+          uiState.rootDrawer = null;
           await openRootInventory({ open: false });
           return;
         }
       }
       let styleAttached = false;
-      if (runtime.mainStyle) {
+      if (hostState.mainStyle) {
         try {
-          styleAttached = Boolean(await runtime.mainStyle.getParent());
+          styleAttached = Boolean(await hostState.mainStyle.getParent());
         } catch {
-          runtime.mainStyle = null;
+          hostState.mainStyle = null;
         }
       }
       if (!styleAttached) {
-        const style = await runtime.mainDoc.querySelector('style[x-itemx2-style="owner"]');
-        if (style) runtime.mainStyle = style;
+        const style = await hostState.mainDoc.querySelector('style[x-itemx2-style="owner"]');
+        if (style) hostState.mainStyle = style;
         else {
-          runtime.mainStyle = null;
+          hostState.mainStyle = null;
           await installMainStyle();
         }
       }
@@ -8578,9 +8606,9 @@ ${codexPageStyle()}
         if (loaded) {
           let open = false;
           try {
-            open = Boolean(await runtime.rootDrawer?.matches('.x-risu-itemx2-is-open'));
+            open = Boolean(await uiState.rootDrawer?.matches('.x-risu-itemx2-is-open'));
           } catch {}
-          await openRootInventory({ open, loaded, tab: runtime.activeRootTab });
+          await openRootInventory({ open, loaded, tab: uiState.activeRootTab });
         }
       }
     } catch (error) {
@@ -8592,7 +8620,7 @@ ${codexPageStyle()}
     if (
       typeof Risuai.readImage !== 'function' ||
       !codexSnapshot?.monsters?.order?.length ||
-      ctx.key !== runtime.activeContextKey
+      ctx.key !== pipelineState.activeContextKey
     )
       return;
     const key = `${ctx.key}:${Number(settings.moduleAssetsEnabled)}:${encounterRegistryFingerprint(codexSnapshot)}`;
@@ -8603,7 +8631,7 @@ ${codexPageStyle()}
   }
 
   async function portraitThumbnail(cacheKey, image) {
-    if (runtime.portraitThumbnailCache.has(cacheKey)) return runtime.portraitThumbnailCache.get(cacheKey);
+    if (portraitsState.portraitThumbnailCache.has(cacheKey)) return portraitsState.portraitThumbnailCache.get(cacheKey);
     const work = Promise.resolve().then(async () => {
       let thumbnail = '';
       try {
@@ -8639,17 +8667,17 @@ ${codexPageStyle()}
       } catch (error) {
         debugRecord('portrait thumbnail', error?.message || String(error));
       }
-      runtime.portraitThumbnailCache.set(cacheKey, thumbnail);
-      while (runtime.portraitThumbnailCache.size > 64)
-        runtime.portraitThumbnailCache.delete(runtime.portraitThumbnailCache.keys().next().value);
+      portraitsState.portraitThumbnailCache.set(cacheKey, thumbnail);
+      while (portraitsState.portraitThumbnailCache.size > 64)
+        portraitsState.portraitThumbnailCache.delete(portraitsState.portraitThumbnailCache.keys().next().value);
       return thumbnail;
     });
-    runtime.portraitThumbnailCache.set(cacheKey, work);
+    portraitsState.portraitThumbnailCache.set(cacheKey, work);
     return work;
   }
 
   async function loadCodexPortraits(character, chat, codexSnapshot, settings, inlineOnly = false) {
-    const ownerKey = runtime.activeContextKey;
+    const ownerKey = pipelineState.activeContextKey;
     const result = {},
       catalog = combinedPortraitAssets(
         character,
@@ -8709,8 +8737,8 @@ ${codexPageStyle()}
       .slice(-8)
       .map((message) => ITEMXCore.messageText(message))
       .join('\n');
-    if (runtime.activeContextKey === ownerKey)
-      runtime.inlinePortraitCatalog = {
+    if (pipelineState.activeContextKey === ownerKey)
+      portraitsState.inlinePortraitCatalog = {
         contextKey: ownerKey,
         characterId: character?.chaId || character?.id || 'character',
         catalog,
@@ -8723,12 +8751,12 @@ ${codexPageStyle()}
         const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
         if (!asset) continue;
         const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
-        if (inlineOnly && runtime.portraitThumbnailCache.has(cacheKey)) {
-          result[monster.id] = await runtime.portraitThumbnailCache.get(cacheKey);
+        if (inlineOnly && portraitsState.portraitThumbnailCache.has(cacheKey)) {
+          result[monster.id] = await portraitsState.portraitThumbnailCache.get(cacheKey);
           continue;
         }
-        if (runtime.portraitCache.has(cacheKey)) {
-          const image = runtime.portraitCache.get(cacheKey);
+        if (portraitsState.portraitCache.has(cacheKey)) {
+          const image = portraitsState.portraitCache.get(cacheKey);
           const thumbnail = await portraitThumbnail(cacheKey, image);
           result[monster.id] = inlineOnly ? thumbnail : image;
           continue;
@@ -8749,12 +8777,12 @@ ${codexPageStyle()}
             const thumbnail = await portraitThumbnail(cacheKey, image);
             result[monster.id] = inlineOnly ? thumbnail : image;
             if (!inlineOnly && image.length <= 4 * 1024 * 1024) {
-              runtime.portraitCache.set(cacheKey, image);
+              portraitsState.portraitCache.set(cacheKey, image);
 
-              while (runtime.portraitCache.size > 24 || [...runtime.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
-                const oldest = runtime.portraitCache.keys().next().value,
-                  removed = runtime.portraitCache.get(oldest) || '';
-                runtime.portraitCache.delete(oldest);
+              while (portraitsState.portraitCache.size > 24 || [...portraitsState.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
+                const oldest = portraitsState.portraitCache.keys().next().value,
+                  removed = portraitsState.portraitCache.get(oldest) || '';
+                portraitsState.portraitCache.delete(oldest);
 
               }
             }
@@ -8855,7 +8883,7 @@ ${codexPageStyle()}
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, runtime.visualEffectsEnabled ? 'full' : 'off');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.visualEffectsEnabled ? 'full' : 'off');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
   }
@@ -8902,7 +8930,7 @@ ${codexPageStyle()}
   function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
     const record = presentationRecord(domain, entity?.id);
     const fingerprint = ITEMXCore.fnv1a(
-      JSON.stringify([entity || {}, record.previous, record.review, runtime.visualEffectsEnabled])
+      JSON.stringify([entity || {}, record.previous, record.review, presentationState.visualEffectsEnabled])
     );
     return domain === 'skill'
       ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`
@@ -8910,7 +8938,7 @@ ${codexPageStyle()}
   }
   function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 'world') {
     const key = codexDetailCacheKey(domain, entity, portrait, rarityMode);
-    if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
+    if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
     const back =
       domain === 'skill'
         ? '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>'
@@ -8918,22 +8946,22 @@ ${codexPageStyle()}
     const html = unwrapCodexPage(
       domain === 'skill' ? skillPageHtml(entity, back, rarityMode) : monsterPageHtml(entity, portrait, back)
     );
-    runtime.detailHtmlCache.set(key, html);
-    while (runtime.detailHtmlCache.size > 60)
-      runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    presentationState.detailHtmlCache.set(key, html);
+    while (presentationState.detailHtmlCache.size > 60)
+      presentationState.detailHtmlCache.delete(presentationState.detailHtmlCache.keys().next().value);
     return html;
   }
 
   function rootBadgeHtml() {
-    const update = runtime.update.available
-      ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>`
+    const update = hostState.update.available
+      ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(hostState.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>`
       : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
   const updateLabelHtml = () =>
-    runtime.update.available
-      ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>`
+    hostState.update.available
+      ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(hostState.update.latest)}">UPDATE</span>`
       : '';
 
   function panelMenuHtml(native = true) {
@@ -8945,7 +8973,7 @@ ${codexPageStyle()}
   }
 
   function selectHistoryRows(loaded) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     const rows = ITEMXHistory.entries(loaded, view.domain).filter((row) => row.closed);
     const selected = rows.find((row) => row.entity.id === view.selected);
     const visible = rows.filter((row) =>
@@ -8959,12 +8987,12 @@ ${codexPageStyle()}
     );
     const pages = Math.max(1, Math.ceil(visible.length / 16));
     view.page = Math.max(0, Math.min(pages - 1, view.page));
-    runtime.historyRows = selected ? [selected] : visible.slice(view.page * 16, view.page * 16 + 16);
-    return { pages, selected, rows: runtime.historyRows };
+    uiState.historyRows = selected ? [selected] : visible.slice(view.page * 16, view.page * 16 + 16);
+    return { pages, selected, rows: uiState.historyRows };
   }
 
   async function prepareHistoryPortraits(loaded) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     if (!view.open || view.key !== loaded.key || view.domain !== 'monster') return;
     const { rows, selected } = selectHistoryRows(loaded);
     if (!rows.length) return;
@@ -8974,14 +9002,14 @@ ${codexPageStyle()}
       entries: Object.fromEntries(rows.map((row) => [row.entity.id, row.entity]))
     };
     const portraits = await loadCodexPortraits(loaded.character, loaded.chat, { monsters }, loaded, !selected);
-    const now = runtime.historyView;
+    const now = uiState.historyView;
     if (!now.open || `${now.key}:${now.domain}:${now.selected || ''}:${now.filter}:${now.page}` !== signature) return;
     if (selected) loaded.portraits = { ...loaded.portraits, ...portraits };
     else loaded.historyThumbnails = portraits;
   }
 
   function historyHtml(loaded) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     const { pages, selected } = selectHistoryRows(loaded);
     const prefs = ITEMXHistory.preferences(loaded.chat);
     const filters = [
@@ -9009,7 +9037,7 @@ ${codexPageStyle()}
               : row.domain === 'skill'
                 ? '상실·망각 기록'
                 : '종료된 조우';
-    const cards = runtime.historyRows
+    const cards = uiState.historyRows
       .map(
         (row, index) =>
           `<section class="itemx2-history-row itemx2-history-row-${index}"><button class="itemx2-history-detail-${index}" type="button"><strong>${row.domain === 'monster' && loaded.historyThumbnails?.[row.entity.id] ? `<img src="${ITEMXCore.esc(loaded.historyThumbnails[row.entity.id])}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:middle">` : ITEMXCore.esc(row.domain === 'item' ? ITEMXCore.resolveItemEmoji(row.entity) : row.entity.glyph || '📖')} ${ITEMXCore.esc(row.entity.name)}</strong><small>${label(row)}</small></button>${buttons(row, index)}</section>`
@@ -9042,12 +9070,12 @@ ${codexPageStyle()}
       const next = { ...latest, scriptstate: { ...latest.scriptstate, [ITEMXHistory.KEY]: JSON.stringify(prefs) } };
       await saveChat(active.characterIndex, active.chatIndex, next);
       loaded.chat = next;
-      if (runtime.cachedLoaded?.key === loaded.key) runtime.cachedLoaded.chat = next;
+      if (pipelineState.cachedLoaded?.key === loaded.key) pipelineState.cachedLoaded.chat = next;
     })();
   }
 
   async function historyAction(action, loaded, native) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     if (view.key !== loaded.key) return;
     if (action === 'back') {
       if (view.selected) view.selected = null;
@@ -9063,7 +9091,7 @@ ${codexPageStyle()}
       });
     else {
       const [operation, rawIndex] = action.split('-');
-      const row = runtime.historyRows?.[Number(rawIndex)];
+      const row = uiState.historyRows?.[Number(rawIndex)];
       if (!row) return;
       if (operation === 'detail') view.selected = row.entity.id;
       else if (operation === 'keep')
@@ -9088,13 +9116,13 @@ ${codexPageStyle()}
     const body = await queryMainClass('itemx2-root-tab-body');
     if (!body) return;
     let pane = await queryMainClass('itemx2-history-pane');
-    if (!runtime.historyView.open || runtime.historyView.key !== loaded.key) {
+    if (!uiState.historyView.open || uiState.historyView.key !== loaded.key) {
       await pane?.remove();
       await body.removeClass('x-risu-itemx2-history-opened');
       return;
     }
     if (!pane) {
-      pane = await runtime.mainDoc.createElement('section');
+      pane = await hostState.mainDoc.createElement('section');
       await pane.addClass('x-risu-itemx2-history-pane');
       await body.appendChild(pane);
     }
@@ -9107,7 +9135,7 @@ ${codexPageStyle()}
     const body = document.querySelector('.itemx2-iframe-content');
     if (!body) return;
     let pane = body.querySelector('.itemx2-history-pane');
-    if (!runtime.historyView.open || runtime.historyView.key !== loaded.key) {
+    if (!uiState.historyView.open || uiState.historyView.key !== loaded.key) {
       pane?.remove();
       body.classList.remove('itemx2-history-opened');
       return;
@@ -9140,10 +9168,10 @@ ${codexPageStyle()}
     if (await eventHitsMainClass(event, 'itemx2-history-open')) {
       const loaded = await cachedOrRebuildCurrent();
       if (!loaded) return true;
-      runtime.historyView = {
+      uiState.historyView = {
         open: true,
         key: loaded.key,
-        domain: historyDomain(runtime.activeRootTab),
+        domain: historyDomain(uiState.activeRootTab),
         filter: 'recent',
         selected: null,
         page: 0
@@ -9151,7 +9179,7 @@ ${codexPageStyle()}
       await drawRootHistory(loaded);
       return true;
     }
-    if (!runtime.historyView.open) return false;
+    if (!uiState.historyView.open) return false;
     const loaded = await cachedOrRebuildCurrent();
     if (!loaded) return true;
     const actions = [
@@ -9166,14 +9194,14 @@ ${codexPageStyle()}
         await historyAction(action, loaded, true);
         return true;
       }
-    if (runtime.historyView.selected) {
+    if (uiState.historyView.selected) {
       for (const action of ['keep-0', 'archive-0'])
         if (await eventHitsMainClass(event, `itemx2-history-${action}`)) {
           await historyAction(action, loaded, true);
           return true;
         }
     } else
-      for (let index = 0; index < (runtime.historyRows?.length || 0); index++) {
+      for (let index = 0; index < (uiState.historyRows?.length || 0); index++) {
         if (!(await eventHitsMainClass(event, `itemx2-history-row-${index}`))) continue;
         for (const operation of ['keep', 'archive', 'detail'])
           if (await eventHitsMainClass(event, `itemx2-history-${operation}-${index}`)) {
@@ -9246,7 +9274,7 @@ ${codexPageStyle()}
     return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4>${connectionCards}${setCard(
       '보조 모델 상태',
       ITEMXCore.esc(auxStatusText()),
-      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
+      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${auxState.auxActive > 0 ? 'disabled' : ''}>${auxState.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
       ' class="itemx2-aux-setting-status"'
     )}<h4 class="itemx2-set-group">기록</h4>${setCard(
       '무엇을 기록할까요',
@@ -9334,10 +9362,10 @@ ${codexPageStyle()}
   }
 
   function settingsPositionChoices(skin) {
-    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === runtime.badgePosition) || BADGE_POSITIONS[0])[1];
+    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === uiState.badgePosition) || BADGE_POSITIONS[0])[1];
     return `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
       ([key, label]) =>
-        `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
+        `<button class="itemx2-position-choice itemx2-position-${key} ${uiState.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
     ).join(
       ''
     )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`;
@@ -9346,15 +9374,15 @@ ${codexPageStyle()}
   function settingsStorageParts(loaded) {
     const footprint = itemxStorageFootprint(loaded.chat);
     return {
-      cleanupArmed: runtime.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed: runtime.storageCleanupArmedUntil > Date.now(),
+      cleanupArmed: uiState.cleanupArmedUntil > Date.now(),
+      storageCleanupArmed: uiState.storageCleanupArmedUntil > Date.now(),
       footprintLabel: `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`
     };
   }
 
   function settingsDebugLog() {
     return (
-      runtime.debugEntries
+      settingsState.debugEntries
         .slice(-12)
         .reverse()
         .map(
@@ -9366,7 +9394,7 @@ ${codexPageStyle()}
   }
 
   function frozenBannerHtml(native) {
-    if (!runtime.frozen) return '';
+    if (!storageState.frozen) return '';
     const cls = native ? 'itemx2-root-frozen' : 'itemx-frozen';
     return `<div class="itemx2-frozen-banner ${cls}" role="alert"><strong>읽기 전용으로 잠김</strong><small>${ITEMXCore.esc(FROZEN_MESSAGE)}</small></div>`;
   }
@@ -9378,8 +9406,8 @@ ${codexPageStyle()}
       .filter((item) => tab === 'settings' || !ITEMXHistory.terminal('item', item))
       .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
-    runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
-    const pageStart = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
+    uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
+    const pageStart = uiState.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
     const inventoryPage = tab === 'inventory' ? all.slice(pageStart, pageStart + ITEMX_ROOT_PAGE_SIZE) : [];
     const skills = (loaded.codexSnapshot?.skills?.order || [])
       .map((id) => loaded.codexSnapshot.skills.entries[id])
@@ -9472,7 +9500,7 @@ ${codexPageStyle()}
           `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
       )
       .join('');
-    const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
+    const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${pipelineState.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
     const settings = settingsPanelHtml(loaded, skin, {
       connection,
       chips,
@@ -9485,7 +9513,7 @@ ${codexPageStyle()}
     });
     const pager =
       pageCount > 1
-        ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
+        ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
         : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
     const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
@@ -9510,7 +9538,7 @@ ${codexPageStyle()}
           `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`
       )
       .join('');
-    const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
+    const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(uiState.status)}`;
     return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
@@ -9529,12 +9557,12 @@ ${codexPageStyle()}
   }
 
   async function updateRootRegions(html) {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return false;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return false;
     const regions = rootInventoryRegions(html);
     if (regions.header == null || regions.nav == null || regions.body == null) return false;
-    const header = await runtime.mainDoc.querySelector('.x-risu-itemx-ph-sub');
-    const nav = await runtime.mainDoc.querySelector('.x-risu-itemx-main-tabs');
-    const body = await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
+    const header = await hostState.mainDoc.querySelector('.x-risu-itemx-ph-sub');
+    const nav = await hostState.mainDoc.querySelector('.x-risu-itemx-main-tabs');
+    const body = await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
     if (!header || !nav || !body) return false;
     try {
       await header.setInnerHTML(regions.header);
@@ -9562,7 +9590,7 @@ ${codexPageStyle()}
       Number(loaded.moduleAssetsEnabled),
       Number(loaded.lorebookEncounterEnabled),
       Number(loaded.debugEnabled),
-      Number(runtime.frozen),
+      Number(storageState.frozen),
       JSON.stringify(ITEMXHistory.preferences(loaded.chat)),
       ITEMXHistory.completedTurns(loaded.chat).total
     ].join(':');
@@ -9606,7 +9634,7 @@ ${codexPageStyle()}
           const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
           const value = !read(current);
           await write(loaded, value);
-          runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+          uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
           await openRootInventory({ open: true, tab: 'settings', loaded });
         })
     });
@@ -9624,26 +9652,26 @@ ${codexPageStyle()}
         hook: 'itemx2-setting-connect',
         run: async () => {
           const restoreStage = workQueue.stage('connect');
-          runtime.status = '연결 및 권한 확인 중';
+          uiState.status = '연결 및 권한 확인 중';
           await updateConnectionUi();
           await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
           try {
             const connected = await installPipelineHooks({ prompt: true });
             const styled = await installMainStyle();
-            runtime.status =
+            uiState.status =
               connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
             if (connected && styled) {
               await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
             } else {
               await showRootFeedback(
-                `연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                `연결 확인 실패 · ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
                 'error',
                 3600
               );
             }
             if (!connected || !styled)
               await notifyUser(
-                `ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                `ITEMX CODEX 연결 확인 실패: ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
                 'error'
               );
           } finally {
@@ -9655,20 +9683,20 @@ ${codexPageStyle()}
       {
         hook: 'itemx2-setting-aux-run',
         run: async () => {
-          if (runtime.auxActive > 0) return;
-          runtime.status = '보조 모델 수동 검사 중';
+          if (auxState.auxActive > 0) return;
+          uiState.status = '보조 모델 수동 검사 중';
           await recoverAuxiliaryOutput({ force: true });
         }
       },
       ...BADGE_POSITIONS.map(([key, label]) => ({
         hook: `itemx2-position-${key}`,
         run: async () => {
-          runtime.badgePosition = key;
+          uiState.badgePosition = key;
           await Risuai.pluginStorage.setItem('badgePosition', key);
-          runtime.status = `배지 위치 · ${label}`;
-          if (runtime.rootDrawer) {
-            for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-            await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
+          uiState.status = `배지 위치 · ${label}`;
+          if (uiState.rootDrawer) {
+            for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+            await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
           }
           await installMainStyle();
           for (const [other] of BADGE_POSITIONS) {
@@ -9687,7 +9715,7 @@ ${codexPageStyle()}
             if (!loaded) return;
             const next = !(await isEnabled(loaded.character));
             await setEnabled(loaded.character, next);
-            runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+            uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
             await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
           })
       },
@@ -9704,8 +9732,8 @@ ${codexPageStyle()}
             const current = await outputSettings(loaded.character),
               value = !current[key];
             await setDomainEnabled(loaded.character, domain, value);
-            runtime.cachedLoaded = null;
-            runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+            pipelineState.cachedLoaded = null;
+            uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
             await openRootInventory({ open: true, tab: 'settings' });
           })
       })),
@@ -9717,16 +9745,16 @@ ${codexPageStyle()}
             if (!loaded) return;
             const value = !(await outputSettings(loaded.character)).debugEnabled;
             await setDebugEnabled(loaded.character, value);
-            runtime.cachedLoaded = null;
-            runtime.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
+            pipelineState.cachedLoaded = null;
+            uiState.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
             await openRootInventory({ open: true, tab: 'settings' });
           })
       },
       {
         hook: 'itemx2-setting-debug-clear',
         run: async () => {
-          runtime.debugEntries = [];
-          runtime.status = '디버그 로그 비움';
+          settingsState.debugEntries = [];
+          uiState.status = '디버그 로그 비움';
           await openRootInventory({ open: true, tab: 'settings' });
         }
       },
@@ -9738,7 +9766,7 @@ ${codexPageStyle()}
             if (!loaded) return;
             const value = !(await outputSettings(loaded.character)).mainOutput;
             await setMainOutput(loaded.character, value);
-            runtime.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
+            uiState.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
             await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
           })
       },
@@ -9748,7 +9776,7 @@ ${codexPageStyle()}
           Object.keys(AUX_LABELS),
           async (loaded, value) => {
             await setAuxOutput(loaded.character, value);
-            runtime.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
+            uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
           }
         ],
         [
@@ -9756,7 +9784,7 @@ ${codexPageStyle()}
           Object.keys(RARITY_MODE_LABELS),
           async (loaded, value) => {
             await setRarityMode(loaded.character, value);
-            runtime.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
+            uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
           }
         ],
         [
@@ -9765,7 +9793,7 @@ ${codexPageStyle()}
           async (loaded, value) => {
             await setSkin(loaded.character, value);
             loaded.skin = value;
-            runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+            uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
           }
         ]
       ].flatMap(([group, values, apply]) =>
@@ -9799,7 +9827,7 @@ ${codexPageStyle()}
               .lorebookEncounterEnabled;
             await setLorebookEncounterEnabled(loaded.character, value);
             loaded.lorebookEncounterEnabled = value;
-            runtime.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
+            uiState.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
             if (value) await scanLorebookEncounters({ refresh: true, silent: true });
             await openRootInventory({ open: true, tab: 'settings' });
           })
@@ -9827,7 +9855,7 @@ ${codexPageStyle()}
                 await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
             }
             loaded.moduleAssetsEnabled = value;
-            runtime.status = value
+            uiState.status = value
               ? '모듈 에셋 초상화 · ON'
               : current.moduleAssetsEnabled
                 ? '모듈 에셋 초상화 · OFF'
@@ -9848,7 +9876,7 @@ ${codexPageStyle()}
             if (!loaded) return;
             await setFontScale(loaded.character, value);
             loaded.fontScale = value;
-            runtime.status = `글자 크기 · ${label}`;
+            uiState.status = `글자 크기 · ${label}`;
             for (const scale of ['small', 'medium', 'large']) {
               const button = await queryMainClass(`itemx2-setting-font-${scale}`);
               if (!button) continue;
@@ -9862,7 +9890,7 @@ ${codexPageStyle()}
         run: armed(
           'storageCleanupArmedUntil',
           async () => {
-            runtime.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
+            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
             await showRootFeedback(
               '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
               'working',
@@ -9870,7 +9898,7 @@ ${codexPageStyle()}
             );
           },
           async () => {
-            runtime.status = '현재 채팅 저장소 최적화 중';
+            uiState.status = '현재 채팅 저장소 최적화 중';
             await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await compactCurrentChatStorage();
@@ -9881,8 +9909,8 @@ ${codexPageStyle()}
               );
               if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
             } catch (error) {
-              runtime.storageCleanupArmedUntil = 0;
-              runtime.status = '저장소 최적화 실패';
+              uiState.storageCleanupArmedUntil = 0;
+              uiState.status = '저장소 최적화 실패';
               await showRootFeedback(`최적화 실패 · ${error.message || error}`, 'error', 4200);
               await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
             }
@@ -9894,7 +9922,7 @@ ${codexPageStyle()}
         run: armed(
           'cleanupArmedUntil',
           async () => {
-            runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
             await showRootFeedback(
               '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.',
               'error',
@@ -9902,7 +9930,7 @@ ${codexPageStyle()}
             );
           },
           async () => {
-            runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+            uiState.status = '현재 채팅 ITEMX 기록 정리 중';
             await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await cleanCurrentChatItemx();
@@ -9913,8 +9941,8 @@ ${codexPageStyle()}
               );
               if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
             } catch (error) {
-              runtime.cleanupArmedUntil = 0;
-              runtime.status = '현재 채팅 정리 실패';
+              uiState.cleanupArmedUntil = 0;
+              uiState.status = '현재 채팅 정리 실패';
               await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
               await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
             }
@@ -9924,7 +9952,7 @@ ${codexPageStyle()}
       {
         hook: 'itemx2-setting-rebuild',
         run: async () => {
-          runtime.cachedLoaded = null;
+          pipelineState.cachedLoaded = null;
           const loaded = await rebuildCurrent();
           if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
         }
@@ -9932,11 +9960,11 @@ ${codexPageStyle()}
     ];
   }
   async function installRootClickRouter(owner) {
-    if (!owner || (runtime.rootClickBindings[0]?.owner === owner && runtime.rootClickBindings.length)) return;
+    if (!owner || (uiState.rootClickBindings[0]?.owner === owner && uiState.rootClickBindings.length)) return;
     await removeRootClickRouter();
     const routeBadge = async (event) => {
       try {
-        const badge = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge'));
+        const badge = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge'));
         if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
         if (
@@ -9951,10 +9979,10 @@ ${codexPageStyle()}
         await setRootOpen(true);
         const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return true;
-        const cacheReady = loaded.key === runtime.activeContextKey && workQueue.revision('loaded-generation') === runtime.generation;
+        const cacheReady = loaded.key === pipelineState.activeContextKey && workQueue.revision('loaded-generation') === pipelineState.generation;
         if (Boolean(workQueue.revision('render')) && cacheReady && workQueue.revision('render') === rootStateFingerprint(loaded))
           return true;
-        await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
+        await openRootInventory({ open: true, loaded, tab: uiState.activeRootTab });
         return true;
       } catch (error) {
         fail('native badge click', error);
@@ -9963,8 +9991,8 @@ ${codexPageStyle()}
     };
     const routeControls = async (event) => {
       try {
-        if (!runtime.rootOpen) return;
-        const close = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-close'));
+        if (!uiState.rootOpen) return;
+        const close = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-close'));
         if (close) {
           const closeRect = await close.getBoundingClientRect();
           if (
@@ -9973,9 +10001,9 @@ ${codexPageStyle()}
             event.clientY >= closeRect.top &&
             event.clientY <= closeRect.bottom
           ) {
-            if (runtime.historyView.open && runtime.cachedLoaded) {
-              runtime.historyView.open = false;
-              await drawRootHistory(runtime.cachedLoaded);
+            if (uiState.historyView.open && pipelineState.cachedLoaded) {
+              uiState.historyView.open = false;
+              await drawRootHistory(pipelineState.cachedLoaded);
             }
             await setRootOpen(false);
             return;
@@ -9991,7 +10019,7 @@ ${codexPageStyle()}
           ['bestiary', '조우 도감'],
           ['settings', '설정']
         ]) {
-          const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`));
+          const button = hostState.mainDoc && (await hostState.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
           if (
@@ -10001,12 +10029,12 @@ ${codexPageStyle()}
             event.clientY > rect.bottom
           )
             continue;
-          if (runtime.activeRootTab === tab && !runtime.historyView.open) return;
-          runtime.historyView.open = false;
+          if (uiState.activeRootTab === tab && !uiState.historyView.open) return;
+          uiState.historyView.open = false;
 
           {
-            if (tab === 'inventory') runtime.rootItemPage = 0;
-            const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            if (tab === 'inventory') uiState.rootItemPage = 0;
+            const body = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
             if (body) {
               await body.removeClass('x-risu-itemx2-history-opened');
               await body.setInnerHTML(
@@ -10031,7 +10059,7 @@ ${codexPageStyle()}
           [-1, '.x-risu-itemx2-root-page-prev'],
           [1, '.x-risu-itemx2-root-page-next']
         ]) {
-          const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(selector));
+          const button = hostState.mainDoc && (await hostState.mainDoc.querySelector(selector));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
           if (
@@ -10051,12 +10079,12 @@ ${codexPageStyle()}
                 ITEMX_ROOT_PAGE_SIZE
             )
           );
-          const nextPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage + direction));
-          if (nextPage === runtime.rootItemPage) return;
-          runtime.rootItemPage = nextPage;
+          const nextPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage + direction));
+          if (nextPage === uiState.rootItemPage) return;
+          uiState.rootItemPage = nextPage;
 
           {
-            const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            const body = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
             if (body)
               await body.setInnerHTML(
                 '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>'
@@ -10066,20 +10094,20 @@ ${codexPageStyle()}
           }
           return;
         }
-        if (runtime.activeRootTab === 'inventory') {
-          const cached = runtime.cachedLoaded;
+        if (uiState.activeRootTab === 'inventory') {
+          const cached = pipelineState.cachedLoaded;
           const cacheReady =
-            cached && cached.key === runtime.activeContextKey && workQueue.revision('loaded-generation') === runtime.generation;
+            cached && cached.key === pipelineState.activeContextKey && workQueue.revision('loaded-generation') === pipelineState.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
           if (loaded && (await eventHitsMainClass(event, 'itemx2-repair-one'))) {
             const items = rootPageItems(loaded);
             for (let index = 0; index < items.length; index++) {
-              if (!(await runtime.mainDoc.querySelector(`#itemx2-detail-${index}:checked`))) continue;
+              if (!(await hostState.mainDoc.querySelector(`#itemx2-detail-${index}:checked`))) continue;
               try {
                 const refreshed = await repairOneItem(loaded, items[index].id);
                 const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
                 const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
-                if (runtime.activeContextKey === loaded.key && detail && item)
+                if (pipelineState.activeContextKey === loaded.key && detail && item)
                   await detail.setInnerHTML(itemDetailHtml(item));
               } catch (error) {
                 await notifyUser(error.message || String(error), 'error');
@@ -10087,7 +10115,7 @@ ${codexPageStyle()}
               return;
             }
           }
-          if (loaded && loaded.key === runtime.activeContextKey) {
+          if (loaded && loaded.key === pipelineState.activeContextKey) {
             await delay(0);
             if (await hydrateCheckedItemDetail(loaded)) return;
             const detailItems = rootPageItems(loaded);
@@ -10110,20 +10138,20 @@ ${codexPageStyle()}
             }
           }
         }
-        if (runtime.activeRootTab === 'skills' || runtime.activeRootTab === 'bestiary') {
-          const cached = runtime.cachedLoaded;
+        if (uiState.activeRootTab === 'skills' || uiState.activeRootTab === 'bestiary') {
+          const cached = pipelineState.cachedLoaded;
           const cacheReady =
-            cached && cached.key === runtime.activeContextKey && workQueue.revision('loaded-generation') === runtime.generation;
+            cached && cached.key === pipelineState.activeContextKey && workQueue.revision('loaded-generation') === pipelineState.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
-          if (loaded && loaded.key === runtime.activeContextKey) {
+          if (loaded && loaded.key === pipelineState.activeContextKey) {
             await delay(0);
-            const domain = runtime.activeRootTab === 'skills' ? 'skill' : 'monster';
+            const domain = uiState.activeRootTab === 'skills' ? 'skill' : 'monster';
             if (await hydrateCheckedCodexDetail(domain, loaded)) return;
           }
           return;
         }
-        if (runtime.activeRootTab !== 'settings') return;
-        const managerFold = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-fold'));
+        if (uiState.activeRootTab !== 'settings') return;
+        const managerFold = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-manager-fold'));
         if (managerFold) {
           const foldRect = await managerFold.getBoundingClientRect();
           const insideManager =
@@ -10141,12 +10169,12 @@ ${codexPageStyle()}
                 if (await eventHitsMainClass(event, `itemx2-manager-reroll-${index}`)) {
                   const noteElement = await queryMainClass('itemx2-manager-note');
                   const note = (await noteElement?.textContent())?.trim() || '';
-                  runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
+                  uiState.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
                   try {
                     const itemEvent = await runItemModel('reroll', loaded, target, note);
                     await commitManualEvents(loaded, [itemEvent], note ? '정보 수정' : '재감정');
                   } catch (error) {
-                    runtime.status = '재감정 실패';
+                    uiState.status = '재감정 실패';
                     await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
@@ -10175,7 +10203,7 @@ ${codexPageStyle()}
                   try {
                     await commitManualEvents(loaded, [itemEvent], '수동 제거');
                   } catch (error) {
-                    runtime.status = '수동 제거 실패';
+                    uiState.status = '수동 제거 실패';
                     await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
@@ -10189,12 +10217,12 @@ ${codexPageStyle()}
                   await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error');
                   return;
                 }
-                runtime.status = '신규 아이템 생성 중';
+                uiState.status = '신규 아이템 생성 중';
                 try {
                   const itemEvent = await runItemModel('create', loaded, null, createNote);
                   await commitManualEvents(loaded, [itemEvent], '신규 생성');
                 } catch (error) {
-                  runtime.status = '아이템 생성 실패';
+                  uiState.status = '아이템 생성 실패';
                   await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                 }
                 await openRootInventory({ open: true, tab: 'settings' });
@@ -10228,7 +10256,7 @@ ${codexPageStyle()}
       ),
       true
     );
-    runtime.rootClickBindings = [{ owner, type: 'click', id, capture: true }];
+    uiState.rootClickBindings = [{ owner, type: 'click', id, capture: true }];
   }
 
   async function openRootInventory(options = {}) {
@@ -10236,30 +10264,30 @@ ${codexPageStyle()}
   }
 
   async function openRootInventoryNow({ open = true, tab = 'inventory', loaded: suppliedLoaded = null } = {}) {
-    if (runtime.backupOpen) return;
+    if (uiState.backupOpen) return;
     try {
-      if (runtime.activeRootTab !== tab) runtime.historyView.open = false;
-      runtime.panelOpen = false;
+      if (uiState.activeRootTab !== tab) uiState.historyView.open = false;
+      uiState.panelOpen = false;
       try {
         await Risuai.hideContainer();
       } catch {}
       const loaded = suppliedLoaded || (await cachedOrRebuildCurrent());
       if (!loaded) throw new Error('No active chat context');
-      if (runtime.activeContextKey && runtime.activeContextKey !== loaded.key) return;
+      if (pipelineState.activeContextKey && pipelineState.activeContextKey !== loaded.key) return;
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
-      runtime.debugEnabled = loaded.debugEnabled;
+      settingsState.debugEnabled = loaded.debugEnabled;
       loaded.portraits =
         tab === 'bestiary' && loaded.encountersEnabled
           ? await loadCodexPortraits(loaded.character, loaded.chat, loaded.codexSnapshot, loaded)
           : {};
       const styled = await installMainStyle({ prompt: true });
-      if (!styled || !runtime.mainDoc) {
-        runtime.status = '메인 화면 권한 필요';
+      if (!styled || !hostState.mainDoc) {
+        uiState.status = '메인 화면 권한 필요';
         await notifyUser('ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.', 'error');
         return;
       }
-      let root = runtime.rootDrawer,
+      let root = uiState.rootDrawer,
         attached = false;
       if (root) {
         try {
@@ -10270,11 +10298,11 @@ ${codexPageStyle()}
       }
       if (!attached) {
         await removeRootDrawer();
-        root = await runtime.mainDoc.createElement('div');
+        root = await hostState.mainDoc.createElement('div');
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(
-        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
       );
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
@@ -10283,23 +10311,23 @@ ${codexPageStyle()}
         workQueue.remember('detail', '');
       }
       if (!attached) {
-        const body = await runtime.mainDoc.querySelector('body');
+        const body = await hostState.mainDoc.querySelector('body');
         if (!body) throw new Error('Main document body unavailable');
-        if (runtime.activeContextKey !== loaded.key) return;
+        if (pipelineState.activeContextKey !== loaded.key) return;
         await body.appendChild(root);
-        if (runtime.activeContextKey !== loaded.key) {
+        if (pipelineState.activeContextKey !== loaded.key) {
           await root.remove();
           return;
         }
       }
-      runtime.rootDrawer = root;
-      runtime.rootOpen = Boolean(open);
+      uiState.rootDrawer = root;
+      uiState.rootOpen = Boolean(open);
       workQueue.remember('render', open ? rootStateFingerprint(loaded) : '');
-      runtime.activeRootTab = tab;
+      uiState.activeRootTab = tab;
       await drawRootHistory(loaded);
       await installRootClickRouter(root);
     } catch (error) {
-      runtime.status = '인벤토리 열기 오류';
+      uiState.status = '인벤토리 열기 오류';
       await removeRootDrawer();
       fail('openRootInventory', error);
     }
@@ -10356,7 +10384,7 @@ ${codexPageStyle()}
     const inventoryContent = !enabled
       ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX CODEX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
       : selected
-        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion && runtime.visualEffectsEnabled ? 'full' : 'off' })}${detailAnnotations('item', selected)}</div></div>`
+        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion && presentationState.visualEffectsEnabled ? 'full' : 'off' })}${detailAnnotations('item', selected)}</div></div>`
         : `<nav class="itemx-seg">${[
             ['all', '전체'],
             ['owned', '보유'],
@@ -10371,15 +10399,15 @@ ${codexPageStyle()}
               ''
             )}</nav><div class="itemx-tools"><button class="itemx-tool" data-action="motion">${ui.motion ? '✦ 모션' : '◇ 정지'}</button><input class="itemx-search itemx-search-input" value="${ITEMXCore.esc(ui.query)}" placeholder="검색" aria-label="검색"><button class="itemx-tool" data-action="rebuild">↻</button></div><div class="itemx-body"><div class="itemx-grid">${visible.map(ITEMXRenderer.renderTile).join('') || '<div class="itemx-empty">표시할 아이템이 없답니다.</div>'}</div></div><footer class="itemx-pf">${visible.length}점 표시${all.filter(matches).length > 60 ? ' · 첫 60점' : ''}</footer>`;
     const permissionLabel =
-      runtime.permissions.replacer === true
+      hostState.permissions.replacer === true
         ? '연결됨'
-        : runtime.permissions.replacer === false
+        : hostState.permissions.replacer === false
           ? '권한 필요'
           : '확인 중';
     const styleLabel =
-      runtime.permissions.mainDom === true
+      hostState.permissions.mainDom === true
         ? '고정 스타일'
-        : runtime.permissions.mainDom === false
+        : hostState.permissions.mainDom === false
           ? '본문 폴백'
           : '확인 중';
     const skin = SETTINGS_SKINS.frame;
@@ -10389,7 +10417,7 @@ ${codexPageStyle()}
     const debugLog = settingsDebugLog();
     const storageParts = settingsStorageParts(loaded);
     const managerContent = `<section class="itemx-manager"><div class="itemx-manager-title">아이템 운영 도구</div><label class="itemx-manager-field"><span>대상 아이템</span><select data-action="manage-select" ${all.length ? '' : 'disabled'}>${manageOptions || '<option>아이템 없음</option>'}</select></label><label class="itemx-manager-field"><span>수정 지시 · 비워두면 순수 재감정</span><textarea data-action="manage-note" placeholder="예: 이름은 그대로 두고 내구도를 31/100으로, 화염 속성은 제거"></textarea></label><div class="itemx-manager-actions"><button class="itemx-tool" data-action="manage-reroll" ${managed ? '' : 'disabled'}>🔄 정보 수정·재감정</button><button class="itemx-tool itemx-manager-danger" data-action="manage-remove" ${managed && managed.possession !== 'removed' ? '' : 'disabled'}>🗑 수동 제거</button></div><div class="itemx-manager-current">${managed ? `${ITEMXCore.esc(managed.name)} · ${ITEMXCore.esc(managed.displayRarity || managed.rarity)} · ${ITEMXCore.esc(managed.possession)} / ${ITEMXCore.esc(managed.location)}` : '선택 가능한 아이템이 없습니다.'}</div><label class="itemx-manager-field"><span>신규 아이템 생성 지시</span><textarea data-action="create-note" placeholder="예: 주인공이 획득한 번개 속성의 희귀 장검"></textarea></label><button class="itemx-tool" data-action="manage-create">＋ 신규 아이템 생성 시도</button><small class="itemx-manager-help">보조 모델 결과는 ITEMX 엄격 파서와 id 검증을 통과한 경우에만 채팅별 사건 원장에 반영됩니다.</small></section>`;
-    const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
+    const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
     const settingsContent = settingsPanelHtml(loaded, skin, {
       permissionLabel,
       styleLabel,
@@ -10432,13 +10460,13 @@ ${codexPageStyle()}
           : ui.tab === 'bestiary'
             ? bestiaryContent
             : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${frozenBannerHtml(false)}<div class="itemx2-iframe-content">${content}</div></section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${uiState.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(uiState.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${frozenBannerHtml(false)}<div class="itemx2-iframe-content">${content}</div></section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener(
       'click',
       entry(
         'ui-action',
         () => {
-          runtime.historyView.open = false;
+          uiState.historyView.open = false;
           void closeInventory();
         },
         true
@@ -10449,7 +10477,7 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         () => {
-          runtime.historyView = {
+          uiState.historyView = {
             open: true,
             key: loaded.key,
             domain: historyDomain(ui.tab),
@@ -10462,7 +10490,7 @@ ${codexPageStyle()}
         true
       )
     );
-    if (runtime.historyView.open) drawIframeHistory(loaded);
+    if (uiState.historyView.open) drawIframeHistory(loaded);
     root.querySelector('[data-action="back"]')?.addEventListener(
       'click',
       entry(
@@ -10529,7 +10557,7 @@ ${codexPageStyle()}
         async () => {
           loaded.enabled = !enabled;
           await setEnabled(loaded.character, loaded.enabled);
-          runtime.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화';
+          uiState.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화';
           drawInventory(loaded);
         },
         true
@@ -10547,7 +10575,7 @@ ${codexPageStyle()}
           async () => {
             loaded[key] = !loaded[key];
             await setDomainEnabled(loaded.character, domain, loaded[key]);
-            runtime.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`;
+            uiState.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`;
             drawInventory(loaded);
           },
           true
@@ -10560,7 +10588,7 @@ ${codexPageStyle()}
         async () => {
           loaded.debugEnabled = !loaded.debugEnabled;
           await setDebugEnabled(loaded.character, loaded.debugEnabled);
-          runtime.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`;
+          uiState.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`;
           drawInventory(loaded);
         },
         true
@@ -10571,8 +10599,8 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         () => {
-          runtime.debugEntries = [];
-          runtime.status = '디버그 로그 비움';
+          settingsState.debugEntries = [];
+          uiState.status = '디버그 로그 비움';
           drawInventory(loaded);
         },
         true
@@ -10583,13 +10611,13 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          if (runtime.auxActive > 0) return;
-          runtime.status = '보조 모델 수동 검사 중';
+          if (auxState.auxActive > 0) return;
+          uiState.status = '보조 모델 수동 검사 중';
           drawInventory(loaded);
           try {
             await recoverAuxiliaryOutput({ force: true });
           } catch (error) {
-            runtime.status = '보조 모델 검사 실패';
+            uiState.status = '보조 모델 검사 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
           }
           const next = await rebuildCurrent();
@@ -10605,7 +10633,7 @@ ${codexPageStyle()}
         async () => {
           loaded.mainOutput = !loaded.mainOutput;
           await setMainOutput(loaded.character, loaded.mainOutput);
-          runtime.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`;
+          uiState.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`;
           drawInventory(loaded);
         },
         true
@@ -10618,7 +10646,7 @@ ${codexPageStyle()}
         async () => {
           loaded.effectsEnabled = !loaded.effectsEnabled;
           await setEffectsEnabled(loaded.character, loaded.effectsEnabled);
-          runtime.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`;
+          uiState.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`;
           drawInventory(loaded);
         },
         true
@@ -10632,13 +10660,13 @@ ${codexPageStyle()}
           if (loaded.moduleAssetsEnabled) {
             loaded.moduleAssetsEnabled = false;
             await setModuleAssetsEnabled(loaded.character, false);
-            runtime.status = '모듈 에셋 초상화 · OFF';
+            uiState.status = '모듈 에셋 초상화 · OFF';
             drawInventory(loaded);
             return;
           }
           const enabled = await enableModuleAssets(loaded.character, loaded.chat);
           loaded.moduleAssetsEnabled = enabled;
-          runtime.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
+          uiState.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
           if (!enabled)
             await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
           drawInventory(loaded);
@@ -10653,7 +10681,7 @@ ${codexPageStyle()}
         async () => {
           loaded.lorebookEncounterEnabled = !loaded.lorebookEncounterEnabled;
           await setLorebookEncounterEnabled(loaded.character, loaded.lorebookEncounterEnabled);
-          runtime.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
+          uiState.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
           if (loaded.lorebookEncounterEnabled) await scanLorebookEncounters({ refresh: true, silent: true });
           const next = await rebuildCurrent();
           if (next) {
@@ -10669,7 +10697,7 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          runtime.status = '조우 로어북 스캔 중';
+          uiState.status = '조우 로어북 스캔 중';
           drawInventory(loaded);
           await scanLorebookEncounters({ refresh: true });
           const next = await rebuildCurrent();
@@ -10691,15 +10719,15 @@ ${codexPageStyle()}
             if (seg === 'aux') {
               await setAuxOutput(loaded.character, value);
               loaded.auxOutput = value;
-              runtime.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
+              uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
             } else if (seg === 'rarity') {
               await setRarityMode(loaded.character, value);
               loaded.rarityMode = value;
-              runtime.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
+              uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
             } else if (seg === 'skin') {
               await setSkin(loaded.character, value);
               loaded.skin = value;
-              runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+              uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
             } else return;
             drawInventory(loaded);
           },
@@ -10716,7 +10744,7 @@ ${codexPageStyle()}
             const value = button.dataset.font;
             await setFontScale(loaded.character, value);
             loaded.fontScale = value;
-            runtime.status = `글자 크기 · ${{ small: '작게', medium: '보통', large: '크게' }[value]}`;
+            uiState.status = `글자 크기 · ${{ small: '작게', medium: '보통', large: '크게' }[value]}`;
             drawInventory(loaded);
           },
           true
@@ -10742,20 +10770,20 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          if (runtime.storageCleanupArmedUntil <= Date.now()) {
-            runtime.storageCleanupArmedUntil = Date.now() + 7000;
-            runtime.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
+          if (uiState.storageCleanupArmedUntil <= Date.now()) {
+            uiState.storageCleanupArmedUntil = Date.now() + 7000;
+            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
             drawInventory(loaded);
             return;
           }
-          runtime.status = '현재 채팅 저장소 최적화 중';
+          uiState.status = '현재 채팅 저장소 최적화 중';
           drawInventory(loaded);
           try {
             const result = await compactCurrentChatStorage();
             if (result.loaded) drawInventory(result.loaded);
           } catch (error) {
-            runtime.storageCleanupArmedUntil = 0;
-            runtime.status = '저장소 최적화 실패';
+            uiState.storageCleanupArmedUntil = 0;
+            uiState.status = '저장소 최적화 실패';
             await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -10782,20 +10810,20 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          if (runtime.cleanupArmedUntil <= Date.now()) {
-            runtime.cleanupArmedUntil = Date.now() + 7000;
-            runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+          if (uiState.cleanupArmedUntil <= Date.now()) {
+            uiState.cleanupArmedUntil = Date.now() + 7000;
+            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
             drawInventory(loaded);
             return;
           }
-          runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+          uiState.status = '현재 채팅 ITEMX 기록 정리 중';
           drawInventory(loaded);
           try {
             const result = await cleanCurrentChatItemx();
             if (result.loaded) drawInventory(result.loaded);
           } catch (error) {
-            runtime.cleanupArmedUntil = 0;
-            runtime.status = '현재 채팅 정리 실패';
+            uiState.cleanupArmedUntil = 0;
+            uiState.status = '현재 채팅 정리 실패';
             await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -10808,11 +10836,11 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          runtime.status = '모델 처리 권한 확인 중';
+          uiState.status = '모델 처리 권한 확인 중';
           drawInventory(loaded);
           const connected = await installPipelineHooks({ prompt: true });
           if (connected) await notifyUser('ITEMX CODEX 모델 처리 권한이 연결되었습니다.', 'success');
-          else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`, 'error');
+          else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${hostState.lastHookError || uiState.status}`, 'error');
           const next = await rebuildCurrent();
           if (next) {
             next.enabled = await isEnabled(next.character);
@@ -10827,11 +10855,11 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          runtime.status = '본문 화면 연결 중';
+          uiState.status = '본문 화면 연결 중';
           drawInventory(loaded);
           const styled = await installMainStyle({ prompt: true });
           if (styled) await notifyUser('ITEMX CODEX 본문 화면 연결이 완료되었습니다.', 'success');
-          else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`, 'error');
+          else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${hostState.lastDomError || uiState.status}`, 'error');
           drawInventory(loaded);
         },
         true
@@ -10845,14 +10873,14 @@ ${codexPageStyle()}
           async () => {
             const value = button.dataset.position;
             if (!BADGE_POSITIONS.some(([key]) => key === value)) return;
-            runtime.badgePosition = value;
+            uiState.badgePosition = value;
             await Risuai.pluginStorage.setItem('badgePosition', value);
-            if (runtime.rootDrawer) {
-              for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-              await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);
+            if (uiState.rootDrawer) {
+              for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+              await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);
             }
             await installMainStyle();
-            runtime.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`;
+            uiState.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`;
             drawInventory(loaded);
           },
           true
@@ -10879,7 +10907,7 @@ ${codexPageStyle()}
             const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
             if (!target) throw new Error('대상 아이템이 없습니다.');
             if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
-            runtime.status = '수동 제거 처리 중';
+            uiState.status = '수동 제거 처리 중';
             drawInventory(loaded);
             const event = {
               kind: 'patch',
@@ -10904,7 +10932,7 @@ ${codexPageStyle()}
               drawInventory(next);
             }
           } catch (error) {
-            runtime.status = '수동 제거 실패';
+            uiState.status = '수동 제거 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -10921,7 +10949,7 @@ ${codexPageStyle()}
             const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
             if (!target) throw new Error('대상 아이템이 없습니다.');
             const note = root.querySelector('[data-action="manage-note"]')?.value?.trim() || '';
-            runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
+            uiState.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
             drawInventory(loaded);
             const event = await runItemModel('reroll', loaded, target, note);
             const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정');
@@ -10930,7 +10958,7 @@ ${codexPageStyle()}
               drawInventory(next);
             }
           } catch (error) {
-            runtime.status = '재감정 실패';
+            uiState.status = '재감정 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -10946,7 +10974,7 @@ ${codexPageStyle()}
           try {
             const note = root.querySelector('[data-action="create-note"]')?.value?.trim() || '';
             if (!note) throw new Error('생성할 아이템 설명을 입력하세요.');
-            runtime.status = '신규 아이템 생성 중';
+            uiState.status = '신규 아이템 생성 중';
             drawInventory(loaded);
             const event = await runItemModel('create', loaded, null, note);
             const next = await commitManualEvents(loaded, [event], '신규 생성');
@@ -10956,7 +10984,7 @@ ${codexPageStyle()}
               drawInventory(next);
             }
           } catch (error) {
-            runtime.status = '아이템 생성 실패';
+            uiState.status = '아이템 생성 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -10970,9 +10998,9 @@ ${codexPageStyle()}
         entry(
           'ui-action',
           () => {
-            if (ui.tab === el.dataset.tab && !runtime.historyView.open) return;
+            if (ui.tab === el.dataset.tab && !uiState.historyView.open) return;
             ui.tab = el.dataset.tab;
-            runtime.historyView.open = false;
+            uiState.historyView.open = false;
             drawIframeHistory(loaded);
             ui.selected = null;
             ui.selectedSkill = null;
@@ -11065,7 +11093,7 @@ ${codexPageStyle()}
   }
 
   async function closeInventory({ immediate = false } = {}) {
-    runtime.panelOpen = false;
+    uiState.panelOpen = false;
     const panel = typeof document === 'undefined' ? null : document.querySelector('.itemx-panel');
     if (panel && !immediate && !reducedMotion()) {
       panel.classList.remove('itemx-plugin-panel-in');
@@ -11075,27 +11103,27 @@ ${codexPageStyle()}
         delay(210)
       ]);
     }
-    if (runtime.panelOpen) return;
+    if (uiState.panelOpen) return;
     await Risuai.hideContainer();
-    runtime.allowDrawerOverSettings = false;
+    uiState.allowDrawerOverSettings = false;
     invalidateHostSettingsVisibility();
     await syncHostSettingsVisibility();
   }
 
   async function openInventory(tab = 'inventory') {
     if (tab === 'inventory') return openRootInventory();
-    runtime.panelOpen = true;
+    uiState.panelOpen = true;
     ui.tab = tab;
     try {
       const compact = window.innerWidth <= 520;
       const panelWidth = compact ? Math.max(320, window.innerWidth - 32) : 420;
       const panelHeight = Math.max(420, Math.min(700, Math.round(window.innerHeight * (compact ? 0.72 : 0.78))));
-      runtime.compactContainer = true;
+      uiState.compactContainer = true;
       try {
         await Risuai.resizeContainer(panelHeight, panelWidth);
       } catch (error) {
-        runtime.compactContainer = false;
-        runtime.status = 'PocketRisu 호환 모드';
+        uiState.compactContainer = false;
+        uiState.status = 'PocketRisu 호환 모드';
         log('resizeContainer unavailable; using bounded fullscreen fallback');
       }
       document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`;
@@ -11104,15 +11132,15 @@ ${codexPageStyle()}
       if (!loaded) throw new Error('No active chat context');
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
-      runtime.debugEnabled = loaded.debugEnabled;
+      settingsState.debugEnabled = loaded.debugEnabled;
       drawInventory(loaded);
-      await Risuai.showContainer(runtime.compactContainer ? 'floating' : 'fullscreen');
+      await Risuai.showContainer(uiState.compactContainer ? 'floating' : 'fullscreen');
       const panel = document.querySelector('.itemx-panel');
-      if (panel && runtime.panelOpen && !reducedMotion())
+      if (panel && uiState.panelOpen && !reducedMotion())
         panel.classList.add('itemx-plugin-panel-in');
     } catch (error) {
-      runtime.panelOpen = false;
-      runtime.status = '인벤토리 열기 오류';
+      uiState.panelOpen = false;
+      uiState.status = '인벤토리 열기 오류';
       try {
         await Risuai.hideContainer();
       } catch {}
@@ -11125,24 +11153,24 @@ ${codexPageStyle()}
     if (!ctx) return;
     const next = !(await isEnabled(ctx.character));
     await setEnabled(ctx.character, next);
-    runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+    uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
     await openRootInventory({ open: true, tab: 'settings' });
   }
 
   async function openSettingsFromRisuMenu() {
     const active = await context();
     if (!active) {
-      runtime.allowDrawerOverSettings = false;
+      uiState.allowDrawerOverSettings = false;
       invalidateHostSettingsVisibility();
-      runtime.status = '채팅 진입 대기';
+      uiState.status = '채팅 진입 대기';
       const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
       await notifyUser(message, 'error');
       return;
     }
-    runtime.activeContextKey = active.key;
-    runtime.allowDrawerOverSettings = true;
+    pipelineState.activeContextKey = active.key;
+    uiState.allowDrawerOverSettings = true;
     invalidateHostSettingsVisibility();
-    let styled = Boolean(runtime.mainDoc) || (await installMainStyle());
+    let styled = Boolean(hostState.mainDoc) || (await installMainStyle());
     const loadingStarted = styled ? Date.now() : 0;
     if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     await updateRootLoading('연결과 권한 확인 중…');
@@ -11153,7 +11181,7 @@ ${codexPageStyle()}
       if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     }
     await updateRootLoading('인벤토리 상태 확인 중…');
-    runtime.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
+    uiState.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
     if (loadingStarted) await delay(Math.max(0, 260 - (Date.now() - loadingStarted)));
     if (styled) await openRootInventory({ open: true, tab: 'settings' });
     else await openInventory('settings');
@@ -11164,17 +11192,17 @@ ${codexPageStyle()}
   }
 
   async function installDisplayHooks() {
-    if (!runtime.hooks.process) {
+    if (!hostState.hooks.process) {
       await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
-      runtime.hooks.process = true;
+      hostState.hooks.process = true;
     }
-    if (!runtime.hooks.output) {
+    if (!hostState.hooks.output) {
       await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
-      runtime.hooks.output = true;
+      hostState.hooks.output = true;
     }
-    if (!runtime.hooks.display) {
+    if (!hostState.hooks.display) {
       await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
-      runtime.hooks.display = true;
+      hostState.hooks.display = true;
     }
   }
 
@@ -11182,7 +11210,7 @@ ${codexPageStyle()}
     await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
     await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
     await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
-    if (runtime.permissions.replacer) {
+    if (hostState.permissions.replacer) {
       await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
       await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
     }
@@ -11193,85 +11221,85 @@ ${codexPageStyle()}
       await installDisplayHooks();
       const permission =
         typeof Risuai.requestPluginPermission === 'function' ? await Risuai.requestPluginPermission('replacer') : true;
-      runtime.permissions.replacer = permission === true;
-      if (!runtime.permissions.replacer) {
-        if (runtime.hooks.before) {
+      hostState.permissions.replacer = permission === true;
+      if (!hostState.permissions.replacer) {
+        if (hostState.hooks.before) {
           try {
             await Risuai.removeRisuReplacer('beforeRequest', pipelineEntries.before);
           } catch {}
         }
-        if (runtime.hooks.after) {
+        if (hostState.hooks.after) {
           try {
             await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
           } catch {}
         }
-        runtime.hooks.before = false;
-        runtime.hooks.after = false;
-        runtime.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
-        runtime.status = '모델 처리 권한 필요';
+        hostState.hooks.before = false;
+        hostState.hooks.after = false;
+        hostState.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
+        uiState.status = '모델 처리 권한 필요';
       } else {
-        if (!runtime.hooks.before) {
+        if (!hostState.hooks.before) {
           await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
-          runtime.hooks.before = true;
+          hostState.hooks.before = true;
         }
-        if (!runtime.hooks.after) {
+        if (!hostState.hooks.after) {
           await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
-          runtime.hooks.after = true;
+          hostState.hooks.after = true;
         }
       }
-      if (!runtime.hooks.listener) {
+      if (!hostState.hooks.listener) {
         if (typeof Risuai.addRisuChatListener !== 'function') {
-          runtime.hooks.listener = 'unsupported';
+          hostState.hooks.listener = 'unsupported';
           log('chat listener unavailable; continuing with core request/output hooks');
         } else
           try {
             await Risuai.addRisuChatListener('output', (output) => {
-              const loaded = runtime.cachedLoaded;
+              const loaded = pipelineState.cachedLoaded;
               if (
                 output?.chat &&
-                loaded?.key === runtime.activeContextKey &&
+                loaded?.key === pipelineState.activeContextKey &&
                 output.characterIndex === loaded.characterIndex &&
                 output.chatIndex === loaded.chatIndex
               )
                 commitEventBursts(output.chat);
               void scheduleCommittedOutputSync();
             });
-            runtime.hooks.listener = true;
+            hostState.hooks.listener = true;
           } catch (error) {
             const message = String(error?.message || error || '');
             if (!/API method addRisuChatListener not found/i.test(message)) throw error;
-            runtime.hooks.listener = 'unsupported';
+            hostState.hooks.listener = 'unsupported';
             log('chat listener unavailable; continuing with core request/output hooks');
           }
       }
-      if (runtime.permissions.replacer) {
-        runtime.lastHookError = '';
-        runtime.status = prompt ? '모델 처리 권한 연결됨' : '정상';
+      if (hostState.permissions.replacer) {
+        hostState.lastHookError = '';
+        uiState.status = prompt ? '모델 처리 권한 연결됨' : '정상';
       }
       if (workQueue.hasTimer('catchUpTimer')) armCatchUpWatchdog();
-      return runtime.permissions.replacer;
+      return hostState.permissions.replacer;
     } catch (error) {
-      runtime.permissions.replacer = false;
-      runtime.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
-      runtime.status = '모델 연결 오류';
+      hostState.permissions.replacer = false;
+      hostState.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
+      uiState.status = '모델 연결 오류';
       fail('pipeline hooks', error);
       return false;
     }
   }
 
   function armRemountWatchdog() {
-    if (runtime.unloading) return;
-    const interval = runtime.hostObserver || !runtime.activeContextKey ? 10000 : 1200;
+    if (hostState.unloading) return;
+    const interval = hostState.hostObserver || !pipelineState.activeContextKey ? 10000 : 1200;
     workQueue.clearTimer('remountTimer');
 
     workQueue.schedule(
       'remountTimer',
       () => {
-        if (!runtime.bodyFxScrollActive) {
+        if (!presentationState.bodyFxScrollActive) {
           const now = Date.now();
-          if (!runtime.activeContextKey) {
+          if (!pipelineState.activeContextKey) {
             return ensureRootInventory();
-          } else if (!runtime.hostObserver || workQueue.age('remount') >= 10000) {
+          } else if (!hostState.hostObserver || workQueue.age('remount') >= 10000) {
             return ensureRootInventory();
           }
         }
@@ -11282,31 +11310,31 @@ ${codexPageStyle()}
   }
 
   async function recoverAfterBrowserResume() {
-    if (runtime.unloading) return;
+    if (hostState.unloading) return;
     workQueue.cancel(intent => intent.kind === 'committed-output', false);
     const pending = (async () => {
       workQueue.clearTimer('bodyFxStartTimer');
       workQueue.clearTimer('bodyFxScrollTimer');
-      runtime.bodyFxScrollActive = false;
-      runtime.bodyFxSawScroll = false;
+      presentationState.bodyFxScrollActive = false;
+      presentationState.bodyFxSawScroll = false;
 
 
-      if (runtime.bodyFxClassOwner)
-        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+      if (presentationState.bodyFxClassOwner)
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
 
       await refreshPipelineBindingsAfterResume();
-      runtime.cachedLoaded = null;
-      runtime.generation += 1;
+      pipelineState.cachedLoaded = null;
+      pipelineState.generation += 1;
       await installMainStyle();
       await rebuildCurrent({ upgradeDisplayRefs: true });
       await ensureRootInventory();
-      runtime.backgrounded = false;
+      hostState.backgrounded = false;
     })().catch((error) => fail('browser resume recovery', error));
     return pending;
   }
 
   function queueBrowserResume() {
-    if (runtime.unloading || !runtime.backgrounded) return;
+    if (hostState.unloading || !hostState.backgrounded) return;
     workQueue.clearTimer('resumeTimer');
     workQueue.schedule(
       'resumeTimer',
@@ -11322,10 +11350,10 @@ ${codexPageStyle()}
     const bind = (target, type, handler) => {
       if (!target || typeof target.addEventListener !== 'function') return;
       target.addEventListener(type, handler);
-      runtime.resumeBindings.push({ target, type, handler });
+      hostState.resumeBindings.push({ target, type, handler });
     };
     const background = () => {
-      runtime.backgrounded = true;
+      hostState.backgrounded = true;
     };
     const visible = () => {
       if (typeof document === 'undefined' || document.visibilityState !== 'hidden') queueBrowserResume();
@@ -11357,14 +11385,14 @@ ${codexPageStyle()}
       'html',
       'itemx2-current-bot'
     );
-    if (setting?.id) runtime.uiParts.push(setting.id);
+    if (setting?.id) hostState.uiParts.push(setting.id);
     await installDisplayHooks();
     const initial = await context();
     let connected = false,
       styled = false;
     if (initial) {
-      runtime.activeContextKey = initial.key;
-      runtime.status = '초기 화면 연결 중';
+      pipelineState.activeContextKey = initial.key;
+      uiState.status = '초기 화면 연결 중';
       await outputSettings(initial.character);
       styled = await installMainStyle();
       const loadingStarted = styled ? Date.now() : 0;
@@ -11377,7 +11405,7 @@ ${codexPageStyle()}
       if (styled) await openRootInventory({ open: false });
       void dispatch('update', checkForUpdate);
     } else {
-      runtime.status = '채팅 진입 대기';
+      uiState.status = '채팅 진입 대기';
     }
     armRemountWatchdog();
     armCatchUpWatchdog();
@@ -11392,28 +11420,28 @@ ${codexPageStyle()}
     if (initial)
       void dispatch('catch-up', catchUpLatestOutput).catch((error) => fail('initial output catch-up', error));
     installBrowserResumeHandlers();
-    if (connected && styled) runtime.status = '정상';
+    if (connected && styled) uiState.status = '정상';
     log(`v${ITEMX_PLUGIN_VERSION} ready`);
     });
   } catch (error) {
-    runtime.status = '초기화 오류';
+    uiState.status = '초기화 오류';
     await removeRootDrawer();
     await notifyUser(`ITEMX CODEX 초기화 실패: ${error.message || error}`, 'error');
     fail('bootstrap', error);
   }
 
   await Risuai.onUnload(async () => {
-    runtime.unloading = true;
+    hostState.unloading = true;
     await workQueue.close();
     clearEventBursts();
-    runtime.panelOpen = false;
+    uiState.panelOpen = false;
     workQueue.clearTimer('resumeTimer');
-    for (const { target, type, handler } of runtime.resumeBindings) {
+    for (const { target, type, handler } of hostState.resumeBindings) {
       try {
         target.removeEventListener(type, handler);
       } catch {}
     }
-    runtime.resumeBindings = [];
+    hostState.resumeBindings = [];
     workQueue.clearTimer('remountTimer');
 
     workQueue.clearTimer('catchUpTimer');
@@ -11424,13 +11452,13 @@ ${codexPageStyle()}
     workQueue.clearTimer('legacyCommitTimer');
     workQueue.clearTimer('bodyFxStartTimer');
     workQueue.clearTimer('bodyFxScrollTimer');
-    if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
+    if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
-        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
       } catch {}
     }
-    runtime.bodyFxScrollActive = false;
-    runtime.bodyFxSawScroll = false;
+    presentationState.bodyFxScrollActive = false;
+    presentationState.bodyFxSawScroll = false;
 
 
     try {
@@ -11439,9 +11467,9 @@ ${codexPageStyle()}
     await removeRootDrawer();
     await removeBodyEffectGovernor();
     try {
-      if (runtime.hostObserver?.disconnect) await runtime.hostObserver.disconnect();
+      if (hostState.hostObserver?.disconnect) await hostState.hostObserver.disconnect();
     } catch {}
-    runtime.hostObserver = null;
+    hostState.hostObserver = null;
     try {
       await Risuai.removeRisuScriptHandler('output', pipelineEntries.output);
     } catch {}
@@ -11457,13 +11485,13 @@ ${codexPageStyle()}
     try {
       await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
     } catch {}
-    for (const id of runtime.uiParts) {
+    for (const id of hostState.uiParts) {
       try {
         await Risuai.unregisterUIPart(id);
       } catch {}
     }
     try {
-      if (runtime.mainStyle) await runtime.mainStyle.remove();
+      if (hostState.mainStyle) await hostState.mainStyle.remove();
     } catch {}
   });
 })();

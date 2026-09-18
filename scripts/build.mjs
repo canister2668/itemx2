@@ -28,6 +28,7 @@ const shellCss = await readFile(resolve(root, 'src/shell.css'), 'utf8');
 const cardsCss = await readFile(resolve(root, 'src/cards.css'), 'utf8');
 const presentationCss = await readFile(resolve(root, 'src/presentation.css'), 'utf8');
 const workQueue = await readFile(resolve(root, 'src/work-queue.js'), 'utf8');
+const state = await readFile(resolve(root, 'src/state.js'), 'utf8');
 const history = await readFile(resolve(root, 'src/history.js'), 'utf8');
 const backup = await readFile(resolve(root, 'src/backup.js'), 'utf8');
 if (!cardsCss.startsWith('    .itemx-panel')) throw new Error('src/cards.css must begin at the .itemx-panel surface');
@@ -94,7 +95,7 @@ const builtRuntime = productionSource(
 if (/__ITEMX_[A-Z_]+__/.test(builtRuntime)) throw new Error('unreplaced build placeholder');
 
 await mkdir(resolve(root, 'dist'), { recursive: true });
-const plugin = `${metadata}${productionSource(core).trimEnd()}\n${productionSource(quality).trimEnd()}\n${productionSource(codex).trimEnd()}\n${productionSource(lorebook).trimEnd()}\n${productionSource(renderer).trimEnd()}\n${productionSource(history).trimEnd()}\n${productionSource(backup).trimEnd()}\n${productionSource(workQueue).trimEnd()}\n${builtRuntime.trimEnd()}\n`;
+const plugin = `${metadata}${productionSource(core).trimEnd()}\n${productionSource(quality).trimEnd()}\n${productionSource(codex).trimEnd()}\n${productionSource(lorebook).trimEnd()}\n${productionSource(renderer).trimEnd()}\n${productionSource(history).trimEnd()}\n${productionSource(backup).trimEnd()}\n${productionSource(workQueue).trimEnd()}\n${productionSource(state).trimEnd()}\n${builtRuntime.trimEnd()}\n`;
 await writeFile(resolve(root, 'dist/itemx2.plugin.js'), plugin);
 await writeFile(resolve(root, 'dist/itemx2-ui.css'), `${css}\n`);
 await writeFile(resolve(root, 'dist/itemx2-main-scoped.css'), `${mainCss.trimEnd()}\n`);

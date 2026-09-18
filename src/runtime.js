@@ -157,89 +157,16 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     workQueue.assertCurrent();
     return Risuai.setChatToIndex(...args);
   };
-  const ui = {
-    tab: 'inventory',
-    filter: 'all',
-    query: '',
-    selected: null,
-    selectedSkill: null,
-    selectedMonster: null,
-    manageId: null,
-    motion: true
-  };
-  const runtime = {
-    latestMarkers: new Set(),
-    eventPayloads: new Map(),
-    presentationRecords: null,
-    eventBursts: new Map(),
-    eventBurstSeen: new Set(),
-    eventBurstOwners: new Set(),
-
-    markerHtmlCache: new Map(),
-    detailHtmlCache: new Map(),
-    settingsCache: new Map(),
-    cachedLoaded: null,
-    portraitCache: new Map(),
-    portraitThumbnailCache: new Map(),
-    inlinePortraitCatalog: null,
-    mainStyle: null,
-    mainDoc: null,
-    rootDrawer: null,
-    rootOpen: false,
-    activeRootTab: 'inventory',
-    rootItemPage: 0,
-
-    rootClickBindings: [],
-    bodyFxEventIds: [],
-    bodyFxClassOwner: null,
-    bodyFxScrollActive: false,
-    bodyFxSawScroll: false,
-    uiParts: [],
-    generation: 0,
-    backgrounded: false,
-    resumeBindings: [],
-    hostObserver: null,
-
-    hostSettingsCache: { at: 0, visible: false },
-
-
-    status: 'UI 준비',
-    lastDomError: '',
-    lastHookError: '',
-    unloading: false,
-    hooks: { process: false, output: false, display: false, before: false, after: false, listener: false },
-    permissions: { replacer: null, mainDom: null, db: null },
-    badgePosition: 'rm',
-    compactContainer: true,
-    moduleAssetCache: { key: '', at: 0, rows: [] },
-    characterAssetCache: { key: '', at: 0, rows: [] },
-    combinedAssetCache: { key: '', at: 0, rows: [] },
-    lorebookCache: { key: '', at: 0, rows: [] },
-    panelOpen: false,
-    auxActive: 0,
-    allowDrawerOverSettings: false,
-    activeContextKey: '',
-    checkpointCacheRecord: null,
-    frozen: false,
-    frozenReason: '',
-    auxLast: { state: 'idle', label: '아직 실행 기록 없음', at: 0, events: null },
-    update: { checking: false, checkedAt: 0, latest: '', available: false },
-    debugEnabled: false,
-    visualEffectsEnabled: true,
-    visualSkin: 'dark',
-    debugEntries: [],
-    backupOpen: false,
-    cleanupArmedUntil: 0,
-    storageCleanupArmedUntil: 0
-  };
-  runtime.historyView = { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 };
+  const stateOwners = ITEMXState.create();
+  const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
+  const ui = uiState.view;
 
   const log = (...args) => console.log('[ITEMX 2]', ...args);
   const debugRecord = (where, detail = '') => {
-    if (!runtime.debugEnabled) return;
+    if (!settingsState.debugEnabled) return;
     const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
-    runtime.debugEntries.push({ at: Date.now(), where: String(where), detail: String(text || '').slice(0, 500) });
-    if (runtime.debugEntries.length > 30) runtime.debugEntries.splice(0, runtime.debugEntries.length - 30);
+    settingsState.debugEntries.push({ at: Date.now(), where: String(where), detail: String(text || '').slice(0, 500) });
+    if (settingsState.debugEntries.length > 30) settingsState.debugEntries.splice(0, settingsState.debugEntries.length - 30);
     console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
   };
   const fail = (where, error) => {
@@ -290,33 +217,33 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     return 0;
   }
   async function syncUpdateIndicator() {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return;
     try {
-      const current = await runtime.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
-      const currentLabel = await runtime.mainDoc.querySelector('.x-risu-itemx2-update-label');
-      if (!runtime.update.available) {
+      const current = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-indicator');
+      const currentLabel = await hostState.mainDoc.querySelector('.x-risu-itemx2-update-label');
+      if (!hostState.update.available) {
         if (current) await current.remove();
         if (currentLabel) await currentLabel.remove();
         return;
       }
       if (current) {
-        await current.setAttribute('x-itemx2-update', runtime.update.latest);
+        await current.setAttribute('x-itemx2-update', hostState.update.latest);
       } else {
-        const badge = await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge');
+        const badge = await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge');
         if (badge) {
-          const indicator = await runtime.mainDoc.createElement('span');
+          const indicator = await hostState.mainDoc.createElement('span');
           await indicator.setClassName('x-risu-itemx2-update-indicator');
-          await indicator.setAttribute('x-itemx2-update', runtime.update.latest);
+          await indicator.setAttribute('x-itemx2-update', hostState.update.latest);
           await indicator.setTextContent('↑');
           await badge.appendChild(indicator);
         }
       }
       if (!currentLabel) {
-        const eyebrow = await runtime.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
+        const eyebrow = await hostState.mainDoc.querySelector('.x-risu-itemx-ph-eyebrow');
         if (eyebrow) {
-          const label = await runtime.mainDoc.createElement('span');
+          const label = await hostState.mainDoc.createElement('span');
           await label.setClassName('x-risu-itemx2-update-label');
-          await label.setAttribute('x-itemx2-update', runtime.update.latest);
+          await label.setAttribute('x-itemx2-update', hostState.update.latest);
           await label.setTextContent('UPDATE');
           await eyebrow.appendChild(label);
         }
@@ -326,20 +253,20 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     }
   }
   async function checkForUpdate() {
-    if (runtime.update.checking || !runtime.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
-    runtime.update.checking = true;
+    if (hostState.update.checking || !pipelineState.activeContextKey || typeof Risuai.nativeFetch !== 'function') return;
+    hostState.update.checking = true;
     try {
       let cached = null;
       try {
         cached = JSON.parse((await Risuai.safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY)) || 'null');
       } catch {}
       if (cached?.latest) {
-        runtime.update.checkedAt = Number(cached.checkedAt) || 0;
-        runtime.update.latest = String(cached.latest);
-        runtime.update.available = compareVersions(runtime.update.latest, ITEMX_PLUGIN_VERSION) > 0;
+        hostState.update.checkedAt = Number(cached.checkedAt) || 0;
+        hostState.update.latest = String(cached.latest);
+        hostState.update.available = compareVersions(hostState.update.latest, ITEMX_PLUGIN_VERSION) > 0;
         await syncUpdateIndicator();
       }
-      if (Date.now() - runtime.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
+      if (Date.now() - hostState.update.checkedAt < ITEMX_UPDATE_CHECK_MS) return;
       const response = await withTimeout(
         Risuai.nativeFetch(ITEMX_UPDATE_URL, {
           method: 'GET',
@@ -353,20 +280,20 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       const header = String((await response.text()) || '');
       const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
       if (!latest) throw new Error('업데이트 버전 헤더를 찾지 못했습니다');
-      runtime.update.checkedAt = Date.now();
-      runtime.update.latest = latest;
-      runtime.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
+      hostState.update.checkedAt = Date.now();
+      hostState.update.latest = latest;
+      hostState.update.available = compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0;
       try {
         await Risuai.safeLocalStorage.setItem(
           ITEMX_UPDATE_CACHE_KEY,
-          JSON.stringify({ checkedAt: runtime.update.checkedAt, latest })
+          JSON.stringify({ checkedAt: hostState.update.checkedAt, latest })
         );
       } catch {}
       await syncUpdateIndicator();
     } catch (error) {
       debugRecord('update check', error?.message || String(error));
     } finally {
-      runtime.update.checking = false;
+      hostState.update.checking = false;
     }
   }
   const messageData = (message) => ITEMXCore.messageText(message);
@@ -417,18 +344,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   const settingsId = (character) => character?.chaId || 'unknown';
-  const cachedSettings = (character) => runtime.settingsCache.get(settingsId(character));
+  const cachedSettings = (character) => settingsState.settingsCache.get(settingsId(character));
   function updateCachedSettings(character, patch) {
     const id = settingsId(character),
-      current = runtime.settingsCache.get(id);
-    if (current) runtime.settingsCache.set(id, { ...current, ...patch });
-    if ('effectsEnabled' in patch) runtime.visualEffectsEnabled = Boolean(patch.effectsEnabled);
-    if ('skin' in patch) runtime.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
+      current = settingsState.settingsCache.get(id);
+    if (current) settingsState.settingsCache.set(id, { ...current, ...patch });
+    if ('effectsEnabled' in patch) presentationState.visualEffectsEnabled = Boolean(patch.effectsEnabled);
+    if ('skin' in patch) presentationState.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
   }
 
   async function outputSettings(character, { refresh = false } = {}) {
     const id = character?.chaId || 'unknown';
-    if (!refresh && runtime.settingsCache.has(id)) return { ...runtime.settingsCache.get(id) };
+    if (!refresh && settingsState.settingsCache.has(id)) return { ...settingsState.settingsCache.get(id) };
     const loading = Promise.all([
       Risuai.pluginStorage.getItem(`enabled:${id}`),
       Risuai.pluginStorage.getItem(`mainOutput:${id}`),
@@ -475,9 +402,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
           lorebookEncounterEnabled: lorebookEncounter === '1',
           skin: SKIN_MODES.includes(skin) ? skin : 'dark'
         };
-        runtime.settingsCache.set(id, settings);
-        runtime.visualEffectsEnabled = settings.effectsEnabled;
-        runtime.visualSkin = settings.skin;
+        settingsState.settingsCache.set(id, settings);
+        presentationState.visualEffectsEnabled = settings.effectsEnabled;
+        presentationState.visualSkin = settings.skin;
         return settings;
       }
     );
@@ -503,7 +430,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   async function setDebugEnabled(character, value) {
-    runtime.debugEnabled = Boolean(value);
+    settingsState.debugEnabled = Boolean(value);
     await Risuai.pluginStorage.setItem(`debugEnabled:${character?.chaId || 'unknown'}`, value ? '1' : '0');
     updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');
@@ -531,8 +458,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function setEffectsEnabled(character, value) {
     await Risuai.pluginStorage.setItem(`effectsEnabled:${settingsId(character)}`, value ? '1' : '0');
     updateCachedSettings(character, { effectsEnabled: Boolean(value) });
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
     await syncMainEffectsState();
   }
 
@@ -546,7 +473,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function setModuleAssetsEnabled(character, value) {
     await Risuai.pluginStorage.setItem(`moduleAssetsEnabled:${settingsId(character)}`, value ? '1' : '0');
     updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
-    runtime.moduleAssetCache = { key: '', at: 0, rows: [] };
+    portraitsState.moduleAssetCache = { key: '', at: 0, rows: [] };
   }
 
   async function setLorebookEncounterEnabled(character, value) {
@@ -594,11 +521,11 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   function characterPortraitAssets(character, max = ITEMXCodex.ASSET_CATALOG_MAX) {
     const key = `${character?.chaId || character?.id || 'character'}:${characterAssetFingerprint(character)}`;
-    if (runtime.characterAssetCache.key === key && Date.now() - runtime.characterAssetCache.at < 30000)
-      return runtime.characterAssetCache.rows;
+    if (portraitsState.characterAssetCache.key === key && Date.now() - portraitsState.characterAssetCache.at < 30000)
+      return portraitsState.characterAssetCache.rows;
     const rows = ITEMXCodex.assetCatalog(character, max, true);
     ITEMXCodex.portraitAssetIndex(rows);
-    runtime.characterAssetCache = { key, at: Date.now(), rows };
+    portraitsState.characterAssetCache = { key, at: Date.now(), rows };
     return rows;
   }
 
@@ -609,9 +536,9 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       return rows.length <= max ? rows : rows.slice(0, max);
     }
     if (!moduleAssets?.length) return extra.length <= max ? extra : extra.slice(0, max);
-    const combinedKey = `${runtime.characterAssetCache.key}|${runtime.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
-    if (runtime.combinedAssetCache.key === combinedKey && Date.now() - runtime.combinedAssetCache.at < 30000)
-      return runtime.combinedAssetCache.rows;
+    const combinedKey = `${portraitsState.characterAssetCache.key}|${portraitsState.moduleAssetCache.key}|${extra.length}|${moduleAssets.length}`;
+    if (portraitsState.combinedAssetCache.key === combinedKey && Date.now() - portraitsState.combinedAssetCache.at < 30000)
+      return portraitsState.combinedAssetCache.rows;
     const rows = extra.slice(),
       seen = new Set(rows.map((row) => row.name));
     for (const row of moduleAssets) {
@@ -620,7 +547,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       rows.push(row);
     }
     ITEMXCodex.portraitAssetIndex(rows);
-    runtime.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
+    portraitsState.combinedAssetCache = { key: combinedKey, at: Date.now(), rows };
     return rows;
   }
 
@@ -638,8 +565,8 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   async function modulePortraitAssets(settings, character, chat) {
     if (!settings?.moduleAssetsEnabled || typeof Risuai.getDatabase !== 'function') return [];
     const key = `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`;
-    if (runtime.moduleAssetCache.key === key && Date.now() - runtime.moduleAssetCache.at < 30000)
-      return runtime.moduleAssetCache.rows;
+    if (portraitsState.moduleAssetCache.key === key && Date.now() - portraitsState.moduleAssetCache.at < 30000)
+      return portraitsState.moduleAssetCache.rows;
     try {
       const database = await Risuai.getDatabase([
         'modules',
@@ -649,18 +576,18 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         'selectedPersona'
       ]);
       if (!database) {
-        runtime.permissions.db = false;
-        runtime.moduleAssetCache = { key, at: Date.now(), rows: [] };
+        hostState.permissions.db = false;
+        portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
         return [];
       }
-      runtime.permissions.db = true;
+      hostState.permissions.db = true;
       const rows = ITEMXCodex.activeModuleAssetCatalog(database, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
       ITEMXCodex.portraitAssetIndex(rows);
-      runtime.moduleAssetCache = { key, at: Date.now(), rows };
+      portraitsState.moduleAssetCache = { key, at: Date.now(), rows };
       return rows;
     } catch (error) {
-      runtime.permissions.db = false;
-      runtime.moduleAssetCache = { key, at: Date.now(), rows: [] };
+      hostState.permissions.db = false;
+      portraitsState.moduleAssetCache = { key, at: Date.now(), rows: [] };
       debugRecord('module portrait assets', error?.message || String(error));
       return [];
     }
@@ -673,7 +600,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         typeof Risuai.requestPluginPermission === 'function' &&
         (await Risuai.requestPluginPermission('db')) !== true
       ) {
-        runtime.permissions.db = false;
+        hostState.permissions.db = false;
         return false;
       }
       const probe = await Risuai.getDatabase([
@@ -684,21 +611,21 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         'selectedPersona'
       ]);
       if (!probe) {
-        runtime.permissions.db = false;
+        hostState.permissions.db = false;
         return false;
       }
-      runtime.permissions.db = true;
+      hostState.permissions.db = true;
       await setModuleAssetsEnabled(character, true);
       const rows = ITEMXCodex.activeModuleAssetCatalog(probe, character, chat, ITEMXCodex.ASSET_CATALOG_MAX);
       ITEMXCodex.portraitAssetIndex(rows);
-      runtime.moduleAssetCache = {
+      portraitsState.moduleAssetCache = {
         key: `${character?.chaId || character?.id || 'character'}:${chat?.id || 'chat'}`,
         at: Date.now(),
         rows
       };
       return true;
     } catch (error) {
-      runtime.permissions.db = false;
+      hostState.permissions.db = false;
       debugRecord('module portrait permission', error?.message || String(error));
       return false;
     }
@@ -733,7 +660,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function loadBadgePosition() {
     const saved = await Risuai.pluginStorage.getItem('badgePosition');
-    if (BADGE_POSITIONS.some(([value]) => value === saved)) runtime.badgePosition = saved;
+    if (BADGE_POSITIONS.some(([value]) => value === saved)) uiState.badgePosition = saved;
   }
 
   function badgeStyle() {
@@ -753,7 +680,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
       'button[aria-label="ITEMX CODEX"]>div,button[aria-label="ITEMX"]>div,button:has(img[src*="ITEMX%20CODEX"])>div,button:has(img[src*="ITEMX%20inventory"])>div';
     const images =
       'button[aria-label="ITEMX CODEX"] img,button[aria-label="ITEMX"] img,button:has(img[src*="ITEMX%20CODEX"]) img[src*="ITEMX%20CODEX"],button:has(img[src*="ITEMX%20inventory"]) img[src*="ITEMX%20inventory"]';
-    return `${button}{${positions[runtime.badgePosition] || positions.rm};display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;outline:0!important;background:none!important;background-color:transparent!important;box-shadow:none!important;cursor:pointer!important;touch-action:manipulation!important;z-index:50!important}${states}{background:none!important;background-color:transparent!important;box-shadow:none!important}${wrappers}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}${images}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;max-width:48px!important;max-height:176px!important;border-radius:0!important;object-fit:contain!important}`;
+    return `${button}{${positions[uiState.badgePosition] || positions.rm};display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;outline:0!important;background:none!important;background-color:transparent!important;box-shadow:none!important;cursor:pointer!important;touch-action:manipulation!important;z-index:50!important}${states}{background:none!important;background-color:transparent!important;box-shadow:none!important}${wrappers}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important}${images}{display:block!important;box-sizing:border-box!important;width:48px!important;height:176px!important;min-width:48px!important;min-height:176px!important;max-width:48px!important;max-height:176px!important;border-radius:0!important;object-fit:contain!important}`;
   }
 
   const codexPageStyle = () => `
@@ -1141,7 +1068,7 @@ ${codexPageStyle()}
 
     const persisted = markerCodes(latest);
     for (const marker of workQueue.recent('uncommitted-markers', 12000) || []) persisted.add(marker);
-    runtime.latestMarkers = persisted;
+    pipelineState.latestMarkers = persisted;
   }
 
   function manualLedger(chat) {
@@ -1196,8 +1123,8 @@ ${codexPageStyle()}
   function readCheckpointRecord(chat) {
     const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
     if (raw === undefined || raw === null || raw === '') return { status: 'absent', value: null, reason: '' };
-    if (typeof raw === 'string' && raw === runtime.checkpointCacheRecord?.raw)
-      return runtime.checkpointCacheRecord.record;
+    if (typeof raw === 'string' && raw === storageState.checkpointCacheRecord?.raw)
+      return storageState.checkpointCacheRecord.record;
     let record;
     try {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -1231,7 +1158,7 @@ ${codexPageStyle()}
       record = { status: 'unreadable', value: null, reason: 'checkpoint_unparsable' };
     }
     if (typeof raw === 'string') {
-      runtime.checkpointCacheRecord = { raw, record };
+      storageState.checkpointCacheRecord = { raw, record };
     }
     return record;
   }
@@ -1246,13 +1173,13 @@ ${codexPageStyle()}
   function checkpointFrozen(chat) {
     const record = readCheckpointRecord(chat);
     const frozen = record.status === 'unreadable';
-    if (frozen && runtime.frozenReason !== record.reason) {
-      runtime.frozenReason = record.reason;
+    if (frozen && storageState.frozenReason !== record.reason) {
+      storageState.frozenReason = record.reason;
       debugRecord('checkpoint frozen', record.reason);
       log('checkpoint unreadable, chat frozen read-only:', record.reason);
     }
-    if (!frozen && runtime.frozen) runtime.frozenReason = '';
-    runtime.frozen = frozen;
+    if (!frozen && storageState.frozen) storageState.frozenReason = '';
+    storageState.frozen = frozen;
     return frozen;
   }
 
@@ -1318,8 +1245,8 @@ ${codexPageStyle()}
   }
 
   function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
-    runtime.eventPayloads = new Map(lookup.payloads);
-    runtime.presentationRecords = null;
+    pipelineState.eventPayloads = new Map(lookup.payloads);
+    presentationState.presentationRecords = null;
   }
 
   const storageBytes = (value) => {
@@ -1564,7 +1491,7 @@ ${codexPageStyle()}
     if (full) return ITEMXCore.decodePayload(full[1]);
     const ref = String(marker || '').match(/^<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->$/);
     if (!ref) return null;
-    return runtime.eventPayloads.get(`item:${ref[1]}`) || inlineViewPayload(ref[2], 'item') || null;
+    return pipelineState.eventPayloads.get(`item:${ref[1]}`) || inlineViewPayload(ref[2], 'item') || null;
   }
 
   function itemPayloadId(payload) {
@@ -1946,7 +1873,7 @@ ${codexPageStyle()}
         !(latestChat.message || []).some((message) => message?.isStreaming)
       ) {
         const reconciled = reconcileStoredRefViews(latestChat);
-        if (reconciled.changed && runtime.activeContextKey === ctx.key) {
+        if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
           await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat);
           latestChat = reconciled.chat;
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
@@ -1986,7 +1913,7 @@ ${codexPageStyle()}
         ]
           .filter(Boolean)
           .join(' · ') || '정상';
-      runtime.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
+      uiState.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
       const loaded = {
         ...ctx,
         chat: latestChat,
@@ -1997,8 +1924,8 @@ ${codexPageStyle()}
         ...settings
       };
       prepareInlinePortraits(loaded, codexSnapshot, settings);
-      runtime.cachedLoaded = loaded;
-      workQueue.remember('loaded-generation', runtime.generation);
+      pipelineState.cachedLoaded = loaded;
+      workQueue.remember('loaded-generation', pipelineState.generation);
       return loaded;
     })();
   }
@@ -2121,17 +2048,17 @@ ${codexPageStyle()}
       )
         throw new Error('저장 직전 채팅이 변경되어 불러오기를 취소했습니다.');
       await saveChat(ctx.characterIndex, ctx.chatIndex, next);
-      runtime.cachedLoaded = null;
+      pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
 
-      runtime.checkpointCacheRecord = null;
-      runtime.checkpointCacheRecord = null;
+      storageState.checkpointCacheRecord = null;
+      storageState.checkpointCacheRecord = null;
 
-      runtime.markerHtmlCache.clear();
-      runtime.detailHtmlCache.clear();
-      runtime.generation++;
+      presentationState.markerHtmlCache.clear();
+      presentationState.detailHtmlCache.clear();
+      pipelineState.generation++;
       refreshLatest(next);
-      runtime.status =
+      uiState.status =
         preview.mode === 'replace'
           ? '덮어쓰기 완료 · 백업 기록으로 교체했습니다'
           : '채팅 이사 완료 · 백업 기록을 불러왔습니다';
@@ -2148,10 +2075,10 @@ ${codexPageStyle()}
   }
 
   async function openBackupPanel() {
-    if (runtime.backupOpen) return;
+    if (uiState.backupOpen) return;
     const ctx = await context();
     if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
-    runtime.backupOpen = true;
+    uiState.backupOpen = true;
     let preview = null,
       url = '',
       busy = false;
@@ -2191,7 +2118,7 @@ ${codexPageStyle()}
         run(async () => {
           if (url) URL.revokeObjectURL(url);
           style.remove();
-          runtime.backupOpen = false;
+          uiState.backupOpen = false;
           await Risuai.hideContainer();
           await openRootInventory({ open: true, tab: 'settings' });
         }),
@@ -2278,7 +2205,7 @@ ${codexPageStyle()}
     try {
       await Risuai.showContainer('fullscreen');
     } catch (error) {
-      runtime.backupOpen = false;
+      uiState.backupOpen = false;
       style.remove();
       throw error;
     }
@@ -2333,19 +2260,19 @@ ${codexPageStyle()}
       await setEnabled(ctx.character, false);
       return cleaned;
     })();
-    runtime.cleanupArmedUntil = 0;
-    runtime.latestMarkers.clear();
+    uiState.cleanupArmedUntil = 0;
+    pipelineState.latestMarkers.clear();
 
     workQueue.forget('uncommitted-markers');
-    runtime.eventPayloads = new Map();
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
+    pipelineState.eventPayloads = new Map();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
-    runtime.cachedLoaded = null;
+    pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
-    runtime.generation += 1;
-    runtime.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
+    pipelineState.generation += 1;
+    uiState.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
     const loaded = await rebuildCurrent();
     if (loaded) loaded.enabled = false;
     return { ...result, loaded };
@@ -2393,18 +2320,18 @@ ${codexPageStyle()}
       const legacyKeysRemoved = await removeLegacyPluginStorage();
       return { chat: compacted, before, after: itemxStorageFootprint(compacted), legacyKeysRemoved };
     })();
-    runtime.storageCleanupArmedUntil = 0;
-    runtime.cachedLoaded = null;
+    uiState.storageCleanupArmedUntil = 0;
+    pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
 
-    runtime.checkpointCacheRecord = null;
+    storageState.checkpointCacheRecord = null;
 
-    runtime.eventPayloads = new Map();
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
-    runtime.generation += 1;
+    pipelineState.eventPayloads = new Map();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
+    pipelineState.generation += 1;
     const saved = Math.max(0, result.before.totalBytes - result.after.totalBytes);
-    runtime.status = `저장소 최적화 완료 · ${Math.round(saved / 1024)} KiB 절감`;
+    uiState.status = `저장소 최적화 완료 · ${Math.round(saved / 1024)} KiB 절감`;
     const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
     return { ...result, savedBytes: saved, loaded };
   }
@@ -2412,10 +2339,10 @@ ${codexPageStyle()}
   async function cachedOrRebuildCurrent() {
     const active = await context();
     if (!active) return null;
-    const cached = runtime.cachedLoaded;
+    const cached = pipelineState.cachedLoaded;
     if (
       cached?.key === active.key &&
-      workQueue.revision('loaded-generation') === runtime.generation &&
+      workQueue.revision('loaded-generation') === pipelineState.generation &&
       cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
       return { ...cached, chat: active.chat };
@@ -2425,10 +2352,10 @@ ${codexPageStyle()}
   async function cachedRequestState() {
     const active = await context();
     if (!active) return null;
-    const cached = runtime.cachedLoaded;
+    const cached = pipelineState.cachedLoaded;
     if (
       cached?.key === active.key &&
-      workQueue.revision('loaded-generation') === runtime.generation &&
+      workQueue.revision('loaded-generation') === pipelineState.generation &&
       cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
       return { ...cached, chat: active.chat };
@@ -2472,7 +2399,7 @@ ${codexPageStyle()}
         : {}
     );
     await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
-    runtime.status = `${label} · ${events.length}건`;
+    uiState.status = `${label} · ${events.length}건`;
     return refresh ? rebuildCurrent() : null;
   }
 
@@ -2500,8 +2427,8 @@ ${codexPageStyle()}
   }
 
   function auxStatusText() {
-    if (runtime.auxActive > 0) return auxWorkingLabel() || '보조 모델 처리 중';
-    const last = runtime.auxLast;
+    if (auxState.auxActive > 0) return auxWorkingLabel() || '보조 모델 처리 중';
+    const last = auxState.auxLast;
     if (!last?.at) return '아직 실행 기록 없음';
     const time = new Date(last.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return `${last.label} · ${time}`;
@@ -2509,33 +2436,33 @@ ${codexPageStyle()}
 
   function connectionSummary() {
     const hook =
-      runtime.permissions.replacer === true
+      hostState.permissions.replacer === true
         ? ['모델 훅 연결', 'on']
-        : runtime.permissions.replacer === false
+        : hostState.permissions.replacer === false
           ? ['모델 훅 오류', 'off']
           : ['모델 훅 확인 전', 'warn'];
     const dom =
-      runtime.permissions.mainDom === true
+      hostState.permissions.mainDom === true
         ? ['화면 연결', 'on']
-        : runtime.permissions.mainDom === false
+        : hostState.permissions.mainDom === false
           ? ['화면 권한 필요', 'off']
           : ['화면 확인 전', 'warn'];
     const listener =
-      runtime.hooks.listener === 'unsupported'
+      hostState.hooks.listener === 'unsupported'
         ? ['Pocket 호환', 'warn']
-        : runtime.hooks.listener
+        : hostState.hooks.listener
           ? ['커밋 감지', 'on']
           : ['커밋 감지 전', 'warn'];
     return {
       hook,
       dom,
       listener,
-      ready: runtime.permissions.replacer === true && runtime.permissions.mainDom === true
+      ready: hostState.permissions.replacer === true && hostState.permissions.mainDom === true
     };
   }
 
   async function updateConnectionUi() {
-    if (!runtime.mainDoc) return;
+    if (!hostState.mainDoc) return;
     const connection = connectionSummary();
     const chips = [
       ['hook', connection.hook],
@@ -2543,7 +2470,7 @@ ${codexPageStyle()}
       ['listener', connection.listener]
     ];
     for (const [key, [label, tone]] of chips) {
-      const chip = await runtime.mainDoc.querySelector(`.x-risu-itemx2-connection-${key}`);
+      const chip = await hostState.mainDoc.querySelector(`.x-risu-itemx2-connection-${key}`);
       if (!chip) continue;
       await chip.setTextContent(label);
       await chip.removeClass('x-risu-itemx2-status-chip-on');
@@ -2551,7 +2478,7 @@ ${codexPageStyle()}
       await chip.removeClass('x-risu-itemx2-status-chip-off');
       await chip.addClass(`x-risu-itemx2-status-chip-${tone}`);
     }
-    const button = await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-connect');
+    const button = await hostState.mainDoc.querySelector('.x-risu-itemx2-setting-connect');
     if (!button) return;
     await button.setTextContent(workQueue.isActive('connect') ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기');
     if (workQueue.isActive('connect')) await button.addClass('x-risu-itemx2-root-setting-button-busy');
@@ -2559,8 +2486,8 @@ ${codexPageStyle()}
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {
-    if (!runtime.mainDoc) return;
-    const button = await runtime.mainDoc.querySelector(selector);
+    if (!hostState.mainDoc) return;
+    const button = await hostState.mainDoc.querySelector(selector);
     if (!button) return;
     await button.setTextContent(label);
     if (enabled === true) await button.addClass('x-risu-itemx2-setting-on');
@@ -2571,10 +2498,10 @@ ${codexPageStyle()}
     return change();
   }
 
-  const auxWorkingLabel = () => runtime.auxLast.state === 'idle' ? '보조 모델 처리 중' : runtime.auxLast.label;
+  const auxWorkingLabel = () => auxState.auxLast.state === 'idle' ? '보조 모델 처리 중' : auxState.auxLast.label;
 
   async function setAuxOutcome(state, label, events = null) {
-    runtime.auxLast = { state, label, events, at: Date.now() };
+    auxState.auxLast = { state, label, events, at: Date.now() };
     await syncAuxIndicator();
     workQueue.clearTimer('auxToastTimer');
     workQueue.schedule(
@@ -2589,26 +2516,26 @@ ${codexPageStyle()}
 
   async function syncAuxIndicator() {
     try {
-      if (!runtime.mainDoc) return;
-      const indicator = await runtime.mainDoc.querySelector('.x-risu-itemx2-aux-status');
+      if (!hostState.mainDoc) return;
+      const indicator = await hostState.mainDoc.querySelector('.x-risu-itemx2-aux-status');
       if (!indicator) return;
       const label = await indicator.querySelector('.x-risu-itemx2-aux-status-label');
-      if (label) await label.setTextContent(runtime.auxActive > 0 ? auxWorkingLabel() : runtime.auxLast.label);
-      const settingLabel = await runtime.mainDoc.querySelector('.x-risu-itemx2-aux-setting-status');
+      if (label) await label.setTextContent(auxState.auxActive > 0 ? auxWorkingLabel() : auxState.auxLast.label);
+      const settingLabel = await hostState.mainDoc.querySelector('.x-risu-itemx2-aux-setting-status');
       if (settingLabel) await settingLabel.setTextContent(auxStatusText());
-      const runButton = await runtime.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run');
+      const runButton = await hostState.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run');
       if (runButton) {
-        await runButton.setTextContent(runtime.auxActive > 0 ? '처리 중…' : '지금 검사');
-        if (runtime.auxActive > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
+        await runButton.setTextContent(auxState.auxActive > 0 ? '처리 중…' : '지금 검사');
+        if (auxState.auxActive > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
         else await runButton.removeClass('x-risu-itemx2-root-setting-button-busy');
       }
-      const recent = runtime.auxLast.at && Date.now() - runtime.auxLast.at < 2600;
-      if (runtime.auxActive > 0 || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
+      const recent = auxState.auxLast.at && Date.now() - auxState.auxLast.at < 2600;
+      if (auxState.auxActive > 0 || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
       else await indicator.removeClass('x-risu-itemx2-aux-status-on');
-      if (runtime.auxLast.state === 'done' && runtime.auxActive === 0)
+      if (auxState.auxLast.state === 'done' && auxState.auxActive === 0)
         await indicator.addClass('x-risu-itemx2-aux-status-done');
       else await indicator.removeClass('x-risu-itemx2-aux-status-done');
-      if (runtime.auxLast.state === 'failed' && runtime.auxActive === 0)
+      if (auxState.auxLast.state === 'failed' && auxState.auxActive === 0)
         await indicator.addClass('x-risu-itemx2-aux-status-failed');
       else await indicator.removeClass('x-risu-itemx2-aux-status-failed');
     } catch (error) {
@@ -2618,9 +2545,9 @@ ${codexPageStyle()}
 
   async function runAuxModel(prompt, label = '보조 모델 처리 중') {
     if (typeof Risuai.runLLMModel !== 'function') throw new Error('이 PocketRisu에는 runLLMModel API가 없습니다.');
-    runtime.auxActive += 1;
-    runtime.auxLast = { state: 'running', label, at: Date.now(), events: null };
-    runtime.status = label;
+    auxState.auxActive += 1;
+    auxState.auxLast = { state: 'running', label, at: Date.now(), events: null };
+    uiState.status = label;
     await syncAuxIndicator();
     try {
       const result = await workQueue.external(() =>
@@ -2634,20 +2561,20 @@ ${codexPageStyle()}
       if (providerError) throw providerError;
       workQueue.forget('aux-provider');
 
-      runtime.auxLast = { state: 'done', label: '보조 모델 응답 수신', at: Date.now(), events: null };
+      auxState.auxLast = { state: 'done', label: '보조 모델 응답 수신', at: Date.now(), events: null };
       return result;
     } catch (error) {
       const providerError = auxiliaryProviderError(error) || error;
       if (providerError?.code === 'AUX_PROVIDER_UNAVAILABLE') {
         workQueue.remember('aux-provider', 'unavailable');
       }
-      runtime.auxLast = { state: 'failed', label: '보조 모델 호출 실패', at: Date.now(), events: null };
+      auxState.auxLast = { state: 'failed', label: '보조 모델 호출 실패', at: Date.now(), events: null };
       throw providerError;
     } finally {
-      runtime.auxActive = Math.max(0, runtime.auxActive - 1);
+      auxState.auxActive = Math.max(0, auxState.auxActive - 1);
       await syncAuxIndicator();
-      if (runtime.auxActive === 0)
-        await setAuxOutcome(runtime.auxLast.state, runtime.auxLast.label, runtime.auxLast.events);
+      if (auxState.auxActive === 0)
+        await setAuxOutcome(auxState.auxLast.state, auxState.auxLast.label, auxState.auxLast.events);
     }
   }
 
@@ -2820,7 +2747,7 @@ ${codexPageStyle()}
   }
 
   async function recoverAuxiliaryOutput(options = {}) {
-    if (runtime.frozen) return null;
+    if (storageState.frozen) return null;
     return recoverAuxiliaryOutputNow(options);
   }
 
@@ -2948,7 +2875,7 @@ ${codexPageStyle()}
     // straight to the chat and must never land on an unreadable ledger.
     if (checkpointFrozen(ctx.chat)) return null;
     const settings = await outputSettings(ctx.character);
-    runtime.debugEnabled = settings.debugEnabled;
+    settingsState.debugEnabled = settings.debugEnabled;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
     if (settings.auxOutput === 'off' && !force) return [];
     if ((workQueue.revision('aux-provider') === 'unavailable') && !force) return [];
@@ -3005,7 +2932,7 @@ ${codexPageStyle()}
         ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.`
         : '';
       const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
-      runtime.status = '보조 출력 검토 중';
+      uiState.status = '보조 출력 검토 중';
       const response = await runAuxModel(prompt, '보조 누락 복구 중');
       const raw = modelText(response);
       if (!raw) throw new Error('보조 출력이 비어 있습니다.');
@@ -3127,15 +3054,15 @@ ${codexPageStyle()}
             [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(history, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
           };
           await saveChat(ctx.characterIndex, ctx.chatIndex, next);
-          if (runtime.activeContextKey === ctx.key) {
-            runtime.status = '보조 출력 · 근거 불충분';
+          if (pipelineState.activeContextKey === ctx.key) {
+            uiState.status = '보조 출력 · 근거 불충분';
             await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0);
           }
           return [];
         }
         await rememberAuxiliaryZero(ctx, guardKey);
-        if (runtime.activeContextKey === ctx.key) {
-          runtime.status = '보조 출력 · 누락 없음';
+        if (pipelineState.activeContextKey === ctx.key) {
+          uiState.status = '보조 출력 · 누락 없음';
           await setAuxOutcome('done', '보조 검사 완료 · 누락 없음', 0);
         }
         return valid;
@@ -3183,7 +3110,7 @@ ${codexPageStyle()}
       const compacted = compactMessageTransports(next, index).chat;
       const compactedLookup = buildMessageEventLookup(compacted);
       const rebuilt = rebuildWithManual(compacted, compactedLookup);
-      const stillActive = runtime.activeContextKey === ctx.key;
+      const stillActive = pipelineState.activeContextKey === ctx.key;
       if (stillActive) {
         refreshLatest(compacted, compactedLookup);
 
@@ -3192,10 +3119,10 @@ ${codexPageStyle()}
       if (stillActive) {
         armEventBursts(markerText);
         commitEventBursts(compacted);
-        runtime.cachedLoaded = null;
-        runtime.generation += 1;
+        pipelineState.cachedLoaded = null;
+        pipelineState.generation += 1;
 
-        runtime.status = `보조 출력 · ${valid.length}건 복구`;
+        uiState.status = `보조 출력 · ${valid.length}건 복구`;
       }
       if (stillActive)
         await setAuxOutcome(
@@ -3208,8 +3135,8 @@ ${codexPageStyle()}
       return valid;
     })().catch(async (error) => {
       fail('auxiliary recovery', error);
-      if (runtime.activeContextKey === ctx.key) {
-        runtime.status = '보조 출력 실패';
+      if (pipelineState.activeContextKey === ctx.key) {
+        uiState.status = '보조 출력 실패';
         await setAuxOutcome('failed', `보조 검사 실패 · ${String(error?.message || error).slice(0, 80)}`);
       }
       return error?.code === 'AUX_PROVIDER_UNAVAILABLE' ? [] : null;
@@ -3248,7 +3175,7 @@ ${codexPageStyle()}
 
   async function repairOneItem(loaded, id) {
     if (!loaded?.itemsEnabled) throw new Error('아이템 기능을 먼저 활성화하세요.');
-    if (!loaded || runtime.auxActive) throw new Error('이미 보조 모델이 처리 중입니다.');
+    if (!loaded || auxState.auxActive) throw new Error('이미 보조 모델이 처리 중입니다.');
     const record = presentationRecord('item', id);
     const missing = record.review?.missing || [];
     if (!missing.length) throw new Error('이 아이템에 기록된 미해결 필드가 없습니다.');
@@ -3293,7 +3220,7 @@ ${codexPageStyle()}
         { source: 'auxiliary', checked: true, missing: remaining, evidenceIndex: sourceIndex },
         false
       );
-      if (runtime.activeContextKey === loaded.key)
+      if (pipelineState.activeContextKey === loaded.key)
         await setAuxOutcome(
           remaining.length ? 'failed' : 'done',
           remaining.length ? `일부 보완 완료 · 미해결 ${remaining.length}개 필드` : '누락 정보 보완 완료',
@@ -3302,7 +3229,7 @@ ${codexPageStyle()}
     })()
       .then(() => rebuildCurrent())
       .catch(async (error) => {
-        if (runtime.activeContextKey === loaded.key && !runtime.unloading)
+        if (pipelineState.activeContextKey === loaded.key && !hostState.unloading)
           await setAuxOutcome('failed', '누락 정보 보완 실패 · 기존 정보 보존', 0);
         throw error;
       })
@@ -3419,7 +3346,7 @@ ${codexPageStyle()}
   }
 
   function scheduleLegacyCommitRecovery(confirm = false) {
-    if (runtime.auxActive > 0) return;
+    if (auxState.auxActive > 0) return;
     workQueue.clearTimer('legacyCommitTimer');
     workQueue.schedule(
       'legacyCommitTimer',
@@ -3431,7 +3358,7 @@ ${codexPageStyle()}
           if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled)
             await scanLorebookEncounters({ silent: true });
           await ensureRootInventory();
-          if (!confirm && runtime.auxActive === 0) scheduleLegacyCommitRecovery(true);
+          if (!confirm && auxState.auxActive === 0) scheduleLegacyCommitRecovery(true);
         } catch (error) {
           fail('legacy commit recovery', error);
         }
@@ -3471,23 +3398,23 @@ ${codexPageStyle()}
     const compactedSource = messageData(compacted.message?.[index]);
     const compactedLookup = buildMessageEventLookup(compacted);
     const snapshot = rebuildWithManual(compacted, compactedLookup);
-    const stillActive = runtime.activeContextKey === ctx.key;
+    const stillActive = pipelineState.activeContextKey === ctx.key;
     if (stillActive) {
       refreshLatest(compacted, compactedLookup);
       workQueue.remember('render', '');
-      runtime.cachedLoaded = null;
-      runtime.generation += 1;
+      pipelineState.cachedLoaded = null;
+      pipelineState.generation += 1;
 
     }
     await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot));
     const errors = parsed.errors.length + codexParsed.errors.length,
       events = parsed.events.length + codexParsed.events.length;
-    if (stillActive) runtime.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
+    if (stillActive) uiState.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
     return { ctx: { ...ctx, chat: compacted }, source: compactedSource };
   }
 
   async function catchUpLatestOutput({ syncUi = true } = {}) {
-    if (!runtime.activeContextKey || runtime.auxActive > 0 || runtime.bodyFxScrollActive)
+    if (!pipelineState.activeContextKey || auxState.auxActive > 0 || presentationState.bodyFxScrollActive)
       return;
     let ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return;
@@ -3500,7 +3427,7 @@ ${codexPageStyle()}
     if (!repaired) return;
     source = repaired.source;
     ctx = repaired.ctx;
-    if (runtime.activeContextKey !== ctx.key) return;
+    if (pipelineState.activeContextKey !== ctx.key) return;
     // The guard must survive our own rewrite. recoverAuxiliaryOutput commits a new
     // message body, so a body-derived hash invalidates itself and the next open of
     // the same chat re-runs recovery forever. Anchor on the stable message id.
@@ -3524,13 +3451,13 @@ ${codexPageStyle()}
       if (loaded) commitEventBursts(loaded.chat);
       if (loaded?.encountersEnabled && loaded?.lorebookEncounterEnabled) await scanLorebookEncounters({ silent: true });
       await ensureRootInventory();
-    }, false, { ready: () => !runtime.bodyFxScrollActive }).catch((error) => fail('chat listener', error));
+    }, false, { ready: () => !presentationState.bodyFxScrollActive }).catch((error) => fail('chat listener', error));
   }
 
   function armCatchUpWatchdog() {
-    if (runtime.unloading) return;
+    if (hostState.unloading) return;
     workQueue.clearTimer('catchUpTimer');
-    const interval = runtime.hooks.listener === true ? 45000 : 4500;
+    const interval = hostState.hooks.listener === true ? 45000 : 4500;
     workQueue.schedule(
       'catchUpTimer',
       () => {
@@ -3554,7 +3481,7 @@ ${codexPageStyle()}
       const loaded = await cachedRequestState();
       if (!loaded || !(await isEnabled(loaded.character))) return safeMessages;
       const settings = await outputSettings(loaded.character);
-      runtime.debugEnabled = settings.debugEnabled;
+      settingsState.debugEnabled = settings.debugEnabled;
       if (!settings.mainOutput) return safeMessages;
       if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return safeMessages;
       const recent = safeMessages
@@ -3589,7 +3516,7 @@ ${codexPageStyle()}
       if (!ctx) return content;
       const enabled = await isEnabled(ctx.character);
       const settings = await outputSettings(ctx.character);
-      runtime.debugEnabled = settings.debugEnabled;
+      settingsState.debugEnabled = settings.debugEnabled;
       if (!enabled || !settings.mainOutput) return stripAllTransport(content);
       const lookup = buildMessageEventLookup(ctx.chat);
       const base = rebuildWithManual(ctx.chat, lookup).registry;
@@ -3618,12 +3545,12 @@ ${codexPageStyle()}
         codexResult.errors.length ||
         codexResult.content !== content
       ) {
-        runtime.latestMarkers = markerCodes(positioned);
-        workQueue.remember('uncommitted-markers', new Set(runtime.latestMarkers));
+        pipelineState.latestMarkers = markerCodes(positioned);
+        workQueue.remember('uncommitted-markers', new Set(pipelineState.latestMarkers));
         const errors = result.errors.length + codexResult.errors.length,
           events = result.events.length + codexResult.events.length;
-        runtime.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
-        runtime.generation += 1;
+        uiState.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
+        pipelineState.generation += 1;
         debugRecord('processOutput', {
           itemEvents: result.events.length,
           codexEvents: codexResult.events.length,
@@ -3640,7 +3567,7 @@ ${codexPageStyle()}
   const afterRequest = async (content, type) => processOutput(content, type);
   const outputFallback = async (content) => {
     const processed = await processOutput(content, 'main');
-    if (runtime.hooks.listener === 'unsupported' && runtime.auxActive === 0)
+    if (hostState.hooks.listener === 'unsupported' && auxState.auxActive === 0)
       scheduleLegacyCommitRecovery();
     return processed;
   };
@@ -3825,7 +3752,7 @@ ${codexPageStyle()}
         const domain = prefix === 'ITEMX2' ? 'item' : 'codex';
         const payload = code
           ? (domain === 'item' ? ITEMXCore : ITEMXCodex).decodePayload(code)
-          : runtime.eventPayloads.get(`${domain}:${ref}`) || inlineViewPayload(inline, domain);
+          : pipelineState.eventPayloads.get(`${domain}:${ref}`) || inlineViewPayload(inline, domain);
         if (payload?.view && !payload.error)
           rows.push({ payload, domain: domain === 'codex' ? payload.event?.domain : 'item', at });
         return raw;
@@ -3835,7 +3762,7 @@ ${codexPageStyle()}
   }
 
   function eventBurstKey(payload) {
-    return `e${ITEMXCore.fnv1a(runtime.activeContextKey)}_${ITEMXCore.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
+    return `e${ITEMXCore.fnv1a(pipelineState.activeContextKey)}_${ITEMXCore.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
   }
   function decorateInlineEvent(html, payload, domain) {
     const kind = ITEMXRenderer.eventKind(payload, domain);
@@ -3848,27 +3775,27 @@ ${codexPageStyle()}
     );
   }
   function armEventBursts(text) {
-    if (!runtime.visualEffectsEnabled || runtime.unloading) return;
-    for (const [key, candidate] of runtime.eventBursts)
-      if (candidate.expires < Date.now()) runtime.eventBursts.delete(key);
+    if (!presentationState.visualEffectsEnabled || hostState.unloading) return;
+    for (const [key, candidate] of presentationState.eventBursts)
+      if (candidate.expires < Date.now()) presentationState.eventBursts.delete(key);
     for (const { payload, domain } of presentationPayloads(text)) {
       if (!ITEMXRenderer.eventKind(payload, domain)) continue;
       const key = eventBurstKey(payload);
-      if (runtime.eventBurstSeen.has(key) || runtime.eventBursts.has(key)) continue;
-      if (runtime.eventBursts.size >= 8) break;
-      runtime.eventBursts.set(key, { expires: Date.now() + 30000, committed: false });
+      if (presentationState.eventBurstSeen.has(key) || presentationState.eventBursts.has(key)) continue;
+      if (presentationState.eventBursts.size >= 8) break;
+      presentationState.eventBursts.set(key, { expires: Date.now() + 30000, committed: false });
     }
   }
   function burstTimer(fn, ms) {
     return workQueue.later('burst', fn, ms);
   }
   function commitEventBursts(chat) {
-    if (!runtime.eventBursts.size || chat?.isStreaming) return;
+    if (!presentationState.eventBursts.size || chat?.isStreaming) return;
     const message = chat?.message?.[assistantMessageIndex(chat)];
     if (!message || message.isStreaming || message.bgContinue) return;
     let activated = false;
     for (const { payload } of presentationPayloads(messageData(message))) {
-      const candidate = runtime.eventBursts.get(eventBurstKey(payload));
+      const candidate = presentationState.eventBursts.get(eventBurstKey(payload));
       if (!candidate || candidate.committed || candidate.expires < Date.now()) continue;
       candidate.committed = true;
       candidate.expires = Date.now() + 3000;
@@ -3877,30 +3804,30 @@ ${codexPageStyle()}
     if (activated) for (const delayMs of [0, 350, 1000]) burstTimer(flushEventBursts, delayMs);
   }
   async function flushEventBursts() {
-    if (runtime.unloading || !runtime.mainDoc || runtime.bodyFxScrollActive || !runtime.eventBursts.size) return;
+    if (hostState.unloading || !hostState.mainDoc || presentationState.bodyFxScrollActive || !presentationState.eventBursts.size) return;
 
-    const key = runtime.activeContextKey;
+    const key = pipelineState.activeContextKey;
     try {
       let played = 0;
-      for (const [id, candidate] of runtime.eventBursts) {
-        if (candidate.expires < Date.now() || !runtime.visualEffectsEnabled) {
-          runtime.eventBursts.delete(id);
+      for (const [id, candidate] of presentationState.eventBursts) {
+        if (candidate.expires < Date.now() || !presentationState.visualEffectsEnabled) {
+          presentationState.eventBursts.delete(id);
           continue;
         }
         if (!candidate.committed || played >= 2) continue;
-        const element = await runtime.mainDoc.querySelector(`[x-itemx2-event="${id}"]`);
-        if (runtime.unloading || key !== runtime.activeContextKey) return;
+        const element = await hostState.mainDoc.querySelector(`[x-itemx2-event="${id}"]`);
+        if (hostState.unloading || key !== pipelineState.activeContextKey) return;
         if (!element) continue;
         // Consume before mutating DOM. Re-rendered markup never contains this class.
-        runtime.eventBursts.delete(id);
-        runtime.eventBurstSeen.add(id);
-        while (runtime.eventBurstSeen.size > 256)
-          runtime.eventBurstSeen.delete(runtime.eventBurstSeen.values().next().value);
-        runtime.eventBurstOwners.add(element);
+        presentationState.eventBursts.delete(id);
+        presentationState.eventBurstSeen.add(id);
+        while (presentationState.eventBurstSeen.size > 256)
+          presentationState.eventBurstSeen.delete(presentationState.eventBurstSeen.values().next().value);
+        presentationState.eventBurstOwners.add(element);
         await element.addClass('x-risu-itemx2-burst-active');
-        if (runtime.unloading || key !== runtime.activeContextKey) {
+        if (hostState.unloading || key !== pipelineState.activeContextKey) {
           await element.removeClass('x-risu-itemx2-burst-active');
-          runtime.eventBurstOwners.delete(element);
+          presentationState.eventBurstOwners.delete(element);
           return;
         }
         played++;
@@ -3908,7 +3835,7 @@ ${codexPageStyle()}
           try {
             await element.removeClass('x-risu-itemx2-burst-active');
           } catch {}
-          runtime.eventBurstOwners.delete(element);
+          presentationState.eventBurstOwners.delete(element);
         }, 1350);
       }
     } catch (error) {
@@ -3917,10 +3844,10 @@ ${codexPageStyle()}
   }
   function clearEventBursts() {
     workQueue.clearGroup('burst');
-    runtime.eventBursts.clear();
-    for (const element of runtime.eventBurstOwners)
+    presentationState.eventBursts.clear();
+    for (const element of presentationState.eventBurstOwners)
       void element.removeClass('x-risu-itemx2-burst-active').catch(() => {});
-    runtime.eventBurstOwners.clear();
+    presentationState.eventBurstOwners.clear();
   }
 
   function suppressRepeatedDisplayStates(content) {
@@ -3933,7 +3860,7 @@ ${codexPageStyle()}
         const payload =
           mode === ':'
             ? ITEMXCore.decodePayload(code)
-            : runtime.eventPayloads.get(`${domain}:${code}`) || inlineViewPayload(inline, domain);
+            : pipelineState.eventPayloads.get(`${domain}:${code}`) || inlineViewPayload(inline, domain);
         const view = payload?.view;
         if (!view?.id || payload.error) return raw;
         const key = `${domain}:${payload.event?.domain || 'item'}:${view.id}`;
@@ -3955,21 +3882,21 @@ ${codexPageStyle()}
       hasCodexCard = false;
     const renderPayload = (cacheKey, payload, motion) => {
       const key = `${cacheKey}:${motion}`;
-      if (runtime.markerHtmlCache.has(key)) return runtime.markerHtmlCache.get(key);
+      if (presentationState.markerHtmlCache.has(key)) return presentationState.markerHtmlCache.get(key);
       const html = decorateInlineEvent(
         ITEMXRenderer.renderMarkerPayload(payload, { inline: true, motion }),
         payload,
         'item'
       );
-      runtime.markerHtmlCache.set(key, html);
-      while (runtime.markerHtmlCache.size > 64)
-        runtime.markerHtmlCache.delete(runtime.markerHtmlCache.keys().next().value);
+      presentationState.markerHtmlCache.set(key, html);
+      while (presentationState.markerHtmlCache.size > 64)
+        presentationState.markerHtmlCache.delete(presentationState.markerHtmlCache.keys().next().value);
       return html;
     };
     const markerMotion = (key) => {
-      if (!runtime.visualEffectsEnabled) return 'off';
-      if (!runtime.latestMarkers.size) return 'lite';
-      return runtime.latestMarkers.has(key) ? 'lite' : 'off';
+      if (!presentationState.visualEffectsEnabled) return 'off';
+      if (!pipelineState.latestMarkers.size) return 'lite';
+      return pipelineState.latestMarkers.has(key) ? 'lite' : 'off';
     };
     const rendered = source
       .replace(ITEMXCore.MARKER_RE, (_, code) => {
@@ -4008,7 +3935,7 @@ ${codexPageStyle()}
       })
       .replace(ITEMX_REF_RE, (_, ref, inline) => {
         found = true;
-        const payload = runtime.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
+        const payload = pipelineState.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
         if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
         const motion = markerMotion(`ITEMX2@${ref}`);
         const html = renderPayload(`item-ref:${ref}`, payload, motion);
@@ -4023,8 +3950,8 @@ ${codexPageStyle()}
       })
       .replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
         found = true;
-        if (!inline && !runtime.latestMarkers.has(`CODEX2@${ref}`)) return '';
-        const payload = runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
+        if (!inline && !pipelineState.latestMarkers.has(`CODEX2@${ref}`)) return '';
+        const payload = pipelineState.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
         if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
         const html = decorateInlineEvent(
           codexInlineEventHtml(
@@ -4042,7 +3969,7 @@ ${codexPageStyle()}
         return '';
       });
     if (!found) return source;
-    if (runtime.mainStyle) return rendered;
+    if (hostState.mainStyle) return rendered;
     return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
   };
 
@@ -4058,19 +3985,19 @@ ${codexPageStyle()}
       return '';
     });
     String(content || '').replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
-      collect(runtime.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
+      collect(pipelineState.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
       return '';
     });
     const portraits = {},
-      cached = runtime.inlinePortraitCatalog;
+      cached = portraitsState.inlinePortraitCatalog;
     // Display hooks must never call back into the host. A host render may be
     // waiting for this callback, and concurrent message renders amplify reads.
-    if (cached?.contextKey === runtime.activeContextKey) {
+    if (cached?.contextKey === pipelineState.activeContextKey) {
       for (const entity of Object.values(monsters)) {
         const asset = ITEMXCodex.assetForEntity(cached.catalog, entity, cached.narrative);
         if (!asset) continue;
         const cacheKey = `${cached.characterId}:${asset.id}:${asset.ext || ''}`;
-        const image = runtime.portraitThumbnailCache.get(cacheKey);
+        const image = portraitsState.portraitThumbnailCache.get(cacheKey);
         if (typeof image === 'string' && image) portraits[entity.id] = image;
       }
     }
@@ -4078,7 +4005,7 @@ ${codexPageStyle()}
   }
 
   function beginBodyScrollEffects() {
-    runtime.bodyFxSawScroll = false;
+    presentationState.bodyFxSawScroll = false;
     workQueue.clearTimer('bodyFxStartTimer');
     workQueue.schedule(
       'bodyFxStartTimer',
@@ -4091,13 +4018,13 @@ ${codexPageStyle()}
   }
 
   function activateBodyScrollEffects() {
-    if (runtime.bodyFxScrollActive || !runtime.bodyFxClassOwner) return;
-    runtime.bodyFxScrollActive = true;
-    void runtime.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
+    if (presentationState.bodyFxScrollActive || !presentationState.bodyFxClassOwner) return;
+    presentationState.bodyFxScrollActive = true;
+    void presentationState.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
   }
 
   function continueBodyScrollEffects() {
-    runtime.bodyFxSawScroll = true;
+    presentationState.bodyFxSawScroll = true;
     workQueue.clearTimer('bodyFxStartTimer');
     activateBodyScrollEffects();
     endBodyScrollEffects(220);
@@ -4109,10 +4036,10 @@ ${codexPageStyle()}
     workQueue.schedule(
       'bodyFxScrollTimer',
       () => {
-        if (!runtime.bodyFxScrollActive) return;
-        runtime.bodyFxScrollActive = false;
-        if (runtime.bodyFxClassOwner)
-          void runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+        if (!presentationState.bodyFxScrollActive) return;
+        presentationState.bodyFxScrollActive = false;
+        if (presentationState.bodyFxClassOwner)
+          void presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
         scheduleHostDomSync(180);
         workQueue.wake();
       },
@@ -4122,40 +4049,40 @@ ${codexPageStyle()}
   }
 
   async function removeBodyEffectGovernor() {
-    const owner = runtime.bodyFxEventIds[0]?.owner;
+    const owner = presentationState.bodyFxEventIds[0]?.owner;
     if (owner)
-      for (const binding of runtime.bodyFxEventIds) {
+      for (const binding of presentationState.bodyFxEventIds) {
         try {
           await owner.removeEventListener(binding.type, binding.id, true);
         } catch (error) {
           debugRecord('body effect listener remove', error?.message || String(error));
         }
       }
-    runtime.bodyFxEventIds = [];
+    presentationState.bodyFxEventIds = [];
   }
 
   async function installBodyEffectGovernor() {
-    if (!runtime.mainDoc) return;
+    if (!hostState.mainDoc) return;
     try {
-      runtime.bodyFxClassOwner = (await runtime.mainDoc.querySelector('.chattext')) || runtime.bodyFxClassOwner;
-      if (runtime.bodyFxEventIds[0]?.owner) {
+      presentationState.bodyFxClassOwner = (await hostState.mainDoc.querySelector('.chattext')) || presentationState.bodyFxClassOwner;
+      if (presentationState.bodyFxEventIds[0]?.owner) {
         try {
-          if (await runtime.bodyFxEventIds[0]?.owner.getParent()) return;
+          if (await presentationState.bodyFxEventIds[0]?.owner.getParent()) return;
         } catch {}
         await removeBodyEffectGovernor();
       }
-      const body = await runtime.mainDoc.querySelector('body');
+      const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
       const bindings = [
         ['pointerdown', beginBodyScrollEffects],
         ['scroll', continueBodyScrollEffects],
-        ['pointerup', () => endBodyScrollEffects(runtime.bodyFxSawScroll ? 220 : 40)],
-        ['pointercancel', () => endBodyScrollEffects(runtime.bodyFxSawScroll ? 220 : 40)],
+        ['pointerup', () => endBodyScrollEffects(presentationState.bodyFxSawScroll ? 220 : 40)],
+        ['pointercancel', () => endBodyScrollEffects(presentationState.bodyFxSawScroll ? 220 : 40)],
         ['scrollend', () => endBodyScrollEffects(40)]
       ];
       for (const [type, handler] of bindings) {
         const id = await body.addEventListener(type, entry('scroll', handler), true);
-        runtime.bodyFxEventIds.push({ owner: body, type, id });
+        presentationState.bodyFxEventIds.push({ owner: body, type, id });
       }
     } catch (error) {
       debugRecord('body effect governor install', error?.message || String(error));
@@ -4170,14 +4097,14 @@ ${codexPageStyle()}
   }
 
   async function syncMainEffectsState() {
-    if (!runtime.mainDoc) return;
+    if (!hostState.mainDoc) return;
     try {
-      const body = await runtime.mainDoc.querySelector('body');
+      const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      if (runtime.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
+      if (presentationState.visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
       else await body.addClass('x-risu-itemx2-effects-off');
       for (const name of SKIN_NAMES) {
-        if (runtime.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
+        if (presentationState.visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
         else await body.removeClass(`x-risu-itemx2-skin-${name}`);
       }
     } catch (error) {
@@ -4186,7 +4113,7 @@ ${codexPageStyle()}
   }
 
   async function syncRootFontScale(value) {
-    const root = runtime.rootDrawer;
+    const root = uiState.rootDrawer;
     if (!root) return;
     for (const scale of ['small', 'medium', 'large']) {
       try {
@@ -4200,34 +4127,34 @@ ${codexPageStyle()}
 
   async function installMainStyle() {
     try {
-      if (runtime.mainStyle && workQueue.revision('style-position') === runtime.badgePosition) {
+      if (hostState.mainStyle && workQueue.revision('style-position') === uiState.badgePosition) {
         try {
-          if (!(await runtime.mainStyle.getParent())) throw new Error('detached style owner');
-          runtime.permissions.mainDom = true;
-          runtime.lastDomError = '';
+          if (!(await hostState.mainStyle.getParent())) throw new Error('detached style owner');
+          hostState.permissions.mainDom = true;
+          hostState.lastDomError = '';
           await installBodyEffectGovernor();
           await syncMainEffectsState();
           await installHostObserver();
           return true;
         } catch {
-          runtime.mainStyle = null;
-          runtime.mainDoc = null;
-          runtime.bodyFxClassOwner = null;
+          hostState.mainStyle = null;
+          hostState.mainDoc = null;
+          presentationState.bodyFxClassOwner = null;
         }
       }
       const doc = await Risuai.getRootDocument();
       if (!doc) {
-        runtime.permissions.mainDom = false;
-        runtime.lastDomError = '메인 문서 API가 null을 반환했습니다';
+        hostState.permissions.mainDom = false;
+        hostState.lastDomError = '메인 문서 API가 null을 반환했습니다';
         return false;
       }
-      runtime.mainDoc = doc;
-      runtime.permissions.mainDom = true;
+      hostState.mainDoc = doc;
+      hostState.permissions.mainDom = true;
       const existing = await doc.querySelector('style[x-itemx2-style="owner"]');
       if (existing) {
-        runtime.mainStyle = existing;
+        hostState.mainStyle = existing;
         await existing.setTextContent(mainStyleText());
-        workQueue.remember('style-position', runtime.badgePosition);
+        workQueue.remember('style-position', uiState.badgePosition);
         await installBodyEffectGovernor();
         await syncMainEffectsState();
         await installHostObserver();
@@ -4239,19 +4166,19 @@ ${codexPageStyle()}
       const head = await doc.querySelector('head');
       if (head) await head.appendChild(style);
       else await doc.appendChild(style);
-      runtime.mainStyle = style;
-      workQueue.remember('style-position', runtime.badgePosition);
-      runtime.lastDomError = '';
+      hostState.mainStyle = style;
+      workQueue.remember('style-position', uiState.badgePosition);
+      hostState.lastDomError = '';
       await installBodyEffectGovernor();
       await syncMainEffectsState();
       await installHostObserver();
       return true;
     } catch (error) {
-      runtime.permissions.mainDom = false;
-      runtime.mainStyle = null;
+      hostState.permissions.mainDom = false;
+      hostState.mainStyle = null;
       workQueue.remember('style-position', '');
-      runtime.mainDoc = null;
-      runtime.lastDomError = String(error?.message || error || '알 수 없는 DOM 오류');
+      hostState.mainDoc = null;
+      hostState.lastDomError = String(error?.message || error || '알 수 없는 DOM 오류');
       fail('main style connection', error);
       return false;
     }
@@ -4267,15 +4194,15 @@ ${codexPageStyle()}
       .filter((item) => !ITEMXHistory.terminal('item', item))
       .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
-    runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
-    const start = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
+    uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
+    const start = uiState.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
     return all.slice(start, start + ITEMX_ROOT_PAGE_SIZE);
   }
 
   function presentationRecord(domain, id) {
-    if (!runtime.presentationRecords) {
+    if (!presentationState.presentationRecords) {
       const records = new Map(),
-        chat = runtime.cachedLoaded?.chat;
+        chat = pipelineState.cachedLoaded?.chat;
       const manual = [...(replayCheckpoint(chat)?.manual || []), ...manualLedger(chat)];
       const manualByIndex = new Map();
       for (const row of manual) {
@@ -4313,9 +4240,9 @@ ${codexPageStyle()}
         for (const row of presentationPayloads(messageData(chat.message[index]))) put(row.payload, row.domain, index);
         putManual(index);
       }
-      runtime.presentationRecords = records;
+      presentationState.presentationRecords = records;
     }
-    return runtime.presentationRecords.get(`${domain}:${id}`) || {};
+    return presentationState.presentationRecords.get(`${domain}:${id}`) || {};
   }
   function detailAnnotations(domain, entity) {
     const record = presentationRecord(domain, entity.id);
@@ -4329,22 +4256,22 @@ ${codexPageStyle()}
   }
 
   function itemDetailHtml(item) {
-    const motion = runtime.visualEffectsEnabled ? 'full' : 'off';
+    const motion = presentationState.visualEffectsEnabled ? 'full' : 'off';
     const record = presentationRecord('item', item.id);
     const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
-    if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
+    if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
     const html = `<div class="itemx2-detail-stack">${ITEMXRenderer.renderCard(item, { motion })}${detailAnnotations('item', item)}</div>`;
-    runtime.detailHtmlCache.set(key, html);
-    while (runtime.detailHtmlCache.size > 60)
-      runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    presentationState.detailHtmlCache.set(key, html);
+    while (presentationState.detailHtmlCache.size > 60)
+      presentationState.detailHtmlCache.delete(presentationState.detailHtmlCache.keys().next().value);
     return html;
   }
 
   async function hydrateCheckedItemDetail(loaded) {
-    if (!runtime.mainDoc || !loaded) return false;
+    if (!hostState.mainDoc || !loaded) return false;
     const detailItems = rootPageItems(loaded);
     for (let index = 0; index < detailItems.length; index += 1) {
-      const selected = await runtime.mainDoc.querySelector(`#itemx2-detail-${index}:checked`);
+      const selected = await hostState.mainDoc.querySelector(`#itemx2-detail-${index}:checked`);
       if (!selected) continue;
       const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
       if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
@@ -4358,8 +4285,8 @@ ${codexPageStyle()}
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
-    if (!runtime.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
-    const marker = await runtime.mainDoc.querySelector(
+    if (!hostState.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
+    const marker = await hostState.mainDoc.querySelector(
       `.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`
     );
     if (!marker) return false;
@@ -4378,7 +4305,7 @@ ${codexPageStyle()}
       );
       portrait = portraits[entity.id] || '';
     }
-    if (loaded.key !== runtime.activeContextKey) return false;
+    if (loaded.key !== pipelineState.activeContextKey) return false;
     const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
     if (workQueue.revision('detail') === detailKey) return true;
     const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
@@ -4391,16 +4318,16 @@ ${codexPageStyle()}
   }
 
   async function queryMainClass(className) {
-    if (!runtime.mainDoc) return null;
+    if (!hostState.mainDoc) return null;
     return (
-      (await runtime.mainDoc.querySelector(`.x-risu-${className}`)) ||
-      (await runtime.mainDoc.querySelector(`.${className}`))
+      (await hostState.mainDoc.querySelector(`.x-risu-${className}`)) ||
+      (await hostState.mainDoc.querySelector(`.${className}`))
     );
   }
 
   async function removeRootClickRouter() {
-    const owner = runtime.rootClickBindings[0]?.owner;
-    const bindings = runtime.rootClickBindings.slice();
+    const owner = uiState.rootClickBindings[0]?.owner;
+    const bindings = uiState.rootClickBindings.slice();
     if (owner)
       for (const binding of bindings) {
         try {
@@ -4409,19 +4336,19 @@ ${codexPageStyle()}
           debugRecord('root click remove', error?.message || String(error));
         }
       }
-    runtime.rootClickBindings = [];
+    uiState.rootClickBindings = [];
   }
 
   async function removeRootDrawer() {
-    runtime.historyView.open = false;
+    uiState.historyView.open = false;
     workQueue.clearTimer('feedbackTimer');
     await removeRootClickRouter();
     try {
-      if (runtime.rootDrawer) await runtime.rootDrawer.remove();
+      if (uiState.rootDrawer) await uiState.rootDrawer.remove();
     } catch {}
-    if (runtime.mainDoc) {
+    if (hostState.mainDoc) {
       try {
-        const safeRoots = await runtime.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
+        const safeRoots = await hostState.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
         const roots = await Risuai.unwarpSafeArray(safeRoots);
         for (const root of roots) {
           try {
@@ -4432,32 +4359,32 @@ ${codexPageStyle()}
         fail('remove duplicate root drawers', error);
       }
     }
-    runtime.rootDrawer = null;
-    runtime.rootOpen = false;
+    uiState.rootDrawer = null;
+    uiState.rootOpen = false;
     workQueue.remember('render', '');
   }
 
   async function mountRootLoading(label = 'ITEMX CODEX 초기화 중…') {
-    if (!runtime.mainDoc) return false;
+    if (!hostState.mainDoc) return false;
     await removeRootDrawer();
-    const root = await runtime.mainDoc.createElement('div');
+    const root = await hostState.mainDoc.createElement('div');
     await root.setAttribute('x-itemx2-drawer', 'owner');
     await root.setClassName('x-risu-itemx2-root-drawer x-risu-itemx2-booting');
     await root.setInnerHTML(
       `<div class="itemx2-boot-card" role="status" aria-live="polite"><i></i><span><strong>${ITEMXCore.esc(label)}</strong><small>화면과 모델 연결을 준비하고 있습니다.</small></span></div>`
     );
-    const body = await runtime.mainDoc.querySelector('body');
+    const body = await hostState.mainDoc.querySelector('body');
     if (!body) return false;
     await body.appendChild(root);
-    runtime.rootDrawer = root;
+    uiState.rootDrawer = root;
     workQueue.forget('render');
     return true;
   }
 
   async function updateRootLoading(label) {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return;
     try {
-      const target = await runtime.mainDoc.querySelector('.x-risu-itemx2-boot-card strong');
+      const target = await hostState.mainDoc.querySelector('.x-risu-itemx2-boot-card strong');
       if (target) await target.setTextContent(label);
     } catch (error) {
       fail('loading label', error);
@@ -4465,9 +4392,9 @@ ${codexPageStyle()}
   }
 
   async function showRootFeedback(message, tone = 'success', timeoutMs = 2600) {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return false;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return false;
     try {
-      const toast = await runtime.mainDoc.querySelector('.x-risu-itemx2-feedback');
+      const toast = await hostState.mainDoc.querySelector('.x-risu-itemx2-feedback');
       if (!toast) return false;
       workQueue.clearTimer('feedbackTimer');
       await toast.setTextContent(message);
@@ -4507,11 +4434,11 @@ ${codexPageStyle()}
   async function lorebookEntries(contextKey, { refresh = false } = {}) {
     if (
       !refresh &&
-      runtime.lorebookCache.key === contextKey &&
-      runtime.lorebookCache.at &&
-      Date.now() - runtime.lorebookCache.at < 10000
+      pipelineState.lorebookCache.key === contextKey &&
+      pipelineState.lorebookCache.at &&
+      Date.now() - pipelineState.lorebookCache.at < 10000
     )
-      return runtime.lorebookCache.rows;
+      return pipelineState.lorebookCache.rows;
     const response = await callOptionalRisuApi('getCurrentLorebookEntries');
     if (!response.available) {
       const error = new Error('현재 RisuAI에서 로어북 조회 API를 지원하지 않습니다.');
@@ -4525,7 +4452,7 @@ ${codexPageStyle()}
         : Array.isArray(response.value?.lorebook)
           ? response.value.lorebook
           : [];
-    runtime.lorebookCache = { key: contextKey, at: Date.now(), rows };
+    pipelineState.lorebookCache = { key: contextKey, at: Date.now(), rows };
     return rows;
   }
 
@@ -4564,18 +4491,18 @@ ${codexPageStyle()}
         };
       })();
       const current = await context();
-      if (runtime.unloading || current?.key !== ctx.key) return scanResult;
+      if (hostState.unloading || current?.key !== ctx.key) return scanResult;
       if (scanResult.changed) {
-        runtime.cachedLoaded = null;
-        runtime.detailHtmlCache.clear();
+        pipelineState.cachedLoaded = null;
+        presentationState.detailHtmlCache.clear();
         workQueue.remember('render', '');
-        runtime.generation += 1;
+        pipelineState.generation += 1;
         await rebuildCurrent();
       }
       const summary = scanResult.result;
       workQueue.remember('lorebook', scanResult.sourceFingerprint);
       if (!silent || summary.enriched || summary.removed)
-        runtime.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
+        uiState.status = `로어북 스캔 · 보완 ${summary.enriched} · 정리 ${summary.removed} · 일치 ${summary.matched} · 모호 ${summary.ambiguous}`;
       debugRecord('lorebook scan', summary);
       if (!silent)
         await notifyUser(
@@ -4616,17 +4543,17 @@ ${codexPageStyle()}
       } catch (error) {
         debugRecord('host DOM sync', error?.message || String(error));
       }
-    }, delayMs, false, () => !runtime.bodyFxScrollActive);
+    }, delayMs, false, () => !presentationState.bodyFxScrollActive);
   }
 
   async function installHostObserver() {
-    if (!runtime.mainDoc || runtime.hostObserver || typeof Risuai.createMutationObserver !== 'function') return;
+    if (!hostState.mainDoc || hostState.hostObserver || typeof Risuai.createMutationObserver !== 'function') return;
     try {
-      const body = await runtime.mainDoc.querySelector('body');
+      const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      runtime.hostObserver = await Risuai.createMutationObserver(
+      hostState.hostObserver = await Risuai.createMutationObserver(
         entry('host-observer', (recordsSafe) => {
-          if (runtime.bodyFxScrollActive) {
+          if (presentationState.bodyFxScrollActive) {
             scheduleHostDomSync();
             return;
           }
@@ -4651,29 +4578,29 @@ ${codexPageStyle()}
           })();
         })
       );
-      if (!runtime.hostObserver?.observe) throw new Error('Mutation observer unavailable');
-      await runtime.hostObserver.observe(body, { childList: true, subtree: true });
+      if (!hostState.hostObserver?.observe) throw new Error('Mutation observer unavailable');
+      await hostState.hostObserver.observe(body, { childList: true, subtree: true });
       armRemountWatchdog();
     } catch (error) {
       try {
-        await runtime.hostObserver?.disconnect();
+        await hostState.hostObserver?.disconnect();
       } catch {}
-      runtime.hostObserver = null;
+      hostState.hostObserver = null;
       armRemountWatchdog();
       debugRecord('host observer install', error?.message || String(error));
     }
   }
 
   function invalidateHostSettingsVisibility() {
-    runtime.hostSettingsCache.at = 0;
+    hostState.hostSettingsCache.at = 0;
   }
 
   async function hostPluginSettingsVisible() {
-    if (!runtime.mainDoc || runtime.allowDrawerOverSettings) return false;
+    if (!hostState.mainDoc || uiState.allowDrawerOverSettings) return false;
     const now = Date.now();
-    if (now - runtime.hostSettingsCache.at < 750) return runtime.hostSettingsCache.visible;
+    if (now - hostState.hostSettingsCache.at < 750) return hostState.hostSettingsCache.visible;
     try {
-      const safeTargets = await runtime.mainDoc.querySelectorAll('button,[role="button"]');
+      const safeTargets = await hostState.mainDoc.querySelectorAll('button,[role="button"]');
       const targets = await Risuai.unwarpSafeArray(safeTargets);
       for (const target of targets.slice(0, 96)) {
         const text = String((await target.textContent()) || '')
@@ -4682,46 +4609,46 @@ ${codexPageStyle()}
         if (!text.includes('ITEMX CODEX · 권한 및 설정')) continue;
         const rect = await target.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
-          runtime.hostSettingsCache = { at: now, visible: true };
+          hostState.hostSettingsCache = { at: now, visible: true };
           return true;
         }
       }
     } catch (error) {
       fail('host settings visibility', error);
     }
-    runtime.hostSettingsCache = { at: now, visible: false };
+    hostState.hostSettingsCache = { at: now, visible: false };
     return false;
   }
 
   async function syncHostSettingsVisibility() {
-    if (!runtime.rootDrawer) return;
+    if (!uiState.rootDrawer) return;
     const visible = await hostPluginSettingsVisible();
     if (Boolean(workQueue.revision('host-settings')) === visible) return;
     workQueue.remember('host-settings', visible);
     try {
-      if (visible) await runtime.rootDrawer.addClass('x-risu-itemx2-host-settings');
-      else await runtime.rootDrawer.removeClass('x-risu-itemx2-host-settings');
+      if (visible) await uiState.rootDrawer.addClass('x-risu-itemx2-host-settings');
+      else await uiState.rootDrawer.removeClass('x-risu-itemx2-host-settings');
     } catch (error) {
       fail('host settings badge visibility', error);
     }
   }
 
   async function setRootOpen(open) {
-    if (!runtime.rootDrawer) return false;
+    if (!uiState.rootDrawer) return false;
     try {
-      if (!(await runtime.rootDrawer.getParent())) {
-        runtime.rootOpen = false;
+      if (!(await uiState.rootDrawer.getParent())) {
+        uiState.rootOpen = false;
         return false;
       }
-      if (open) await runtime.rootDrawer.addClass('x-risu-itemx2-is-open');
+      if (open) await uiState.rootDrawer.addClass('x-risu-itemx2-is-open');
       else {
-        await runtime.rootDrawer.removeClass('x-risu-itemx2-is-open');
-        runtime.rootOpen = false;
-        runtime.allowDrawerOverSettings = false;
+        await uiState.rootDrawer.removeClass('x-risu-itemx2-is-open');
+        uiState.rootOpen = false;
+        uiState.allowDrawerOverSettings = false;
         invalidateHostSettingsVisibility();
         await syncHostSettingsVisibility();
       }
-      runtime.rootOpen = Boolean(open);
+      uiState.rootOpen = Boolean(open);
       return true;
     } catch {
       return false;
@@ -4730,113 +4657,113 @@ ${codexPageStyle()}
 
   async function resetRuntimeForContext(active) {
     const nextKey = active?.key || '';
-    if (runtime.activeContextKey === nextKey) return false;
-    runtime.activeContextKey = nextKey;
-    runtime.inlinePortraitCatalog = null;
-    runtime.historyView = { open: false, key: nextKey, domain: 'item', filter: 'recent', selected: null, page: 0 };
+    if (pipelineState.activeContextKey === nextKey) return false;
+    pipelineState.activeContextKey = nextKey;
+    portraitsState.inlinePortraitCatalog = null;
+    uiState.historyView = { open: false, key: nextKey, domain: 'item', filter: 'recent', selected: null, page: 0 };
     clearEventBursts();
     armRemountWatchdog();
-    runtime.rootItemPage = 0;
+    uiState.rootItemPage = 0;
     workQueue.remember('detail', '');
     invalidateHostSettingsVisibility();
-    runtime.cachedLoaded = null;
+    pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
     workQueue.forget('uncommitted-markers');
-    runtime.markerHtmlCache.clear();
-    runtime.detailHtmlCache.clear();
+    presentationState.markerHtmlCache.clear();
+    presentationState.detailHtmlCache.clear();
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
     workQueue.remember('lorebook', '');
-    runtime.cleanupArmedUntil = 0;
+    uiState.cleanupArmedUntil = 0;
 
     workQueue.clearTimer('legacyCommitTimer');
     workQueue.clearTimer('bodyFxStartTimer');
     workQueue.clearTimer('bodyFxScrollTimer');
-    if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
+    if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
-        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
       } catch {}
     }
-    runtime.bodyFxScrollActive = false;
-    runtime.bodyFxSawScroll = false;
+    presentationState.bodyFxScrollActive = false;
+    presentationState.bodyFxSawScroll = false;
 
 
-    runtime.bodyFxClassOwner = null;
+    presentationState.bodyFxClassOwner = null;
     refreshLatest(active?.chat || { message: [], scriptstate: {} });
     await removeRootDrawer();
     return true;
   }
 
   function ensureRootInventory() {
-    if (runtime.unloading || runtime.bodyFxScrollActive) return Promise.resolve();
+    if (hostState.unloading || presentationState.bodyFxScrollActive) return Promise.resolve();
     return ensureRootInventoryNow();
   }
 
   async function ensureRootInventoryNow() {
-    if (runtime.backupOpen) return;
-    if (runtime.bodyFxScrollActive) return;
+    if (uiState.backupOpen) return;
+    if (presentationState.bodyFxScrollActive) return;
     workQueue.remember('remount', 'checked');
     const active = await context();
     const contextChanged = await resetRuntimeForContext(active);
     if (!active) {
-      runtime.status = '채팅 진입 대기';
+      uiState.status = '채팅 진입 대기';
       return;
     }
-    const cached = runtime.cachedLoaded;
+    const cached = pipelineState.cachedLoaded;
     const replayChanged =
       !contextChanged &&
       cached?.key === active.key &&
       cached.replayFingerprint !== replaySourceFingerprint(active.chat);
 
-    if (!contextChanged && (runtime.auxActive > 0))
+    if (!contextChanged && (auxState.auxActive > 0))
       return;
 
     try {
-      if (!runtime.hooks.output || !runtime.hooks.display || !runtime.hooks.before || !runtime.hooks.after)
+      if (!hostState.hooks.output || !hostState.hooks.display || !hostState.hooks.before || !hostState.hooks.after)
         await installPipelineHooks();
       if (contextChanged) {
-        if (!runtime.mainDoc && !(await installMainStyle())) return;
+        if (!hostState.mainDoc && !(await installMainStyle())) return;
         const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
         if (loaded) await openRootInventory({ open: false, loaded });
         void dispatch('update', checkForUpdate);
         return;
       }
-      if (!runtime.mainDoc && !(await installMainStyle())) return;
+      if (!hostState.mainDoc && !(await installMainStyle())) return;
       let drawerAttached = false;
-      if (runtime.rootDrawer) {
+      if (uiState.rootDrawer) {
         try {
-          drawerAttached = Boolean(await runtime.rootDrawer.getParent());
+          drawerAttached = Boolean(await uiState.rootDrawer.getParent());
         } catch {
-          runtime.rootDrawer = null;
+          uiState.rootDrawer = null;
         }
       }
       if (!drawerAttached) {
-        const safeMounted = await runtime.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
+        const safeMounted = await hostState.mainDoc.querySelectorAll('[x-itemx2-drawer="owner"]');
         const mounted = await Risuai.unwarpSafeArray(safeMounted);
         if (mounted.length === 1) {
-          runtime.rootDrawer = mounted[0];
-          runtime.rootOpen = Boolean(await runtime.rootDrawer.matches('.x-risu-itemx2-is-open'));
-          await installRootClickRouter(runtime.rootDrawer);
+          uiState.rootDrawer = mounted[0];
+          uiState.rootOpen = Boolean(await uiState.rootDrawer.matches('.x-risu-itemx2-is-open'));
+          await installRootClickRouter(uiState.rootDrawer);
         } else {
           await removeRootClickRouter();
-          runtime.rootDrawer = null;
+          uiState.rootDrawer = null;
           await openRootInventory({ open: false });
           return;
         }
       }
       let styleAttached = false;
-      if (runtime.mainStyle) {
+      if (hostState.mainStyle) {
         try {
-          styleAttached = Boolean(await runtime.mainStyle.getParent());
+          styleAttached = Boolean(await hostState.mainStyle.getParent());
         } catch {
-          runtime.mainStyle = null;
+          hostState.mainStyle = null;
         }
       }
       if (!styleAttached) {
-        const style = await runtime.mainDoc.querySelector('style[x-itemx2-style="owner"]');
-        if (style) runtime.mainStyle = style;
+        const style = await hostState.mainDoc.querySelector('style[x-itemx2-style="owner"]');
+        if (style) hostState.mainStyle = style;
         else {
-          runtime.mainStyle = null;
+          hostState.mainStyle = null;
           await installMainStyle();
         }
       }
@@ -4845,9 +4772,9 @@ ${codexPageStyle()}
         if (loaded) {
           let open = false;
           try {
-            open = Boolean(await runtime.rootDrawer?.matches('.x-risu-itemx2-is-open'));
+            open = Boolean(await uiState.rootDrawer?.matches('.x-risu-itemx2-is-open'));
           } catch {}
-          await openRootInventory({ open, loaded, tab: runtime.activeRootTab });
+          await openRootInventory({ open, loaded, tab: uiState.activeRootTab });
         }
       }
     } catch (error) {
@@ -4859,7 +4786,7 @@ ${codexPageStyle()}
     if (
       typeof Risuai.readImage !== 'function' ||
       !codexSnapshot?.monsters?.order?.length ||
-      ctx.key !== runtime.activeContextKey
+      ctx.key !== pipelineState.activeContextKey
     )
       return;
     const key = `${ctx.key}:${Number(settings.moduleAssetsEnabled)}:${encounterRegistryFingerprint(codexSnapshot)}`;
@@ -4870,7 +4797,7 @@ ${codexPageStyle()}
   }
 
   async function portraitThumbnail(cacheKey, image) {
-    if (runtime.portraitThumbnailCache.has(cacheKey)) return runtime.portraitThumbnailCache.get(cacheKey);
+    if (portraitsState.portraitThumbnailCache.has(cacheKey)) return portraitsState.portraitThumbnailCache.get(cacheKey);
     const work = Promise.resolve().then(async () => {
       let thumbnail = '';
       try {
@@ -4906,17 +4833,17 @@ ${codexPageStyle()}
       } catch (error) {
         debugRecord('portrait thumbnail', error?.message || String(error));
       }
-      runtime.portraitThumbnailCache.set(cacheKey, thumbnail);
-      while (runtime.portraitThumbnailCache.size > 64)
-        runtime.portraitThumbnailCache.delete(runtime.portraitThumbnailCache.keys().next().value);
+      portraitsState.portraitThumbnailCache.set(cacheKey, thumbnail);
+      while (portraitsState.portraitThumbnailCache.size > 64)
+        portraitsState.portraitThumbnailCache.delete(portraitsState.portraitThumbnailCache.keys().next().value);
       return thumbnail;
     });
-    runtime.portraitThumbnailCache.set(cacheKey, work);
+    portraitsState.portraitThumbnailCache.set(cacheKey, work);
     return work;
   }
 
   async function loadCodexPortraits(character, chat, codexSnapshot, settings, inlineOnly = false) {
-    const ownerKey = runtime.activeContextKey;
+    const ownerKey = pipelineState.activeContextKey;
     const result = {},
       catalog = combinedPortraitAssets(
         character,
@@ -4976,8 +4903,8 @@ ${codexPageStyle()}
       .slice(-8)
       .map((message) => ITEMXCore.messageText(message))
       .join('\n');
-    if (runtime.activeContextKey === ownerKey)
-      runtime.inlinePortraitCatalog = {
+    if (pipelineState.activeContextKey === ownerKey)
+      portraitsState.inlinePortraitCatalog = {
         contextKey: ownerKey,
         characterId: character?.chaId || character?.id || 'character',
         catalog,
@@ -4990,12 +4917,12 @@ ${codexPageStyle()}
         const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
         if (!asset) continue;
         const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
-        if (inlineOnly && runtime.portraitThumbnailCache.has(cacheKey)) {
-          result[monster.id] = await runtime.portraitThumbnailCache.get(cacheKey);
+        if (inlineOnly && portraitsState.portraitThumbnailCache.has(cacheKey)) {
+          result[monster.id] = await portraitsState.portraitThumbnailCache.get(cacheKey);
           continue;
         }
-        if (runtime.portraitCache.has(cacheKey)) {
-          const image = runtime.portraitCache.get(cacheKey);
+        if (portraitsState.portraitCache.has(cacheKey)) {
+          const image = portraitsState.portraitCache.get(cacheKey);
           const thumbnail = await portraitThumbnail(cacheKey, image);
           result[monster.id] = inlineOnly ? thumbnail : image;
           continue;
@@ -5016,12 +4943,12 @@ ${codexPageStyle()}
             const thumbnail = await portraitThumbnail(cacheKey, image);
             result[monster.id] = inlineOnly ? thumbnail : image;
             if (!inlineOnly && image.length <= 4 * 1024 * 1024) {
-              runtime.portraitCache.set(cacheKey, image);
+              portraitsState.portraitCache.set(cacheKey, image);
 
-              while (runtime.portraitCache.size > 24 || [...runtime.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
-                const oldest = runtime.portraitCache.keys().next().value,
-                  removed = runtime.portraitCache.get(oldest) || '';
-                runtime.portraitCache.delete(oldest);
+              while (portraitsState.portraitCache.size > 24 || [...portraitsState.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
+                const oldest = portraitsState.portraitCache.keys().next().value,
+                  removed = portraitsState.portraitCache.get(oldest) || '';
+                portraitsState.portraitCache.delete(oldest);
 
               }
             }
@@ -5122,7 +5049,7 @@ ${codexPageStyle()}
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, runtime.visualEffectsEnabled ? 'full' : 'off');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.visualEffectsEnabled ? 'full' : 'off');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
   }
@@ -5169,7 +5096,7 @@ ${codexPageStyle()}
   function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
     const record = presentationRecord(domain, entity?.id);
     const fingerprint = ITEMXCore.fnv1a(
-      JSON.stringify([entity || {}, record.previous, record.review, runtime.visualEffectsEnabled])
+      JSON.stringify([entity || {}, record.previous, record.review, presentationState.visualEffectsEnabled])
     );
     return domain === 'skill'
       ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`
@@ -5177,7 +5104,7 @@ ${codexPageStyle()}
   }
   function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 'world') {
     const key = codexDetailCacheKey(domain, entity, portrait, rarityMode);
-    if (runtime.detailHtmlCache.has(key)) return runtime.detailHtmlCache.get(key);
+    if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
     const back =
       domain === 'skill'
         ? '<label class="itemx-codex-back" for="itemx2-skill-none">‹ 스킬 목록</label>'
@@ -5185,22 +5112,22 @@ ${codexPageStyle()}
     const html = unwrapCodexPage(
       domain === 'skill' ? skillPageHtml(entity, back, rarityMode) : monsterPageHtml(entity, portrait, back)
     );
-    runtime.detailHtmlCache.set(key, html);
-    while (runtime.detailHtmlCache.size > 60)
-      runtime.detailHtmlCache.delete(runtime.detailHtmlCache.keys().next().value);
+    presentationState.detailHtmlCache.set(key, html);
+    while (presentationState.detailHtmlCache.size > 60)
+      presentationState.detailHtmlCache.delete(presentationState.detailHtmlCache.keys().next().value);
     return html;
   }
 
   function rootBadgeHtml() {
-    const update = runtime.update.available
-      ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>`
+    const update = hostState.update.available
+      ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(hostState.update.latest)}" aria-label="ITEMX CODEX 업데이트 가능">↑</span>`
       : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${runtime.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
   const updateLabelHtml = () =>
-    runtime.update.available
-      ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(runtime.update.latest)}">UPDATE</span>`
+    hostState.update.available
+      ? `<span class="itemx2-update-label" x-itemx2-update="${ITEMXCore.esc(hostState.update.latest)}">UPDATE</span>`
       : '';
 
   function panelMenuHtml(native = true) {
@@ -5212,7 +5139,7 @@ ${codexPageStyle()}
   }
 
   function selectHistoryRows(loaded) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     const rows = ITEMXHistory.entries(loaded, view.domain).filter((row) => row.closed);
     const selected = rows.find((row) => row.entity.id === view.selected);
     const visible = rows.filter((row) =>
@@ -5226,12 +5153,12 @@ ${codexPageStyle()}
     );
     const pages = Math.max(1, Math.ceil(visible.length / 16));
     view.page = Math.max(0, Math.min(pages - 1, view.page));
-    runtime.historyRows = selected ? [selected] : visible.slice(view.page * 16, view.page * 16 + 16);
-    return { pages, selected, rows: runtime.historyRows };
+    uiState.historyRows = selected ? [selected] : visible.slice(view.page * 16, view.page * 16 + 16);
+    return { pages, selected, rows: uiState.historyRows };
   }
 
   async function prepareHistoryPortraits(loaded) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     if (!view.open || view.key !== loaded.key || view.domain !== 'monster') return;
     const { rows, selected } = selectHistoryRows(loaded);
     if (!rows.length) return;
@@ -5241,14 +5168,14 @@ ${codexPageStyle()}
       entries: Object.fromEntries(rows.map((row) => [row.entity.id, row.entity]))
     };
     const portraits = await loadCodexPortraits(loaded.character, loaded.chat, { monsters }, loaded, !selected);
-    const now = runtime.historyView;
+    const now = uiState.historyView;
     if (!now.open || `${now.key}:${now.domain}:${now.selected || ''}:${now.filter}:${now.page}` !== signature) return;
     if (selected) loaded.portraits = { ...loaded.portraits, ...portraits };
     else loaded.historyThumbnails = portraits;
   }
 
   function historyHtml(loaded) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     const { pages, selected } = selectHistoryRows(loaded);
     const prefs = ITEMXHistory.preferences(loaded.chat);
     const filters = [
@@ -5276,7 +5203,7 @@ ${codexPageStyle()}
               : row.domain === 'skill'
                 ? '상실·망각 기록'
                 : '종료된 조우';
-    const cards = runtime.historyRows
+    const cards = uiState.historyRows
       .map(
         (row, index) =>
           `<section class="itemx2-history-row itemx2-history-row-${index}"><button class="itemx2-history-detail-${index}" type="button"><strong>${row.domain === 'monster' && loaded.historyThumbnails?.[row.entity.id] ? `<img src="${ITEMXCore.esc(loaded.historyThumbnails[row.entity.id])}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:middle">` : ITEMXCore.esc(row.domain === 'item' ? ITEMXCore.resolveItemEmoji(row.entity) : row.entity.glyph || '📖')} ${ITEMXCore.esc(row.entity.name)}</strong><small>${label(row)}</small></button>${buttons(row, index)}</section>`
@@ -5309,12 +5236,12 @@ ${codexPageStyle()}
       const next = { ...latest, scriptstate: { ...latest.scriptstate, [ITEMXHistory.KEY]: JSON.stringify(prefs) } };
       await saveChat(active.characterIndex, active.chatIndex, next);
       loaded.chat = next;
-      if (runtime.cachedLoaded?.key === loaded.key) runtime.cachedLoaded.chat = next;
+      if (pipelineState.cachedLoaded?.key === loaded.key) pipelineState.cachedLoaded.chat = next;
     })();
   }
 
   async function historyAction(action, loaded, native) {
-    const view = runtime.historyView;
+    const view = uiState.historyView;
     if (view.key !== loaded.key) return;
     if (action === 'back') {
       if (view.selected) view.selected = null;
@@ -5330,7 +5257,7 @@ ${codexPageStyle()}
       });
     else {
       const [operation, rawIndex] = action.split('-');
-      const row = runtime.historyRows?.[Number(rawIndex)];
+      const row = uiState.historyRows?.[Number(rawIndex)];
       if (!row) return;
       if (operation === 'detail') view.selected = row.entity.id;
       else if (operation === 'keep')
@@ -5355,13 +5282,13 @@ ${codexPageStyle()}
     const body = await queryMainClass('itemx2-root-tab-body');
     if (!body) return;
     let pane = await queryMainClass('itemx2-history-pane');
-    if (!runtime.historyView.open || runtime.historyView.key !== loaded.key) {
+    if (!uiState.historyView.open || uiState.historyView.key !== loaded.key) {
       await pane?.remove();
       await body.removeClass('x-risu-itemx2-history-opened');
       return;
     }
     if (!pane) {
-      pane = await runtime.mainDoc.createElement('section');
+      pane = await hostState.mainDoc.createElement('section');
       await pane.addClass('x-risu-itemx2-history-pane');
       await body.appendChild(pane);
     }
@@ -5374,7 +5301,7 @@ ${codexPageStyle()}
     const body = document.querySelector('.itemx2-iframe-content');
     if (!body) return;
     let pane = body.querySelector('.itemx2-history-pane');
-    if (!runtime.historyView.open || runtime.historyView.key !== loaded.key) {
+    if (!uiState.historyView.open || uiState.historyView.key !== loaded.key) {
       pane?.remove();
       body.classList.remove('itemx2-history-opened');
       return;
@@ -5407,10 +5334,10 @@ ${codexPageStyle()}
     if (await eventHitsMainClass(event, 'itemx2-history-open')) {
       const loaded = await cachedOrRebuildCurrent();
       if (!loaded) return true;
-      runtime.historyView = {
+      uiState.historyView = {
         open: true,
         key: loaded.key,
-        domain: historyDomain(runtime.activeRootTab),
+        domain: historyDomain(uiState.activeRootTab),
         filter: 'recent',
         selected: null,
         page: 0
@@ -5418,7 +5345,7 @@ ${codexPageStyle()}
       await drawRootHistory(loaded);
       return true;
     }
-    if (!runtime.historyView.open) return false;
+    if (!uiState.historyView.open) return false;
     const loaded = await cachedOrRebuildCurrent();
     if (!loaded) return true;
     const actions = [
@@ -5433,14 +5360,14 @@ ${codexPageStyle()}
         await historyAction(action, loaded, true);
         return true;
       }
-    if (runtime.historyView.selected) {
+    if (uiState.historyView.selected) {
       for (const action of ['keep-0', 'archive-0'])
         if (await eventHitsMainClass(event, `itemx2-history-${action}`)) {
           await historyAction(action, loaded, true);
           return true;
         }
     } else
-      for (let index = 0; index < (runtime.historyRows?.length || 0); index++) {
+      for (let index = 0; index < (uiState.historyRows?.length || 0); index++) {
         if (!(await eventHitsMainClass(event, `itemx2-history-row-${index}`))) continue;
         for (const operation of ['keep', 'archive', 'detail'])
           if (await eventHitsMainClass(event, `itemx2-history-${operation}-${index}`)) {
@@ -5521,7 +5448,7 @@ ${codexPageStyle()}
     return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">연결</h4>${connectionCards}${setCard(
       '보조 모델 상태',
       ITEMXCore.esc(auxStatusText()),
-      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${runtime.auxActive > 0 ? 'disabled' : ''}>${runtime.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
+      `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${auxState.auxActive > 0 ? 'disabled' : ''}>${auxState.auxActive > 0 ? '처리 중…' : '지금 검사'}</button>`,
       ' class="itemx2-aux-setting-status"'
     )}<h4 class="itemx2-set-group">기록</h4>${setCard(
       '무엇을 기록할까요',
@@ -5609,11 +5536,11 @@ ${codexPageStyle()}
   }
 
   function settingsPositionChoices(skin) {
-    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === runtime.badgePosition) || BADGE_POSITIONS[0])[1];
+    const positionLabel = (BADGE_POSITIONS.find(([key]) => key === uiState.badgePosition) || BADGE_POSITIONS[0])[1];
     // A map of the screen beats six abbreviations: the slot sits where the badge will.
     return `<div class="itemx2-position-map">${BADGE_POSITIONS.map(
       ([key, label]) =>
-        `<button class="itemx2-position-choice itemx2-position-${key} ${runtime.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
+        `<button class="itemx2-position-choice itemx2-position-${key} ${uiState.badgePosition === key ? 'itemx2-position-on' : ''}" type="button"${skin.choiceData('position', key)} aria-label="${label}"></button>`
     ).join(
       ''
     )}<span class="itemx2-position-screen">대화 화면</span></div><p class="itemx2-position-hint">현재 <b>${positionLabel}</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>`;
@@ -5622,15 +5549,15 @@ ${codexPageStyle()}
   function settingsStorageParts(loaded) {
     const footprint = itemxStorageFootprint(loaded.chat);
     return {
-      cleanupArmed: runtime.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed: runtime.storageCleanupArmedUntil > Date.now(),
+      cleanupArmed: uiState.cleanupArmedUntil > Date.now(),
+      storageCleanupArmed: uiState.storageCleanupArmedUntil > Date.now(),
       footprintLabel: `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`
     };
   }
 
   function settingsDebugLog() {
     return (
-      runtime.debugEntries
+      settingsState.debugEntries
         .slice(-12)
         .reverse()
         .map(
@@ -5644,7 +5571,7 @@ ${codexPageStyle()}
   // One banner, both render paths. The only difference between the native
   // drawer and the iframe fallback is the class prefix, so it is a parameter.
   function frozenBannerHtml(native) {
-    if (!runtime.frozen) return '';
+    if (!storageState.frozen) return '';
     const cls = native ? 'itemx2-root-frozen' : 'itemx-frozen';
     return `<div class="itemx2-frozen-banner ${cls}" role="alert"><strong>읽기 전용으로 잠김</strong><small>${ITEMXCore.esc(FROZEN_MESSAGE)}</small></div>`;
   }
@@ -5656,8 +5583,8 @@ ${codexPageStyle()}
       .filter((item) => tab === 'settings' || !ITEMXHistory.terminal('item', item))
       .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
-    runtime.rootItemPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage));
-    const pageStart = runtime.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
+    uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
+    const pageStart = uiState.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
     const inventoryPage = tab === 'inventory' ? all.slice(pageStart, pageStart + ITEMX_ROOT_PAGE_SIZE) : [];
     const skills = (loaded.codexSnapshot?.skills?.order || [])
       .map((id) => loaded.codexSnapshot.skills.entries[id])
@@ -5751,7 +5678,7 @@ ${codexPageStyle()}
           `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
       )
       .join('');
-    const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${runtime.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
+    const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>디버그 진단 <small>${loaded.debugEnabled ? 'ON · 최근 30건' : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>문맥</b><span>${ITEMXCore.esc(loaded.key)}</span><b>세대</b><span>${pipelineState.generation}</span><b>스냅숏</b><span>${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>항목</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>마지막 오류</b><span>${ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || '없음')}</span></div><pre class="itemx2-debug-log">${ITEMXCore.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">로그 비우기</button></div></details>`;
     const settings = settingsPanelHtml(loaded, skin, {
       connection,
       chips,
@@ -5764,7 +5691,7 @@ ${codexPageStyle()}
     });
     const pager =
       pageCount > 1
-        ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${runtime.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${runtime.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${runtime.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
+        ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
         : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
     const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
@@ -5789,7 +5716,7 @@ ${codexPageStyle()}
           `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`
       )
       .join('');
-    const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}`;
+    const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(uiState.status)}`;
     return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
@@ -5808,12 +5735,12 @@ ${codexPageStyle()}
   }
 
   async function updateRootRegions(html) {
-    if (!runtime.mainDoc || !runtime.rootDrawer) return false;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return false;
     const regions = rootInventoryRegions(html);
     if (regions.header == null || regions.nav == null || regions.body == null) return false;
-    const header = await runtime.mainDoc.querySelector('.x-risu-itemx-ph-sub');
-    const nav = await runtime.mainDoc.querySelector('.x-risu-itemx-main-tabs');
-    const body = await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
+    const header = await hostState.mainDoc.querySelector('.x-risu-itemx-ph-sub');
+    const nav = await hostState.mainDoc.querySelector('.x-risu-itemx-main-tabs');
+    const body = await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body');
     if (!header || !nav || !body) return false;
     try {
       await header.setInnerHTML(regions.header);
@@ -5841,7 +5768,7 @@ ${codexPageStyle()}
       Number(loaded.moduleAssetsEnabled),
       Number(loaded.lorebookEncounterEnabled),
       Number(loaded.debugEnabled),
-      Number(runtime.frozen),
+      Number(storageState.frozen),
       JSON.stringify(ITEMXHistory.preferences(loaded.chat)),
       ITEMXHistory.completedTurns(loaded.chat).total
     ].join(':');
@@ -5893,7 +5820,7 @@ ${codexPageStyle()}
           const current = cachedSettings(loaded.character) || (await outputSettings(loaded.character));
           const value = !read(current);
           await write(loaded, value);
-          runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+          uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
           await openRootInventory({ open: true, tab: 'settings', loaded });
         })
     });
@@ -5911,26 +5838,26 @@ ${codexPageStyle()}
         hook: 'itemx2-setting-connect',
         run: async () => {
           const restoreStage = workQueue.stage('connect');
-          runtime.status = '연결 및 권한 확인 중';
+          uiState.status = '연결 및 권한 확인 중';
           await updateConnectionUi();
           await showRootFeedback('ITEMX CODEX 연결과 권한을 확인하는 중입니다…', 'working', 0);
           try {
             const connected = await installPipelineHooks({ prompt: true });
             const styled = await installMainStyle();
-            runtime.status =
+            uiState.status =
               connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
             if (connected && styled) {
               await showRootFeedback('ITEMX CODEX 연결 및 권한 확인 완료', 'success');
             } else {
               await showRootFeedback(
-                `연결 확인 실패 · ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                `연결 확인 실패 · ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
                 'error',
                 3600
               );
             }
             if (!connected || !styled)
               await notifyUser(
-                `ITEMX CODEX 연결 확인 실패: ${(!connected ? runtime.lastHookError : runtime.lastDomError) || runtime.status}`,
+                `ITEMX CODEX 연결 확인 실패: ${(!connected ? hostState.lastHookError : hostState.lastDomError) || uiState.status}`,
                 'error'
               );
           } finally {
@@ -5942,20 +5869,20 @@ ${codexPageStyle()}
       {
         hook: 'itemx2-setting-aux-run',
         run: async () => {
-          if (runtime.auxActive > 0) return;
-          runtime.status = '보조 모델 수동 검사 중';
+          if (auxState.auxActive > 0) return;
+          uiState.status = '보조 모델 수동 검사 중';
           await recoverAuxiliaryOutput({ force: true });
         }
       },
       ...BADGE_POSITIONS.map(([key, label]) => ({
         hook: `itemx2-position-${key}`,
         run: async () => {
-          runtime.badgePosition = key;
+          uiState.badgePosition = key;
           await Risuai.pluginStorage.setItem('badgePosition', key);
-          runtime.status = `배지 위치 · ${label}`;
-          if (runtime.rootDrawer) {
-            for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-            await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
+          uiState.status = `배지 위치 · ${label}`;
+          if (uiState.rootDrawer) {
+            for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+            await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${key}`);
           }
           await installMainStyle();
           for (const [other] of BADGE_POSITIONS) {
@@ -5974,7 +5901,7 @@ ${codexPageStyle()}
             if (!loaded) return;
             const next = !(await isEnabled(loaded.character));
             await setEnabled(loaded.character, next);
-            runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+            uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
             await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
           })
       },
@@ -5991,8 +5918,8 @@ ${codexPageStyle()}
             const current = await outputSettings(loaded.character),
               value = !current[key];
             await setDomainEnabled(loaded.character, domain, value);
-            runtime.cachedLoaded = null;
-            runtime.status = `${label} · ${value ? 'ON' : 'OFF'}`;
+            pipelineState.cachedLoaded = null;
+            uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
             await openRootInventory({ open: true, tab: 'settings' });
           })
       })),
@@ -6004,16 +5931,16 @@ ${codexPageStyle()}
             if (!loaded) return;
             const value = !(await outputSettings(loaded.character)).debugEnabled;
             await setDebugEnabled(loaded.character, value);
-            runtime.cachedLoaded = null;
-            runtime.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
+            pipelineState.cachedLoaded = null;
+            uiState.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
             await openRootInventory({ open: true, tab: 'settings' });
           })
       },
       {
         hook: 'itemx2-setting-debug-clear',
         run: async () => {
-          runtime.debugEntries = [];
-          runtime.status = '디버그 로그 비움';
+          settingsState.debugEntries = [];
+          uiState.status = '디버그 로그 비움';
           await openRootInventory({ open: true, tab: 'settings' });
         }
       },
@@ -6025,7 +5952,7 @@ ${codexPageStyle()}
             if (!loaded) return;
             const value = !(await outputSettings(loaded.character)).mainOutput;
             await setMainOutput(loaded.character, value);
-            runtime.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
+            uiState.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
             await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
           })
       },
@@ -6036,7 +5963,7 @@ ${codexPageStyle()}
           Object.keys(AUX_LABELS),
           async (loaded, value) => {
             await setAuxOutput(loaded.character, value);
-            runtime.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
+            uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
           }
         ],
         [
@@ -6044,7 +5971,7 @@ ${codexPageStyle()}
           Object.keys(RARITY_MODE_LABELS),
           async (loaded, value) => {
             await setRarityMode(loaded.character, value);
-            runtime.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
+            uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
           }
         ],
         [
@@ -6053,7 +5980,7 @@ ${codexPageStyle()}
           async (loaded, value) => {
             await setSkin(loaded.character, value);
             loaded.skin = value;
-            runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+            uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
           }
         ]
       ].flatMap(([group, values, apply]) =>
@@ -6087,7 +6014,7 @@ ${codexPageStyle()}
               .lorebookEncounterEnabled;
             await setLorebookEncounterEnabled(loaded.character, value);
             loaded.lorebookEncounterEnabled = value;
-            runtime.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
+            uiState.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
             if (value) await scanLorebookEncounters({ refresh: true, silent: true });
             await openRootInventory({ open: true, tab: 'settings' });
           })
@@ -6117,7 +6044,7 @@ ${codexPageStyle()}
                 await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
             }
             loaded.moduleAssetsEnabled = value;
-            runtime.status = value
+            uiState.status = value
               ? '모듈 에셋 초상화 · ON'
               : current.moduleAssetsEnabled
                 ? '모듈 에셋 초상화 · OFF'
@@ -6138,7 +6065,7 @@ ${codexPageStyle()}
             if (!loaded) return;
             await setFontScale(loaded.character, value);
             loaded.fontScale = value;
-            runtime.status = `글자 크기 · ${label}`;
+            uiState.status = `글자 크기 · ${label}`;
             for (const scale of ['small', 'medium', 'large']) {
               const button = await queryMainClass(`itemx2-setting-font-${scale}`);
               if (!button) continue;
@@ -6152,7 +6079,7 @@ ${codexPageStyle()}
         run: armed(
           'storageCleanupArmedUntil',
           async () => {
-            runtime.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
+            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
             await showRootFeedback(
               '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
               'working',
@@ -6160,7 +6087,7 @@ ${codexPageStyle()}
             );
           },
           async () => {
-            runtime.status = '현재 채팅 저장소 최적화 중';
+            uiState.status = '현재 채팅 저장소 최적화 중';
             await showRootFeedback('현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await compactCurrentChatStorage();
@@ -6171,8 +6098,8 @@ ${codexPageStyle()}
               );
               if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
             } catch (error) {
-              runtime.storageCleanupArmedUntil = 0;
-              runtime.status = '저장소 최적화 실패';
+              uiState.storageCleanupArmedUntil = 0;
+              uiState.status = '저장소 최적화 실패';
               await showRootFeedback(`최적화 실패 · ${error.message || error}`, 'error', 4200);
               await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
             }
@@ -6184,7 +6111,7 @@ ${codexPageStyle()}
         run: armed(
           'cleanupArmedUntil',
           async () => {
-            runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
             await showRootFeedback(
               '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.',
               'error',
@@ -6192,7 +6119,7 @@ ${codexPageStyle()}
             );
           },
           async () => {
-            runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+            uiState.status = '현재 채팅 ITEMX 기록 정리 중';
             await showRootFeedback('현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…', 'working', 0);
             try {
               const result = await cleanCurrentChatItemx();
@@ -6203,8 +6130,8 @@ ${codexPageStyle()}
               );
               if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
             } catch (error) {
-              runtime.cleanupArmedUntil = 0;
-              runtime.status = '현재 채팅 정리 실패';
+              uiState.cleanupArmedUntil = 0;
+              uiState.status = '현재 채팅 정리 실패';
               await showRootFeedback(`정리 실패 · ${error.message || error}`, 'error', 4200);
               await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
             }
@@ -6214,7 +6141,7 @@ ${codexPageStyle()}
       {
         hook: 'itemx2-setting-rebuild',
         run: async () => {
-          runtime.cachedLoaded = null;
+          pipelineState.cachedLoaded = null;
           const loaded = await rebuildCurrent();
           if (loaded) await openRootInventory({ open: true, tab: 'settings', loaded });
         }
@@ -6222,11 +6149,11 @@ ${codexPageStyle()}
     ];
   }
   async function installRootClickRouter(owner) {
-    if (!owner || (runtime.rootClickBindings[0]?.owner === owner && runtime.rootClickBindings.length)) return;
+    if (!owner || (uiState.rootClickBindings[0]?.owner === owner && uiState.rootClickBindings.length)) return;
     await removeRootClickRouter();
     const routeBadge = async (event) => {
       try {
-        const badge = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-native-badge'));
+        const badge = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge'));
         if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
         if (
@@ -6241,10 +6168,10 @@ ${codexPageStyle()}
         await setRootOpen(true);
         const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return true;
-        const cacheReady = loaded.key === runtime.activeContextKey && workQueue.revision('loaded-generation') === runtime.generation;
+        const cacheReady = loaded.key === pipelineState.activeContextKey && workQueue.revision('loaded-generation') === pipelineState.generation;
         if (Boolean(workQueue.revision('render')) && cacheReady && workQueue.revision('render') === rootStateFingerprint(loaded))
           return true;
-        await openRootInventory({ open: true, loaded, tab: runtime.activeRootTab });
+        await openRootInventory({ open: true, loaded, tab: uiState.activeRootTab });
         return true;
       } catch (error) {
         fail('native badge click', error);
@@ -6253,8 +6180,8 @@ ${codexPageStyle()}
     };
     const routeControls = async (event) => {
       try {
-        if (!runtime.rootOpen) return;
-        const close = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-close'));
+        if (!uiState.rootOpen) return;
+        const close = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-close'));
         if (close) {
           const closeRect = await close.getBoundingClientRect();
           if (
@@ -6263,9 +6190,9 @@ ${codexPageStyle()}
             event.clientY >= closeRect.top &&
             event.clientY <= closeRect.bottom
           ) {
-            if (runtime.historyView.open && runtime.cachedLoaded) {
-              runtime.historyView.open = false;
-              await drawRootHistory(runtime.cachedLoaded);
+            if (uiState.historyView.open && pipelineState.cachedLoaded) {
+              uiState.historyView.open = false;
+              await drawRootHistory(pipelineState.cachedLoaded);
             }
             await setRootOpen(false);
             return;
@@ -6282,7 +6209,7 @@ ${codexPageStyle()}
           ['bestiary', '조우 도감'],
           ['settings', '설정']
         ]) {
-          const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`));
+          const button = hostState.mainDoc && (await hostState.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
           if (
@@ -6292,12 +6219,12 @@ ${codexPageStyle()}
             event.clientY > rect.bottom
           )
             continue;
-          if (runtime.activeRootTab === tab && !runtime.historyView.open) return;
-          runtime.historyView.open = false;
+          if (uiState.activeRootTab === tab && !uiState.historyView.open) return;
+          uiState.historyView.open = false;
 
           {
-            if (tab === 'inventory') runtime.rootItemPage = 0;
-            const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            if (tab === 'inventory') uiState.rootItemPage = 0;
+            const body = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
             if (body) {
               await body.removeClass('x-risu-itemx2-history-opened');
               await body.setInnerHTML(
@@ -6322,7 +6249,7 @@ ${codexPageStyle()}
           [-1, '.x-risu-itemx2-root-page-prev'],
           [1, '.x-risu-itemx2-root-page-next']
         ]) {
-          const button = runtime.mainDoc && (await runtime.mainDoc.querySelector(selector));
+          const button = hostState.mainDoc && (await hostState.mainDoc.querySelector(selector));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
           if (
@@ -6342,12 +6269,12 @@ ${codexPageStyle()}
                 ITEMX_ROOT_PAGE_SIZE
             )
           );
-          const nextPage = Math.max(0, Math.min(pageCount - 1, runtime.rootItemPage + direction));
-          if (nextPage === runtime.rootItemPage) return;
-          runtime.rootItemPage = nextPage;
+          const nextPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage + direction));
+          if (nextPage === uiState.rootItemPage) return;
+          uiState.rootItemPage = nextPage;
 
           {
-            const body = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            const body = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
             if (body)
               await body.setInnerHTML(
                 '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>'
@@ -6357,20 +6284,20 @@ ${codexPageStyle()}
           }
           return;
         }
-        if (runtime.activeRootTab === 'inventory') {
-          const cached = runtime.cachedLoaded;
+        if (uiState.activeRootTab === 'inventory') {
+          const cached = pipelineState.cachedLoaded;
           const cacheReady =
-            cached && cached.key === runtime.activeContextKey && workQueue.revision('loaded-generation') === runtime.generation;
+            cached && cached.key === pipelineState.activeContextKey && workQueue.revision('loaded-generation') === pipelineState.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
           if (loaded && (await eventHitsMainClass(event, 'itemx2-repair-one'))) {
             const items = rootPageItems(loaded);
             for (let index = 0; index < items.length; index++) {
-              if (!(await runtime.mainDoc.querySelector(`#itemx2-detail-${index}:checked`))) continue;
+              if (!(await hostState.mainDoc.querySelector(`#itemx2-detail-${index}:checked`))) continue;
               try {
                 const refreshed = await repairOneItem(loaded, items[index].id);
                 const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
                 const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
-                if (runtime.activeContextKey === loaded.key && detail && item)
+                if (pipelineState.activeContextKey === loaded.key && detail && item)
                   await detail.setInnerHTML(itemDetailHtml(item));
               } catch (error) {
                 await notifyUser(error.message || String(error), 'error');
@@ -6378,7 +6305,7 @@ ${codexPageStyle()}
               return;
             }
           }
-          if (loaded && loaded.key === runtime.activeContextKey) {
+          if (loaded && loaded.key === pipelineState.activeContextKey) {
             // SafeElement listeners are document-level. While this async
             // callback awaits, the label's native radio action can already
             // hide the clicked tile, making its rectangle zero-sized. Yield
@@ -6406,20 +6333,20 @@ ${codexPageStyle()}
             }
           }
         }
-        if (runtime.activeRootTab === 'skills' || runtime.activeRootTab === 'bestiary') {
-          const cached = runtime.cachedLoaded;
+        if (uiState.activeRootTab === 'skills' || uiState.activeRootTab === 'bestiary') {
+          const cached = pipelineState.cachedLoaded;
           const cacheReady =
-            cached && cached.key === runtime.activeContextKey && workQueue.revision('loaded-generation') === runtime.generation;
+            cached && cached.key === pipelineState.activeContextKey && workQueue.revision('loaded-generation') === pipelineState.generation;
           const loaded = cacheReady ? cached : await cachedOrRebuildCurrent();
-          if (loaded && loaded.key === runtime.activeContextKey) {
+          if (loaded && loaded.key === pipelineState.activeContextKey) {
             await delay(0);
-            const domain = runtime.activeRootTab === 'skills' ? 'skill' : 'monster';
+            const domain = uiState.activeRootTab === 'skills' ? 'skill' : 'monster';
             if (await hydrateCheckedCodexDetail(domain, loaded)) return;
           }
           return;
         }
-        if (runtime.activeRootTab !== 'settings') return;
-        const managerFold = runtime.mainDoc && (await runtime.mainDoc.querySelector('.x-risu-itemx2-manager-fold'));
+        if (uiState.activeRootTab !== 'settings') return;
+        const managerFold = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-manager-fold'));
         if (managerFold) {
           const foldRect = await managerFold.getBoundingClientRect();
           const insideManager =
@@ -6437,12 +6364,12 @@ ${codexPageStyle()}
                 if (await eventHitsMainClass(event, `itemx2-manager-reroll-${index}`)) {
                   const noteElement = await queryMainClass('itemx2-manager-note');
                   const note = (await noteElement?.textContent())?.trim() || '';
-                  runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
+                  uiState.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
                   try {
                     const itemEvent = await runItemModel('reroll', loaded, target, note);
                     await commitManualEvents(loaded, [itemEvent], note ? '정보 수정' : '재감정');
                   } catch (error) {
-                    runtime.status = '재감정 실패';
+                    uiState.status = '재감정 실패';
                     await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
@@ -6471,7 +6398,7 @@ ${codexPageStyle()}
                   try {
                     await commitManualEvents(loaded, [itemEvent], '수동 제거');
                   } catch (error) {
-                    runtime.status = '수동 제거 실패';
+                    uiState.status = '수동 제거 실패';
                     await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
@@ -6485,12 +6412,12 @@ ${codexPageStyle()}
                   await notifyUser('ITEMX CODEX: 생성할 아이템 설명을 입력하세요.', 'error');
                   return;
                 }
-                runtime.status = '신규 아이템 생성 중';
+                uiState.status = '신규 아이템 생성 중';
                 try {
                   const itemEvent = await runItemModel('create', loaded, null, createNote);
                   await commitManualEvents(loaded, [itemEvent], '신규 생성');
                 } catch (error) {
-                  runtime.status = '아이템 생성 실패';
+                  uiState.status = '아이템 생성 실패';
                   await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
                 }
                 await openRootInventory({ open: true, tab: 'settings' });
@@ -6524,7 +6451,7 @@ ${codexPageStyle()}
       ),
       true
     );
-    runtime.rootClickBindings = [{ owner, type: 'click', id, capture: true }];
+    uiState.rootClickBindings = [{ owner, type: 'click', id, capture: true }];
   }
 
   async function openRootInventory(options = {}) {
@@ -6532,30 +6459,30 @@ ${codexPageStyle()}
   }
 
   async function openRootInventoryNow({ open = true, tab = 'inventory', loaded: suppliedLoaded = null } = {}) {
-    if (runtime.backupOpen) return;
+    if (uiState.backupOpen) return;
     try {
-      if (runtime.activeRootTab !== tab) runtime.historyView.open = false;
-      runtime.panelOpen = false;
+      if (uiState.activeRootTab !== tab) uiState.historyView.open = false;
+      uiState.panelOpen = false;
       try {
         await Risuai.hideContainer();
       } catch {}
       const loaded = suppliedLoaded || (await cachedOrRebuildCurrent());
       if (!loaded) throw new Error('No active chat context');
-      if (runtime.activeContextKey && runtime.activeContextKey !== loaded.key) return;
+      if (pipelineState.activeContextKey && pipelineState.activeContextKey !== loaded.key) return;
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
-      runtime.debugEnabled = loaded.debugEnabled;
+      settingsState.debugEnabled = loaded.debugEnabled;
       loaded.portraits =
         tab === 'bestiary' && loaded.encountersEnabled
           ? await loadCodexPortraits(loaded.character, loaded.chat, loaded.codexSnapshot, loaded)
           : {};
       const styled = await installMainStyle({ prompt: true });
-      if (!styled || !runtime.mainDoc) {
-        runtime.status = '메인 화면 권한 필요';
+      if (!styled || !hostState.mainDoc) {
+        uiState.status = '메인 화면 권한 필요';
         await notifyUser('ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.', 'error');
         return;
       }
-      let root = runtime.rootDrawer,
+      let root = uiState.rootDrawer,
         attached = false;
       if (root) {
         try {
@@ -6566,11 +6493,11 @@ ${codexPageStyle()}
       }
       if (!attached) {
         await removeRootDrawer();
-        root = await runtime.mainDoc.createElement('div');
+        root = await hostState.mainDoc.createElement('div');
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(
-        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${runtime.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
       );
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
@@ -6579,25 +6506,25 @@ ${codexPageStyle()}
         workQueue.remember('detail', '');
       }
       if (!attached) {
-        const body = await runtime.mainDoc.querySelector('body');
+        const body = await hostState.mainDoc.querySelector('body');
         if (!body) throw new Error('Main document body unavailable');
-        if (runtime.activeContextKey !== loaded.key) return;
+        if (pipelineState.activeContextKey !== loaded.key) return;
         await body.appendChild(root);
-        if (runtime.activeContextKey !== loaded.key) {
+        if (pipelineState.activeContextKey !== loaded.key) {
           await root.remove();
           return;
         }
       }
-      runtime.rootDrawer = root;
-      runtime.rootOpen = Boolean(open);
+      uiState.rootDrawer = root;
+      uiState.rootOpen = Boolean(open);
       workQueue.remember('render', open ? rootStateFingerprint(loaded) : '');
-      runtime.activeRootTab = tab;
+      uiState.activeRootTab = tab;
       // Region updates retain the body element, including its classes. Reconcile
       // the closed state too, or a former history overlay hides the new tab.
       await drawRootHistory(loaded);
       await installRootClickRouter(root);
     } catch (error) {
-      runtime.status = '인벤토리 열기 오류';
+      uiState.status = '인벤토리 열기 오류';
       await removeRootDrawer();
       fail('openRootInventory', error);
     }
@@ -6654,7 +6581,7 @@ ${codexPageStyle()}
     const inventoryContent = !enabled
       ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX CODEX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
       : selected
-        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion && runtime.visualEffectsEnabled ? 'full' : 'off' })}${detailAnnotations('item', selected)}</div></div>`
+        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion && presentationState.visualEffectsEnabled ? 'full' : 'off' })}${detailAnnotations('item', selected)}</div></div>`
         : `<nav class="itemx-seg">${[
             ['all', '전체'],
             ['owned', '보유'],
@@ -6669,15 +6596,15 @@ ${codexPageStyle()}
               ''
             )}</nav><div class="itemx-tools"><button class="itemx-tool" data-action="motion">${ui.motion ? '✦ 모션' : '◇ 정지'}</button><input class="itemx-search itemx-search-input" value="${ITEMXCore.esc(ui.query)}" placeholder="검색" aria-label="검색"><button class="itemx-tool" data-action="rebuild">↻</button></div><div class="itemx-body"><div class="itemx-grid">${visible.map(ITEMXRenderer.renderTile).join('') || '<div class="itemx-empty">표시할 아이템이 없답니다.</div>'}</div></div><footer class="itemx-pf">${visible.length}점 표시${all.filter(matches).length > 60 ? ' · 첫 60점' : ''}</footer>`;
     const permissionLabel =
-      runtime.permissions.replacer === true
+      hostState.permissions.replacer === true
         ? '연결됨'
-        : runtime.permissions.replacer === false
+        : hostState.permissions.replacer === false
           ? '권한 필요'
           : '확인 중';
     const styleLabel =
-      runtime.permissions.mainDom === true
+      hostState.permissions.mainDom === true
         ? '고정 스타일'
-        : runtime.permissions.mainDom === false
+        : hostState.permissions.mainDom === false
           ? '본문 폴백'
           : '확인 중';
     // Same controls as the drawer: a map of the screen and real size previews.
@@ -6688,7 +6615,7 @@ ${codexPageStyle()}
     const debugLog = settingsDebugLog();
     const storageParts = settingsStorageParts(loaded);
     const managerContent = `<section class="itemx-manager"><div class="itemx-manager-title">아이템 운영 도구</div><label class="itemx-manager-field"><span>대상 아이템</span><select data-action="manage-select" ${all.length ? '' : 'disabled'}>${manageOptions || '<option>아이템 없음</option>'}</select></label><label class="itemx-manager-field"><span>수정 지시 · 비워두면 순수 재감정</span><textarea data-action="manage-note" placeholder="예: 이름은 그대로 두고 내구도를 31/100으로, 화염 속성은 제거"></textarea></label><div class="itemx-manager-actions"><button class="itemx-tool" data-action="manage-reroll" ${managed ? '' : 'disabled'}>🔄 정보 수정·재감정</button><button class="itemx-tool itemx-manager-danger" data-action="manage-remove" ${managed && managed.possession !== 'removed' ? '' : 'disabled'}>🗑 수동 제거</button></div><div class="itemx-manager-current">${managed ? `${ITEMXCore.esc(managed.name)} · ${ITEMXCore.esc(managed.displayRarity || managed.rarity)} · ${ITEMXCore.esc(managed.possession)} / ${ITEMXCore.esc(managed.location)}` : '선택 가능한 아이템이 없습니다.'}</div><label class="itemx-manager-field"><span>신규 아이템 생성 지시</span><textarea data-action="create-note" placeholder="예: 주인공이 획득한 번개 속성의 희귀 장검"></textarea></label><button class="itemx-tool" data-action="manage-create">＋ 신규 아이템 생성 시도</button><small class="itemx-manager-help">보조 모델 결과는 ITEMX 엄격 파서와 id 검증을 통과한 경우에만 채팅별 사건 원장에 반영됩니다.</small></section>`;
-    const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(runtime.lastHookError || runtime.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
+    const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
     const settingsContent = settingsPanelHtml(loaded, skin, {
       permissionLabel,
       styleLabel,
@@ -6731,13 +6658,13 @@ ${codexPageStyle()}
           : ui.tab === 'bestiary'
             ? bestiaryContent
             : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${runtime.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(runtime.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${frozenBannerHtml(false)}<div class="itemx2-iframe-content">${content}</div></section></main></div>`;
+    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${uiState.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(uiState.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${frozenBannerHtml(false)}<div class="itemx2-iframe-content">${content}</div></section></main></div>`;
     root.querySelector('[data-action="close"]')?.addEventListener(
       'click',
       entry(
         'ui-action',
         () => {
-          runtime.historyView.open = false;
+          uiState.historyView.open = false;
           void closeInventory();
         },
         true
@@ -6748,7 +6675,7 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         () => {
-          runtime.historyView = {
+          uiState.historyView = {
             open: true,
             key: loaded.key,
             domain: historyDomain(ui.tab),
@@ -6761,7 +6688,7 @@ ${codexPageStyle()}
         true
       )
     );
-    if (runtime.historyView.open) drawIframeHistory(loaded);
+    if (uiState.historyView.open) drawIframeHistory(loaded);
     root.querySelector('[data-action="back"]')?.addEventListener(
       'click',
       entry(
@@ -6828,7 +6755,7 @@ ${codexPageStyle()}
         async () => {
           loaded.enabled = !enabled;
           await setEnabled(loaded.character, loaded.enabled);
-          runtime.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화';
+          uiState.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화';
           drawInventory(loaded);
         },
         true
@@ -6846,7 +6773,7 @@ ${codexPageStyle()}
           async () => {
             loaded[key] = !loaded[key];
             await setDomainEnabled(loaded.character, domain, loaded[key]);
-            runtime.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`;
+            uiState.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`;
             drawInventory(loaded);
           },
           true
@@ -6859,7 +6786,7 @@ ${codexPageStyle()}
         async () => {
           loaded.debugEnabled = !loaded.debugEnabled;
           await setDebugEnabled(loaded.character, loaded.debugEnabled);
-          runtime.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`;
+          uiState.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`;
           drawInventory(loaded);
         },
         true
@@ -6870,8 +6797,8 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         () => {
-          runtime.debugEntries = [];
-          runtime.status = '디버그 로그 비움';
+          settingsState.debugEntries = [];
+          uiState.status = '디버그 로그 비움';
           drawInventory(loaded);
         },
         true
@@ -6882,13 +6809,13 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          if (runtime.auxActive > 0) return;
-          runtime.status = '보조 모델 수동 검사 중';
+          if (auxState.auxActive > 0) return;
+          uiState.status = '보조 모델 수동 검사 중';
           drawInventory(loaded);
           try {
             await recoverAuxiliaryOutput({ force: true });
           } catch (error) {
-            runtime.status = '보조 모델 검사 실패';
+            uiState.status = '보조 모델 검사 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
           }
           const next = await rebuildCurrent();
@@ -6904,7 +6831,7 @@ ${codexPageStyle()}
         async () => {
           loaded.mainOutput = !loaded.mainOutput;
           await setMainOutput(loaded.character, loaded.mainOutput);
-          runtime.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`;
+          uiState.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`;
           drawInventory(loaded);
         },
         true
@@ -6917,7 +6844,7 @@ ${codexPageStyle()}
         async () => {
           loaded.effectsEnabled = !loaded.effectsEnabled;
           await setEffectsEnabled(loaded.character, loaded.effectsEnabled);
-          runtime.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`;
+          uiState.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`;
           drawInventory(loaded);
         },
         true
@@ -6931,13 +6858,13 @@ ${codexPageStyle()}
           if (loaded.moduleAssetsEnabled) {
             loaded.moduleAssetsEnabled = false;
             await setModuleAssetsEnabled(loaded.character, false);
-            runtime.status = '모듈 에셋 초상화 · OFF';
+            uiState.status = '모듈 에셋 초상화 · OFF';
             drawInventory(loaded);
             return;
           }
           const enabled = await enableModuleAssets(loaded.character, loaded.chat);
           loaded.moduleAssetsEnabled = enabled;
-          runtime.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
+          uiState.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
           if (!enabled)
             await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
           drawInventory(loaded);
@@ -6952,7 +6879,7 @@ ${codexPageStyle()}
         async () => {
           loaded.lorebookEncounterEnabled = !loaded.lorebookEncounterEnabled;
           await setLorebookEncounterEnabled(loaded.character, loaded.lorebookEncounterEnabled);
-          runtime.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
+          uiState.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
           if (loaded.lorebookEncounterEnabled) await scanLorebookEncounters({ refresh: true, silent: true });
           const next = await rebuildCurrent();
           if (next) {
@@ -6968,7 +6895,7 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          runtime.status = '조우 로어북 스캔 중';
+          uiState.status = '조우 로어북 스캔 중';
           drawInventory(loaded);
           await scanLorebookEncounters({ refresh: true });
           const next = await rebuildCurrent();
@@ -6990,15 +6917,15 @@ ${codexPageStyle()}
             if (seg === 'aux') {
               await setAuxOutput(loaded.character, value);
               loaded.auxOutput = value;
-              runtime.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
+              uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
             } else if (seg === 'rarity') {
               await setRarityMode(loaded.character, value);
               loaded.rarityMode = value;
-              runtime.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
+              uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
             } else if (seg === 'skin') {
               await setSkin(loaded.character, value);
               loaded.skin = value;
-              runtime.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
+              uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
             } else return;
             drawInventory(loaded);
           },
@@ -7015,7 +6942,7 @@ ${codexPageStyle()}
             const value = button.dataset.font;
             await setFontScale(loaded.character, value);
             loaded.fontScale = value;
-            runtime.status = `글자 크기 · ${{ small: '작게', medium: '보통', large: '크게' }[value]}`;
+            uiState.status = `글자 크기 · ${{ small: '작게', medium: '보통', large: '크게' }[value]}`;
             drawInventory(loaded);
           },
           true
@@ -7041,20 +6968,20 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          if (runtime.storageCleanupArmedUntil <= Date.now()) {
-            runtime.storageCleanupArmedUntil = Date.now() + 7000;
-            runtime.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
+          if (uiState.storageCleanupArmedUntil <= Date.now()) {
+            uiState.storageCleanupArmedUntil = Date.now() + 7000;
+            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
             drawInventory(loaded);
             return;
           }
-          runtime.status = '현재 채팅 저장소 최적화 중';
+          uiState.status = '현재 채팅 저장소 최적화 중';
           drawInventory(loaded);
           try {
             const result = await compactCurrentChatStorage();
             if (result.loaded) drawInventory(result.loaded);
           } catch (error) {
-            runtime.storageCleanupArmedUntil = 0;
-            runtime.status = '저장소 최적화 실패';
+            uiState.storageCleanupArmedUntil = 0;
+            uiState.status = '저장소 최적화 실패';
             await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -7081,20 +7008,20 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          if (runtime.cleanupArmedUntil <= Date.now()) {
-            runtime.cleanupArmedUntil = Date.now() + 7000;
-            runtime.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
+          if (uiState.cleanupArmedUntil <= Date.now()) {
+            uiState.cleanupArmedUntil = Date.now() + 7000;
+            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
             drawInventory(loaded);
             return;
           }
-          runtime.status = '현재 채팅 ITEMX 기록 정리 중';
+          uiState.status = '현재 채팅 ITEMX 기록 정리 중';
           drawInventory(loaded);
           try {
             const result = await cleanCurrentChatItemx();
             if (result.loaded) drawInventory(result.loaded);
           } catch (error) {
-            runtime.cleanupArmedUntil = 0;
-            runtime.status = '현재 채팅 정리 실패';
+            uiState.cleanupArmedUntil = 0;
+            uiState.status = '현재 채팅 정리 실패';
             await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -7107,11 +7034,11 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          runtime.status = '모델 처리 권한 확인 중';
+          uiState.status = '모델 처리 권한 확인 중';
           drawInventory(loaded);
           const connected = await installPipelineHooks({ prompt: true });
           if (connected) await notifyUser('ITEMX CODEX 모델 처리 권한이 연결되었습니다.', 'success');
-          else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${runtime.lastHookError || runtime.status}`, 'error');
+          else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${hostState.lastHookError || uiState.status}`, 'error');
           const next = await rebuildCurrent();
           if (next) {
             next.enabled = await isEnabled(next.character);
@@ -7126,11 +7053,11 @@ ${codexPageStyle()}
       entry(
         'ui-action',
         async () => {
-          runtime.status = '본문 화면 연결 중';
+          uiState.status = '본문 화면 연결 중';
           drawInventory(loaded);
           const styled = await installMainStyle({ prompt: true });
           if (styled) await notifyUser('ITEMX CODEX 본문 화면 연결이 완료되었습니다.', 'success');
-          else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${runtime.lastDomError || runtime.status}`, 'error');
+          else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${hostState.lastDomError || uiState.status}`, 'error');
           drawInventory(loaded);
         },
         true
@@ -7144,14 +7071,14 @@ ${codexPageStyle()}
           async () => {
             const value = button.dataset.position;
             if (!BADGE_POSITIONS.some(([key]) => key === value)) return;
-            runtime.badgePosition = value;
+            uiState.badgePosition = value;
             await Risuai.pluginStorage.setItem('badgePosition', value);
-            if (runtime.rootDrawer) {
-              for (const [other] of BADGE_POSITIONS) await runtime.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-              await runtime.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);
+            if (uiState.rootDrawer) {
+              for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
+              await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);
             }
             await installMainStyle();
-            runtime.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`;
+            uiState.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`;
             drawInventory(loaded);
           },
           true
@@ -7178,7 +7105,7 @@ ${codexPageStyle()}
             const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
             if (!target) throw new Error('대상 아이템이 없습니다.');
             if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
-            runtime.status = '수동 제거 처리 중';
+            uiState.status = '수동 제거 처리 중';
             drawInventory(loaded);
             const event = {
               kind: 'patch',
@@ -7203,7 +7130,7 @@ ${codexPageStyle()}
               drawInventory(next);
             }
           } catch (error) {
-            runtime.status = '수동 제거 실패';
+            uiState.status = '수동 제거 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -7220,7 +7147,7 @@ ${codexPageStyle()}
             const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
             if (!target) throw new Error('대상 아이템이 없습니다.');
             const note = root.querySelector('[data-action="manage-note"]')?.value?.trim() || '';
-            runtime.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
+            uiState.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
             drawInventory(loaded);
             const event = await runItemModel('reroll', loaded, target, note);
             const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정');
@@ -7229,7 +7156,7 @@ ${codexPageStyle()}
               drawInventory(next);
             }
           } catch (error) {
-            runtime.status = '재감정 실패';
+            uiState.status = '재감정 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -7245,7 +7172,7 @@ ${codexPageStyle()}
           try {
             const note = root.querySelector('[data-action="create-note"]')?.value?.trim() || '';
             if (!note) throw new Error('생성할 아이템 설명을 입력하세요.');
-            runtime.status = '신규 아이템 생성 중';
+            uiState.status = '신규 아이템 생성 중';
             drawInventory(loaded);
             const event = await runItemModel('create', loaded, null, note);
             const next = await commitManualEvents(loaded, [event], '신규 생성');
@@ -7255,7 +7182,7 @@ ${codexPageStyle()}
               drawInventory(next);
             }
           } catch (error) {
-            runtime.status = '아이템 생성 실패';
+            uiState.status = '아이템 생성 실패';
             await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
             drawInventory(loaded);
           }
@@ -7269,9 +7196,9 @@ ${codexPageStyle()}
         entry(
           'ui-action',
           () => {
-            if (ui.tab === el.dataset.tab && !runtime.historyView.open) return;
+            if (ui.tab === el.dataset.tab && !uiState.historyView.open) return;
             ui.tab = el.dataset.tab;
-            runtime.historyView.open = false;
+            uiState.historyView.open = false;
             drawIframeHistory(loaded);
             ui.selected = null;
             ui.selectedSkill = null;
@@ -7364,7 +7291,7 @@ ${codexPageStyle()}
   }
 
   async function closeInventory({ immediate = false } = {}) {
-    runtime.panelOpen = false;
+    uiState.panelOpen = false;
     const panel = typeof document === 'undefined' ? null : document.querySelector('.itemx-panel');
     if (panel && !immediate && !reducedMotion()) {
       panel.classList.remove('itemx-plugin-panel-in');
@@ -7374,27 +7301,27 @@ ${codexPageStyle()}
         delay(210)
       ]);
     }
-    if (runtime.panelOpen) return;
+    if (uiState.panelOpen) return;
     await Risuai.hideContainer();
-    runtime.allowDrawerOverSettings = false;
+    uiState.allowDrawerOverSettings = false;
     invalidateHostSettingsVisibility();
     await syncHostSettingsVisibility();
   }
 
   async function openInventory(tab = 'inventory') {
     if (tab === 'inventory') return openRootInventory();
-    runtime.panelOpen = true;
+    uiState.panelOpen = true;
     ui.tab = tab;
     try {
       const compact = window.innerWidth <= 520;
       const panelWidth = compact ? Math.max(320, window.innerWidth - 32) : 420;
       const panelHeight = Math.max(420, Math.min(700, Math.round(window.innerHeight * (compact ? 0.72 : 0.78))));
-      runtime.compactContainer = true;
+      uiState.compactContainer = true;
       try {
         await Risuai.resizeContainer(panelHeight, panelWidth);
       } catch (error) {
-        runtime.compactContainer = false;
-        runtime.status = 'PocketRisu 호환 모드';
+        uiState.compactContainer = false;
+        uiState.status = 'PocketRisu 호환 모드';
         log('resizeContainer unavailable; using bounded fullscreen fallback');
       }
       document.head.innerHTML = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`;
@@ -7403,15 +7330,15 @@ ${codexPageStyle()}
       if (!loaded) throw new Error('No active chat context');
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
-      runtime.debugEnabled = loaded.debugEnabled;
+      settingsState.debugEnabled = loaded.debugEnabled;
       drawInventory(loaded);
-      await Risuai.showContainer(runtime.compactContainer ? 'floating' : 'fullscreen');
+      await Risuai.showContainer(uiState.compactContainer ? 'floating' : 'fullscreen');
       const panel = document.querySelector('.itemx-panel');
-      if (panel && runtime.panelOpen && !reducedMotion())
+      if (panel && uiState.panelOpen && !reducedMotion())
         panel.classList.add('itemx-plugin-panel-in');
     } catch (error) {
-      runtime.panelOpen = false;
-      runtime.status = '인벤토리 열기 오류';
+      uiState.panelOpen = false;
+      uiState.status = '인벤토리 열기 오류';
       try {
         await Risuai.hideContainer();
       } catch {}
@@ -7424,24 +7351,24 @@ ${codexPageStyle()}
     if (!ctx) return;
     const next = !(await isEnabled(ctx.character));
     await setEnabled(ctx.character, next);
-    runtime.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
+    uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
     await openRootInventory({ open: true, tab: 'settings' });
   }
 
   async function openSettingsFromRisuMenu() {
     const active = await context();
     if (!active) {
-      runtime.allowDrawerOverSettings = false;
+      uiState.allowDrawerOverSettings = false;
       invalidateHostSettingsVisibility();
-      runtime.status = '채팅 진입 대기';
+      uiState.status = '채팅 진입 대기';
       const message = 'ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.';
       await notifyUser(message, 'error');
       return;
     }
-    runtime.activeContextKey = active.key;
-    runtime.allowDrawerOverSettings = true;
+    pipelineState.activeContextKey = active.key;
+    uiState.allowDrawerOverSettings = true;
     invalidateHostSettingsVisibility();
-    let styled = Boolean(runtime.mainDoc) || (await installMainStyle());
+    let styled = Boolean(hostState.mainDoc) || (await installMainStyle());
     const loadingStarted = styled ? Date.now() : 0;
     if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     await updateRootLoading('연결과 권한 확인 중…');
@@ -7452,7 +7379,7 @@ ${codexPageStyle()}
       if (styled) await mountRootLoading('ITEMX CODEX 설정 불러오는 중…');
     }
     await updateRootLoading('인벤토리 상태 확인 중…');
-    runtime.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
+    uiState.status = connected && styled ? '연결 및 권한 정상' : connected ? '화면 연결 실패' : '모델 훅 연결 실패';
     if (loadingStarted) await delay(Math.max(0, 260 - (Date.now() - loadingStarted)));
     if (styled) await openRootInventory({ open: true, tab: 'settings' });
     else await openInventory('settings');
@@ -7463,17 +7390,17 @@ ${codexPageStyle()}
   }
 
   async function installDisplayHooks() {
-    if (!runtime.hooks.process) {
+    if (!hostState.hooks.process) {
       await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
-      runtime.hooks.process = true;
+      hostState.hooks.process = true;
     }
-    if (!runtime.hooks.output) {
+    if (!hostState.hooks.output) {
       await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
-      runtime.hooks.output = true;
+      hostState.hooks.output = true;
     }
-    if (!runtime.hooks.display) {
+    if (!hostState.hooks.display) {
       await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
-      runtime.hooks.display = true;
+      hostState.hooks.display = true;
     }
   }
 
@@ -7484,7 +7411,7 @@ ${codexPageStyle()}
     await Risuai.addRisuScriptHandler('process', pipelineEntries.process);
     await Risuai.addRisuScriptHandler('output', pipelineEntries.output);
     await Risuai.addRisuScriptHandler('display', pipelineEntries.display);
-    if (runtime.permissions.replacer) {
+    if (hostState.permissions.replacer) {
       await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
       await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
     }
@@ -7495,85 +7422,85 @@ ${codexPageStyle()}
       await installDisplayHooks();
       const permission =
         typeof Risuai.requestPluginPermission === 'function' ? await Risuai.requestPluginPermission('replacer') : true;
-      runtime.permissions.replacer = permission === true;
-      if (!runtime.permissions.replacer) {
-        if (runtime.hooks.before) {
+      hostState.permissions.replacer = permission === true;
+      if (!hostState.permissions.replacer) {
+        if (hostState.hooks.before) {
           try {
             await Risuai.removeRisuReplacer('beforeRequest', pipelineEntries.before);
           } catch {}
         }
-        if (runtime.hooks.after) {
+        if (hostState.hooks.after) {
           try {
             await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
           } catch {}
         }
-        runtime.hooks.before = false;
-        runtime.hooks.after = false;
-        runtime.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
-        runtime.status = '모델 처리 권한 필요';
+        hostState.hooks.before = false;
+        hostState.hooks.after = false;
+        hostState.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
+        uiState.status = '모델 처리 권한 필요';
       } else {
-        if (!runtime.hooks.before) {
+        if (!hostState.hooks.before) {
           await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
-          runtime.hooks.before = true;
+          hostState.hooks.before = true;
         }
-        if (!runtime.hooks.after) {
+        if (!hostState.hooks.after) {
           await Risuai.addRisuReplacer('afterRequest', pipelineEntries.after);
-          runtime.hooks.after = true;
+          hostState.hooks.after = true;
         }
       }
-      if (!runtime.hooks.listener) {
+      if (!hostState.hooks.listener) {
         if (typeof Risuai.addRisuChatListener !== 'function') {
-          runtime.hooks.listener = 'unsupported';
+          hostState.hooks.listener = 'unsupported';
           log('chat listener unavailable; continuing with core request/output hooks');
         } else
           try {
             await Risuai.addRisuChatListener('output', (output) => {
-              const loaded = runtime.cachedLoaded;
+              const loaded = pipelineState.cachedLoaded;
               if (
                 output?.chat &&
-                loaded?.key === runtime.activeContextKey &&
+                loaded?.key === pipelineState.activeContextKey &&
                 output.characterIndex === loaded.characterIndex &&
                 output.chatIndex === loaded.chatIndex
               )
                 commitEventBursts(output.chat);
               void scheduleCommittedOutputSync();
             });
-            runtime.hooks.listener = true;
+            hostState.hooks.listener = true;
           } catch (error) {
             const message = String(error?.message || error || '');
             if (!/API method addRisuChatListener not found/i.test(message)) throw error;
-            runtime.hooks.listener = 'unsupported';
+            hostState.hooks.listener = 'unsupported';
             log('chat listener unavailable; continuing with core request/output hooks');
           }
       }
-      if (runtime.permissions.replacer) {
-        runtime.lastHookError = '';
-        runtime.status = prompt ? '모델 처리 권한 연결됨' : '정상';
+      if (hostState.permissions.replacer) {
+        hostState.lastHookError = '';
+        uiState.status = prompt ? '모델 처리 권한 연결됨' : '정상';
       }
       if (workQueue.hasTimer('catchUpTimer')) armCatchUpWatchdog();
-      return runtime.permissions.replacer;
+      return hostState.permissions.replacer;
     } catch (error) {
-      runtime.permissions.replacer = false;
-      runtime.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
-      runtime.status = '모델 연결 오류';
+      hostState.permissions.replacer = false;
+      hostState.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
+      uiState.status = '모델 연결 오류';
       fail('pipeline hooks', error);
       return false;
     }
   }
 
   function armRemountWatchdog() {
-    if (runtime.unloading) return;
-    const interval = runtime.hostObserver || !runtime.activeContextKey ? 10000 : 1200;
+    if (hostState.unloading) return;
+    const interval = hostState.hostObserver || !pipelineState.activeContextKey ? 10000 : 1200;
     workQueue.clearTimer('remountTimer');
 
     workQueue.schedule(
       'remountTimer',
       () => {
-        if (!runtime.bodyFxScrollActive) {
+        if (!presentationState.bodyFxScrollActive) {
           const now = Date.now();
-          if (!runtime.activeContextKey) {
+          if (!pipelineState.activeContextKey) {
             return ensureRootInventory();
-          } else if (!runtime.hostObserver || workQueue.age('remount') >= 10000) {
+          } else if (!hostState.hostObserver || workQueue.age('remount') >= 10000) {
             return ensureRootInventory();
           }
         }
@@ -7584,21 +7511,21 @@ ${codexPageStyle()}
   }
 
   async function recoverAfterBrowserResume() {
-    if (runtime.unloading) return;
+    if (hostState.unloading) return;
     workQueue.cancel(intent => intent.kind === 'committed-output', false);
     const pending = (async () => {
       workQueue.clearTimer('bodyFxStartTimer');
       workQueue.clearTimer('bodyFxScrollTimer');
-      runtime.bodyFxScrollActive = false;
-      runtime.bodyFxSawScroll = false;
+      presentationState.bodyFxScrollActive = false;
+      presentationState.bodyFxSawScroll = false;
 
 
-      if (runtime.bodyFxClassOwner)
-        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+      if (presentationState.bodyFxClassOwner)
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
 
       await refreshPipelineBindingsAfterResume();
-      runtime.cachedLoaded = null;
-      runtime.generation += 1;
+      pipelineState.cachedLoaded = null;
+      pipelineState.generation += 1;
       await installMainStyle();
       // Resume restores rendering and bindings only. Auxiliary regeneration and
       // committed-output sync rewrite the stored message, and the catch-up guard
@@ -7606,13 +7533,13 @@ ${codexPageStyle()}
       // blocks once per resume. Regeneration belongs to real new turns.
       await rebuildCurrent({ upgradeDisplayRefs: true });
       await ensureRootInventory();
-      runtime.backgrounded = false;
+      hostState.backgrounded = false;
     })().catch((error) => fail('browser resume recovery', error));
     return pending;
   }
 
   function queueBrowserResume() {
-    if (runtime.unloading || !runtime.backgrounded) return;
+    if (hostState.unloading || !hostState.backgrounded) return;
     workQueue.clearTimer('resumeTimer');
     workQueue.schedule(
       'resumeTimer',
@@ -7628,10 +7555,10 @@ ${codexPageStyle()}
     const bind = (target, type, handler) => {
       if (!target || typeof target.addEventListener !== 'function') return;
       target.addEventListener(type, handler);
-      runtime.resumeBindings.push({ target, type, handler });
+      hostState.resumeBindings.push({ target, type, handler });
     };
     const background = () => {
-      runtime.backgrounded = true;
+      hostState.backgrounded = true;
     };
     const visible = () => {
       if (typeof document === 'undefined' || document.visibilityState !== 'hidden') queueBrowserResume();
@@ -7663,14 +7590,14 @@ ${codexPageStyle()}
       'html',
       'itemx2-current-bot'
     );
-    if (setting?.id) runtime.uiParts.push(setting.id);
+    if (setting?.id) hostState.uiParts.push(setting.id);
     await installDisplayHooks();
     const initial = await context();
     let connected = false,
       styled = false;
     if (initial) {
-      runtime.activeContextKey = initial.key;
-      runtime.status = '초기 화면 연결 중';
+      pipelineState.activeContextKey = initial.key;
+      uiState.status = '초기 화면 연결 중';
       await outputSettings(initial.character);
       styled = await installMainStyle();
       const loadingStarted = styled ? Date.now() : 0;
@@ -7683,7 +7610,7 @@ ${codexPageStyle()}
       if (styled) await openRootInventory({ open: false });
       void dispatch('update', checkForUpdate);
     } else {
-      runtime.status = '채팅 진입 대기';
+      uiState.status = '채팅 진입 대기';
     }
     armRemountWatchdog();
     armCatchUpWatchdog();
@@ -7698,28 +7625,28 @@ ${codexPageStyle()}
     if (initial)
       void dispatch('catch-up', catchUpLatestOutput).catch((error) => fail('initial output catch-up', error));
     installBrowserResumeHandlers();
-    if (connected && styled) runtime.status = '정상';
+    if (connected && styled) uiState.status = '정상';
     log(`v${ITEMX_PLUGIN_VERSION} ready`);
     });
   } catch (error) {
-    runtime.status = '초기화 오류';
+    uiState.status = '초기화 오류';
     await removeRootDrawer();
     await notifyUser(`ITEMX CODEX 초기화 실패: ${error.message || error}`, 'error');
     fail('bootstrap', error);
   }
 
   await Risuai.onUnload(async () => {
-    runtime.unloading = true;
+    hostState.unloading = true;
     await workQueue.close();
     clearEventBursts();
-    runtime.panelOpen = false;
+    uiState.panelOpen = false;
     workQueue.clearTimer('resumeTimer');
-    for (const { target, type, handler } of runtime.resumeBindings) {
+    for (const { target, type, handler } of hostState.resumeBindings) {
       try {
         target.removeEventListener(type, handler);
       } catch {}
     }
-    runtime.resumeBindings = [];
+    hostState.resumeBindings = [];
     workQueue.clearTimer('remountTimer');
 
     workQueue.clearTimer('catchUpTimer');
@@ -7730,13 +7657,13 @@ ${codexPageStyle()}
     workQueue.clearTimer('legacyCommitTimer');
     workQueue.clearTimer('bodyFxStartTimer');
     workQueue.clearTimer('bodyFxScrollTimer');
-    if (runtime.bodyFxScrollActive && runtime.bodyFxClassOwner) {
+    if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
-        await runtime.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+        await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
       } catch {}
     }
-    runtime.bodyFxScrollActive = false;
-    runtime.bodyFxSawScroll = false;
+    presentationState.bodyFxScrollActive = false;
+    presentationState.bodyFxSawScroll = false;
 
 
     try {
@@ -7745,9 +7672,9 @@ ${codexPageStyle()}
     await removeRootDrawer();
     await removeBodyEffectGovernor();
     try {
-      if (runtime.hostObserver?.disconnect) await runtime.hostObserver.disconnect();
+      if (hostState.hostObserver?.disconnect) await hostState.hostObserver.disconnect();
     } catch {}
-    runtime.hostObserver = null;
+    hostState.hostObserver = null;
     try {
       await Risuai.removeRisuScriptHandler('output', pipelineEntries.output);
     } catch {}
@@ -7763,13 +7690,13 @@ ${codexPageStyle()}
     try {
       await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
     } catch {}
-    for (const id of runtime.uiParts) {
+    for (const id of hostState.uiParts) {
       try {
         await Risuai.unregisterUIPart(id);
       } catch {}
     }
     try {
-      if (runtime.mainStyle) await runtime.mainStyle.remove();
+      if (hostState.mainStyle) await hostState.mainStyle.remove();
     } catch {}
   });
 })();

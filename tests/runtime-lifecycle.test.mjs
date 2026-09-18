@@ -9,6 +9,7 @@ const queuePrelude =
   queueSource +
   `
 const workQueue = ITEMXWorkQueue.create();
+const hostState = runtime, pipelineState = runtime, auxState = runtime, presentationState = runtime, portraitsState = runtime, storageState = runtime, settingsState = runtime, uiState = runtime;
 const dispatch = (kind, work) => workQueue.enqueue({kind, work});
 const entry = (kind, work) => (...args) => dispatch(kind, () => work(...args));
 const saveChat = (...args) => Risuai.setChatToIndex(...args);
@@ -240,7 +241,7 @@ test('closing reflects native class removal even when settings bridge fails', as
     }
   });
   const setOpen = vm.runInContext(
-    section('  async function setRootOpen(open)', '  async function resetRuntimeForContext') + '\nsetRootOpen;',
+    queuePrelude + section('  async function setRootOpen(open)', '  async function resetRuntimeForContext') + '\nsetRootOpen;',
     sandbox
   );
   await setOpen(false);
