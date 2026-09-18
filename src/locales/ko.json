@@ -1,0 +1,879 @@
+{
+  "runtime.001": [
+    "ITEMX CODEX 초기화 실패: ",
+    ""
+  ],
+  "runtime.002": "초기화 오류",
+  "runtime.003": "정상",
+  "runtime.004": "채팅 진입 대기",
+  "runtime.005": "채팅 인벤토리 복원 중…",
+  "runtime.006": "모델 처리 연결 중…",
+  "runtime.007": "ITEMX CODEX 초기화 중…",
+  "runtime.008": "초기 화면 연결 중",
+  "runtime.009": "ITEMX CODEX · 권한 및 설정",
+  "style.001": "알 수 없는 DOM 오류",
+  "style.002": "메인 문서 API가 null을 반환했습니다",
+  "style.003": "한지",
+  "style.004": "서리",
+  "style.005": "다크",
+  "style.006": "우상",
+  "style.007": "우중",
+  "style.008": "우하",
+  "style.009": "좌상",
+  "style.010": "좌중",
+  "style.011": "좌하",
+  "ui-settings.001": "모델 훅 연결 실패",
+  "ui-settings.002": "화면 연결 실패",
+  "ui-settings.003": "연결 및 권한 정상",
+  "ui-settings.004": "인벤토리 상태 확인 중…",
+  "ui-settings.005": "ITEMX CODEX 설정 불러오는 중…",
+  "ui-settings.006": "연결과 권한 확인 중…",
+  "ui-settings.007": "ITEMX CODEX 설정 불러오는 중…",
+  "ui-settings.008": "ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.",
+  "ui-settings.009": "채팅 진입 대기",
+  "ui-settings.010": "현재 봇 비활성화",
+  "ui-settings.011": "현재 봇 활성화",
+  "ui-settings.012": [
+    "ITEMX CODEX 정리 실패: ",
+    ""
+  ],
+  "ui-settings.013": [
+    "정리 실패 · ",
+    ""
+  ],
+  "ui-settings.014": "현재 채팅 정리 실패",
+  "ui-settings.015": [
+    "정리 완료 · 본문 ",
+    "개 · 마커 ",
+    "개"
+  ],
+  "ui-settings.016": "현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…",
+  "ui-settings.017": "현재 채팅 ITEMX 기록 정리 중",
+  "ui-settings.018": "되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.",
+  "ui-settings.019": "정리 확인 대기 · 7초 안에 다시 누르세요",
+  "ui-settings.020": [
+    "ITEMX CODEX 저장소 최적화 실패: ",
+    ""
+  ],
+  "ui-settings.021": [
+    "최적화 실패 · ",
+    ""
+  ],
+  "ui-settings.022": "저장소 최적화 실패",
+  "ui-settings.023": [
+    "최적화 완료 · ",
+    " KiB 절감 · 구형 캐시 ",
+    "개 정리"
+  ],
+  "ui-settings.024": "현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…",
+  "ui-settings.025": "현재 채팅 저장소 최적화 중",
+  "ui-settings.026": "현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.",
+  "ui-settings.027": "최적화 확인 대기 · 7초 안에 다시 누르세요",
+  "ui-settings.028": [
+    "글자 크기 · ",
+    ""
+  ],
+  "ui-settings.029": "대",
+  "ui-settings.030": "중",
+  "ui-settings.031": "소",
+  "ui-settings.032": "모듈 에셋 권한 없음 · 이모지 폴백",
+  "ui-settings.033": "모듈 에셋 초상화 · OFF",
+  "ui-settings.034": "모듈 에셋 초상화 · ON",
+  "ui-settings.035": "모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.",
+  "ui-settings.036": [
+    "조우 로어북 자동 보완 · ",
+    ""
+  ],
+  "ui-settings.037": "시각 이펙트",
+  "ui-settings.038": [
+    "화면 스킨 · ",
+    ""
+  ],
+  "ui-settings.039": [
+    "등급 판정 기준 · ",
+    ""
+  ],
+  "ui-settings.040": [
+    "보조 모델로 보완 · ",
+    ""
+  ],
+  "ui-settings.041": [
+    "메인 출력 · ",
+    ""
+  ],
+  "ui-settings.042": "디버그 로그 비움",
+  "ui-settings.043": [
+    "디버그 로그 · ",
+    ""
+  ],
+  "ui-settings.044": "전투 도감",
+  "ui-settings.045": "스킬",
+  "ui-settings.046": "무기·아이템",
+  "ui-settings.047": "현재 봇 비활성화",
+  "ui-settings.048": "현재 봇 활성화",
+  "ui-settings.049": [
+    "배지 위치 · ",
+    ""
+  ],
+  "ui-settings.050": "보조 모델 수동 검사 중",
+  "ui-settings.051": [
+    "ITEMX CODEX 연결 확인 실패: ",
+    ""
+  ],
+  "ui-settings.052": [
+    "연결 확인 실패 · ",
+    ""
+  ],
+  "ui-settings.053": "ITEMX CODEX 연결 및 권한 확인 완료",
+  "ui-settings.054": "모델 훅 연결 실패",
+  "ui-settings.055": "화면 연결 실패",
+  "ui-settings.056": "연결 및 권한 정상",
+  "ui-settings.057": "ITEMX CODEX 연결과 권한을 확인하는 중입니다…",
+  "ui-settings.058": "연결 및 권한 확인 중",
+  "ui-settings.059": "기록 없음",
+  "ui-settings.060": [
+    "",
+    " KiB · 마커 ",
+    "개"
+  ],
+  "ui-settings.061": [
+    "<div class=\"itemx2-position-map\">",
+    "<span class=\"itemx2-position-screen\">대화 화면</span></div><p class=\"itemx2-position-hint\">현재 <b>",
+    "</b> · 고르면 배지와 패널이 바로 옮겨집니다.</p>"
+  ],
+  "ui-settings.062": [
+    "<button class=\"itemx2-font-choice itemx2-setting-font-",
+    " ",
+    "\" type=\"button\"",
+    "><em>가나다</em><span>",
+    "</span></button>"
+  ],
+  "ui-settings.063": "크게",
+  "ui-settings.064": "보통",
+  "ui-settings.065": "작게",
+  "ui-settings.066": "멈춤",
+  "ui-settings.067": "기록 중",
+  "ui-settings.068": "적대·대련·전투",
+  "ui-settings.069": "전투 도감",
+  "ui-settings.070": "습득·숙련·봉인",
+  "ui-settings.071": "스킬",
+  "ui-settings.072": "감정·손상·소실",
+  "ui-settings.073": "무기·아이템",
+  "ui-settings.074": [
+    "<div class=\"itemx2-root-settings\"><h4 class=\"itemx2-set-group\">연결</h4>",
+    "",
+    "<h4 class=\"itemx2-set-group\">기록</h4>",
+    "<div class=\"itemx2-domain-grid\">",
+    "</div>",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "<h4 class=\"itemx2-set-group\">모양</h4>",
+    "",
+    "",
+    "<div class=\"itemx2-font-grid\">",
+    "</div>",
+    "<div class=\"itemx2-position-grid\">",
+    "</div>",
+    "<h4 class=\"itemx2-set-group\">데이터</h4>",
+    "",
+    "<div class=\"itemx2-danger-zone\"><h4>되돌릴 수 없는 작업</h4>",
+    "</div>",
+    "",
+    "</div>"
+  ],
+  "ui-settings.075": "지금 검사",
+  "ui-settings.076": "처리 중…",
+  "ui-settings.077": "보조 모델 상태",
+  "ui-settings.078": "끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.",
+  "ui-settings.079": "무엇을 기록할까요",
+  "ui-settings.080": "끄면 이 봇에서만 멈춥니다. 다른 봇은 영향받지 않습니다.",
+  "ui-settings.081": "활성 상태입니다.",
+  "ui-settings.082": "이 봇에서 사용",
+  "ui-settings.083": "대화 중인 모델에게 기록 규약을 전달합니다. 끄면 새 기록이 만들어지지 않습니다.",
+  "ui-settings.084": "메인 모델에 형식 알리기",
+  "ui-settings.085": "메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서 <b>기타 보조모델</b>을 먼저 지정해야 동작합니다.",
+  "ui-settings.086": "보조 모델로 보완",
+  "ui-settings.087": "세계관 등급명(초월급 등)은 그대로 두고, 색과 이펙트에 쓸 내부 등급만 정합니다.",
+  "ui-settings.088": "등급 판정 기준",
+  "ui-settings.089": "지금 스캔",
+  "ui-settings.090": "이미 만난 상대만 로어북과 대조합니다. 모델을 부르지 않아 토큰이 들지 않습니다.",
+  "ui-settings.091": "로어북에서 설명 채우기",
+  "ui-settings.092": "활성 모듈에서 이름이 맞는 캐릭터 이미지를 찾아 조우 도감에 씁니다. 못 찾으면 이모지로 대신합니다.",
+  "ui-settings.093": "모듈 초상화 사용",
+  "ui-settings.094": "서리는 밝은 중립 톤, 한지는 밝은 문서 톤입니다. 카드·인벤토리·도감·설정에 함께 적용됩니다.",
+  "ui-settings.095": "화면 스킨",
+  "ui-settings.096": "카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.",
+  "ui-settings.097": "이펙트",
+  "ui-settings.098": "인벤토리·도감의 본문 글자에 바로 적용됩니다.",
+  "ui-settings.099": "글자 크기",
+  "ui-settings.100": "화면에서 CODEX 배지가 붙을 자리입니다.",
+  "ui-settings.101": "배지 위치",
+  "ui-settings.102": "저장소 최적화",
+  "ui-settings.103": "다시 눌러 최적화",
+  "ui-settings.104": "재구축",
+  "ui-settings.105": [
+    "",
+    " · 최근 원장은 자동 순환됩니다."
+  ],
+  "ui-settings.106": "저장 공간",
+  "ui-settings.107": "현재 채팅 정리",
+  "ui-settings.108": "다시 눌러 완전 제거",
+  "ui-settings.109": "본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.",
+  "ui-settings.110": "이 채팅의 ITEMX 기록 지우기",
+  "ui-settings.111": "플러그인",
+  "ui-settings.112": "다시 연결",
+  "ui-settings.113": [
+    "",
+    " · 거부되어도 메시지별 스타일로 표시합니다."
+  ],
+  "ui-settings.114": "본문 카드 스타일",
+  "ui-settings.115": "권한 요청",
+  "ui-settings.116": [
+    "",
+    " · 모델 응답을 읽고 원시 태그를 정리하려면 필요합니다."
+  ],
+  "ui-settings.117": "모델 처리 권한",
+  "ui-settings.118": "연결하기",
+  "ui-settings.119": "다시 확인",
+  "ui-settings.120": "확인 중…",
+  "ui-settings.121": "모델 응답을 읽고 화면에 카드를 그리려면 Risu의 허가가 필요합니다. 처음 한 번만 물어봅니다.",
+  "ui-settings.122": "Risu 연결",
+  "ui-settings.123": [
+    "",
+    " · 불러오기 완료. 닫은 뒤 CODEX에서 확인하세요."
+  ],
+  "ui-settings.124": "위 기록을 현재 채팅으로 가져옵니다. 확인 후 불러오기를 누르세요.",
+  "ui-settings.125": "이 채팅에 불러오기",
+  "ui-settings.126": "기존 기록을 백업으로 덮어쓰기",
+  "ui-settings.127": [
+    " · 교체 대상: 아이템 ",
+    " · 스킬 ",
+    " · 조우 ",
+    ""
+  ],
+  "ui-settings.128": "백업 텍스트가 변경되었습니다. 내용을 다시 확인해 주세요.",
+  "ui-settings.129": "파일을 읽었습니다. 내용을 확인해 주세요.",
+  "ui-settings.130": "백업 파일은 32 MiB 이하여야 합니다.",
+  "ui-settings.131": "백업 텍스트를 선택했습니다. 기기의 복사 메뉴로 복사해 주세요.",
+  "ui-settings.132": "백업 텍스트를 복사했습니다.",
+  "ui-settings.133": [
+    "",
+    " · 백업 준비 완료. 파일 저장이나 텍스트 복사를 눌러 보관하세요."
+  ],
+  "ui-settings.134": [
+    "아이템 ",
+    " · 스킬 ",
+    " · 조우 ",
+    ""
+  ],
+  "ui-settings.135": [
+    "현재 대상: ",
+    " · ",
+    ""
+  ],
+  "ui-settings.136": "캐릭터",
+  "ui-settings.137": "현재 채팅",
+  "ui-settings.138": [
+    "<main id=\"itemx-backup\"><header><h2>백업 · 채팅 이사</h2><button id=\"ix-close\" type=\"button\">닫기</button></header><p id=\"ix-target\"></p><p>아이템·스킬·조우의 현재 상태와 기록 목록을 옮깁니다. 대화 본문·손요약·다른 모듈의 호감도/위치 변수·이미지 파일은 포함하지 않습니다. 초상은 같은 캐릭터/모듈 에셋이 있어야 표시됩니다.</p><section><h3>1. 지금 기록 저장</h3><button id=\"ix-export\" type=\"button\">백업 만들기</button><a id=\"ix-download\" hidden>JSON 파일 저장</a><button id=\"ix-copy\" type=\"button\" disabled>텍스트 복사</button><textarea id=\"ix-export-text\" aria-label=\"내보낸 백업\" readonly placeholder=\"백업을 만들면 파일 저장 또는 텍스트 복사를 선택할 수 있습니다.\"></textarea></section><section><h3>2. 백업 불러오기</h3><label>불러오기 방식 <select id=\"ix-mode\"><option value=\"empty\">빈 채팅에 불러오기</option><option value=\"replace\">기존 ITEMX 기록 덮어쓰기</option></select></label><p>덮어쓰기는 현재 ITEMX 기록을 백업 상태로 교체하고 기존 본문 카드를 제거합니다. 대화 글과 다른 모듈 데이터는 유지됩니다. 필요하면 먼저 현재 기록을 백업하세요.</p><label>백업 JSON 파일 <input id=\"ix-file\" type=\"file\" accept=\".json,application/json\"></label><textarea id=\"ix-import-text\" aria-label=\"불러올 백업\" placeholder=\"파일을 선택하거나 백업 텍스트를 붙여넣으세요.\"></textarea><button id=\"ix-preview\" type=\"button\">내용 확인</button><p id=\"ix-preview-text\"></p><button id=\"ix-import\" type=\"button\" disabled>이 채팅에 불러오기</button></section><p id=\"ix-status\" role=\"status\" aria-live=\"polite\"></p></main>"
+  ],
+  "ui-settings.139": "현재 채팅을 찾을 수 없습니다.",
+  "ui-settings.140": [
+    "<button class=\"itemx2-root-setting-button itemx2-setting-backup\" data-action=\"backup\" type=\"button\">저장 / 불러오기</button>"
+  ],
+  "ui-settings.141": "아이템·스킬·조우와 기록 목록을 저장하고 새 채팅으로 가져옵니다.",
+  "ui-settings.142": "백업 · 채팅 이사",
+  "ui-settings.143": "ITEMX 강제",
+  "ui-settings.144": "세계관 우선",
+  "ui-settings.145": "항상 검토",
+  "ui-settings.146": "누락 시",
+  "ui-settings.147": "끔",
+  "ui-settings.148": "업데이트 버전 헤더를 찾지 못했습니다",
+  "ui-settings.149": [
+    "업데이트 서버 응답 ",
+    ""
+  ],
+  "ui-settings.150": "없음",
+  "ui-settings.151": "업데이트 확인 시간이 초과되었습니다",
+  "ledger.001": [
+    "",
+    " · ",
+    "건"
+  ],
+  "ledger.002": "수동 변경을 적용할 수 없습니다.",
+  "ledger.003": "저장 직전 대화가 변경되어 보완을 취소했습니다.",
+  "ledger.004": [
+    "저장소 최적화 완료 · ",
+    " KiB 절감"
+  ],
+  "ledger.005": "출력 스트리밍이 끝난 뒤 최적화할 수 있습니다.",
+  "ledger.006": "현재 채팅을 불러오지 못했습니다.",
+  "ledger.007": "최적화 중 채팅이 바뀌었습니다. 다시 시도하세요.",
+  "ledger.008": "현재 채팅을 찾을 수 없습니다.",
+  "ledger.009": [
+    "현재 채팅 정리 완료 · 마커 ",
+    "개"
+  ],
+  "ledger.010": "출력 스트리밍이 끝난 뒤 정리할 수 있습니다.",
+  "ledger.011": "현재 채팅을 불러오지 못했습니다.",
+  "ledger.012": "정리 중 채팅이 바뀌었습니다. 다시 시도하세요.",
+  "ledger.013": "현재 채팅을 찾을 수 없습니다.",
+  "ledger.014": "채팅 이사 완료 · 백업 기록을 불러왔습니다",
+  "ledger.015": "덮어쓰기 완료 · 백업 기록으로 교체했습니다",
+  "ledger.016": "저장 직전 채팅이 변경되어 불러오기를 취소했습니다.",
+  "ledger.017": "채팅이 변경되었습니다. 내용을 다시 확인해 주세요.",
+  "ledger.018": "미리보기 이후 채팅이 변경되었습니다. 내용을 다시 확인해 주세요.",
+  "ledger.019": "채팅이 변경되어 불러오기를 취소했습니다.",
+  "ledger.020": "불러올 ITEMX 기록이 없는 백업입니다.",
+  "ledger.021": "이미 ITEMX 기록이 있습니다. 덮어쓰기를 선택하거나 새 채팅에서 불러와 주세요.",
+  "ledger.022": "채팅이 변경되었습니다. 백업 화면을 다시 열어 주세요.",
+  "ledger.023": "불러오기 방식을 선택해 주세요.",
+  "ledger.024": "채팅이 변경되었습니다. 백업 화면을 다시 열어 주세요.",
+  "ledger.025": "응답이 끝난 뒤 백업을 저장하거나 불러와 주세요.",
+  "ledger.026": [
+    "",
+    " · 아이템 ",
+    " · 스킬 ",
+    " · 도감 ",
+    ""
+  ],
+  "ledger.027": "정상",
+  "ledger.028": "이전 버전에서 저장 항목 축소 이력 있음",
+  "ledger.029": "저장 용량 16 MiB 이상 · 현재 상태 보존 중",
+  "ledger.030": "ITEMX 기록을 이 버전에서 읽을 수 없어 안전을 위해 읽기 전용으로 잠갔습니다. 설정 → 백업에서 먼저 백업을 내려받으세요.",
+  "aux.001": "누락 정보 보완 실패 · 기존 정보 보존",
+  "aux.002": "누락 정보 보완 완료",
+  "aux.003": [
+    "일부 보완 완료 · 미해결 ",
+    "개 필드"
+  ],
+  "aux.004": "누락 정보 보완",
+  "aux.005": "처리 중 대화가 변경되어 보완을 적용하지 않았습니다.",
+  "aux.006": "근거와 일치하는 단일 보완 결과가 없습니다. 기존 정보는 보존됩니다.",
+  "aux.007": [
+    "",
+    " · 누락 정보 보완 중"
+  ],
+  "aux.008": "원문 근거를 찾지 못했습니다. 아이템은 변경하지 않았습니다.",
+  "aux.009": "현재 아이템을 찾을 수 없습니다.",
+  "aux.010": "출력 완료 후 다시 시도하세요.",
+  "aux.011": "채팅이 변경되었습니다.",
+  "aux.012": "이 아이템에 기록된 미해결 필드가 없습니다.",
+  "aux.013": "이미 보조 모델이 처리 중입니다.",
+  "aux.014": "아이템 기능을 먼저 활성화하세요.",
+  "aux.015": "재감정 결과가 대상 id를 보존하지 않았습니다.",
+  "aux.016": "신규 생성이 기존 아이템 id를 덮으려 했습니다.",
+  "aux.017": [
+    "감정 결과 검증 실패 (",
+    ")"
+  ],
+  "aux.018": "보조 모델이 빈 응답을 반환했습니다.",
+  "aux.019": "아이템 재감정 중",
+  "aux.020": "신규 아이템 생성 중",
+  "aux.021": "무기·아이템 기능이 OFF입니다. 설정에서 먼저 켜세요.",
+  "aux.022": "이 PocketRisu에는 runLLMModel API가 없습니다.",
+  "aux.023": [
+    "보조 검사 실패 · ",
+    ""
+  ],
+  "aux.024": "보조 출력 실패",
+  "aux.025": [
+    "보조 복구 완료 · ",
+    "건"
+  ],
+  "aux.026": [
+    "일부 보완 실패 · ",
+    "건 · 기존 정보 보존"
+  ],
+  "aux.027": [
+    "보조 출력 · ",
+    "건 복구"
+  ],
+  "aux.028": "보조 검사 완료 · 누락 없음",
+  "aux.029": "보조 출력 · 누락 없음",
+  "aux.030": "보조 검사 보류 · 수동 재검사 가능",
+  "aux.031": "보조 출력 · 근거 불충분",
+  "aux.032": [
+    "보조 출력 검증 실패 (",
+    ")"
+  ],
+  "aux.033": "아이템 상세정보 보완 중",
+  "aux.034": "보조 출력이 비어 있습니다.",
+  "aux.035": "보조 누락 복구 중",
+  "aux.036": "보조 출력 검토 중",
+  "aux.037": "보조 모델 호출 실패",
+  "aux.038": "보조 모델 응답 수신",
+  "aux.039": "보조 모델이 90초 안에 응답하지 않았습니다.",
+  "aux.040": "이 PocketRisu에는 runLLMModel API가 없습니다.",
+  "aux.041": "보조 모델 처리 중",
+  "aux.042": "지금 검사",
+  "aux.043": "처리 중…",
+  "aux.044": "보조 모델 처리 중",
+  "aux.045": "연결하기",
+  "aux.046": "다시 확인",
+  "aux.047": "확인 중…",
+  "aux.048": "커밋 감지 전",
+  "aux.049": "커밋 감지",
+  "aux.050": "Pocket 호환",
+  "aux.051": "화면 확인 전",
+  "aux.052": "화면 권한 필요",
+  "aux.053": "화면 연결",
+  "aux.054": "모델 훅 확인 전",
+  "aux.055": "모델 훅 오류",
+  "aux.056": "모델 훅 연결",
+  "aux.057": "아직 실행 기록 없음",
+  "aux.058": "보조 모델 처리 중",
+  "aux.059": "보조 모델 제공자를 사용할 수 없습니다. Risu 설정에서 보조 모델을 변경하거나 해당 제공자 플러그인을 켜세요.",
+  "pipeline.001": "모델 연결 오류",
+  "pipeline.002": "알 수 없는 모델 훅 오류",
+  "pipeline.003": "정상",
+  "pipeline.004": "모델 처리 권한 연결됨",
+  "pipeline.005": "모델 처리 권한 필요",
+  "pipeline.006": "모델 처리 권한이 허용되지 않았습니다",
+  "pipeline.007": [
+    "메인 출력 ",
+    "건 처리"
+  ],
+  "pipeline.008": [
+    "격리 ",
+    "건"
+  ],
+  "pipeline.009": [
+    "누락 훅 복구 · ",
+    "건"
+  ],
+  "pipeline.010": [
+    "깨진 전송 격리 · ",
+    "건"
+  ],
+  "presentation.001": [
+    "<span class=\"itemx-event-chip\">✦ 도감 기록 복원 중</span>"
+  ],
+  "presentation.002": [
+    "<span class=\"itemx-event-chip\">📦 ITEMX CODEX · 기록 복원 중</span>"
+  ],
+  "presentation.003": [
+    "<section class=\"",
+    "\" style=\"",
+    "\">",
+    "",
+    "<div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\">",
+    "</span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">",
+    "</small><strong class=\"itemx2-inline-name\">",
+    "</strong><span class=\"itemx2-inline-meta\">",
+    "</span><span class=\"itemx2-inline-quick\">",
+    "</span></span><i class=\"itemx2-inline-state\">",
+    "</i></div><footer class=\"itemx2-inline-foot\"><b>",
+    "</b><span>",
+    "</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>"
+  ],
+  "presentation.004": "전투 도감 기록",
+  "presentation.005": "최근",
+  "presentation.006": "결과",
+  "presentation.007": "상태",
+  "presentation.008": "관계",
+  "presentation.009": "미상",
+  "presentation.010": "위협도",
+  "presentation.011": "미분류",
+  "presentation.012": "분류",
+  "presentation.013": "조우 정보가 전투 도감에 기록되었습니다.",
+  "presentation.014": "큰 변화",
+  "presentation.015": "복원",
+  "presentation.016": "기록 소실",
+  "presentation.017": "최초 등록",
+  "presentation.018": "교전 중",
+  "presentation.019": "아군화",
+  "presentation.020": "사망",
+  "presentation.021": "격파",
+  "presentation.022": "도주",
+  "presentation.023": "종료",
+  "presentation.024": "교전 개시",
+  "presentation.025": "효과",
+  "presentation.026": "개방",
+  "presentation.027": [
+    "대상 ",
+    ""
+  ],
+  "presentation.028": "미분류",
+  "presentation.029": "스킬 정보가 CODEX에 기록되었습니다.",
+  "presentation.030": "미상",
+  "presentation.031": "재사용",
+  "presentation.032": "미상",
+  "presentation.033": "소모",
+  "presentation.034": "미상",
+  "presentation.035": "숙련도",
+  "presentation.036": "미상",
+  "presentation.037": "큰 변화",
+  "presentation.038": "복원",
+  "presentation.039": "상실",
+  "presentation.040": "최초 등록",
+  "presentation.041": "상실",
+  "presentation.042": "봉인 해제",
+  "presentation.043": "봉인",
+  "presentation.044": "숙련 상승",
+  "presentation.045": "장착 해제",
+  "presentation.046": "장착",
+  "presentation.047": "습득",
+  "presentation.048": "미상",
+  "ui-panel.001": "인벤토리 열기 오류",
+  "ui-panel.002": "PocketRisu 호환 모드",
+  "ui-panel.003": "인벤토리 열기 오류",
+  "ui-panel.004": "ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.",
+  "ui-panel.005": "메인 화면 권한 필요",
+  "ui-panel.006": "아이템 생성 실패",
+  "ui-panel.007": "신규 생성",
+  "ui-panel.008": "신규 아이템 생성 중",
+  "ui-panel.009": "ITEMX CODEX: 생성할 아이템 설명을 입력하세요.",
+  "ui-panel.010": "수동 제거 실패",
+  "ui-panel.011": "수동 제거",
+  "ui-panel.012": [
+    "",
+    "을(를) 현재 채팅 인벤토리에서 제거할까요?"
+  ],
+  "ui-panel.013": "재감정 실패",
+  "ui-panel.014": "재감정",
+  "ui-panel.015": "정보 수정",
+  "ui-panel.016": "아이템 재감정 중",
+  "ui-panel.017": "정보 수정 감정 중",
+  "ui-panel.018": "<div class=\"itemx2-tab-loading\" role=\"status\" aria-live=\"polite\"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>",
+  "ui-panel.019": [
+    "<div class=\"itemx2-tab-loading\" role=\"status\" aria-live=\"polite\"><i></i><strong>",
+    " 불러오는 중</strong><small>선택한 탭만 준비하고 있답니다.</small></div>"
+  ],
+  "ui-panel.020": "설정",
+  "ui-panel.021": "조우 도감",
+  "ui-panel.022": "스킬",
+  "ui-panel.023": "인벤토리",
+  "ui-panel.024": "인벤토리",
+  "ui-panel.025": "현재 봇 비활성",
+  "ui-panel.026": [
+    "보유 ",
+    " · 장착 ",
+    " · 관찰 ",
+    ""
+  ],
+  "ui-panel.027": "⚙️ 설정",
+  "ui-panel.028": "⚔️ 조우",
+  "ui-panel.029": "✨ 스킬",
+  "ui-panel.030": "📦 인벤",
+  "ui-panel.031": [
+    "<div class=\"itemx2-root-bestiary itemx2-root-tab-active\"><input class=\"itemx2-root-control\" id=\"itemx2-monster-none\" name=\"itemx2-monster-detail\" type=\"radio\" checked><div class=\"itemx2-codex-note\">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>",
+    "</div>"
+  ],
+  "ui-panel.032": [
+    "<div class=\"itemx2-root-skills itemx2-root-tab-active\"><input class=\"itemx2-root-control\" id=\"itemx2-skill-none\" name=\"itemx2-skill-detail\" type=\"radio\" checked><div class=\"itemx2-codex-note\">장착·봉인·본문에서 다시 언급된 스킬만 모델 문맥에 제한적으로 전달됩니다.</div>",
+    "</div>"
+  ],
+  "ui-panel.033": [
+    "<div class=\"itemx2-root-inventory\"><nav class=\"itemx-seg itemx2-root-filters\">",
+    "</nav><div class=\"itemx-tools itemx2-root-tools\"><span class=\"itemx-tool\">",
+    "</span><span class=\"itemx-search\">채팅별 저장소</span></div><div class=\"itemx-body\"><div class=\"itemx-grid\">",
+    "</div></div><footer class=\"itemx-pf\"><span>",
+    " / ",
+    "점",
+    "</span>",
+    "</footer></div>"
+  ],
+  "ui-panel.034": "◇ 이펙트 OFF",
+  "ui-panel.035": "✨ 이펙트 ON",
+  "ui-panel.036": " · 첫 60점",
+  "ui-panel.037": [
+    "<details class=\"itemx2-manager-fold itemx2-debug-fold\"><summary>디버그 진단 <small>",
+    "</small></summary><div class=\"itemx2-debug-body\"><button class=\"itemx2-root-setting-button itemx2-setting-debug ",
+    "\" type=\"button\">로그 ",
+    "</button><div class=\"itemx2-debug-grid\"><b>문맥</b><span>",
+    "</span><b>세대</b><span>",
+    "</span><b>스냅숏</b><span>",
+    " / ",
+    "</span><b>항목</b><span>",
+    " / ",
+    " / ",
+    "</span><b>마지막 오류</b><span>",
+    "</span></div><pre class=\"itemx2-debug-log\">",
+    "</pre><button class=\"itemx2-root-setting-button itemx2-setting-debug-clear\" type=\"button\">로그 비우기</button></div></details>"
+  ],
+  "ui-panel.038": "ON · 최근 30건",
+  "ui-panel.039": "없음",
+  "ui-panel.040": [
+    "<details class=\"itemx2-manager-fold\"><summary>아이템 관리 <small>현재 화면에서 접기·펼치기</small></summary><div class=\"itemx2-manager-body\"><label class=\"itemx2-manager-label\">수정 지시 · 비워두면 순수 재감정<div class=\"itemx2-manager-editor itemx2-manager-note\" contenteditable=\"true\" role=\"textbox\" aria-label=\"아이템 수정 지시\"></div></label><div class=\"itemx2-manager-list\">",
+    "</div><div class=\"itemx2-manager-create\"><label class=\"itemx2-manager-label\">신규 아이템 생성 지시<div class=\"itemx2-manager-editor itemx2-manager-create-note\" contenteditable=\"true\" role=\"textbox\" aria-label=\"신규 아이템 생성 지시\"></div></label><button class=\"itemx2-root-setting-button itemx2-manager-create-button\" type=\"button\">＋ 신규 아이템 생성</button></div></div></details>"
+  ],
+  "ui-panel.041": "<div class=\"itemx2-root-empty\">관리할 아이템이 없습니다.</div>",
+  "ui-panel.042": [
+    "<div class=\"itemx2-manager-row itemx2-manager-row-",
+    "\"><span class=\"itemx2-manager-name\"><strong>",
+    " ",
+    "</strong><small>",
+    " · ",
+    " / ",
+    "</small></span><span class=\"itemx2-manager-actions\"><button class=\"itemx2-manager-reroll-",
+    "\" type=\"button\">재감정</button><button class=\"itemx2-manager-remove itemx2-manager-remove-",
+    "\" type=\"button\" ",
+    ">제거</button></span></div>"
+  ],
+  "ui-panel.043": "<div class=\"itemx2-root-empty\">표시할 아이템이 없답니다.</div>",
+  "ui-panel.044": [
+    "<div class=\"itemx2-root-item ",
+    "\"><input class=\"itemx2-root-control itemx2-root-detail-choice\" id=\"",
+    "\" name=\"itemx2-detail\" type=\"radio\"><label class=\"itemx2-root-tile-label itemx2-root-tile-",
+    "\" for=\"",
+    "\">",
+    "</label><div class=\"itemx2-root-detail itemx-body\"><label class=\"itemx-back itemx2-root-back\" for=\"itemx2-detail-none\">‹ 목록으로</label><div class=\"itemx-detail itemx2-root-detail-body-",
+    "\"><span class=\"itemx2-detail-loading\">상세 정보를 불러오는 중…</span></div></div></div>"
+  ],
+  "ui-panel.045": "<div class=\"itemx2-codex-empty\">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>",
+  "ui-panel.046": [
+    "<div class=\"itemx2-codex-entry\"><input class=\"itemx2-root-control itemx2-codex-entry-choice itemx2-monster-entry-choice\" id=\"itemx2-monster-",
+    "\" name=\"itemx2-monster-detail\" type=\"radio\"><label class=\"itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ",
+    "\" for=\"itemx2-monster-",
+    "\">",
+    "</label><div class=\"itemx-codex-page itemx2-codex-page itemx2-monster-detail itemx2-root-monster-detail-body-",
+    "\"><span class=\"itemx2-codex-detail-index\">",
+    "</span><span class=\"itemx2-detail-loading\">상세 정보를 불러오는 중…</span></div></div>"
+  ],
+  "ui-panel.047": "<div class=\"itemx2-codex-empty\">아직 확정된 스킬이 없답니다.</div>",
+  "ui-panel.048": [
+    "<div class=\"itemx2-codex-entry\"><input class=\"itemx2-root-control itemx2-codex-entry-choice itemx2-skill-entry-choice\" id=\"itemx2-skill-",
+    "\" name=\"itemx2-skill-detail\" type=\"radio\"><label class=\"itemx2-codex-card itemx2-codex-summary itemx2-skill-card\" for=\"itemx2-skill-",
+    "\">",
+    "</label><div class=\"itemx-codex-page itemx2-codex-page itemx2-skill-detail itemx2-root-skill-detail-body-",
+    "\"><span class=\"itemx2-codex-detail-index\">",
+    "</span><span class=\"itemx2-detail-loading\">상세 정보를 불러오는 중…</span></div></div>"
+  ],
+  "ui-panel.049": "관찰",
+  "ui-panel.050": "장착",
+  "ui-panel.051": "보유",
+  "ui-panel.052": "전체",
+  "ui-panel.053": [
+    "",
+    "<div class=\"itemx2-root-layer\"><section class=\"itemx-panel itemx2-root-panel\" aria-label=\"ITEMX CODEX\"><div class=\"itemx2-tab-loading itemx2-open-loading\" role=\"status\" aria-live=\"polite\"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>"
+  ],
+  "ui-panel.054": [
+    "<!--ITEMX2-SEARCH-START--><div class=\"itemx2-search-controls\"><div class=\"itemx2-search-query\" contenteditable=\"true\" role=\"textbox\" aria-label=\"검색어\" data-placeholder=\"이름·종류 검색\">",
+    "</div><button class=\"itemx2-search-apply\" type=\"button\">검색</button><button class=\"itemx2-search-clear\" type=\"button\">초기화</button></div><!--ITEMX2-SEARCH-END-->"
+  ],
+  "ui-panel.055": "응답이 끝난 뒤 기록 설정을 변경해 주세요.",
+  "ui-panel.056": "현재 채팅을 찾을 수 없습니다.",
+  "ui-panel.057": "채팅이 변경되었습니다.",
+  "ui-panel.058": [
+    "<header class=\"itemx2-history-heading\"><button class=\"itemx2-history-back\" type=\"button\">‹ ",
+    "</button><strong>",
+    " 기록</strong></header><nav class=\"itemx2-history-filters\">",
+    "</nav><div class=\"itemx2-history-policy\"><span>소모품 자동 보관</span><button class=\"itemx2-history-retention\" type=\"button\">",
+    "</button><small>정상 응답이 완료된 새 입력만 계산합니다. 무기·스킬·조우는 자동 보관하지 않습니다. 원본 사건은 삭제하지 않습니다.</small></div><div class=\"itemx2-history-list\">",
+    "</div>",
+    ""
+  ],
+  "ui-panel.059": "현재 목록",
+  "ui-panel.060": "기록 목록",
+  "ui-panel.061": "조우",
+  "ui-panel.062": "스킬",
+  "ui-panel.063": "아이템",
+  "ui-panel.064": [
+    "",
+    "회 입력 후"
+  ],
+  "ui-panel.065": "<p>해당 기록이 없습니다.</p>",
+  "ui-panel.066": "종료된 조우",
+  "ui-panel.067": "상실·망각 기록",
+  "ui-panel.068": "소실·양도 기록 · 자동 정리 안 함",
+  "ui-panel.069": [
+    "소모 완료 · ",
+    "회 입력 뒤 자동 보관"
+  ],
+  "ui-panel.070": "보관된 기록 · 보존으로 꺼내기",
+  "ui-panel.071": "보존 중 · 자동 정리 제외",
+  "ui-panel.072": [
+    "<button class=\"itemx2-history-archive-",
+    "\" type=\"button\">지금 보관</button>"
+  ],
+  "ui-panel.073": "보존",
+  "ui-panel.074": "보존 해제",
+  "ui-panel.075": "보관됨",
+  "ui-panel.076": "보존",
+  "ui-panel.077": "파손·소실",
+  "ui-panel.078": "소모",
+  "ui-panel.079": "최근 기록",
+  "ui-panel.080": [
+    "<div class=\"itemx2-panel-actions\"><button class=\"itemx-ph-btn itemx2-history-open\" data-action=\"history-open\" type=\"button\" aria-label=\"기록 보기\" title=\"기록 보기\">기록</button><button class=\"itemx-ph-btn ",
+    "\" data-action=\"close\" type=\"button\" aria-label=\"닫기\" title=\"닫기\">✕</button></div>"
+  ],
+  "ui-panel.081": [
+    "<span class=\"itemx2-update-indicator\" x-itemx2-update=\"",
+    "\" aria-label=\"ITEMX CODEX 업데이트 가능\">↑</span>"
+  ],
+  "ui-panel.082": "<label class=\"itemx-codex-back\" for=\"itemx2-monster-none\">‹ 조우 목록</label>",
+  "ui-panel.083": "<label class=\"itemx-codex-back\" for=\"itemx2-skill-none\">‹ 스킬 목록</label>",
+  "ui-panel.084": [
+    "<div class=\"itemx-codex-page itemx2-codex-page\">",
+    "<section class=\"itemx-codex-hero itemx-monster-hero ",
+    "\">",
+    "<b class=\"itemx-threat-banner\">⚠️ THREAT · ",
+    "</b>",
+    "<span class=\"itemx-codex-hero-copy\"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>",
+    "</strong><span>",
+    " · ",
+    " · ",
+    "</span></span></section><div class=\"itemx-codex-stat-grid\"><span class=\"itemx-codex-stat\"><small>ENCOUNTERS</small><strong>⚔️ ",
+    "회</strong></span><span class=\"itemx-codex-stat\"><small>COMBAT STATE</small><strong>",
+    "</strong></span></div>",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "<section class=\"itemx-codex-section\"><small>ID · ",
+    "</small></section>",
+    "</div>"
+  ],
+  "ui-panel.085": "미상",
+  "ui-panel.086": "미분류",
+  "ui-panel.087": "📖 보관 기록",
+  "ui-panel.088": "🔥 현재 교전 기록",
+  "ui-panel.089": [
+    "<section class=\"itemx-codex-section\"><h4>👁️ 관찰 기록</h4><p>",
+    "</p></section>"
+  ],
+  "ui-panel.090": "없음",
+  "ui-panel.091": "🏷️ 별칭",
+  "ui-panel.092": "미상",
+  "ui-panel.093": "🎯 확인된 약점",
+  "ui-panel.094": "미상",
+  "ui-panel.095": "🛡️ 확인된 내성",
+  "ui-panel.096": "미상",
+  "ui-panel.097": "💥 관측 행동",
+  "ui-panel.098": "<section class=\"itemx-codex-section\"><small>📚 로어북 공개 정보로 보완된 기록</small></section>",
+  "ui-panel.099": [
+    "<section class=\"itemx-codex-section itemx2-encounter-outcome\"><span class=\"itemx2-encounter-outcome-head\"><h4>⚔️ 최근 전투 결과</h4><i>",
+    "",
+    "</i></span><p>",
+    "</p></section>"
+  ],
+  "ui-panel.100": "결말 기록",
+  "ui-panel.101": [
+    " · ",
+    "번째 조우"
+  ],
+  "ui-panel.102": "결말 기록",
+  "ui-panel.103": "사망",
+  "ui-panel.104": "토벌",
+  "ui-panel.105": "도주",
+  "ui-panel.106": "교전 종료",
+  "ui-panel.107": [
+    "",
+    "",
+    "<span class=\"itemx2-codex-copy\"><strong>",
+    "</strong><small>",
+    " · 위협 ",
+    " · ",
+    "</small><span class=\"itemx2-codex-tags\"><i>⚔️ ",
+    "</i>",
+    "</span></span><span class=\"itemx2-codex-glyph\">",
+    "</span>"
+  ],
+  "ui-panel.108": [
+    "<i>🎯 약점 ",
+    "</i>"
+  ],
+  "ui-panel.109": [
+    "<div class=\"itemx-codex-page itemx2-codex-page\">",
+    "<section class=\"itemx-codex-hero itemx-skill-hero craft-arcane ",
+    "\" style=\"",
+    "\">",
+    "<span class=\"itemx-codex-hero-glyph\">",
+    "</span><span class=\"itemx-codex-hero-copy\"><small>✨ ARCANE SKILL RECORD</small><strong>",
+    "</strong><span>",
+    " · ",
+    " · ",
+    "</span></span></section><div class=\"itemx-codex-stat-grid\"><span class=\"itemx-codex-stat\"><small>LEVEL</small><strong>",
+    "</strong></span><span class=\"itemx-codex-stat\"><small>TYPE / TARGET</small><strong>",
+    " · ",
+    "</strong></span><span class=\"itemx-codex-stat\"><small>COST</small><strong>",
+    "</strong></span><span class=\"itemx-codex-stat\"><small>COOLDOWN</small><strong>",
+    "</strong></span></div><section class=\"itemx-codex-section\"><h4>✨ 숙련도 · ",
+    "</h4><span class=\"itemx-codex-mastery\">",
+    "</span></section>",
+    "<section class=\"itemx-codex-section\"><h4>💫 발현 효과</h4><span class=\"itemx-codex-chip-row\">",
+    "</span></section><section class=\"itemx-codex-section\"><h4>📈 성장 기록</h4><p>",
+    "</p><small>ID · ",
+    "</small></section>",
+    "</div>"
+  ],
+  "ui-panel.110": "미분류",
+  "ui-panel.111": "미분류",
+  "ui-panel.112": "미상",
+  "ui-panel.113": "없음",
+  "ui-panel.114": "없음",
+  "ui-panel.115": [
+    "<section class=\"itemx-codex-section\"><h4>📜 기술 해설</h4><p>",
+    "</p></section>"
+  ],
+  "ui-panel.116": "기록 없음",
+  "ui-panel.117": "<i>기록 없음</i>",
+  "ui-panel.118": "미상",
+  "ui-panel.119": "미상",
+  "ui-panel.120": [
+    "",
+    "<span class=\"itemx2-codex-glyph\">",
+    "</span><span class=\"itemx2-codex-copy\"><strong>",
+    "</strong><small>",
+    " · ",
+    " · ",
+    "</small><span class=\"itemx2-codex-tags\"><i>✨ ",
+    "</i><i>",
+    "</i>",
+    "</span></span><span class=\"itemx2-skill-meta\"><small>소모</small><b>",
+    "</b><small>재사용</small><b>",
+    "</b></span><span class=\"itemx2-mastery\">",
+    "</span>"
+  ],
+  "ui-panel.121": "없음",
+  "ui-panel.122": "없음",
+  "ui-panel.123": "숙련 미상",
+  "ui-panel.124": [
+    "숙련 ",
+    "%"
+  ],
+  "ui-panel.125": "Lv.미상",
+  "ui-panel.126": "채팅 진입 대기",
+  "ui-panel.127": "ITEMX CODEX · 권한 및 설정",
+  "ui-panel.128": [
+    "조우 로어북 스캔 실패: ",
+    ""
+  ],
+  "ui-panel.129": [
+    "조우 로어북 스캔 완료 · 보완 ",
+    "건 · 정리 ",
+    "건 · 일치 ",
+    "건",
+    ""
+  ],
+  "ui-panel.130": [
+    " · 모호하여 제외 ",
+    "건"
+  ],
+  "ui-panel.131": [
+    "로어북 스캔 · 보완 ",
+    " · 정리 ",
+    " · 일치 ",
+    " · 모호 ",
+    ""
+  ],
+  "ui-panel.132": "출력 스트리밍이 끝난 뒤 로어북을 스캔할 수 있습니다.",
+  "ui-panel.133": "현재 채팅을 다시 불러오지 못했습니다.",
+  "ui-panel.134": "스캔 중 채팅이 바뀌었습니다. 다시 시도하세요.",
+  "ui-panel.135": "현재 채팅을 찾을 수 없습니다.",
+  "ui-panel.136": "현재 RisuAI에서 로어북 조회 API를 지원하지 않습니다.",
+  "ui-panel.137": [
+    "<div class=\"itemx2-boot-card\" role=\"status\" aria-live=\"polite\"><i></i><span><strong>",
+    "</strong><small>화면과 모델 연결을 준비하고 있습니다.</small></span></div>"
+  ],
+  "ui-panel.138": "ITEMX CODEX 초기화 중…",
+  "ui-panel.139": [
+    "<button class=\"itemx2-repair-one\" data-action=\"repair-one\" data-item-id=\"",
+    "\">이 항목의 누락 정보만 보완</button>"
+  ]
+}

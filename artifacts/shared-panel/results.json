@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "frame",
+    "width": 390,
+    "radioWithoutRewrite": true,
+    "detail": true,
+    "confirmedSearch": true,
+    "skillDetail": true,
+    "settingsToggle": true,
+    "cleanupConfirmation": true
+  },
+  {
+    "mode": "frame",
+    "width": 900,
+    "radioWithoutRewrite": true,
+    "detail": true,
+    "confirmedSearch": true,
+    "skillDetail": true,
+    "settingsToggle": true,
+    "cleanupConfirmation": true
+  },
+  {
+    "mode": "drawer",
+    "width": 390,
+    "radioWithoutRewrite": true,
+    "detail": true,
+    "confirmedSearch": true,
+    "skillDetail": true,
+    "settingsToggle": true,
+    "cleanupConfirmation": true
+  },
+  {
+    "mode": "drawer",
+    "width": 900,
+    "radioWithoutRewrite": true,
+    "detail": true,
+    "confirmedSearch": true,
+    "skillDetail": true,
+    "settingsToggle": true,
+    "cleanupConfirmation": true
+  }
+]

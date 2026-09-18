@@ -16,16 +16,16 @@
     )
       return null;
     const error = new Error(
-      '보조 모델 제공자를 사용할 수 없습니다. Risu 설정에서 보조 모델을 변경하거나 해당 제공자 플러그인을 켜세요.'
+      ITEMXText("aux.059")
     );
     error.code = 'AUX_PROVIDER_UNAVAILABLE';
     return error;
   }
 
   function auxStatusText() {
-    if (auxState.auxActive > 0) return auxWorkingLabel() || '보조 모델 처리 중';
+    if (auxState.auxActive > 0) return auxWorkingLabel() || ITEMXText("aux.058");
     const last = auxState.auxLast;
-    if (!last?.at) return '아직 실행 기록 없음';
+    if (!last?.at) return ITEMXText("aux.057");
     const time = new Date(last.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return `${last.label} · ${time}`;
   }
@@ -33,22 +33,22 @@
   function connectionSummary() {
     const hook =
       hostState.permissions.replacer === true
-        ? ['모델 훅 연결', 'on']
+        ? [ITEMXText("aux.056"), 'on']
         : hostState.permissions.replacer === false
-          ? ['모델 훅 오류', 'off']
-          : ['모델 훅 확인 전', 'warn'];
+          ? [ITEMXText("aux.055"), 'off']
+          : [ITEMXText("aux.054"), 'warn'];
     const dom =
       hostState.permissions.mainDom === true
-        ? ['화면 연결', 'on']
+        ? [ITEMXText("aux.053"), 'on']
         : hostState.permissions.mainDom === false
-          ? ['화면 권한 필요', 'off']
-          : ['화면 확인 전', 'warn'];
+          ? [ITEMXText("aux.052"), 'off']
+          : [ITEMXText("aux.051"), 'warn'];
     const listener =
       hostState.hooks.listener === 'unsupported'
-        ? ['Pocket 호환', 'warn']
+        ? [ITEMXText("aux.050"), 'warn']
         : hostState.hooks.listener
-          ? ['커밋 감지', 'on']
-          : ['커밋 감지 전', 'warn'];
+          ? [ITEMXText("aux.049"), 'on']
+          : [ITEMXText("aux.048"), 'warn'];
     return {
       hook,
       dom,
@@ -76,14 +76,14 @@
     }
     const button = await hostState.mainDoc.querySelector('.x-risu-itemx2-setting-connect');
     if (!button) return;
-    await button.setTextContent(workQueue.isActive('connect') ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기');
+    await button.setTextContent(workQueue.isActive('connect') ? ITEMXText("aux.047") : connection.ready ? ITEMXText("aux.046") : ITEMXText("aux.045"));
     if (workQueue.isActive('connect')) await button.addClass('x-risu-itemx2-root-setting-button-busy');
     else await button.removeClass('x-risu-itemx2-root-setting-button-busy');
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {
-    if (!hostState.mainDoc) return;
-    const button = await hostState.mainDoc.querySelector(selector);
+    if (!panelDocument()) return;
+    const button = await panelDocument().querySelector(selector);
     if (!button) return;
     await button.setTextContent(label);
     if (enabled === true) await button.addClass('x-risu-itemx2-setting-on');
@@ -94,7 +94,7 @@
     return change();
   }
 
-  const auxWorkingLabel = () => auxState.auxLast.state === 'idle' ? '보조 모델 처리 중' : auxState.auxLast.label;
+  const auxWorkingLabel = () => auxState.auxLast.state === 'idle' ? ITEMXText("aux.044") : auxState.auxLast.label;
 
   async function setAuxOutcome(state, label, events = null) {
     auxState.auxLast = { state, label, events, at: Date.now() };
@@ -121,7 +121,7 @@
       if (settingLabel) await settingLabel.setTextContent(auxStatusText());
       const runButton = await hostState.mainDoc.querySelector('.x-risu-itemx2-setting-aux-run');
       if (runButton) {
-        await runButton.setTextContent(auxState.auxActive > 0 ? '처리 중…' : '지금 검사');
+        await runButton.setTextContent(auxState.auxActive > 0 ? ITEMXText("aux.043") : ITEMXText("aux.042"));
         if (auxState.auxActive > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
         else await runButton.removeClass('x-risu-itemx2-root-setting-button-busy');
       }
@@ -139,8 +139,8 @@
     }
   }
 
-  async function runAuxModel(prompt, label = '보조 모델 처리 중') {
-    if (typeof Risuai.runLLMModel !== 'function') throw new Error('이 PocketRisu에는 runLLMModel API가 없습니다.');
+  async function runAuxModel(prompt, label = ITEMXText("aux.041")) {
+    if (typeof Risuai.runLLMModel !== 'function') throw new Error(ITEMXText("aux.040"));
     auxState.auxActive += 1;
     auxState.auxLast = { state: 'running', label, at: Date.now(), events: null };
     uiState.status = label;
@@ -150,21 +150,21 @@
         withTimeout(
           Risuai.runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: true }),
           90000,
-          '보조 모델이 90초 안에 응답하지 않았습니다.'
+          ITEMXText("aux.039")
         )
       );
       const providerError = auxiliaryProviderError(result);
       if (providerError) throw providerError;
       workQueue.forget('aux-provider');
 
-      auxState.auxLast = { state: 'done', label: '보조 모델 응답 수신', at: Date.now(), events: null };
+      auxState.auxLast = { state: 'done', label: ITEMXText("aux.038"), at: Date.now(), events: null };
       return result;
     } catch (error) {
       const providerError = auxiliaryProviderError(error) || error;
       if (providerError?.code === 'AUX_PROVIDER_UNAVAILABLE') {
         workQueue.remember('aux-provider', 'unavailable');
       }
-      auxState.auxLast = { state: 'failed', label: '보조 모델 호출 실패', at: Date.now(), events: null };
+      auxState.auxLast = { state: 'failed', label: ITEMXText("aux.037"), at: Date.now(), events: null };
       throw providerError;
     } finally {
       auxState.auxActive = Math.max(0, auxState.auxActive - 1);
@@ -505,10 +505,10 @@
         ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.`
         : '';
       const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${ITEMXCore.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${ITEMXCodex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
-      uiState.status = '보조 출력 검토 중';
-      const response = await runAuxModel(prompt, '보조 누락 복구 중');
+      uiState.status = ITEMXText("aux.036");
+      const response = await runAuxModel(prompt, ITEMXText("aux.035"));
       const raw = modelText(response);
-      if (!raw) throw new Error('보조 출력이 비어 있습니다.');
+      if (!raw) throw new Error(ITEMXText("aux.034"));
       const itemReconciler = auxiliaryEventReconciler(
         'item',
         snapshot.registry,
@@ -565,7 +565,7 @@
         try {
           const repairResponse = await runAuxModel(
             ITEMXQuality.repairPrompt(partials, committedNarrative),
-            '아이템 상세정보 보완 중'
+            ITEMXText("aux.033")
           );
           const repairRaw = modelText(repairResponse);
           const repairParsed = repairRaw ? ITEMXCore.extractResponse(repairRaw, validationRegistry) : { events: [] };
@@ -607,7 +607,7 @@
         rejected: rejectedIds.length
       });
       const allErrors = [...parsed.errors, ...codexParsed.errors];
-      if (!valid.length && allErrors.length) throw new Error(`보조 출력 검증 실패 (${allErrors[0]})`);
+      if (!valid.length && allErrors.length) throw new Error(ITEMXText("aux.032", allErrors[0]));
 
       const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return null;
@@ -628,15 +628,15 @@
           };
           await saveChat(ctx.characterIndex, ctx.chatIndex, next);
           if (pipelineState.activeContextKey === ctx.key) {
-            uiState.status = '보조 출력 · 근거 불충분';
-            await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0);
+            uiState.status = ITEMXText("aux.031");
+            await setAuxOutcome('failed', ITEMXText("aux.030"), 0);
           }
           return [];
         }
         await rememberAuxiliaryZero(ctx, guardKey);
         if (pipelineState.activeContextKey === ctx.key) {
-          uiState.status = '보조 출력 · 누락 없음';
-          await setAuxOutcome('done', '보조 검사 완료 · 누락 없음', 0);
+          uiState.status = ITEMXText("aux.029");
+          await setAuxOutcome('done', ITEMXText("aux.028"), 0);
         }
         return valid;
       }
@@ -695,49 +695,49 @@
         pipelineState.cachedLoaded = null;
         pipelineState.generation += 1;
 
-        uiState.status = `보조 출력 · ${valid.length}건 복구`;
+        uiState.status = ITEMXText("aux.027", valid.length);
       }
       if (stillActive)
         await setAuxOutcome(
           unresolvedPartials.length || rejectedIds.length ? 'failed' : 'done',
           unresolvedPartials.length || rejectedIds.length
-            ? `일부 보완 실패 · ${unresolvedPartials.length + rejectedIds.length}건 · 기존 정보 보존`
-            : `보조 복구 완료 · ${valid.length}건`,
+            ? ITEMXText("aux.026", unresolvedPartials.length + rejectedIds.length)
+            : ITEMXText("aux.025", valid.length),
           valid.length
         );
       return valid;
     })().catch(async (error) => {
       fail('auxiliary recovery', error);
       if (pipelineState.activeContextKey === ctx.key) {
-        uiState.status = '보조 출력 실패';
-        await setAuxOutcome('failed', `보조 검사 실패 · ${String(error?.message || error).slice(0, 80)}`);
+        uiState.status = ITEMXText("aux.024");
+        await setAuxOutcome('failed', ITEMXText("aux.023", String(error?.message || error).slice(0, 80)));
       }
       return error?.code === 'AUX_PROVIDER_UNAVAILABLE' ? [] : null;
     });
   }
 
   async function runItemModel(task, loaded, target = null, instruction = '') {
-    if (typeof Risuai.runLLMModel !== 'function') throw new Error('이 PocketRisu에는 runLLMModel API가 없습니다.');
+    if (typeof Risuai.runLLMModel !== 'function') throw new Error(ITEMXText("aux.022"));
     const settings = await outputSettings(loaded.character);
-    if (!settings.itemsEnabled) throw new Error('무기·아이템 기능이 OFF입니다. 설정에서 먼저 켜세요.');
+    if (!settings.itemsEnabled) throw new Error(ITEMXText("aux.021"));
     const targetJson = target ? JSON.stringify(target) : 'null';
     const prompt = `${itemxProtocolText(settings.rarityMode)}\n\nYou are running a manual ITEMX management transaction. Output ITEMX transport only; no prose and no code fence.\n${task === 'create' ? 'Create exactly one genuinely new item from the user description. Emit exactly one complete itemExam with a new snake_case id.' : 'Reappraise exactly the supplied existing item. Emit exactly one complete itemExam, keep its id, possession, location, slot and count, and update descriptive/appraisal fields according to the instruction. Never remove it and never create another id.'}\n\nCURRENT INVENTORY:\n${ITEMXCore.anchor(loaded.snapshot)}\n\nTARGET ITEM JSON:\n${targetJson}\n\nUSER INSTRUCTION:\n${instruction || (task === 'create' ? 'Create a fitting new item.' : 'Roll a fresh appraisal while preserving established facts not contradicted by context.')}`;
-    const response = await runAuxModel(prompt, task === 'create' ? '신규 아이템 생성 중' : '아이템 재감정 중');
+    const response = await runAuxModel(prompt, task === 'create' ? ITEMXText("aux.020") : ITEMXText("aux.019"));
     const raw = modelText(response);
-    if (!raw) throw new Error('보조 모델이 빈 응답을 반환했습니다.');
+    if (!raw) throw new Error(ITEMXText("aux.018"));
     const parsed = ITEMXCore.extractResponse(raw, loaded.snapshot.registry);
     if (parsed.errors.length || parsed.events.length !== 1 || parsed.events[0].kind !== 'exam')
-      throw new Error(`감정 결과 검증 실패 (${parsed.errors[0] || `events=${parsed.events.length}`})`);
+      throw new Error(ITEMXText("aux.017", parsed.errors[0] || `events=${parsed.events.length}`));
     const event = parsed.events[0];
     if (task === 'create') {
       if (loaded.snapshot.registry.items[event.item.id])
-        throw new Error('신규 생성이 기존 아이템 id를 덮으려 했습니다.');
+        throw new Error(ITEMXText("aux.016"));
       event.item.possession = 'owned';
       event.item.location = 'inventory';
       event.item.slot = null;
       event.item.count = Math.max(1, Number(event.item.count) || 1);
     } else {
-      if (!target || event.item.id !== target.id) throw new Error('재감정 결과가 대상 id를 보존하지 않았습니다.');
+      if (!target || event.item.id !== target.id) throw new Error(ITEMXText("aux.015"));
       event.item.possession = target.possession;
       event.item.location = target.location;
       event.item.slot = target.slot || null;
@@ -747,23 +747,23 @@
   }
 
   async function repairOneItem(loaded, id) {
-    if (!loaded?.itemsEnabled) throw new Error('아이템 기능을 먼저 활성화하세요.');
-    if (!loaded || auxState.auxActive) throw new Error('이미 보조 모델이 처리 중입니다.');
+    if (!loaded?.itemsEnabled) throw new Error(ITEMXText("aux.014"));
+    if (!loaded || auxState.auxActive) throw new Error(ITEMXText("aux.013"));
     const record = presentationRecord('item', id);
     const missing = record.review?.missing || [];
-    if (!missing.length) throw new Error('이 아이템에 기록된 미해결 필드가 없습니다.');
+    if (!missing.length) throw new Error(ITEMXText("aux.012"));
 
     return (async () => {
       const active = await context();
-      if (!active || active.key !== loaded.key) throw new Error('채팅이 변경되었습니다.');
+      if (!active || active.key !== loaded.key) throw new Error(ITEMXText("aux.011"));
       const chat = active.chat;
       if (chat.isStreaming || (chat.message || []).some((one) => one.isStreaming || one.bgContinue))
-        throw new Error('출력 완료 후 다시 시도하세요.');
+        throw new Error(ITEMXText("aux.010"));
       const sourceIndex = record.review?.evidenceIndex ?? record.messageIndex;
       const source = messageData(chat.message?.[sourceIndex]);
       const reg = rebuildWithManual(chat).registry,
         item = reg.items[id];
-      if (!item || item.possession === 'removed') throw new Error('현재 아이템을 찾을 수 없습니다.');
+      if (!item || item.possession === 'removed') throw new Error(ITEMXText("aux.009"));
       const conversation = auxiliaryConversationContext(chat, sourceIndex);
       const narrative = [
         conversation.triggeringUser,
@@ -771,39 +771,39 @@
         auxiliaryVisibleText(source, { itemRefs: false })
       ].join('\n\n');
       const evidence = ITEMXQuality.detectItemEvidence(narrative, item, Object.values(reg.items));
-      if (!evidence.segment) throw new Error('원문 근거를 찾지 못했습니다. 아이템은 변경하지 않았습니다.');
+      if (!evidence.segment) throw new Error(ITEMXText("aux.008"));
       const partial = { event: { kind: 'exam', item }, missing, evidence };
       const raw = modelText(
-        await runAuxModel(ITEMXQuality.repairPrompt([partial], narrative), `${item.name} · 누락 정보 보완 중`)
+        await runAuxModel(ITEMXQuality.repairPrompt([partial], narrative), ITEMXText("aux.007", item.name))
       );
       const parsed = ITEMXCore.extractResponse(raw, reg);
       const partialMap = new Map([[id, partial]]);
       const events = parsed.events.map((event) => ITEMXQuality.acceptRepair(event, partialMap, reg)).filter(Boolean);
       if (events.length !== 1 || parsed.events.length !== 1 || parsed.errors.length)
-        throw new Error('근거와 일치하는 단일 보완 결과가 없습니다. 기존 정보는 보존됩니다.');
+        throw new Error(ITEMXText("aux.006"));
       const latest = await context();
       if (!latest || latest.key !== loaded.key || JSON.stringify(latest.chat) !== JSON.stringify(chat))
-        throw new Error('처리 중 대화가 변경되어 보완을 적용하지 않았습니다.');
+        throw new Error(ITEMXText("aux.005"));
       const remaining = missing.filter((key) => !Object.prototype.hasOwnProperty.call(events[0].patch.fields, key));
       // This transaction already owns the queue; commitManualEvents only writes.
       await commitManualEvents(
         { ...loaded, chat: latest.chat, expectedChat: latest.chat },
         events,
-        '누락 정보 보완',
+        ITEMXText("aux.004"),
         { source: 'auxiliary', checked: true, missing: remaining, evidenceIndex: sourceIndex },
         false
       );
       if (pipelineState.activeContextKey === loaded.key)
         await setAuxOutcome(
           remaining.length ? 'failed' : 'done',
-          remaining.length ? `일부 보완 완료 · 미해결 ${remaining.length}개 필드` : '누락 정보 보완 완료',
+          remaining.length ? ITEMXText("aux.003", remaining.length) : ITEMXText("aux.002"),
           events.length
         );
     })()
       .then(() => rebuildCurrent())
       .catch(async (error) => {
         if (pipelineState.activeContextKey === loaded.key && !hostState.unloading)
-          await setAuxOutcome('failed', '누락 정보 보완 실패 · 기존 정보 보존', 0);
+          await setAuxOutcome('failed', ITEMXText("aux.001"), 0);
         throw error;
       })
       .finally(() => {});

@@ -20,6 +20,6 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
   };
   for (const enabled of [true, false]) for (const tab of ['inventory', 'skills', 'bestiary', 'settings']) for (const open of [true, false]) {
     const input = { ...loaded, enabled };
-    assert.equal(next.rootInventoryHtml(input, open, tab), old.rootInventoryHtml(input, open, tab), `${enabled}/${tab}/${open}`);
+    assert.equal(next.rootInventoryHtml(input, open, tab).replace(/<!--ITEMX2-SEARCH-START-->[\s\S]*?<!--ITEMX2-SEARCH-END-->/g, ''), old.rootInventoryHtml(input, open, tab), `${enabled}/${tab}/${open}`);
   }
 });

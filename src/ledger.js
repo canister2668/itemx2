@@ -79,7 +79,7 @@
   }
 
   const FROZEN_MESSAGE =
-    'ITEMX 기록을 이 버전에서 읽을 수 없어 안전을 위해 읽기 전용으로 잠갔습니다. 설정 → 백업에서 먼저 백업을 내려받으세요.';
+    ITEMXText("ledger.030");
 
   function prefixMarkerFingerprint(chat, boundary) {
     let source = `b:${boundary}`;
@@ -692,12 +692,12 @@
       const storageWarning = itemxStorageFootprint(latestChat).totalBytes >= ITEMX_STORAGE_WARNING_BYTES;
       const storageStatus =
         [
-          storageWarning ? '저장 용량 16 MiB 이상 · 현재 상태 보존 중' : '',
-          storagePruned ? '이전 버전에서 저장 항목 축소 이력 있음' : ''
+          storageWarning ? ITEMXText("ledger.029") : '',
+          storagePruned ? ITEMXText("ledger.028") : ''
         ]
           .filter(Boolean)
-          .join(' · ') || '정상';
-      uiState.status = `${storageStatus} · 아이템 ${snapshot.registry.order.length} · 스킬 ${codexSnapshot.skills.order.length} · 도감 ${codexSnapshot.monsters.order.length}`;
+          .join(' · ') || ITEMXText("ledger.027");
+      uiState.status = ITEMXText("ledger.026", storageStatus, snapshot.registry.order.length, codexSnapshot.skills.order.length, codexSnapshot.monsters.order.length);
       const loaded = {
         ...ctx,
         chat: latestChat,
@@ -750,21 +750,21 @@
 
   function requireBackupIdle(chat) {
     if (!chat || chat.isStreaming || chat.message?.some((m) => m.isStreaming || m.bgContinue))
-      throw new Error('응답이 끝난 뒤 백업을 저장하거나 불러와 주세요.');
+      throw new Error(ITEMXText("ledger.025"));
   }
 
   async function exportCurrentBackup(key) {
     const ctx = await context();
-    if (!ctx || ctx.key !== key) throw new Error('채팅이 변경되었습니다. 백업 화면을 다시 열어 주세요.');
+    if (!ctx || ctx.key !== key) throw new Error(ITEMXText("ledger.024"));
     requireBackupIdle(ctx.chat);
     return ITEMXBackup.capture(backupState(ctx));
   }
 
   async function prepareBackupImport(text, key, mode = 'empty') {
-    if (!['empty', 'replace'].includes(mode)) throw new Error('불러오기 방식을 선택해 주세요.');
+    if (!['empty', 'replace'].includes(mode)) throw new Error(ITEMXText("ledger.023"));
     const value = ITEMXBackup.parse(text),
       ctx = await context();
-    if (!ctx || ctx.key !== key) throw new Error('채팅이 변경되었습니다. 백업 화면을 다시 열어 주세요.');
+    if (!ctx || ctx.key !== key) throw new Error(ITEMXText("ledger.022"));
     requireBackupIdle(ctx.chat);
     const loaded = backupState(ctx);
     const previousCounts = [
@@ -773,21 +773,21 @@
       loaded.codexSnapshot.monsters.order.length
     ];
     if (mode === 'empty' && previousCounts.some(Boolean))
-      throw new Error('이미 ITEMX 기록이 있습니다. 덮어쓰기를 선택하거나 새 채팅에서 불러와 주세요.');
+      throw new Error(ITEMXText("ledger.021"));
     if (mode !== 'replace' && !ITEMXBackup.counts(value).some(Boolean))
-      throw new Error('불러올 ITEMX 기록이 없는 백업입니다.');
+      throw new Error(ITEMXText("ledger.020"));
     return { value, key, mode, previousCounts, expected: JSON.stringify(ctx.chat) };
   }
 
   async function commitBackupImport(preview) {
     return (async () => {
       const ctx = await context();
-      if (!ctx || ctx.key !== preview.key) throw new Error('채팅이 변경되어 불러오기를 취소했습니다.');
+      if (!ctx || ctx.key !== preview.key) throw new Error(ITEMXText("ledger.019"));
       requireBackupIdle(ctx.chat);
       if (JSON.stringify(ctx.chat) !== preview.expected)
-        throw new Error('미리보기 이후 채팅이 변경되었습니다. 내용을 다시 확인해 주세요.');
+        throw new Error(ITEMXText("ledger.018"));
       const checked = await prepareBackupImport(JSON.stringify(preview.value), preview.key, preview.mode);
-      if (checked.expected !== preview.expected) throw new Error('채팅이 변경되었습니다. 내용을 다시 확인해 주세요.');
+      if (checked.expected !== preview.expected) throw new Error(ITEMXText("ledger.017"));
       const value = checked.value;
       const restored = ITEMXBackup.restore(value, ctx.chat);
       const boundary = (ctx.chat.message || []).length - 1;
@@ -831,7 +831,7 @@
         JSON.stringify(latest) !== preview.expected ||
         JSON.stringify(active.chat) !== preview.expected
       )
-        throw new Error('저장 직전 채팅이 변경되어 불러오기를 취소했습니다.');
+        throw new Error(ITEMXText("ledger.016"));
       await saveChat(ctx.characterIndex, ctx.chatIndex, next);
       pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
@@ -843,8 +843,8 @@
       refreshLatest(next);
       uiState.status =
         preview.mode === 'replace'
-          ? '덮어쓰기 완료 · 백업 기록으로 교체했습니다'
-          : '채팅 이사 완료 · 백업 기록을 불러왔습니다';
+          ? ITEMXText("ledger.015")
+          : ITEMXText("ledger.014");
       return value;
     })();
   }
@@ -881,14 +881,14 @@
 
   async function cleanCurrentChatItemx() {
     const ctx = await context();
-    if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
+    if (!ctx) throw new Error(ITEMXText("ledger.013"));
     const result = await (async () => {
       const active = await context();
-      if (!active || active.key !== ctx.key) throw new Error('정리 중 채팅이 바뀌었습니다. 다시 시도하세요.');
+      if (!active || active.key !== ctx.key) throw new Error(ITEMXText("ledger.012"));
       const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-      if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
+      if (!latest) throw new Error(ITEMXText("ledger.011"));
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
-        throw new Error('출력 스트리밍이 끝난 뒤 정리할 수 있습니다.');
+        throw new Error(ITEMXText("ledger.010"));
       }
       const cleaned = cleanChatPluginData(latest);
       workQueue.assertCurrent();
@@ -911,7 +911,7 @@
     pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
     pipelineState.generation += 1;
-    uiState.status = `현재 채팅 정리 완료 · 마커 ${result.removedMarkers}개`;
+    uiState.status = ITEMXText("ledger.009", result.removedMarkers);
     const loaded = await rebuildCurrent();
     if (loaded) loaded.enabled = false;
     return { ...result, loaded };
@@ -939,14 +939,14 @@
 
   async function compactCurrentChatStorage() {
     const ctx = await context();
-    if (!ctx) throw new Error('현재 채팅을 찾을 수 없습니다.');
+    if (!ctx) throw new Error(ITEMXText("ledger.008"));
     const result = await (async () => {
       const active = await context();
-      if (!active || active.key !== ctx.key) throw new Error('최적화 중 채팅이 바뀌었습니다. 다시 시도하세요.');
+      if (!active || active.key !== ctx.key) throw new Error(ITEMXText("ledger.007"));
       const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-      if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
+      if (!latest) throw new Error(ITEMXText("ledger.006"));
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue))
-        throw new Error('출력 스트리밍이 끝난 뒤 최적화할 수 있습니다.');
+        throw new Error(ITEMXText("ledger.005"));
       if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
       const before = itemxStorageFootprint(latest);
       const compacted = refreshReplayCache(latest, { force: true, keepMessages: 8 });
@@ -969,7 +969,7 @@
     presentationState.detailHtmlCache.clear();
     pipelineState.generation += 1;
     const saved = Math.max(0, result.before.totalBytes - result.after.totalBytes);
-    uiState.status = `저장소 최적화 완료 · ${Math.round(saved / 1024)} KiB 절감`;
+    uiState.status = ITEMXText("ledger.004", Math.round(saved / 1024));
     const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
     return { ...result, savedBytes: saved, loaded };
   }
@@ -1006,14 +1006,14 @@
     if (!latest) throw new Error('Chat disappeared during manual operation');
     if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
     if (loaded.expectedChat && JSON.stringify(latest) !== JSON.stringify(loaded.expectedChat))
-      throw new Error('저장 직전 대화가 변경되어 보완을 취소했습니다.');
+      throw new Error(ITEMXText("ledger.003"));
     const ledger = manualLedger(latest);
     const afterIndex = Math.max(-1, (latest.message || []).length - 1);
     const scratch = rebuildWithManual(latest).registry;
     for (const event of events) {
       const previous = ITEMXCore.comparisonView(scratch.items[event.item?.id || event.patch?.id]);
       const view = ITEMXCore.clone(ITEMXCore.applyEvent(scratch, event));
-      if (!view) throw new Error('수동 변경을 적용할 수 없습니다.');
+      if (!view) throw new Error(ITEMXText("ledger.002"));
       ledger.push({
         at: Date.now(),
         afterIndex,
@@ -1037,6 +1037,6 @@
         : {}
     );
     await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
-    uiState.status = `${label} · ${events.length}건`;
+    uiState.status = ITEMXText("ledger.001", label, events.length);
     return refresh ? rebuildCurrent() : null;
   }

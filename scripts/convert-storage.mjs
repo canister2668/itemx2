@@ -38,7 +38,7 @@ for (const chat of input.chats) {
   for (const field of ['skills', 'monsters', 'history']) assert.deepEqual(stable(newState.codexSnapshot[field]), stable(oldState.codexSnapshot[field]), `codex ${field} differs: ${chat.id}`);
   // The exact HTML gate also covers nonempty, real inventories from every chat.
   const settings = { enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'world', itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, effectsEnabled: true, fontScale: 'small', skin: 'dark', character: { name: 'conversion' }, chat: restored, key: chat.id };
-  for (const tab of ['inventory', 'skills', 'bestiary']) assert.equal(after.rootInventoryHtml({ ...settings, ...newState }, true, tab), before.rootInventoryHtml({ ...settings, ...oldState }, true, tab), `render differs: ${chat.id}/${tab}`);
+  for (const tab of ['inventory', 'skills', 'bestiary']) assert.equal(after.rootInventoryHtml({ ...settings, ...newState }, true, tab).replace(/<!--ITEMX2-SEARCH-START-->[\s\S]*?<!--ITEMX2-SEARCH-END-->/g, ''), before.rootInventoryHtml({ ...settings, ...oldState }, true, tab), `render differs: ${chat.id}/${tab}`);
   const log = persisted.scriptstate['itemx:log'];
   delete persisted.scriptstate['itemx:cache'];
   const uncached = after.backupState({ chat: after.storage.hydrate(persisted), character: { name: 'conversion' } });

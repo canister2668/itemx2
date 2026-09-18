@@ -228,11 +228,12 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(rootToggleHandler.includes('openRootInventory'), false);
   assert.equal(rootToggleHandler.includes('recoverAuxiliaryOutput'), false);
   const iframeSegHandler = source.slice(
-    source.indexOf("root.querySelectorAll('[data-seg]')"),
-    source.indexOf("root.querySelectorAll('[data-font]')")
+    source.indexOf('function rootSettingActions'),
+    source.indexOf('function characterAssetFingerprint')
   );
   assert.match(iframeSegHandler, /setAuxOutput\(loaded\.character, value\)/);
-  assert.equal(iframeSegHandler.includes('recoverAuxiliaryOutput'), false);
+  assert.match(source, /await installRootClickRouter\(nativeElement\(root\)\)/);
+  assert.doesNotMatch(source, /querySelectorAll\('\[data-seg\]'\)/);
   // Manual auxiliary check forces a pass and refreshes in place, never by
   // re-opening the panel.
   const auxRunHandler = source.slice(
@@ -442,7 +443,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /전투 도감/);
   assert.match(source, /디버그 진단/);
   assert.match(source, /debugEntries\.length > 30/);
-  assert.match(source, /data-action="debug-toggle"/);
+  assert.match(source, /hook: 'itemx2-setting-debug'/);
   assert.match(source, /ITEMX CODEX · ACTIVE CONTEXT/);
   assert.match(source, /AVAILABLE PORTRAIT ASSET NAMES/);
   assert.match(source, /portraitProtocolNames/);
@@ -573,7 +574,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.ok(positionHandler.length > 200, 'badge position action rows not found');
   assert.equal(positionHandler.includes('installMainStyle'), true);
   assert.equal(positionHandler.includes('openRootInventory'), false);
-  assert.match(source, /data-tab="settings"/);
+  assert.match(source, /itemx2-root-tab-\$\{key\}/);
   assert.match(source, /const schema = Object.freeze\(\{ enabled: true/);
   const bootstrap = source.slice(
     source.lastIndexOf('await loadBadgePosition()'),
@@ -591,7 +592,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /async function cleanCurrentChatItemx\(\)/);
   assert.match(source, /const CHAT_DATA_KEYS = \[/);
   assert.match(source, /await setEnabled\(ctx\.character, false\)/);
-  assert.match(source, /uiState\.cleanupArmedUntil = Date\.now\(\) \+ 7000/);
+  assert.match(source, /uiState\[key\] = Date\.now\(\) \+ 7000/);
   assert.match(source, /function reconcileStoredRefViews\(chat, preferredLatestIndex = null\)/);
   assert.match(source, /const keepInline = index === latestIndex/);
   assert.match(source, /\.chattext \.x-risu-itemx-card/);

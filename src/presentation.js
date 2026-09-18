@@ -65,7 +65,7 @@
   };
 
   const codexInlineStat = (label, value, from) => {
-    const now = ITEMXCore.esc(value || '미상');
+    const now = ITEMXCore.esc(value || ITEMXText("presentation.048"));
     const changed = from != null && String(from) !== '' && String(from) !== String(value);
     const body = changed ? `<s>${ITEMXCore.esc(from)}</s><u>→</u><em>${now}</em>` : `<span>${now}</span>`;
     return `<i class="${changed ? 'itemx2-inline-stat-changed' : ''}"><b>${ITEMXCore.esc(label)}</b>${body}</i>`;
@@ -83,35 +83,35 @@
     if (event.domain === 'skill') {
       const appraisal = codexInlineAppraisalStyle(entity, 'skill');
       const labels = {
-        learn: ['SKILL LEARNED', '습득'],
-        equip: ['SKILL EQUIPPED', '장착'],
-        unequip: ['SKILL UPDATED', '장착 해제'],
-        mastery: ['SKILL MASTERY UPDATED', '숙련 상승'],
-        seal: ['SKILL SEALED', '봉인'],
-        unseal: ['SKILL UNSEALED', '봉인 해제'],
-        forget: ['SKILL LOST', '상실']
+        learn: ['SKILL LEARNED', ITEMXText("presentation.047")],
+        equip: ['SKILL EQUIPPED', ITEMXText("presentation.046")],
+        unequip: ['SKILL UPDATED', ITEMXText("presentation.045")],
+        mastery: ['SKILL MASTERY UPDATED', ITEMXText("presentation.044")],
+        seal: ['SKILL SEALED', ITEMXText("presentation.043")],
+        unseal: ['SKILL UNSEALED', ITEMXText("presentation.042")],
+        forget: ['SKILL LOST', ITEMXText("presentation.041")]
       };
       const [kicker, state] =
         event.kind === 'exam'
-          ? ['NEW SKILL ARCHIVED', '최초 등록']
+          ? ['NEW SKILL ARCHIVED', ITEMXText("presentation.040")]
           : labels[action] ||
             (op === 'remove'
-              ? ['SKILL LOST', '상실']
+              ? ['SKILL LOST', ITEMXText("presentation.039")]
               : op === 'restore'
-                ? ['SKILL RESTORED', '복원']
-                : ['SKILL RECORD UPDATED', '큰 변화']);
+                ? ['SKILL RESTORED', ITEMXText("presentation.038")]
+                : ['SKILL RECORD UPDATED', ITEMXText("presentation.037")]);
       const mastery = entity.mastery != null && Number.isFinite(Number(entity.mastery)) ? Number(entity.mastery) : null;
       const priorMastery =
         previous.mastery != null && Number.isFinite(Number(previous.mastery)) ? Number(previous.mastery) : null;
       const quick = [
         [
           'LEVEL',
-          entity.level == null ? '미상' : `Lv.${entity.level}`,
+          entity.level == null ? ITEMXText("presentation.036") : `Lv.${entity.level}`,
           previous.level == null || previous.level === entity.level ? null : `Lv.${previous.level}`
         ],
-        ['숙련도', mastery == null ? '미상' : `${mastery}%`, priorMastery == null ? null : `${priorMastery}%`],
-        ['소모', entity.cost || '미상', previous.cost || null],
-        ['재사용', entity.cooldown || '미상', previous.cooldown || null]
+        [ITEMXText("presentation.035"), mastery == null ? ITEMXText("presentation.034") : `${mastery}%`, priorMastery == null ? null : `${priorMastery}%`],
+        [ITEMXText("presentation.033"), entity.cost || ITEMXText("presentation.032"), previous.cost || null],
+        [ITEMXText("presentation.031"), entity.cooldown || ITEMXText("presentation.030"), previous.cooldown || null]
       ]
         .map(([label, value, from]) => codexInlineStat(label, value, from))
         .join('');
@@ -119,54 +119,54 @@
         (entity.effects || []).slice(0, 2).join(' · ') ||
         entity.description ||
         entity.growth ||
-        '스킬 정보가 CODEX에 기록되었습니다.';
+        ITEMXText("presentation.029");
       const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
       const meta = [
-        entity.school || '미분류',
+        entity.school || ITEMXText("presentation.028"),
         entity.type || 'active',
         entity.status || 'learned',
-        entity.target ? `대상 ${entity.target}` : ''
+        entity.target ? ITEMXText("presentation.027", entity.target) : ''
       ]
         .filter(Boolean)
         .join(' · ');
       // The chips already carry every change, so the separate change block is gone.
-      return `<section class="${classes}" style="${appraisal.style}">${codexInlineBody(entity.affinity)}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc([entity.rank, meta].filter(Boolean).join(' · '))}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? '개방' : '효과'}</b><span>${ITEMXCore.esc(effect)}</span><em class="itemx2-inline-more">CODEX &#8250;</em></footer></section>`;
+      return `<section class="${classes}" style="${appraisal.style}">${codexInlineBody(entity.affinity)}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc([entity.rank, meta].filter(Boolean).join(' · '))}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? ITEMXText("presentation.026") : ITEMXText("presentation.025")}</b><span>${ITEMXCore.esc(effect)}</span><em class="itemx2-inline-more">CODEX &#8250;</em></footer></section>`;
     }
     const appraisal = codexInlineAppraisalStyle(entity, 'monster');
     const labels = {
-      encounter: ['ENCOUNTER RESUMED', '교전 개시'],
-      end: ['ENCOUNTER RESOLVED', '종료'],
-      escape: ['ENCOUNTER RESOLVED', '도주'],
-      defeat: ['ENCOUNTER RESOLVED', '격파'],
-      kill: ['ENCOUNTER RESOLVED', '사망'],
-      ally: ['ENCOUNTER UPDATED', '아군화']
+      encounter: ['ENCOUNTER RESUMED', ITEMXText("presentation.024")],
+      end: ['ENCOUNTER RESOLVED', ITEMXText("presentation.023")],
+      escape: ['ENCOUNTER RESOLVED', ITEMXText("presentation.022")],
+      defeat: ['ENCOUNTER RESOLVED', ITEMXText("presentation.021")],
+      kill: ['ENCOUNTER RESOLVED', ITEMXText("presentation.020")],
+      ally: ['ENCOUNTER UPDATED', ITEMXText("presentation.019")]
     };
     const [kicker, state] =
       event.kind === 'exam'
-        ? ['ENCOUNTER REGISTERED', entity.status === 'active' ? '교전 중' : '최초 등록']
+        ? ['ENCOUNTER REGISTERED', entity.status === 'active' ? ITEMXText("presentation.018") : ITEMXText("presentation.017")]
         : labels[action] ||
           (op === 'remove'
-            ? ['ENCOUNTER LOST', '기록 소실']
+            ? ['ENCOUNTER LOST', ITEMXText("presentation.016")]
             : op === 'restore'
-              ? ['ENCOUNTER RESTORED', '복원']
-              : ['ENCOUNTER UPDATED', '큰 변화']);
+              ? ['ENCOUNTER RESTORED', ITEMXText("presentation.015")]
+              : ['ENCOUNTER UPDATED', ITEMXText("presentation.014")]);
     const detail =
-      entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || '조우 정보가 전투 도감에 기록되었습니다.';
+      entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || ITEMXText("presentation.013");
     const warning =
       entity.active && ['hostile', 'sparring'].includes(String(entity.relation || ''))
         ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>'
         : '';
     const quick = [
-      ['분류', entity.kind || '미분류', null],
-      ['위협도', entity.threat || '미상', previous.threat || null],
-      ['관계', entity.relation || 'unknown', previous.relation || null],
-      ['상태', entity.status || 'unknown', previous.status || null]
+      [ITEMXText("presentation.012"), entity.kind || ITEMXText("presentation.011"), null],
+      [ITEMXText("presentation.010"), entity.threat || ITEMXText("presentation.009"), previous.threat || null],
+      [ITEMXText("presentation.008"), entity.relation || 'unknown', previous.relation || null],
+      [ITEMXText("presentation.007"), entity.status || 'unknown', previous.status || null]
     ]
       .map(([label, value, from]) => codexInlineStat(label, value, from))
       .join('');
     const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
     const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
-    return `<section class="${classes}" style="${appraisal.style}">${warning}${ended ? '<span class="itemx2-inline-seal">&#35352;&#37636;</span>' : '<span class="itemx2-inline-scan"></span>'}<div class="itemx2-inline-main"><span class="itemx2-inline-icon">${portrait ? `<img src="${ITEMXCore.esc(portrait)}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span>${ITEMXCore.esc(encounterEmoji(entity))}</span>`}</span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc([entity.kind, aliases || entity.description].filter(Boolean).join(' · ') || '전투 도감 기록')}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${ended ? '결과' : '최근'}</b><span>${ITEMXCore.esc(detail)}</span><em class="itemx2-inline-more">도감 &#8250;</em></footer></section>`;
+    return ITEMXText("presentation.003", classes, appraisal.style, warning, ended ? '<span class="itemx2-inline-seal">&#35352;&#37636;</span>' : '<span class="itemx2-inline-scan"></span>', portrait ? `<img src="${ITEMXCore.esc(portrait)}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span>${ITEMXCore.esc(encounterEmoji(entity))}</span>`, kicker, ITEMXCore.esc(entity.name || entity.id), ITEMXCore.esc([entity.kind, aliases || entity.description].filter(Boolean).join(' · ') || ITEMXText("presentation.004")), quick, state, ended ? ITEMXText("presentation.006") : ITEMXText("presentation.005"), ITEMXCore.esc(detail));
   }
 
   function presentationPayloads(text) {
@@ -368,7 +368,7 @@
       .replace(ITEMX_REF_RE, (_, ref, inline) => {
         found = true;
         const payload = pipelineState.eventPayloads.get(`item:${ref}`) || inlineViewPayload(inline, 'item');
-        if (!payload || payload.error) return `<span class="itemx-event-chip">📦 ITEMX CODEX · 기록 복원 중</span>`;
+        if (!payload || payload.error) return ITEMXText("presentation.002");
         const motion = markerMotion(`ITEMX2@${ref}`);
         const html = renderPayload(`item-ref:${ref}`, payload, motion);
         if (html) {
@@ -384,7 +384,7 @@
         found = true;
         if (!inline && !pipelineState.latestMarkers.has(`CODEX2@${ref}`)) return '';
         const payload = pipelineState.eventPayloads.get(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
-        if (!payload || payload.error) return inline ? `<span class="itemx-event-chip">✦ 도감 기록 복원 중</span>` : '';
+        if (!payload || payload.error) return inline ? ITEMXText("presentation.001") : '';
         const html = decorateInlineEvent(
           codexInlineEventHtml(
             payload,

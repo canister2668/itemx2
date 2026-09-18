@@ -3906,16 +3906,7 @@ const ITEMXState = (() => {
         storageCleanupArmedUntil: 0,
         historyView: { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 },
         historyRows: [],
-        view: {
-    tab: 'inventory',
-    filter: 'all',
-    query: '',
-    selected: null,
-    selectedSkill: null,
-    selectedMonster: null,
-    manageId: null,
-    motion: true
-  }
+        view: { query: '' }
       }),
     });
   }
@@ -4140,6 +4131,40 @@ const ITEMXSettings = (() => {
   const ITEMX_AUX_ZERO_MAX_BYTES = 65536;
 
 
+  const nativeElements = new WeakMap();
+  function nativeElement(node) {
+    if (!node) return null;
+    if (nativeElements.has(node)) return nativeElements.get(node);
+    const local = value => String(value).replaceAll('x-risu-', '');
+    const port = {
+      node,
+      querySelector: async selector => nativeElement(node.querySelector(local(selector))),
+      createElement: async tag => nativeElement(document.createElement(tag)),
+      getParent: async () => nativeElement(node.parentElement),
+      getBoundingClientRect: async () => node.getBoundingClientRect(),
+      textContent: async () => node.textContent,
+      setTextContent: async value => { node.textContent = value; },
+      setInnerHTML: async value => { node.innerHTML = value; },
+      getInnerHTML: async () => node.innerHTML,
+      setClassName: async value => { node.className = local(value); },
+      addClass: async value => node.classList.add(local(value)),
+      removeClass: async value => node.classList.remove(local(value)),
+      setAttribute: async (key, value) => node.setAttribute(key, key === 'class' ? local(value) : value),
+      getAttribute: async key => node.getAttribute(key),
+      removeAttribute: async key => node.removeAttribute(key),
+      appendChild: async child => node.appendChild(child.node),
+      remove: async () => node.remove(),
+      addEventListener: async (type, handler, capture) => { node.addEventListener(type, handler, capture); return handler; },
+      removeEventListener: async (type, handler, capture) => node.removeEventListener(type, handler, capture)
+    };
+    nativeElements.set(node, port);
+    return port;
+  }
+  function panelDocument() {
+    return uiState.panelOpen && typeof document !== 'undefined' ? nativeElement(document) : hostState.mainDoc;
+  }
+
+
   const ITEMX_STYLE = ":root { color-scheme: dark; font-family: Inter, Pretendard, \"Noto Sans KR\", sans-serif; }\n    * { box-sizing: border-box; }\n    body { margin: 0; min-height: 100vh; background: #080a10; color: #e6ebf4; }\n    button, select { font: inherit; }\n    button { color: inherit; }\n\n    .risu-shell { min-height: 100vh; background: radial-gradient(900px 560px at 50% 20%, #171b27 0, #0b0e15 55%, #07090e 100%); }\n    .risu-topbar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #202532; background: rgba(12,15,23,.94); color: #aeb7c9; font-size: 13px; }\n    .risu-topbar strong { color: #f2f4f8; font-size: 14px; }\n    .stage { width: min(920px, 100%); margin: 0 auto; padding: 22px 18px 64px; }\n    .demo-note { display: flex; align-items: center; gap: 9px; margin: 0 auto 14px; width: min(760px,100%); padding: 9px 12px; border: 1px solid #30394a; border-radius: 10px; background: #111622; color: #919db2; font-size: 12px; line-height: 1.45; }\n    .demo-note b { color: #d8b25c; white-space: nowrap; }\n\n    .lab { width: min(760px, 100%); margin: 0 auto 14px; padding: 12px; border: 1px solid #252c3a; border-radius: 13px; background: rgba(13,17,26,.96); }\n    .lab-title { margin-bottom: 9px; color: #8e9ab0; font-size: 10px; font-weight: 800; letter-spacing: .22em; }\n    .lab-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }\n    .lab label { display: grid; gap: 5px; color: #79869d; font-size: 11px; }\n    .lab select, .lab button { min-height: 34px; border: 1px solid #31394a; border-radius: 8px; background: #171c28; color: #d9dfeb; padding: 0 9px; }\n    .lab button { cursor: pointer; }\n    .lab button[aria-pressed=\"true\"] { border-color: #806a3d; background: #2a2418; color: #f0d79d; }\n\n    \n    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
 
   const ITEMX_CHAT_STYLE = "    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .itemx2-never-stage{padding:12px 8px 40px}.itemx2-never-topbar{padding:0 12px}.itemx2-never-lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.itemx2-never-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
@@ -4296,6 +4321,8 @@ const ITEMXSettings = (() => {
   const ITEMX_SETTINGS_STYLE = `.itemx2-root-empty{padding:2rem;text-align:center;color:#77839c}.itemx2-root-settings{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.itemx2-position-choice,.itemx2-font-choice{display:grid;place-items:center;min-height:38px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#9aabc4;cursor:pointer}.itemx2-font-choice.itemx2-font-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-position-on{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-root-setting-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #1c2331;border-radius:12px;background:#0d121c}.itemx2-root-setting-card span{display:grid;gap:3px}.itemx2-root-setting-card small{color:#77839c;line-height:1.4}.itemx2-root-setting-button{min-height:36px;padding:0 11px;border:1px solid #2b3547;border-radius:9px;background:#151d2a;color:#cbd7e9;cursor:pointer}.itemx2-status-row{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:5px!important;margin-top:3px}.itemx2-status-chip{display:inline-flex!important;padding:3px 7px;border:1px solid #354157;border-radius:999px;background:#131a26;color:#93a2ba;font-size:.66rem;font-weight:800;font-style:normal}.itemx2-status-chip-warn{border-color:#6a5530;color:#e8c987;background:#241d10}.itemx2-root-setting-button-primary{border-color:#6e5a32;background:#2a2316;color:#f0d79d}.itemx2-setting-on{border-color:#4e8968!important;background:#12241a!important;color:#a9e6c2!important}.itemx2-setting-cleanup{border-color:#65333a!important;background:#241216!important;color:#ffadb5!important}.itemx2-root-setting-button:disabled,.itemx2-root-setting-button-busy{opacity:.58;cursor:default;pointer-events:none}.itemx2-manager-fold{border:1px solid #283247;border-radius:12px;background:#0b1019;overflow:hidden}.itemx2-manager-fold summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;cursor:pointer;color:#f0d79d;font-weight:800;list-style:none}.itemx2-manager-fold summary::-webkit-details-marker{display:none}.itemx2-manager-fold summary::after{content:'＋';color:#8291aa}.itemx2-manager-fold[open] summary::after{content:'－'}.itemx2-manager-body{display:grid;gap:10px;padding:0 12px 12px}.itemx2-manager-label{display:grid;gap:5px;color:#8592a8;font-size:.72rem}.itemx2-manager-editor{min-height:58px;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;white-space:pre-wrap;overflow-wrap:anywhere;outline:none}.itemx2-manager-editor:focus{border-color:#637ba3}.itemx2-manager-list{display:grid;gap:7px}.itemx2-manager-actions{display:flex;gap:5px}.itemx2-manager-actions button{min-height:31px;padding:0 8px;border:1px solid #344159;border-radius:7px;background:#172131;color:#cbd7e9;cursor:pointer}.itemx2-manager-actions .itemx2-manager-remove{border-color:#65333a;color:#ffadb5}.itemx2-manager-create{display:grid;gap:7px;padding-top:3px;border-top:1px solid #1d2737}.itemx2-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.itemx2-domain-card{display:grid;gap:5px;padding:10px;border:1px solid #273247;border-radius:10px;background:#101722;color:#dce5f2;text-align:left}.itemx2-domain-card small{color:#718199;font-size:.62rem}.itemx2-debug-fold{border-color:#334056}.itemx2-debug-body{display:grid;gap:8px;padding:0 12px 12px}.itemx2-debug-grid{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 8px;font-size:.64rem}.itemx2-debug-grid b{color:#718199}.itemx2-debug-grid span{color:#c4cfdf;overflow-wrap:anywhere}.itemx2-debug-log{display:grid;gap:4px;max-height:180px;overflow:auto;padding:8px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere}`;
 
   const rootDrawerStyle = () => `
+.itemx2-search-controls{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid #354157}.itemx2-search-query{flex:1;min-width:0;min-height:28px;padding:5px 7px;border:1px solid #536684;border-radius:6px;font-size:.75rem;overflow-wrap:anywhere}.itemx2-search-query:empty:before{content:attr(data-placeholder);opacity:.6}.itemx2-search-controls button{flex:none;border:1px solid #536684;border-radius:6px;padding:4px 8px;background:transparent;color:inherit;font-size:.7rem}
+
 .itemx2-root-drawer,.itemx2-root-drawer *{box-sizing:border-box}
 .itemx2-root-drawer{--itemx-ui-scale:1;--itemx-text-xs:calc(.62rem * var(--itemx-ui-scale));--itemx-text-sm:calc(.70rem * var(--itemx-ui-scale));--itemx-text-md:calc(.82rem * var(--itemx-ui-scale));--itemx-text-lg:calc(1.08rem * var(--itemx-ui-scale));position:fixed;inset:0;z-index:49;pointer-events:none;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif;color:#e6ebf4}.itemx2-root-drawer.itemx2-font-medium{--itemx-ui-scale:1.12}.itemx2-root-drawer.itemx2-font-large{--itemx-ui-scale:1.25}
 .itemx2-root-control{position:fixed!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
@@ -4726,7 +4753,9 @@ ${codexPageStyle()}
     }
   }
 
-  function fallbackDocumentHead() { return `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`; }
+  function fallbackDocumentHead() { return `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>${ITEMX_STYLE}${rootDrawerStyle()}${ITEMX_FRAME_STYLE}\n${codexPageStyle()}\n${ITEMX_SETTINGS_STYLE}\n${ITEMX_CONTROL_STYLE}\n${skinStyleSheet()}\nhtml,body{height:100%;min-height:0!important;overflow:hidden;background:transparent!important}.risu-shell{height:100%;min-height:0;background:transparent}.itemx-plugin-stage{width:100%;height:100%;min-height:0;display:block;padding:8px}.itemx-plugin-stage .itemx-panel{width:100%;height:100%;margin:0;max-height:none}.itemx-plugin-stage-fallback{display:flex;align-items:flex-end;justify-content:flex-end;padding:12px;background:transparent}.itemx-plugin-stage-fallback .itemx-panel{width:min(420px,100%);height:min(700px,72dvh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.58)}.itemx-plugin-panel-in{animation:itemx-plugin-panel-in 190ms cubic-bezier(.2,.78,.2,1) both}.itemx-plugin-panel-out{pointer-events:none;animation:itemx-plugin-panel-out 160ms cubic-bezier(.4,0,1,1) both}@keyframes itemx-plugin-panel-in{from{opacity:0;transform:translate3d(0,7px,0) scale(.982)}to{opacity:1;transform:none}}@keyframes itemx-plugin-panel-out{from{opacity:1;transform:none}to{opacity:0;transform:translate3d(0,5px,0) scale(.988)}}.itemx-search-input{font:inherit;outline:none}.itemx-empty{padding:2rem;text-align:center;color:#77839c}.itemx-disabled{display:grid;gap:12px;padding:28px;color:#93a2ba;overflow:auto}.itemx-disabled strong{color:#f4f0e6}.itemx-disabled .itemx-tool{justify-self:start}.itemx-main-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #171d2b}.itemx-main-tab{min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:#0d121c;color:#77839c;font:inherit;font-size:.72rem;white-space:nowrap;cursor:pointer}.itemx-main-tab-on{border-bottom-color:#d4af6e;color:#f2ead9;font-weight:800}.itemx-panel>.itemx-body{flex:1;min-height:0;overflow:auto}.itemx-settings,.itemx2-iframe-content>.itemx2-root-settings{display:grid;gap:10px;padding:16px;overflow:auto}.itemx-setting-on{border-color:#6baf88;color:#a9e6c2}.itemx-manager{display:grid;gap:10px;padding:14px;border:1px solid #303a4e;border-radius:13px;background:#0b1019}.itemx-manager-title{color:#f0d79d;font-weight:800}.itemx-manager-field{display:grid;gap:5px;color:#8592a8;font-size:.76rem}.itemx-manager-field select,.itemx-manager-field textarea{width:100%;padding:9px;border:1px solid #293448;border-radius:9px;background:#121925;color:#e3e9f3;font:inherit}.itemx-manager-field textarea{min-height:72px;resize:vertical}.itemx-manager-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.itemx-manager-danger{border-color:#65333a!important;color:#ffadb5!important}.itemx-manager-current,.itemx-manager-help{color:#718097;font-size:.72rem;line-height:1.45}.itemx-codex-fold{border:1px solid #263247;border-radius:12px;background:#0d121c;overflow:hidden}.itemx-codex-fold summary{display:grid;gap:4px;padding:14px;cursor:pointer;list-style:none}.itemx-codex-fold summary::-webkit-details-marker{display:none}.itemx-codex-fold summary strong{color:#edf2fb}.itemx-codex-fold summary small{color:#8494ad}.itemx-codex-detail{display:grid;gap:7px;padding:11px 14px 14px;border-top:1px solid #202b3c;color:#bdc8d9;font-size:.72rem;line-height:1.5}.itemx-codex-detail b{color:#7788a2}.itemx-debug-log{max-height:180px;overflow:auto;padding:9px;border:1px solid #202b3d;border-radius:8px;background:#080d15;color:#91a2ba;font:10px/1.45 monospace;white-space:pre-wrap}@media(prefers-reduced-motion:reduce){.itemx-plugin-panel-in,.itemx-plugin-panel-out{animation:none!important}}@media(max-width:380px){.itemx-plugin-stage{padding:6px}.itemx-grid{grid-template-columns:1fr}.itemx-manager-actions{grid-template-columns:1fr}}</style>`; }
+
+  const ITEMX_FRAME_STYLE = `.itemx2-frame{position:relative;inset:auto;width:100%;height:100dvh;pointer-events:auto}.itemx2-frame .itemx2-root-layer{position:relative;inset:auto;height:100%}.itemx2-frame .itemx2-root-panel{position:relative;inset:auto!important;transform:none!important;width:100%;height:100%;max-height:100dvh;border-radius:12px}.itemx2-frame .itemx2-native-badge{display:none}`;
 
 
   function compareVersions(left, right) {
@@ -5314,8 +5343,8 @@ ${codexPageStyle()}
         })
     });
     const armed = (key, arm, confirmed) => async () => {
-      if (runtime[key] <= Date.now()) {
-        runtime[key] = Date.now() + 7000;
+      if (uiState[key] <= Date.now()) {
+        uiState[key] = Date.now() + 7000;
         await arm();
         await openRootInventory({ open: true, tab: 'settings' });
         return;
@@ -7083,8 +7112,8 @@ ${codexPageStyle()}
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {
-    if (!hostState.mainDoc) return;
-    const button = await hostState.mainDoc.querySelector(selector);
+    if (!panelDocument()) return;
+    const button = await panelDocument().querySelector(selector);
     if (!button) return;
     await button.setTextContent(label);
     if (enabled === true) await button.addClass('x-risu-itemx2-setting-on');
@@ -8919,6 +8948,7 @@ ${codexPageStyle()}
   function rootPageItems(loaded) {
     const all = itemsOf(loaded?.snapshot)
       .filter((item) => !ITEMXHistory.terminal('item', item))
+      .filter(matches)
       .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
@@ -8996,10 +9026,10 @@ ${codexPageStyle()}
   }
 
   async function hydrateCheckedItemDetail(loaded) {
-    if (!hostState.mainDoc || !loaded) return false;
+    if (!panelDocument() || !loaded) return false;
     const detailItems = rootPageItems(loaded);
     for (let index = 0; index < detailItems.length; index += 1) {
-      const selected = await hostState.mainDoc.querySelector(`#itemx2-detail-${index}:checked`);
+      const selected = await panelDocument().querySelector(`#itemx2-detail-${index}:checked`);
       if (!selected) continue;
       const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
       if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
@@ -9009,12 +9039,12 @@ ${codexPageStyle()}
   }
 
   function codexEntries(loaded, domain) {
-    return ITEMXHistory.currentEntities(loaded, domain).slice(0, 60);
+    return ITEMXHistory.currentEntities(loaded, domain).filter(matches).slice(0, 60);
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
-    if (!hostState.mainDoc || !loaded || !['skill', 'monster'].includes(domain)) return false;
-    const marker = await hostState.mainDoc.querySelector(
+    if (!panelDocument() || !loaded || !['skill', 'monster'].includes(domain)) return false;
+    const marker = await panelDocument().querySelector(
       `.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`
     );
     if (!marker) return false;
@@ -9044,10 +9074,10 @@ ${codexPageStyle()}
   }
 
   async function queryMainClass(className) {
-    if (!hostState.mainDoc) return null;
+    if (!panelDocument()) return null;
     return (
-      (await hostState.mainDoc.querySelector(`.x-risu-${className}`)) ||
-      (await hostState.mainDoc.querySelector(`.${className}`))
+      (await panelDocument().querySelector(`.x-risu-${className}`)) ||
+      (await panelDocument().querySelector(`.${className}`))
     );
   }
 
@@ -9360,6 +9390,7 @@ ${codexPageStyle()}
   }
 
   async function setRootOpen(open) {
+    if (uiState.panelOpen) { if (!open) { uiState.rootOpen = false; await closeInventory(); } return; }
     if (!uiState.rootDrawer) return false;
     try {
       if (!(await uiState.rootDrawer.getParent())) {
@@ -9848,7 +9879,7 @@ ${codexPageStyle()}
       return;
     }
     if (!pane) {
-      pane = await hostState.mainDoc.createElement('section');
+      pane = await panelDocument().createElement('section');
       await pane.addClass('x-risu-itemx2-history-pane');
       await body.appendChild(pane);
     }
@@ -9856,39 +9887,7 @@ ${codexPageStyle()}
     await body.addClass('x-risu-itemx2-history-opened');
   }
 
-  async function drawIframeHistory(loaded) {
-    await prepareHistoryPortraits(loaded);
-    const body = document.querySelector('.itemx2-iframe-content');
-    if (!body) return;
-    let pane = body.querySelector('.itemx2-history-pane');
-    if (!uiState.historyView.open || uiState.historyView.key !== loaded.key) {
-      pane?.remove();
-      body.classList.remove('itemx2-history-opened');
-      return;
-    }
-    if (!pane) {
-      pane = document.createElement('section');
-      pane.className = 'itemx2-history-pane';
-      body.appendChild(pane);
-    }
-    pane.innerHTML = historyHtml(loaded);
-    body.classList.add('itemx2-history-opened');
-    pane.onclick = entry(
-      'ui-action',
-      async (event) => {
-        const button = event.target.closest('button');
-        const token = button && [...button.classList].find((name) => name.startsWith('itemx2-history-'));
-        if (!token) return;
-
-        try {
-          await historyAction(token.slice('itemx2-history-'.length), loaded, false);
-        } catch (error) {
-          await notifyUser(error.message, 'error');
-        }
-      },
-      true
-    );
-  }
+  async function drawIframeHistory(loaded) { return drawRootHistory(loaded); }
 
   async function routeHistoryControls(event) {
     if (await eventHitsMainClass(event, 'itemx2-history-open')) {
@@ -9941,11 +9940,15 @@ ${codexPageStyle()}
 
   function frozenBannerHtml() { return ''; }
 
+  function searchControlsHtml() {
+    return `<!--ITEMX2-SEARCH-START--><div class="itemx2-search-controls"><div class="itemx2-search-query" contenteditable="true" role="textbox" aria-label="검색어" data-placeholder="이름·종류 검색">${ITEMXCore.esc(ui.query)}</div><button class="itemx2-search-apply" type="button">검색</button><button class="itemx2-search-clear" type="button">초기화</button></div><!--ITEMX2-SEARCH-END-->`;
+  }
+
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open)
       return `${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>`;
     const all = itemsOf(loaded.snapshot)
-      .filter((item) => tab === 'settings' || !ITEMXHistory.terminal('item', item))
+      .filter((item) => tab === 'settings' || (!ITEMXHistory.terminal('item', item) && matches(item)))
       .slice(0, 60);
     const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
     uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
@@ -9955,6 +9958,7 @@ ${codexPageStyle()}
       .map((id) => loaded.codexSnapshot.skills.entries[id])
       .filter(Boolean)
       .filter((entity) => !ITEMXHistory.terminal('skill', entity))
+      .filter(matches)
       .slice(0, 60);
     const monsters = codexEntries(loaded, 'monster');
     const counts = {
@@ -10081,7 +10085,7 @@ ${codexPageStyle()}
       )
       .join('');
     const headerStatus = `${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(uiState.status)}`;
-    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+    return `${controls}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
   function rootInventoryRegions(html) {
@@ -10170,7 +10174,7 @@ ${codexPageStyle()}
     await removeRootClickRouter();
     const routeBadge = async (event) => {
       try {
-        const badge = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-native-badge'));
+        const badge = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-native-badge'));
         if (!badge) return false;
         const rect = await badge.getBoundingClientRect();
         if (
@@ -10198,7 +10202,7 @@ ${codexPageStyle()}
     const routeControls = async (event) => {
       try {
         if (!uiState.rootOpen) return;
-        const close = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-close'));
+        const close = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-root-close'));
         if (close) {
           const closeRect = await close.getBoundingClientRect();
           if (
@@ -10215,6 +10219,14 @@ ${codexPageStyle()}
             return;
           }
         }
+        if (await eventHitsMainClass(event, 'itemx2-search-apply') || await eventHitsMainClass(event, 'itemx2-search-clear')) {
+          const clear = await eventHitsMainClass(event, 'itemx2-search-clear');
+          const input = await queryMainClass('itemx2-search-query');
+          ui.query = clear ? '' : String(await input?.textContent() || '').trim().slice(0, 200);
+          uiState.rootItemPage = 0;
+          await openRootInventory({ open: true, tab: uiState.activeRootTab });
+          return;
+        }
         if (await eventHitsMainClass(event, 'itemx2-history-open')) {
           await routeHistoryControls(event);
           return;
@@ -10225,7 +10237,7 @@ ${codexPageStyle()}
           ['bestiary', '조우 도감'],
           ['settings', '설정']
         ]) {
-          const button = hostState.mainDoc && (await hostState.mainDoc.querySelector(`.x-risu-itemx2-root-tab-${tab}`));
+          const button = panelDocument() && (await panelDocument().querySelector(`.x-risu-itemx2-root-tab-${tab}`));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
           if (
@@ -10240,7 +10252,7 @@ ${codexPageStyle()}
 
           {
             if (tab === 'inventory') uiState.rootItemPage = 0;
-            const body = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            const body = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-root-tab-body'));
             if (body) {
               await body.removeClass('x-risu-itemx2-history-opened');
               await body.setInnerHTML(
@@ -10265,7 +10277,7 @@ ${codexPageStyle()}
           [-1, '.x-risu-itemx2-root-page-prev'],
           [1, '.x-risu-itemx2-root-page-next']
         ]) {
-          const button = hostState.mainDoc && (await hostState.mainDoc.querySelector(selector));
+          const button = panelDocument() && (await panelDocument().querySelector(selector));
           if (!button) continue;
           const rect = await button.getBoundingClientRect();
           if (
@@ -10290,7 +10302,7 @@ ${codexPageStyle()}
           uiState.rootItemPage = nextPage;
 
           {
-            const body = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-root-tab-body'));
+            const body = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-root-tab-body'));
             if (body)
               await body.setInnerHTML(
                 '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>아이템 불러오는 중</strong><small>16개씩 나누어 준비하고 있답니다.</small></div>'
@@ -10308,7 +10320,7 @@ ${codexPageStyle()}
           if (loaded && (await eventHitsMainClass(event, 'itemx2-repair-one'))) {
             const items = rootPageItems(loaded);
             for (let index = 0; index < items.length; index++) {
-              if (!(await hostState.mainDoc.querySelector(`#itemx2-detail-${index}:checked`))) continue;
+              if (!(await panelDocument().querySelector(`#itemx2-detail-${index}:checked`))) continue;
               try {
                 const refreshed = await repairOneItem(loaded, items[index].id);
                 const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
@@ -10357,7 +10369,7 @@ ${codexPageStyle()}
           return;
         }
         if (uiState.activeRootTab !== 'settings') return;
-        const managerFold = hostState.mainDoc && (await hostState.mainDoc.querySelector('.x-risu-itemx2-manager-fold'));
+        const managerFold = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-manager-fold'));
         if (managerFold) {
           const foldRect = await managerFold.getBoundingClientRect();
           const insideManager =
@@ -10466,6 +10478,11 @@ ${codexPageStyle()}
   }
 
   async function openRootInventory(options = {}) {
+    if (uiState.panelOpen) {
+      const loaded = options.loaded || await cachedOrRebuildCurrent();
+      if (loaded) await drawInventory(loaded, options.tab || uiState.activeRootTab);
+      return;
+    }
     return openRootInventoryNow(options);
   }
 
@@ -10540,14 +10557,10 @@ ${codexPageStyle()}
   }
 
   function matches(item) {
-    if (ui.filter === 'owned' && item.possession !== 'owned') return false;
-    if (ui.filter === 'equipped' && item.location !== 'equipped') return false;
-    if (ui.filter === 'observed' && item.possession !== 'observed') return false;
-    if (ui.filter === 'removed' && item.possession !== 'removed') return false;
-    const q = ui.query.trim().toLowerCase();
+    const q = ui.query.trim().toLocaleLowerCase();
     return (
       !q ||
-      [item.name, item.id, item.itemType, item.displayRarity, item.affinity, item.affinity2].some((value) =>
+      [item.name, item.id, item.itemType, item.displayRarity, item.affinity, item.affinity2, item.school, item.kind].some((value) =>
         String(value || '')
           .toLowerCase()
           .includes(q)
@@ -10555,741 +10568,15 @@ ${codexPageStyle()}
     );
   }
 
-  function drawInventory(loaded) {
+  async function drawInventory(loaded, tab = uiState.activeRootTab) {
     const root = document.querySelector('#itemx2-root');
     if (!root) return;
-    const all = itemsOf(loaded.snapshot),
-      selected = ui.selected && all.find((item) => item.id === ui.selected && !ITEMXHistory.terminal('item', item));
-    const counts = {
-      all: all.filter((item) => !ITEMXHistory.terminal('item', item)).length,
-      owned: all.filter((item) => item.possession === 'owned').length,
-      equipped: all.filter((item) => item.location === 'equipped').length,
-      observed: all.filter((item) => item.possession === 'observed').length,
-      removed: all.filter((item) => item.possession === 'removed').length
-    };
-    const visible =
-      ui.tab === 'inventory'
-        ? all
-            .filter((item) => !ITEMXHistory.terminal('item', item))
-            .filter(matches)
-            .slice(0, 60)
-        : [];
-    if (ui.tab === 'settings' && (!ui.manageId || !all.some((item) => item.id === ui.manageId)))
-      ui.manageId = all.find((item) => item.possession !== 'removed')?.id || all[0]?.id || null;
-    const managed = ui.tab === 'settings' && ui.manageId ? all.find((item) => item.id === ui.manageId) : null;
-    const manageOptions =
-      ui.tab === 'settings'
-        ? all
-            .map(
-              (item) =>
-                `<option value="${ITEMXCore.esc(item.id)}" ${item.id === ui.manageId ? 'selected' : ''}>${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name)} · ${ITEMXCore.esc(item.id)}</option>`
-            )
-            .join('')
-        : '';
-    const enabled = loaded.enabled === true;
-    const inventoryContent = !enabled
-      ? `<div class="itemx-disabled"><strong>현재 봇에서 ITEMX CODEX가 꺼져 있답니다.</strong><span>설정 탭에서 다시 활성화할 수 있습니다.</span><button class="itemx-tool" data-tab="settings">설정 열기</button></div>`
-      : selected
-        ? `<div class="itemx-body"><button class="itemx-back" data-action="back">‹ 목록으로</button><div class="itemx-detail">${ITEMXRenderer.renderCard(selected, { motion: ui.motion && presentationState.visualEffectsEnabled ? 'full' : 'off' })}${detailAnnotations('item', selected)}</div></div>`
-        : `<nav class="itemx-seg">${[
-            ['all', '전체'],
-            ['owned', '보유'],
-            ['equipped', '장착'],
-            ['observed', '관찰']
-          ]
-            .map(
-              ([key, label]) =>
-                `<button class="itemx-seg-i ${ui.filter === key ? 'itemx-seg-on' : ''}" data-filter="${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></button>`
-            )
-            .join(
-              ''
-            )}</nav><div class="itemx-tools"><button class="itemx-tool" data-action="motion">${ui.motion ? '✦ 모션' : '◇ 정지'}</button><input class="itemx-search itemx-search-input" value="${ITEMXCore.esc(ui.query)}" placeholder="검색" aria-label="검색"><button class="itemx-tool" data-action="rebuild">↻</button></div><div class="itemx-body"><div class="itemx-grid">${visible.map(ITEMXRenderer.renderTile).join('') || '<div class="itemx-empty">표시할 아이템이 없답니다.</div>'}</div></div><footer class="itemx-pf">${visible.length}점 표시${all.filter(matches).length > 60 ? ' · 첫 60점' : ''}</footer>`;
-    const permissionLabel =
-      hostState.permissions.replacer === true
-        ? '연결됨'
-        : hostState.permissions.replacer === false
-          ? '권한 필요'
-          : '확인 중';
-    const styleLabel =
-      hostState.permissions.mainDom === true
-        ? '고정 스타일'
-        : hostState.permissions.mainDom === false
-          ? '본문 폴백'
-          : '확인 중';
-    const skin = SETTINGS_SKINS.frame;
-    const positionChoices = settingsPositionChoices(skin);
-    const fontChoices = settingsFontChoices(loaded, skin);
-    const domainControls = settingsDomainControls(loaded, skin);
-    const debugLog = settingsDebugLog();
-    const storageParts = settingsStorageParts(loaded);
-    const managerContent = `<section class="itemx-manager"><div class="itemx-manager-title">아이템 운영 도구</div><label class="itemx-manager-field"><span>대상 아이템</span><select data-action="manage-select" ${all.length ? '' : 'disabled'}>${manageOptions || '<option>아이템 없음</option>'}</select></label><label class="itemx-manager-field"><span>수정 지시 · 비워두면 순수 재감정</span><textarea data-action="manage-note" placeholder="예: 이름은 그대로 두고 내구도를 31/100으로, 화염 속성은 제거"></textarea></label><div class="itemx-manager-actions"><button class="itemx-tool" data-action="manage-reroll" ${managed ? '' : 'disabled'}>🔄 정보 수정·재감정</button><button class="itemx-tool itemx-manager-danger" data-action="manage-remove" ${managed && managed.possession !== 'removed' ? '' : 'disabled'}>🗑 수동 제거</button></div><div class="itemx-manager-current">${managed ? `${ITEMXCore.esc(managed.name)} · ${ITEMXCore.esc(managed.displayRarity || managed.rarity)} · ${ITEMXCore.esc(managed.possession)} / ${ITEMXCore.esc(managed.location)}` : '선택 가능한 아이템이 없습니다.'}</div><label class="itemx-manager-field"><span>신규 아이템 생성 지시</span><textarea data-action="create-note" placeholder="예: 주인공이 획득한 번개 속성의 희귀 장검"></textarea></label><button class="itemx-tool" data-action="manage-create">＋ 신규 아이템 생성 시도</button><small class="itemx-manager-help">보조 모델 결과는 ITEMX 엄격 파서와 id 검증을 통과한 경우에만 채팅별 사건 원장에 반영됩니다.</small></section>`;
-    const debugContent = `<details class="itemx-codex-fold"><summary><strong>디버그 진단 · ${loaded.debugEnabled ? 'ON' : 'OFF'}</strong><small>훅·스냅숏·최근 로그</small></summary><div class="itemx-codex-detail"><span>문맥 ${ITEMXCore.esc(loaded.key)}</span><span>스냅숏 ${ITEMXCore.esc(loaded.snapshot.fingerprint || '-')} / ${ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-')}</span><span>오류 ${ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || '없음')}</span><div class="itemx-manager-actions"><button class="itemx-tool ${loaded.debugEnabled ? 'itemx-setting-on' : ''}" data-action="debug-toggle">로그 ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><button class="itemx-tool" data-action="debug-clear">비우기</button></div><pre class="itemx-debug-log">${ITEMXCore.esc(debugLog)}</pre></div></details>`;
-    const settingsContent = settingsPanelHtml(loaded, skin, {
-      permissionLabel,
-      styleLabel,
-      domainControls,
-      fontChoices,
-      positionChoices,
-      manager: managerContent,
-      debugPanel: debugContent,
-      ...storageParts
-    });
-    const iframeSkills =
-      ui.tab === 'skills'
-        ? (loaded.codexSnapshot?.skills?.order || [])
-            .map((id) => loaded.codexSnapshot.skills.entries[id])
-            .filter(Boolean)
-            .filter((entity) => !ITEMXHistory.terminal('skill', entity))
-        : [];
-    const iframeMonsters = ui.tab === 'bestiary' ? ITEMXHistory.currentEntities(loaded, 'monster') : [];
-    const selectedSkill = ui.selectedSkill && iframeSkills.find((one) => one.id === ui.selectedSkill);
-    const selectedMonster = ui.selectedMonster && iframeMonsters.find((one) => one.id === ui.selectedMonster);
-    const skillRows = iframeSkills
-      .map(
-        (one) =>
-          `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary" data-skill-id="${ITEMXCore.esc(one.id)}">${skillSummaryHtml(one, loaded.rarityMode)}</button>`
-      )
-      .join('');
-    const monsterRows = iframeMonsters
-      .map(
-        (one) =>
-          `<button class="itemx-codex-list-button itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${one.active ? 'active' : ''}" data-monster-id="${ITEMXCore.esc(one.id)}">${monsterSummaryHtml(one, loaded.portraits?.[one.id] || '')}</button>`
-      )
-      .join('');
-    const skillsContent = `<div class="itemx-settings">${selectedSkill ? skillPageHtml(selectedSkill, '<button class="itemx-codex-back" data-action="back-skill">‹ 스킬 목록</button>', loaded.rarityMode).replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${skillRows || '<div class="itemx-empty">아직 확정된 스킬이 없답니다.</div>'}</div>`}</div>`;
-    const bestiaryContent = `<div class="itemx-settings">${selectedMonster ? monsterPageHtml(selectedMonster, loaded.portraits?.[selectedMonster.id] || '', '<button class="itemx-codex-back" data-action="back-monster">‹ 조우 목록</button>').replace('itemx2-codex-page', 'itemx-codex-page-active') : `<div class="itemx-codex-list">${monsterRows || '<div class="itemx-empty">실제 전투나 합의된 대련이 발생하면 등록된답니다.</div>'}</div>`}</div>`;
-    const content =
-      ui.tab === 'settings'
-        ? settingsContent
-        : ui.tab === 'skills'
-          ? skillsContent
-          : ui.tab === 'bestiary'
-            ? bestiaryContent
-            : inventoryContent;
-    root.innerHTML = `<div class="risu-shell"><main class="stage itemx-plugin-stage ${uiState.compactContainer ? '' : 'itemx-plugin-stage-fallback'}"><section class="itemx-panel itemx2-font-${loaded.fontScale || 'small'} ${loaded.effectsEnabled ? '' : 'itemx2-effects-off'} ${SKIN_NAMES.includes(loaded.skin) ? `itemx2-skin-${loaded.skin}` : ''}" aria-label="ITEMX CODEX"><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || '인벤토리')}</span><span class="itemx-ph-sub">${enabled ? `보유 ${counts.owned} · 장착 ${counts.equipped} · 관찰 ${counts.observed}` : '현재 봇 비활성'} · ${ITEMXCore.esc(uiState.status)}</span></span>${panelMenuHtml(false)}</header><nav class="itemx-main-tabs"><button class="itemx-main-tab ${ui.tab === 'inventory' ? 'itemx-main-tab-on' : ''}" data-tab="inventory">📦 인벤</button><button class="itemx-main-tab ${ui.tab === 'skills' ? 'itemx-main-tab-on' : ''}" data-tab="skills">✨ 스킬</button><button class="itemx-main-tab ${ui.tab === 'bestiary' ? 'itemx-main-tab-on' : ''}" data-tab="bestiary">⚔️ 조우</button><button class="itemx-main-tab ${ui.tab === 'settings' ? 'itemx-main-tab-on' : ''}" data-tab="settings">⚙️ 설정</button></nav>${frozenBannerHtml(false)}<div class="itemx2-iframe-content">${content}</div></section></main></div>`;
-    root.querySelector('[data-action="close"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          uiState.historyView.open = false;
-          void closeInventory();
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="history-open"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          uiState.historyView = {
-            open: true,
-            key: loaded.key,
-            domain: historyDomain(ui.tab),
-            filter: 'recent',
-            selected: null,
-            page: 0
-          };
-          drawIframeHistory(loaded);
-        },
-        true
-      )
-    );
-    if (uiState.historyView.open) drawIframeHistory(loaded);
-    root.querySelector('[data-action="back"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          ui.selected = null;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="back-skill"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          ui.selectedSkill = null;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="back-monster"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          ui.selectedMonster = null;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="motion"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          ui.motion = !ui.motion;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="repair-one"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          if (!selected) return;
-          try {
-            drawInventory(await repairOneItem(loaded, selected.id));
-          } catch (error) {
-            await notifyUser(error.message || String(error), 'error');
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="toggle"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          loaded.enabled = !enabled;
-          await setEnabled(loaded.character, loaded.enabled);
-          uiState.status = loaded.enabled ? '현재 봇 활성화' : '현재 봇 비활성화';
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    for (const [domain, key, label] of [
-      ['items', 'itemsEnabled', '무기·아이템'],
-      ['skills', 'skillsEnabled', '스킬'],
-      ['encounters', 'encountersEnabled', '전투 도감']
-    ])
-      root.querySelector(`[data-action="domain-${domain}"]`)?.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          async () => {
-            loaded[key] = !loaded[key];
-            await setDomainEnabled(loaded.character, domain, loaded[key]);
-            uiState.status = `${label} · ${loaded[key] ? 'ON' : 'OFF'}`;
-            drawInventory(loaded);
-          },
-          true
-        )
-      );
-    root.querySelector('[data-action="debug-toggle"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          loaded.debugEnabled = !loaded.debugEnabled;
-          await setDebugEnabled(loaded.character, loaded.debugEnabled);
-          uiState.status = `디버그 로그 · ${loaded.debugEnabled ? 'ON' : 'OFF'}`;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="debug-clear"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        () => {
-          settingsState.debugEntries = [];
-          uiState.status = '디버그 로그 비움';
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="aux-run"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          if (auxState.auxActive > 0) return;
-          uiState.status = '보조 모델 수동 검사 중';
-          drawInventory(loaded);
-          try {
-            await recoverAuxiliaryOutput({ force: true });
-          } catch (error) {
-            uiState.status = '보조 모델 검사 실패';
-            await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
-          }
-          const next = await rebuildCurrent();
-          drawInventory(next || loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="main-output"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          loaded.mainOutput = !loaded.mainOutput;
-          await setMainOutput(loaded.character, loaded.mainOutput);
-          uiState.status = `메인 출력 · ${loaded.mainOutput ? 'ON' : 'OFF'}`;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="effects"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          loaded.effectsEnabled = !loaded.effectsEnabled;
-          await setEffectsEnabled(loaded.character, loaded.effectsEnabled);
-          uiState.status = `시각 이펙트 · ${loaded.effectsEnabled ? 'ON' : 'OFF'}`;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="module-assets"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          if (loaded.moduleAssetsEnabled) {
-            loaded.moduleAssetsEnabled = false;
-            await setModuleAssetsEnabled(loaded.character, false);
-            uiState.status = '모듈 에셋 초상화 · OFF';
-            drawInventory(loaded);
-            return;
-          }
-          const enabled = await enableModuleAssets(loaded.character, loaded.chat);
-          loaded.moduleAssetsEnabled = enabled;
-          uiState.status = enabled ? '모듈 에셋 초상화 · ON' : '모듈 에셋 권한 없음 · 이모지 폴백';
-          if (!enabled)
-            await notifyUser('모듈 에셋 권한이 허용되지 않았습니다. 조우 초상화는 이모지로 표시됩니다.', 'error');
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="lorebook-toggle"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          loaded.lorebookEncounterEnabled = !loaded.lorebookEncounterEnabled;
-          await setLorebookEncounterEnabled(loaded.character, loaded.lorebookEncounterEnabled);
-          uiState.status = `조우 로어북 자동 보완 · ${loaded.lorebookEncounterEnabled ? 'ON' : 'OFF'}`;
-          if (loaded.lorebookEncounterEnabled) await scanLorebookEncounters({ refresh: true, silent: true });
-          const next = await rebuildCurrent();
-          if (next) {
-            next.enabled = await isEnabled(next.character);
-            drawInventory(next);
-          } else drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="lorebook-scan"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          uiState.status = '조우 로어북 스캔 중';
-          drawInventory(loaded);
-          await scanLorebookEncounters({ refresh: true });
-          const next = await rebuildCurrent();
-          if (next) {
-            next.enabled = await isEnabled(next.character);
-            drawInventory(next);
-          } else drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelectorAll('[data-seg]').forEach((button) =>
-      button.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          async () => {
-            const { seg, value } = button.dataset;
-            if (seg === 'aux') {
-              await setAuxOutput(loaded.character, value);
-              loaded.auxOutput = value;
-              uiState.status = `보조 모델로 보완 · ${AUX_LABELS[value]}`;
-            } else if (seg === 'rarity') {
-              await setRarityMode(loaded.character, value);
-              loaded.rarityMode = value;
-              uiState.status = `등급 판정 기준 · ${RARITY_MODE_LABELS[value]}`;
-            } else if (seg === 'skin') {
-              await setSkin(loaded.character, value);
-              loaded.skin = value;
-              uiState.status = `화면 스킨 · ${SKIN_LABELS[value]}`;
-            } else return;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelectorAll('[data-font]').forEach((button) =>
-      button.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          async () => {
-            const value = button.dataset.font;
-            await setFontScale(loaded.character, value);
-            loaded.fontScale = value;
-            uiState.status = `글자 크기 · ${{ small: '작게', medium: '보통', large: '크게' }[value]}`;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelector('[data-action="rebuild"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          const next = await rebuildCurrent();
-          if (next) {
-            next.enabled = await isEnabled(next.character);
-            drawInventory(next);
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="storage-cleanup"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          if (uiState.storageCleanupArmedUntil <= Date.now()) {
-            uiState.storageCleanupArmedUntil = Date.now() + 7000;
-            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
-            drawInventory(loaded);
-            return;
-          }
-          uiState.status = '현재 채팅 저장소 최적화 중';
-          drawInventory(loaded);
-          try {
-            const result = await compactCurrentChatStorage();
-            if (result.loaded) drawInventory(result.loaded);
-          } catch (error) {
-            uiState.storageCleanupArmedUntil = 0;
-            uiState.status = '저장소 최적화 실패';
-            await notifyUser(`ITEMX CODEX 저장소 최적화 실패: ${error.message || error}`, 'error');
-            drawInventory(loaded);
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="backup"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          try {
-            await openBackupPanel();
-          } catch (error) {
-            await notifyUser(error.message, 'error');
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="cleanup-chat"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          if (uiState.cleanupArmedUntil <= Date.now()) {
-            uiState.cleanupArmedUntil = Date.now() + 7000;
-            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
-            drawInventory(loaded);
-            return;
-          }
-          uiState.status = '현재 채팅 ITEMX 기록 정리 중';
-          drawInventory(loaded);
-          try {
-            const result = await cleanCurrentChatItemx();
-            if (result.loaded) drawInventory(result.loaded);
-          } catch (error) {
-            uiState.cleanupArmedUntil = 0;
-            uiState.status = '현재 채팅 정리 실패';
-            await notifyUser(`ITEMX CODEX 정리 실패: ${error.message || error}`, 'error');
-            drawInventory(loaded);
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="permissions"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          uiState.status = '모델 처리 권한 확인 중';
-          drawInventory(loaded);
-          const connected = await installPipelineHooks({ prompt: true });
-          if (connected) await notifyUser('ITEMX CODEX 모델 처리 권한이 연결되었습니다.', 'success');
-          else await notifyUser(`ITEMX CODEX 권한 연결 실패: ${hostState.lastHookError || uiState.status}`, 'error');
-          const next = await rebuildCurrent();
-          if (next) {
-            next.enabled = await isEnabled(next.character);
-            drawInventory(next);
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="style"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          uiState.status = '본문 화면 연결 중';
-          drawInventory(loaded);
-          const styled = await installMainStyle({ prompt: true });
-          if (styled) await notifyUser('ITEMX CODEX 본문 화면 연결이 완료되었습니다.', 'success');
-          else await notifyUser(`ITEMX CODEX 화면 연결 실패: ${hostState.lastDomError || uiState.status}`, 'error');
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelectorAll('[data-position]').forEach((button) =>
-      button.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          async () => {
-            const value = button.dataset.position;
-            if (!BADGE_POSITIONS.some(([key]) => key === value)) return;
-            uiState.badgePosition = value;
-            await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: value });
-            if (uiState.rootDrawer) {
-              for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
-              await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);
-            }
-            await installMainStyle();
-            uiState.status = `배지 위치 · ${BADGE_POSITIONS.find(([key]) => key === value)?.[1] || value}`;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelector('[data-action="manage-select"]')?.addEventListener(
-      'change',
-      entry(
-        'ui-action',
-        (event) => {
-          ui.manageId = event.target.value;
-          drawInventory(loaded);
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="manage-remove"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          try {
-            const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
-            if (!target) throw new Error('대상 아이템이 없습니다.');
-            if (!(await confirmUser(`${target.name}을(를) 현재 채팅 인벤토리에서 제거할까요?`))) return;
-            uiState.status = '수동 제거 처리 중';
-            drawInventory(loaded);
-            const event = {
-              kind: 'patch',
-              patch: {
-                id: target.id,
-                action: null,
-                op: 'remove',
-                fields: {},
-                quantity: null,
-                destination: '',
-                reason: 'manual_remove',
-                slot: null,
-                inputs: null,
-                outputs: null,
-                equip: null,
-                unequip: null
-              }
-            };
-            const next = await commitManualEvents(loaded, [event], '수동 제거');
-            if (next) {
-              next.enabled = await isEnabled(next.character);
-              drawInventory(next);
-            }
-          } catch (error) {
-            uiState.status = '수동 제거 실패';
-            await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
-            drawInventory(loaded);
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="manage-reroll"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          try {
-            const target = itemsOf(loaded.snapshot).find((item) => item.id === ui.manageId);
-            if (!target) throw new Error('대상 아이템이 없습니다.');
-            const note = root.querySelector('[data-action="manage-note"]')?.value?.trim() || '';
-            uiState.status = note ? '정보 수정 감정 중' : '아이템 재감정 중';
-            drawInventory(loaded);
-            const event = await runItemModel('reroll', loaded, target, note);
-            const next = await commitManualEvents(loaded, [event], note ? '정보 수정' : '재감정');
-            if (next) {
-              next.enabled = await isEnabled(next.character);
-              drawInventory(next);
-            }
-          } catch (error) {
-            uiState.status = '재감정 실패';
-            await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
-            drawInventory(loaded);
-          }
-        },
-        true
-      )
-    );
-    root.querySelector('[data-action="manage-create"]')?.addEventListener(
-      'click',
-      entry(
-        'ui-action',
-        async () => {
-          try {
-            const note = root.querySelector('[data-action="create-note"]')?.value?.trim() || '';
-            if (!note) throw new Error('생성할 아이템 설명을 입력하세요.');
-            uiState.status = '신규 아이템 생성 중';
-            drawInventory(loaded);
-            const event = await runItemModel('create', loaded, null, note);
-            const next = await commitManualEvents(loaded, [event], '신규 생성');
-            ui.manageId = event.item.id;
-            if (next) {
-              next.enabled = await isEnabled(next.character);
-              drawInventory(next);
-            }
-          } catch (error) {
-            uiState.status = '아이템 생성 실패';
-            await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
-            drawInventory(loaded);
-          }
-        },
-        true
-      )
-    );
-    root.querySelectorAll('[data-tab]').forEach((el) =>
-      el.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          () => {
-            if (ui.tab === el.dataset.tab && !uiState.historyView.open) return;
-            ui.tab = el.dataset.tab;
-            uiState.historyView.open = false;
-            drawIframeHistory(loaded);
-            ui.selected = null;
-            ui.selectedSkill = null;
-            ui.selectedMonster = null;
-            const current = root.querySelector('.itemx-main-tabs')?.nextElementSibling;
-            if (current)
-              current.innerHTML =
-                '<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>탭 불러오는 중</strong><small>선택한 화면만 준비하고 있답니다.</small></div>';
-            setTimeout(
-              entry('timer:404371', () => drawInventory(loaded)),
-              24
-            );
-          },
-          true
-        )
-      )
-    );
-    root.querySelectorAll('[data-filter]').forEach((el) =>
-      el.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          () => {
-            ui.filter = el.dataset.filter;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelectorAll('[data-item-id]').forEach((el) =>
-      el.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          () => {
-            ui.selected = el.dataset.itemId;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelectorAll('[data-skill-id]').forEach((el) =>
-      el.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          () => {
-            ui.selectedSkill = el.dataset.skillId;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelectorAll('[data-monster-id]').forEach((el) =>
-      el.addEventListener(
-        'click',
-        entry(
-          'ui-action',
-          () => {
-            ui.selectedMonster = el.dataset.monsterId;
-            drawInventory(loaded);
-          },
-          true
-        )
-      )
-    );
-    root.querySelector('.itemx-search-input')?.addEventListener(
-      'input',
-      entry(
-        'ui-action',
-        (event) => {
-          ui.query = event.target.value;
-          drawInventory(loaded);
-          const input = root.querySelector('.itemx-search-input');
-          input?.focus();
-          input?.setSelectionRange(ui.query.length, ui.query.length);
-        },
-        true
-      )
-    );
+    uiState.activeRootTab = tab;
+    uiState.rootOpen = true;
+    root.className = `itemx2-root-drawer itemx2-frame itemx2-is-open itemx2-font-${loaded.fontScale || 'small'}${loaded.effectsEnabled ? '' : ' itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` itemx2-skin-${loaded.skin}` : ''}`;
+    root.innerHTML = rootInventoryHtml(loaded, true, tab);
+    await drawRootHistory(loaded);
+    await installRootClickRouter(nativeElement(root));
   }
 
   function reducedMotion() {
@@ -11319,7 +10606,7 @@ ${codexPageStyle()}
   async function openInventory(tab = 'inventory') {
     if (tab === 'inventory') return openRootInventory();
     uiState.panelOpen = true;
-    ui.tab = tab;
+    uiState.activeRootTab = tab;
     try {
       const compact = window.innerWidth <= 520;
       const panelWidth = compact ? Math.max(320, window.innerWidth - 32) : 420;
@@ -11339,7 +10626,7 @@ ${codexPageStyle()}
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
       settingsState.debugEnabled = loaded.debugEnabled;
-      drawInventory(loaded);
+      await drawInventory(loaded, tab);
       await Risuai.showContainer(uiState.compactContainer ? 'floating' : 'fullscreen');
       const panel = document.querySelector('.itemx-panel');
       if (panel && uiState.panelOpen && !reducedMotion())

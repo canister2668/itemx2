@@ -29,3 +29,15 @@ test('state instances and their mutable collections are isolated', () => {
   assert.equal('rootOpen' in a.pipeline, false);
   assert.equal('generation' in a.ui, false);
 });
+
+test('production code has no implicit access to the retired flat runtime object', async () => {
+  const { runtimeSource } = await import('../scripts/runtime-source.mjs');
+  const { parsers } = await import('prettier/plugins/babel');
+  const ast = parsers.babel.parse(await runtimeSource());
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'Identifier') assert.notEqual(node.name, 'runtime', 'dynamic state access escaped its owner');
+    for (const [key, value] of Object.entries(node)) if (!['comments', 'tokens', 'loc', 'extra'].includes(key)) Array.isArray(value) ? value.forEach(visit) : visit(value);
+  }
+  visit(ast);
+});

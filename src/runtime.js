@@ -50,7 +50,7 @@
     await loadBadgePosition();
     await dispatch('bootstrap', async () => {
     const setting = await Risuai.registerSetting(
-      'ITEMX CODEX · 권한 및 설정',
+      ITEMXText("runtime.009"),
       entry('settings', openSettingsFromRisuMenu),
       '💎',
       'html',
@@ -63,20 +63,20 @@
       styled = false;
     if (initial) {
       pipelineState.activeContextKey = initial.key;
-      uiState.status = '초기 화면 연결 중';
+      uiState.status = ITEMXText("runtime.008");
       await outputSettings(initial.character);
       styled = await installMainStyle();
       const loadingStarted = styled ? Date.now() : 0;
-      if (styled) await mountRootLoading('ITEMX CODEX 초기화 중…');
-      await updateRootLoading('모델 처리 연결 중…');
+      if (styled) await mountRootLoading(ITEMXText("runtime.007"));
+      await updateRootLoading(ITEMXText("runtime.006"));
       connected = await installPipelineHooks();
-      await updateRootLoading('채팅 인벤토리 복원 중…');
+      await updateRootLoading(ITEMXText("runtime.005"));
       await rebuildCurrent({ upgradeDisplayRefs: true });
       if (loadingStarted) await delay(Math.max(0, 320 - (Date.now() - loadingStarted)));
       if (styled) await openRootInventory({ open: false });
       void dispatch('update', checkForUpdate);
     } else {
-      uiState.status = '채팅 진입 대기';
+      uiState.status = ITEMXText("runtime.004");
     }
     armRemountWatchdog();
     armCatchUpWatchdog();
@@ -91,13 +91,13 @@
     if (initial)
       void dispatch('catch-up', catchUpLatestOutput).catch((error) => fail('initial output catch-up', error));
     installBrowserResumeHandlers();
-    if (connected && styled) uiState.status = '정상';
+    if (connected && styled) uiState.status = ITEMXText("runtime.003");
     log(`v${ITEMX_PLUGIN_VERSION} ready`);
     });
   } catch (error) {
-    uiState.status = '초기화 오류';
+    uiState.status = ITEMXText("runtime.002");
     await removeRootDrawer();
-    await notifyUser(`ITEMX CODEX 초기화 실패: ${error.message || error}`, 'error');
+    await notifyUser(ITEMXText("runtime.001", error.message || error), 'error');
     fail('bootstrap', error);
   }
 

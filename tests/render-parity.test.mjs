@@ -41,7 +41,7 @@ test('the settings panel has a single renderer', async () => {
   assert.equal((source.match(/function settingsPanelHtml\(/g) || []).length, 1);
   assert.equal((source.match(/const settings = `<div class="itemx2-root-settings">/g) || []).length, 0);
   assert.equal((source.match(/const settingsContent = `<div class="itemx-settings">/g) || []).length, 0);
-  assert.equal((source.match(/settingsPanelHtml\(loaded, skin, \{/g) || []).length, 2);
+  assert.equal((source.match(/settingsPanelHtml\(loaded, skin, \{/g) || []).length, 1);
 });
 
 test('both skins render the same controls in the same order', async () => {
@@ -107,7 +107,7 @@ test('the freeze banner is rendered from one shared function', async () => {
   const source = await src();
   assert.equal((source.match(/function frozenBannerHtml\(/g) || []).length, 1);
   assert.ok(source.includes('${frozenBannerHtml(true)}'));
-  assert.ok(source.includes('${frozenBannerHtml(false)}'));
+  assert.match(source, /root.innerHTML = rootInventoryHtml\(loaded, true, tab\)/);
 });
 
 test('the iframe shell layer never reaches the shipped chat scope', async () => {

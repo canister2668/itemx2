@@ -1,0 +1,65 @@
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+const bundle = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
+const anchor = '  try {\n    await loadBadgePosition();';
+const fixture = bundle.replace(anchor, `
+  globalThis.itemxTest = { core: ITEMXCore, codex: ITEMXCodex, armed: () => uiState.storageCleanupArmedUntil, async setup(mode) {
+    const root = document.querySelector('#itemx2-root');
+    const items = ['검', '목걸이'].map((name,index) => ITEMXCore.normalizeItem({id:'item'+index,name,itemType:index?'장신구':'검',possession:'owned',location:index?'inventory':'equipped',count:1}).item);
+    const codex = ITEMXCodex.extractResponse('<skillExam><id>skill0</id><name>검술</name><status>learned</status></skillExam>').snapshot;
+    const loaded = { key:'test:chat',character:{chaId:'test',name:'Browser fixture'},chat:{id:'chat',message:[],scriptstate:{}},snapshot:{registry:{order:items.map(x=>x.id),items:Object.fromEntries(items.map(x=>[x.id,x])),diagnostics:[]},history:{},fingerprint:'test'},codexSnapshot:codex,...await outputSettings({chaId:'test'}),portraits:{} };
+    pipelineState.cachedLoaded=loaded; pipelineState.activeContextKey=loaded.key;
+    workQueue.remember('loaded-generation',pipelineState.generation);
+    cachedOrRebuildCurrent = async()=>loaded; rebuildCurrent = async()=>loaded;
+    hostState.mainDoc=nativeElement(document); installMainStyle=async()=>true;
+    uiState.panelOpen=mode==='frame'; uiState.rootOpen=true; uiState.activeRootTab='inventory';
+    document.head.innerHTML=fallbackDocumentHead();
+    if(mode==='frame') await drawInventory(loaded,'inventory');
+    else { root.className='itemx2-root-drawer itemx2-pos-rm itemx2-is-open'; root.innerHTML=rootInventoryHtml(loaded,true,'inventory'); uiState.rootDrawer=nativeElement(root); await installRootClickRouter(uiState.rootDrawer); }
+    return loaded;
+  }};
+  return;
+${anchor}`);
+if (fixture === bundle) throw new Error('bootstrap anchor missing');
+const script = `const {chromium}=require('playwright-core');
+(async()=>{ const browser=await chromium.launch({headless:true,args:['--no-sandbox']}); const results=[];
+try { for(const mode of ['frame','drawer']) for(const width of [390,900]) {
+ const page=await browser.newPage({viewport:{width,height:844}}); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ await page.setContent('<html><head></head><body><div id="itemx2-root"></div></body></html>');
+ await page.evaluate(()=>{const store=new Map();window.Risuai={pluginStorage:{getItem:async k=>store.get(k),setItem:async(k,v)=>store.set(k,v)},hideContainer:async()=>{},showContainer:async()=>{},getImage:async()=>null};});
+ await page.evaluate(${JSON.stringify(fixture)}); await page.evaluate(mode=>itemxTest.setup(mode),mode);
+ await page.waitForTimeout(250);
+ const before=await page.locator('.itemx2-root-tab-body').innerHTML();
+ await page.locator('label[for="itemx2-filter-equipped"]').click(); await page.waitForTimeout(100);
+ if(await page.locator('.itemx2-root-item:visible').count()!==1)throw Error('radio filter failed '+mode+' '+JSON.stringify(await page.evaluate(()=>({checked:[...document.querySelectorAll('input:checked')].map(x=>x.id), tiles:[...document.querySelectorAll('.itemx2-root-item')].map(x=>({cls:x.className,display:getComputedStyle(x).display})),style:document.head.textContent.includes('itemx2-filter-equipped:checked')}))));
+ if(await page.locator('.itemx2-root-tab-body').innerHTML()!==before)throw Error('radio filter rewrote body');
+ await page.locator('label[for="itemx2-filter-all"]').click();
+ await page.locator('.itemx2-root-tile-0').click();
+ await page.waitForFunction(()=>document.querySelector('.itemx2-root-detail-body-0')?.textContent.includes('검'));
+ await page.locator('label[for="itemx2-detail-none"]').first().click();
+ await page.locator('.itemx2-search-query').fill('목걸이');
+ if(await page.locator('.itemx2-root-item').count()!==2)throw Error('search changed before confirmation');
+ await page.locator('.itemx2-search-apply').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.itemx2-root-item').length===1);
+ if(!(await page.locator('.itemx2-root-item').textContent()).includes('목걸이'))throw Error('wrong search match');
+ await page.locator('.itemx2-search-clear').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.itemx2-root-item').length===2);
+ await page.locator('.itemx2-root-tab-skills').click();
+ await page.waitForSelector('.itemx2-skill-card');
+ await page.locator('.itemx2-skill-card').click();
+ await page.waitForFunction(()=>document.querySelector('.itemx2-root-skill-detail-body-0')?.textContent.includes('검술'));
+ await page.locator('.itemx2-root-tab-settings').click();
+ await page.waitForSelector('.itemx2-setting-toggle');
+ await page.locator('.itemx2-setting-toggle').click();
+ await page.waitForFunction(()=>document.querySelector('.itemx2-setting-toggle')?.textContent==='OFF');
+ await page.locator('.itemx2-setting-storage-cleanup').click();
+ await page.waitForFunction(()=>itemxTest.armed()>Date.now());
+ if(errors.length)throw Error(errors.join(';'));
+ results.push({mode,width,radioWithoutRewrite:true,detail:true,confirmedSearch:true,skillDetail:true,settingsToggle:true,cleanupConfirmation:true,screenshot:(await page.screenshot()).toString('base64')});
+ await page.close();
+ } console.log(JSON.stringify(results)); } finally {await browser.close();} })().catch(e=>{console.error(e);process.exit(1)});`;
+const result = JSON.parse(execFileSync('docker', ['exec','-i','claudex-workhouse-browser-runtime','node'], { input: script, encoding:'utf8',timeout:180000,maxBuffer:12e6 }));
+await mkdir(new URL('../artifacts/shared-panel/',import.meta.url),{recursive:true});
+for(const row of result){await writeFile(new URL(`../artifacts/shared-panel/${row.mode}-${row.width}.png`,import.meta.url),Buffer.from(row.screenshot,'base64'));delete row.screenshot;}
+await writeFile(new URL('../artifacts/shared-panel/results.json',import.meta.url),JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify(result));

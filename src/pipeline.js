@@ -260,7 +260,7 @@
     await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot));
     const errors = parsed.errors.length + codexParsed.errors.length,
       events = parsed.events.length + codexParsed.events.length;
-    if (stillActive) uiState.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
+    if (stillActive) uiState.status = errors ? ITEMXText("pipeline.010", errors) : ITEMXText("pipeline.009", events);
     return { ctx: { ...ctx, chat: compacted }, source: compactedSource };
   }
 
@@ -400,7 +400,7 @@
         workQueue.remember('uncommitted-markers', new Set(pipelineState.latestMarkers));
         const errors = result.errors.length + codexResult.errors.length,
           events = result.events.length + codexResult.events.length;
-        uiState.status = errors ? `격리 ${errors}건` : `메인 출력 ${events}건 처리`;
+        uiState.status = errors ? ITEMXText("pipeline.008", errors) : ITEMXText("pipeline.007", events);
         pipelineState.generation += 1;
         debugRecord('processOutput', {
           itemEvents: result.events.length,
@@ -475,8 +475,8 @@
         }
         hostState.hooks.before = false;
         hostState.hooks.after = false;
-        hostState.lastHookError = '모델 처리 권한이 허용되지 않았습니다';
-        uiState.status = '모델 처리 권한 필요';
+        hostState.lastHookError = ITEMXText("pipeline.006");
+        uiState.status = ITEMXText("pipeline.005");
       } else {
         if (!hostState.hooks.before) {
           await Risuai.addRisuReplacer('beforeRequest', pipelineEntries.before);
@@ -514,14 +514,14 @@
       }
       if (hostState.permissions.replacer) {
         hostState.lastHookError = '';
-        uiState.status = prompt ? '모델 처리 권한 연결됨' : '정상';
+        uiState.status = prompt ? ITEMXText("pipeline.004") : ITEMXText("pipeline.003");
       }
       if (workQueue.hasTimer('catchUpTimer')) armCatchUpWatchdog();
       return hostState.permissions.replacer;
     } catch (error) {
       hostState.permissions.replacer = false;
-      hostState.lastHookError = String(error?.message || error || '알 수 없는 모델 훅 오류');
-      uiState.status = '모델 연결 오류';
+      hostState.lastHookError = String(error?.message || error || ITEMXText("pipeline.002"));
+      uiState.status = ITEMXText("pipeline.001");
       fail('pipeline hooks', error);
       return false;
     }

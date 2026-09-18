@@ -81,16 +81,7 @@ const ITEMXState = (() => {
         storageCleanupArmedUntil: 0,
         historyView: { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 },
         historyRows: [],
-        view: {
-    tab: 'inventory',
-    filter: 'all',
-    query: '',
-    selected: null,
-    selectedSkill: null,
-    selectedMonster: null,
-    manageId: null,
-    motion: true
-  }
+        view: { query: '' }
       }),
     });
   }
