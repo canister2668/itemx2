@@ -12,7 +12,7 @@ const workQueue = ITEMXWorkQueue.create();
 const hostState = runtime, pipelineState = runtime, auxState = runtime, presentationState = runtime, portraitsState = runtime, storageState = runtime, settingsState = runtime, uiState = runtime;
 const dispatch = (kind, work) => workQueue.enqueue({kind, work});
 const entry = (kind, work) => (...args) => dispatch(kind, () => work(...args));
-const saveChat = (...args) => Risuai.setChatToIndex(...args);
+const saveChat = (...args) => Risuai.setChatToIndex(...args); const readChat = (...args) => Risuai.getChatFromIndex(...args);
 const pipelineEntries = {process: globalThis.processHandler, output: globalThis.outputFallback, display: globalThis.displayWithPortraits, before: globalThis.beforeRequest, after: globalThis.afterRequest};
 `;
 function runWithQueue(code, sandbox) {

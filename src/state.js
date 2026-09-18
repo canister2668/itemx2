@@ -59,11 +59,7 @@ const ITEMXState = (() => {
         characterAssetCache: { key: '', at: 0, rows: [] },
         combinedAssetCache: { key: '', at: 0, rows: [] }
       }),
-      storage: owner({
-        checkpointCacheRecord: null,
-        frozen: false,
-        frozenReason: ''
-      }),
+      storage: owner({}),
       settings: owner({
         settingsCache: new Map(),
         debugEnabled: false,

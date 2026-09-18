@@ -1,3 +1,4 @@
+import { hydrate, migrate, settingsModel } from './helpers/storage.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -19,7 +20,7 @@ async function bootWithOutput(data, options = {}) {
     chatWrites = 0;
   const prompts = [],
     requests = [];
-  const storage = new Map(options.freshDefaults ? [] : [['auxOutput:char-guard', 'missing']]),
+  const storage = new Map([['itemx:settings', JSON.stringify(settingsModel.migrate(options.freshDefaults ? {} : {'auxOutput:char-guard': 'missing'}))]]),
     handlers = {},
     replacers = {},
     intervals = [];
@@ -109,7 +110,8 @@ async function bootWithOutput(data, options = {}) {
     storage,
     prompts,
     requests,
-    chat: () => structuredClone(chat),
+    chat: () => hydrate(structuredClone(chat)),
+    persistedChat: () => structuredClone(chat),
     setLatestData: (value) => {
       chat.message.at(-1).data = value;
     },
@@ -263,14 +265,13 @@ test('missing auxiliary plugin provider is quarantined without leaking or repeat
   assert.equal(result.chatWrites, 0);
 });
 
-test('zero-event automatic auxiliary remembers the guard without rewriting chat', async () => {
+test('zero-event automatic auxiliary caches the guard without rewriting message text', async () => {
   const result = await bootWithOutput('완결된 서술이지만 새 아이템 사건은 없다.');
   assert.equal(result.modelCalls, 1);
-  assert.equal(result.chatWrites, 0);
-  assert.ok(result.storage.has('auxZeroRing:v1'));
-  const ring = JSON.parse(result.storage.get('auxZeroRing:v1'));
-  assert.equal(Object.keys(ring).length, 1);
-  assert.equal(Object.keys(ring['char-guard:chat-guard'].history).length, 1);
+  assert.equal(result.chatWrites, 1);
+  const cached = JSON.parse(result.persistedChat().scriptstate['itemx:cache']);
+  assert.equal(Object.keys(cached.auxZero).length, 1);
+  assert.equal(result.chat().message[0].data, '완결된 서술이지만 새 아이템 사건은 없다.');
 });
 
 test('auxiliary regeneration receives the triggering turn and recent visible narrative, not hidden thoughts or legacy ITEMX state', async () => {

@@ -9,7 +9,7 @@ const p = await presentationRuntime(
       h = value;
     }
   },
-  'capture({ policy: ITEMXHistory, rebuildWithManual, rebuildCodexWithLedger, buildMessageEventLookup, checkpointReplay, checkpointStatus, rootInventoryHtml, rootPageItems, codexEntries, historyHtml, cleanChatPluginData, beforeRequest });'
+  'capture({ policy: ITEMXHistory, rebuildWithManual, rebuildCodexWithLedger, buildMessageEventLookup, refreshReplayCache, checkpointStatus, rootInventoryHtml, rootPageItems, codexEntries, historyHtml, cleanChatPluginData, beforeRequest });'
 );
 const { core, codex } = p;
 const exam = (id, type = 'elixir', more = {}) => ({
@@ -169,28 +169,16 @@ test('sealed skills stay in the active list while lost skills and resolved encou
   assert.equal(h.policy.entries(value, 'monster')[0].archived, false);
 });
 
-test('sealed checkpoint retains lifecycle metadata without keeping an unbounded prefix ledger', () => {
-  const chat = chatOf([
-    [exam('pill')],
-    [patch('pill', 'consume', { quantity: 1 })],
-    ...Array.from({ length: 70 }, () => [])
-  ]);
-  const compact = h.checkpointReplay(chat),
-    status = h.checkpointStatus(compact);
-  assert.equal(status.valid, true);
-  const cp = status.checkpoint;
-  const snapshot = h.rebuildWithManual(compact, h.buildMessageEventLookup(compact), {
-    start: cp.boundary + 1,
-    registry: cp.item.registry,
-    history: cp.item.history,
-    manual: []
-  });
-  const value = loaded(chat);
-  assert.deepEqual(JSON.parse(JSON.stringify(snapshot.history)), JSON.parse(JSON.stringify(value.snapshot.history)));
-  assert.doesNotMatch(compact.message[0].data + compact.message[1].data, /ITEMX2/);
+test('cache maintenance retains lifecycle metadata and the complete authoritative log', () => {
+  const chat = chatOf([[exam('pill')], [patch('pill', 'consume', { quantity: 1 })], ...Array.from({ length: 70 }, () => [])]);
+  const compact = h.refreshReplayCache(chat);
+  const snapshot = loaded(compact).snapshot;
+  assert.deepEqual(JSON.parse(JSON.stringify(snapshot.history)), JSON.parse(JSON.stringify(loaded(chat).snapshot.history)));
+  assert.match(compact.message[1].data, /ITEMX2/);
+  const before = compact.scriptstate['itemx:log'];
   compact.message[3].data = '소모하지 않았다';
-  assert.equal(h.checkpointStatus(compact).valid, true);
   assert.equal(row(loaded(compact)).closed, true);
+  assert.equal(h.refreshReplayCache(compact).scriptstate['itemx:log'], before);
 });
 
 test('old tombstones stay out of ordinary model anchors even when pinned and never erase original markers', () => {
@@ -250,7 +238,8 @@ test('record preferences write only their own field once and refuse streaming or
   });
   assert.equal(writes, 1);
   const without = structuredClone(chat);
-  delete without.scriptstate[h.policy.KEY];
+  for (const key of [h.policy.KEY, 'itemx:log', 'itemx:prefs', 'itemx:cache']) delete without.scriptstate[key];
+  assert.equal(JSON.parse(chat.scriptstate['itemx:prefs']).keep['item:pill'], true);
   assert.equal(JSON.stringify(without), before);
   chat.isStreaming = true;
   await assert.rejects(() => api.saveHistoryPreference(value, () => {}), /응답이 끝난/);

@@ -112,22 +112,6 @@ const ITEMX_AUX_SETTLE_MS = 1500;
 const ITEMX_AUX_PROMPT_REVISION = 2;
 const ITEMX_ROOT_PAGE_SIZE = 16;
 const ITEMX_CHECKPOINT_VERSION = 2;
-// Upgrade a stored checkpoint one version forward. A checkpoint replaces an
-// event prefix whose markers compaction already stripped from the message
-// bodies, so an unreadable checkpoint is unrecoverable: every version we ever
-// wrote must keep a path to the current shape.
-const ITEMX_CHECKPOINT_MIGRATIONS = {
-  // v1 sealed the prefix by marker fingerprint instead of a message id. The
-  // stored registries are already current; only the seal anchor changed.
-  1: (value) => ({
-    ...value,
-    v: 2,
-    sealedThroughId: typeof value.sealedThroughId === 'string' ? value.sealedThroughId : '',
-    rows: Array.isArray(value.rows) ? value.rows : [],
-    manual: Array.isArray(value.manual) ? value.manual : [],
-    storage: value.storage && typeof value.storage === 'object' ? value.storage : undefined
-  })
-};
 const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
 const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
 const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
@@ -153,9 +137,10 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     (kind, work, unique = false) =>
     (...args) =>
       dispatch(kind, () => work(...args), unique);
-  const saveChat = (...args) => {
+  const readChat = async (...args) => ITEMXStorage.hydrate(await Risuai.getChatFromIndex(...args));
+  const saveChat = (characterIndex, chatIndex, chat) => {
     workQueue.assertCurrent();
-    return Risuai.setChatToIndex(...args);
+    return Risuai.setChatToIndex(characterIndex, chatIndex, ITEMXStorage.persist(chat));
   };
   const stateOwners = ITEMXState.create();
   const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
@@ -326,7 +311,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         Risuai.getCharacter()
       ]);
       if (characterIndex == null || chatIndex == null || !character) return null;
-      const chat = await Risuai.getChatFromIndex(characterIndex, chatIndex);
+      const chat = await readChat(characterIndex, chatIndex);
       if (!chat) return null;
       return {
         characterIndex,
@@ -354,76 +339,31 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   async function outputSettings(character, { refresh = false } = {}) {
-    const id = character?.chaId || 'unknown';
+    const id = settingsId(character);
     if (!refresh && settingsState.settingsCache.has(id)) return { ...settingsState.settingsCache.get(id) };
-    const loading = Promise.all([
-      Risuai.pluginStorage.getItem(`enabled:${id}`),
-      Risuai.pluginStorage.getItem(`mainOutput:${id}`),
-      Risuai.pluginStorage.getItem(`auxOutput:${id}`),
-      Risuai.pluginStorage.getItem(`rarityMode:${id}`),
-      Risuai.pluginStorage.getItem(`itemsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`skillsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`encountersEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`debugEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`effectsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`fontScale:${id}`),
-      Risuai.pluginStorage.getItem(`moduleAssetsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`lorebookEncounterEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`skin:${id}`)
-    ]).then(
-      ([
-        enabled,
-        main,
-        aux,
-        rarity,
-        items,
-        skills,
-        encounters,
-        debug,
-        effects,
-        fontScale,
-        moduleAssets,
-        lorebookEncounter,
-        skin
-      ]) => {
-        const settings = {
-          enabled: enabled !== '0',
-          mainOutput: main !== '0',
-          // The public API cannot preflight the shared auxiliary provider.
-          auxOutput: ['off', 'missing', 'always'].includes(aux) ? aux : 'off',
-          rarityMode: ['world', 'itemx'].includes(rarity) ? rarity : 'world',
-          itemsEnabled: items !== '0',
-          skillsEnabled: skills !== '0',
-          encountersEnabled: encounters !== '0',
-          debugEnabled: debug === '1',
-          effectsEnabled: effects !== '0',
-          fontScale: ['small', 'medium', 'large'].includes(fontScale) ? fontScale : 'small',
-          moduleAssetsEnabled: moduleAssets === '1',
-          lorebookEncounterEnabled: lorebookEncounter === '1',
-          skin: SKIN_MODES.includes(skin) ? skin : 'dark'
-        };
-        settingsState.settingsCache.set(id, settings);
-        presentationState.visualEffectsEnabled = settings.effectsEnabled;
-        presentationState.visualSkin = settings.skin;
-        return settings;
-      }
-    );
-    return { ...(await loading) };
+    const document = await ITEMXSettings.read(Risuai.pluginStorage);
+    const settings = ITEMXSettings.normalize(document.characters[id]);
+    settingsState.settingsCache.set(id, settings);
+    presentationState.visualEffectsEnabled = settings.effectsEnabled;
+    presentationState.visualSkin = settings.skin;
+    return { ...settings };
   }
+
+  const writeSetting = (character, key, value) => ITEMXSettings.update(Risuai.pluginStorage, settingsId(character), { [key]: value });
 
   async function isEnabled(character) {
     return (cachedSettings(character) || (await outputSettings(character))).enabled;
   }
 
   async function setEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`enabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'enabled', Boolean(value));
     updateCachedSettings(character, { enabled: Boolean(value) });
   }
 
   async function setDomainEnabled(character, domain, value) {
     const keys = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
     if (!keys[domain]) throw new Error('Invalid ITEMX domain');
-    await Risuai.pluginStorage.setItem(`${keys[domain]}:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    await writeSetting(character, keys[domain], Boolean(value));
     updateCachedSettings(character, { [keys[domain]]: Boolean(value) });
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
@@ -431,19 +371,19 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function setDebugEnabled(character, value) {
     settingsState.debugEnabled = Boolean(value);
-    await Risuai.pluginStorage.setItem(`debugEnabled:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    await writeSetting(character, 'debugEnabled', Boolean(value));
     updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');
   }
 
   async function setMainOutput(character, value) {
-    await Risuai.pluginStorage.setItem(`mainOutput:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    await writeSetting(character, 'mainOutput', Boolean(value));
     updateCachedSettings(character, { mainOutput: Boolean(value) });
   }
 
   async function setAuxOutput(character, value) {
     if (!['off', 'missing', 'always'].includes(value)) throw new Error('Invalid auxiliary output mode');
-    await Risuai.pluginStorage.setItem(`auxOutput:${character?.chaId || 'unknown'}`, value);
+    await writeSetting(character, 'auxOutput', value);
     updateCachedSettings(character, { auxOutput: value });
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
@@ -451,12 +391,12 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function setRarityMode(character, value) {
     if (!['world', 'itemx'].includes(value)) throw new Error('Invalid rarity mode');
-    await Risuai.pluginStorage.setItem(`rarityMode:${character?.chaId || 'unknown'}`, value);
+    await writeSetting(character, 'rarityMode', value);
     updateCachedSettings(character, { rarityMode: value });
   }
 
   async function setEffectsEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`effectsEnabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'effectsEnabled', Boolean(value));
     updateCachedSettings(character, { effectsEnabled: Boolean(value) });
     presentationState.markerHtmlCache.clear();
     presentationState.detailHtmlCache.clear();
@@ -465,19 +405,19 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function setFontScale(character, value) {
     if (!['small', 'medium', 'large'].includes(value)) throw new Error('Invalid font scale');
-    await Risuai.pluginStorage.setItem(`fontScale:${settingsId(character)}`, value);
+    await writeSetting(character, 'fontScale', value);
     updateCachedSettings(character, { fontScale: value });
     await syncRootFontScale(value);
   }
 
   async function setModuleAssetsEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`moduleAssetsEnabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'moduleAssetsEnabled', Boolean(value));
     updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
     portraitsState.moduleAssetCache = { key: '', at: 0, rows: [] };
   }
 
   async function setLorebookEncounterEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`lorebookEncounterEnabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'lorebookEncounterEnabled', Boolean(value));
     updateCachedSettings(character, { lorebookEncounterEnabled: Boolean(value) });
     workQueue.remember('lorebook', '');
   }
@@ -659,7 +599,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   ];
 
   async function loadBadgePosition() {
-    const saved = await Risuai.pluginStorage.getItem('badgePosition');
+    const saved = (await ITEMXSettings.read(Risuai.pluginStorage)).global.badgePosition;
     if (BADGE_POSITIONS.some(([value]) => value === saved)) uiState.badgePosition = saved;
   }
 
@@ -1116,71 +1056,22 @@ ${codexPageStyle()}
     );
   }
 
-  // Classify the stored checkpoint instead of collapsing every failure to null.
-  // `unreadable` means a checkpoint is present but this build cannot fold it:
-  // the caller must freeze rather than reseal, because the event prefix it
-  // replaced no longer exists in the message bodies.
+  // Only imported baseline events need this DTO; derived caches never lock a chat.
   function readCheckpointRecord(chat) {
     const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
-    if (raw === undefined || raw === null || raw === '') return { status: 'absent', value: null, reason: '' };
-    if (typeof raw === 'string' && raw === storageState.checkpointCacheRecord?.raw)
-      return storageState.checkpointCacheRecord.record;
-    let record;
-    try {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-        record = { status: 'unreadable', value: null, reason: 'checkpoint_not_object' };
-      else if (!Number.isInteger(parsed.v))
-        record = { status: 'unreadable', value: null, reason: 'checkpoint_no_version' };
-      else if (parsed.v > ITEMX_CHECKPOINT_VERSION)
-        record = { status: 'unreadable', value: null, reason: `checkpoint_from_newer_build_v${parsed.v}` };
-      else {
-        let value = parsed;
-        while (value.v < ITEMX_CHECKPOINT_VERSION) {
-          const migrate = ITEMX_CHECKPOINT_MIGRATIONS[value.v];
-          if (typeof migrate !== 'function') {
-            value = null;
-            break;
-          }
-          const next = migrate(value);
-          if (!next || next.v <= value.v) {
-            value = null;
-            break;
-          }
-          value = next;
-        }
-        if (!value) record = { status: 'unreadable', value: null, reason: `checkpoint_no_migration_v${parsed.v}` };
-        else if (!checkpointShapeValid(value))
-          record = { status: 'unreadable', value: null, reason: 'checkpoint_shape_invalid' };
-        else record = { status: 'ok', value, reason: '' };
-      }
-    } catch {
-      record = { status: 'unreadable', value: null, reason: 'checkpoint_unparsable' };
-    }
-    if (typeof raw === 'string') {
-      storageState.checkpointCacheRecord = { raw, record };
-    }
-    return record;
+    if (!raw) return { status: 'absent', value: null, reason: '' };
+    const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!checkpointShapeValid(value)) throw new Error('Invalid imported baseline event');
+    return { status: 'ok', value, reason: '' };
   }
 
-  function replayCheckpoint(chat) {
+  function readReplayBaseline(chat) {
     return readCheckpointRecord(chat).value;
   }
 
-  // A present-but-unreadable checkpoint freezes this chat. Reading, rendering
-  // and backup export stay available; anything that would reseal or rewrite the
-  // ledger is refused, because the prefix it replaced cannot be reconstructed.
-  function checkpointFrozen(chat) {
-    const record = readCheckpointRecord(chat);
-    const frozen = record.status === 'unreadable';
-    if (frozen && storageState.frozenReason !== record.reason) {
-      storageState.frozenReason = record.reason;
-      debugRecord('checkpoint frozen', record.reason);
-      log('checkpoint unreadable, chat frozen read-only:', record.reason);
-    }
-    if (!frozen && storageState.frozen) storageState.frozenReason = '';
-    storageState.frozen = frozen;
-    return frozen;
+  function assertLogReadable(chat) {
+    ITEMXStorage.log(chat); // Malformed authoritative data must be surfaced, never overwritten.
+    return false;
   }
 
   const FROZEN_MESSAGE =
@@ -1198,7 +1089,7 @@ ${codexPageStyle()}
   }
 
   function checkpointStatus(chat) {
-    const checkpoint = replayCheckpoint(chat);
+    const checkpoint = readReplayBaseline(chat);
     if (checkpoint?.v === ITEMX_CHECKPOINT_VERSION) {
       const messages = Array.isArray(chat?.message) ? chat.message : [];
       let boundary = checkpoint.boundary;
@@ -1217,7 +1108,7 @@ ${codexPageStyle()}
   }
 
   function buildMessageEventLookup(chat) {
-    const archived = replayCheckpoint(chat)?.rows || [];
+    const archived = readReplayBaseline(chat)?.rows || [];
     const rows = [...archived, ...messageEventLedger(chat)],
       itemByRef = new Map(),
       codexByRef = new Map(),
@@ -1261,7 +1152,7 @@ ${codexPageStyle()}
   }
 
   function itemxStorageFootprint(chat) {
-    const state = chat?.scriptstate || {};
+    const state = ITEMXStorage.persist(chat).scriptstate || {};
     let stateBytes = 0,
       markerBytes = 0,
       markerCount = 0;
@@ -1592,6 +1483,7 @@ ${codexPageStyle()}
   }
 
   function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
+    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replay(chat).codex;
     const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
     state.history ||= { skill: {}, monster: {} };
     const messages = chat?.message || [],
@@ -1669,133 +1561,21 @@ ${codexPageStyle()}
     const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(kept) };
     const reconciled = reconcileStoredRefViews(next, index).chat;
-    return { chat: checkpointReplay(reconciled), changed: true };
+    return { chat: refreshReplayCache(reconciled), changed: true };
   }
 
-  function checkpointReplay(chat, options = {}) {
-    const messages = Array.isArray(chat?.message) ? chat.message : [],
-      status = checkpointStatus(chat);
-    const liveRows = messageEventLedger(chat),
-      liveManual = manualLedger(chat);
-    const tailMessages = messages.length - (status.valid ? status.checkpoint.boundary + 1 : 0);
-    const eventPressure = liveRows.length + liveManual.length >= ITEMX_CHECKPOINT_TAIL_EVENTS;
-    const messagePressure = tailMessages >= ITEMX_CHECKPOINT_TRIGGER_MESSAGES;
-    const ledgerBytes = storageBytes(JSON.stringify(liveRows)) + storageBytes(JSON.stringify(liveManual));
-    const bytePressure = ledgerBytes >= ITEMX_CHECKPOINT_TAIL_BYTES;
-    // Never reseal a frozen chat: resealing folds the live tail onto a
-    // checkpoint we could not read, which silently drops the sealed prefix.
-    if (checkpointFrozen(chat)) return chat;
-    if (!options.force && !eventPressure && !messagePressure && !bytePressure && !(status.checkpoint && !status.valid))
-      return chat;
-    const keepMessages = Math.max(
-      0,
-      Math.min(
-        ITEMX_CHECKPOINT_TAIL_MESSAGES,
-        Number.isInteger(options.keepMessages) ? options.keepMessages : ITEMX_CHECKPOINT_TAIL_MESSAGES
-      )
-    );
-    let tailStart = Math.max(0, messages.length - keepMessages);
-    const lookup = buildMessageEventLookup(chat),
-      payloadByKey = new Map(lookup.rows.map((row) => [`${row.domain}:${row.ref}`, row]));
-    const tailCost = (start) => {
-      const used = new Set();
-      let fullEvents = 0,
-        fullBytes = 0;
-      for (let index = start; index < messages.length; index += 1) {
-        const text = messageData(messages[index]);
-        for (const marker of text.match(ITEMXCore.MARKER_RE) || []) {
-          fullEvents += 1;
-          fullBytes += storageBytes(marker);
-        }
-        for (const marker of text.match(ITEMXCodex.MARKER_RE) || []) {
-          fullEvents += 1;
-          fullBytes += storageBytes(marker);
-        }
-        text.replace(ITEMX_REF_RE, (_, ref) => (used.add(`item:${ref}`), ''));
-        text.replace(ITEMX_CODEX_REF_RE, (_, ref) => (used.add(`codex:${ref}`), ''));
-      }
-      const rows = [...used].map((key) => payloadByKey.get(key)).filter(Boolean);
-      const manual = liveManual.filter((row) => row.afterIndex >= start);
-      return {
-        events: fullEvents + rows.length + manual.length,
-        bytes: fullBytes + storageBytes(JSON.stringify(rows)) + storageBytes(JSON.stringify(manual))
-      };
-    };
-    while (tailStart < messages.length) {
-      const cost = tailCost(tailStart);
-      if (cost.events <= ITEMX_CHECKPOINT_TAIL_EVENTS && cost.bytes <= ITEMX_CHECKPOINT_TAIL_BYTES) break;
-      tailStart += 1;
-    }
-    const boundary = tailStart - 1;
-    if (boundary < 0 || (status.valid && boundary <= status.checkpoint.boundary)) return chat;
-    const start = status.valid ? status.checkpoint.boundary + 1 : 0;
-    const baseManual = status.valid ? liveManual : [...(status.checkpoint?.manual || []), ...liveManual];
-    const item = rebuildWithManual(chat, lookup, {
-      start,
-      end: boundary,
-      registry: status.valid ? status.checkpoint.item.registry : undefined,
-      history: status.valid ? status.checkpoint.item.history : undefined,
-      manual: baseManual
-    });
-    const codex = rebuildCodexWithLedger(chat, lookup, {
-      start,
-      end: boundary,
-      base: status.valid ? status.checkpoint.codex : undefined
-    });
-    const next = ITEMXCore.clone(chat),
-      rowsByKey = new Map(lookup.rows.map((row) => [`${row.domain}:${row.ref}`, row]));
-    for (let index = 0; index <= boundary; index += 1) {
-      const message = next.message?.[index];
-      if (!message) continue;
-      const original = messageData(message);
-      const source = original
-        .replace(ITEMXCore.MARKER_RE, '')
-        .replace(ITEMXCodex.MARKER_RE, '')
-        .replace(ITEMX_REF_RE, '')
-        .replace(ITEMX_CODEX_REF_RE, '')
-        .replace(/[ \t]+\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n');
-      if (typeof message.data === 'string') message.data = source;
-      else if (typeof message.content === 'string') message.content = source;
-    }
-    const usedTail = new Set();
-    for (let index = boundary + 1; index < (next.message || []).length; index += 1) {
-      const text = messageData(next.message[index]);
-      text.replace(ITEMX_REF_RE, (_, ref) => (usedTail.add(`item:${ref}`), ''));
-      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => (usedTail.add(`codex:${ref}`), ''));
-    }
-    const tailRows = [...rowsByKey].filter(([key]) => usedTail.has(key)).map(([, row]) => row);
-    const tailManual = baseManual.filter((row) => row.afterIndex > boundary);
-    const sealed = createCheckpoint(
-      item,
-      codex,
-      boundary,
-      messages[boundary]?.chatId || '',
-      status.checkpoint?.storage?.pruned === true
-    );
-    if (status.checkpoint?.restored) {
-      sealed.checkpoint.restored = true;
-      sealed.encoded = JSON.stringify(sealed.checkpoint);
-    }
-    next.scriptstate = {
-      ...(next.scriptstate || {}),
-      [ITEMX_CHECKPOINT_KEY]: sealed.encoded,
-      [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows),
-      [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual)
-    };
-    // Keep display preferences for both the sealed prefix and recent tail.
-    // They are user choices, not disposable event history.
-    delete next.scriptstate[ITEMXCore.STATE_KEY];
-    delete next.scriptstate[ITEMXCodex.STATE_KEY];
-    return next;
+  function refreshReplayCache(chat, options = {}) {
+    // Cache maintenance cannot truncate the log, markers, or manual history.
+    return ITEMXStorage.hydrate(ITEMXStorage.persist(chat));
   }
 
   function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat), options = {}) {
+    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replay(chat).item;
     const messages = Array.isArray(chat?.message) ? chat.message : [];
     const start = Math.max(0, options.start || 0),
       end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
     const ledger = options.manual || [
-        ...(start === 0 ? replayCheckpoint(chat)?.manual || [] : []),
+        ...(start === 0 ? readReplayBaseline(chat)?.manual || [] : []),
         ...manualLedger(chat)
       ],
       manualByIndex = new Map(),
@@ -1864,11 +1644,11 @@ ${codexPageStyle()}
     const ctx = await context();
     if (!ctx) return null;
     return (async () => {
-      let latestChat = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      let latestChat = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latestChat) return null;
       if (
         upgradeDisplayRefs &&
-        !checkpointFrozen(latestChat) &&
+        !assertLogReadable(latestChat) &&
         !latestChat.isStreaming &&
         !(latestChat.message || []).some((message) => message?.isStreaming)
       ) {
@@ -1879,7 +1659,7 @@ ${codexPageStyle()}
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
       }
-      checkpointFrozen(latestChat);
+      assertLogReadable(latestChat);
       const lookup = buildMessageEventLookup(latestChat);
       const checkpoint = checkpointStatus(latestChat);
       const usableCheckpoint =
@@ -1931,6 +1711,7 @@ ${codexPageStyle()}
   }
 
   const CHAT_DATA_KEYS = [
+    ITEMXStorage.LOG, ITEMXStorage.PREFS, ITEMXStorage.CACHE,
     ITEMXCore.STATE_KEY,
     ITEMXCore.CHAT_KEY,
     ITEMXCodex.STATE_KEY,
@@ -1943,7 +1724,7 @@ ${codexPageStyle()}
   ];
 
   function backupState(ctx) {
-    const chat = ctx.chat,
+    const chat = ITEMXStorage.hydrate(ctx.chat),
       lookup = buildMessageEventLookup(chat),
       status = checkpointStatus(chat);
     const usable = status.valid && status.checkpoint.item.history && status.checkpoint.codex.history;
@@ -2027,7 +1808,7 @@ ${codexPageStyle()}
         }
         base.scriptstate = { ...base.scriptstate };
         for (const key of CHAT_DATA_KEYS)
-          if (![ITEMX_AUX_KEY, ITEMXCore.CHAT_KEY].includes(key)) delete base.scriptstate[key];
+          if (![ITEMX_AUX_KEY, ITEMXCore.CHAT_KEY, ITEMXStorage.LOG].includes(key)) delete base.scriptstate[key];
       }
       const next = {
         ...base,
@@ -2038,7 +1819,7 @@ ${codexPageStyle()}
           [ITEMX_MANUAL_KEY]: '[]'
         }
       };
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       const active = await context();
       if (
         !active ||
@@ -2051,8 +1832,6 @@ ${codexPageStyle()}
       pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
 
-      storageState.checkpointCacheRecord = null;
-      storageState.checkpointCacheRecord = null;
 
       presentationState.markerHtmlCache.clear();
       presentationState.detailHtmlCache.clear();
@@ -2247,13 +2026,14 @@ ${codexPageStyle()}
     const result = await (async () => {
       const active = await context();
       if (!active || active.key !== ctx.key) throw new Error('정리 중 채팅이 바뀌었습니다. 다시 시도하세요.');
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
         throw new Error('출력 스트리밍이 끝난 뒤 정리할 수 있습니다.');
       }
       const cleaned = cleanChatPluginData(latest);
-      await saveChat(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
+      workQueue.assertCurrent();
+      await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
       // Cleanup is intended for leaving ITEMX behind. Disable this bot only
       // after the chat write succeeds so catch-up cannot immediately recreate
       // the markers that were just removed.
@@ -2304,13 +2084,13 @@ ${codexPageStyle()}
     const result = await (async () => {
       const active = await context();
       if (!active || active.key !== ctx.key) throw new Error('최적화 중 채팅이 바뀌었습니다. 다시 시도하세요.');
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue))
         throw new Error('출력 스트리밍이 끝난 뒤 최적화할 수 있습니다.');
-      if (checkpointFrozen(latest)) throw new Error(FROZEN_MESSAGE);
+      if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
       const before = itemxStorageFootprint(latest);
-      const compacted = checkpointReplay(latest, { force: true, keepMessages: 8 });
+      const compacted = refreshReplayCache(latest, { force: true, keepMessages: 8 });
       const aux = auxiliaryHistory(compacted);
       compacted.scriptstate = {
         ...(compacted.scriptstate || {}),
@@ -2324,7 +2104,6 @@ ${codexPageStyle()}
     pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
 
-    storageState.checkpointCacheRecord = null;
 
     pipelineState.eventPayloads = new Map();
     presentationState.markerHtmlCache.clear();
@@ -2364,9 +2143,9 @@ ${codexPageStyle()}
 
   async function commitManualEvents(loaded, events, label, review = { source: 'manual' }, refresh = true) {
     if (!loaded || !Array.isArray(events) || !events.length) throw new Error('No manual events to commit');
-    const latest = await Risuai.getChatFromIndex(loaded.characterIndex, loaded.chatIndex);
+    const latest = await readChat(loaded.characterIndex, loaded.chatIndex);
     if (!latest) throw new Error('Chat disappeared during manual operation');
-    if (checkpointFrozen(latest)) throw new Error(FROZEN_MESSAGE);
+    if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
     if (loaded.expectedChat && JSON.stringify(latest) !== JSON.stringify(loaded.expectedChat))
       throw new Error('저장 직전 대화가 변경되어 보완을 취소했습니다.');
     const ledger = manualLedger(latest);
@@ -2386,14 +2165,14 @@ ${codexPageStyle()}
     }
     let next = ITEMXCore.clone(latest);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger) };
-    next = checkpointReplay(next);
+    next = refreshReplayCache(next);
     const snapshot = rebuildWithManual(
       next,
       buildMessageEventLookup(next),
       checkpointStatus(next).valid
         ? {
-            start: replayCheckpoint(next).boundary + 1,
-            registry: replayCheckpoint(next).item.registry,
+            start: readReplayBaseline(next).boundary + 1,
+            registry: readReplayBaseline(next).item.registry,
             manual: manualLedger(next)
           }
         : {}
@@ -2589,42 +2368,16 @@ ${codexPageStyle()}
   }
 
   async function auxiliaryZeroHistory(ctx) {
-    try {
-      const raw = await Risuai.pluginStorage.getItem(ITEMX_AUX_ZERO_STORAGE_KEY),
-        parsed = typeof raw === 'string' ? JSON.parse(raw) : raw,
-        current = parsed?.[ctx.key]?.history;
-      if (current && typeof current === 'object' && !Array.isArray(current)) return current;
-      const legacyRaw = await Risuai.pluginStorage.getItem(`auxZero:${ctx.key}`),
-        legacy = typeof legacyRaw === 'string' ? JSON.parse(legacyRaw) : legacyRaw;
-      return legacy && typeof legacy === 'object' && !Array.isArray(legacy) ? legacy : {};
-    } catch {
-      return {};
-    }
+    return ITEMXStorage.cache(ctx.chat).auxZero || {};
   }
 
   async function rememberAuxiliaryZero(ctx, guardKey) {
-    const history = await auxiliaryZeroHistory(ctx);
-    history[guardKey] = Date.now();
-    let ring = {};
-    try {
-      const raw = await Risuai.pluginStorage.getItem(ITEMX_AUX_ZERO_STORAGE_KEY),
-        parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ring = parsed;
-    } catch {}
-    ring[ctx.key] = {
-      at: Date.now(),
-      history: boundedObjectTail(history, 24, Math.floor(ITEMX_AUX_ZERO_MAX_BYTES / 4))
-    };
-    ring = Object.fromEntries(
-      Object.entries(ring)
-        .sort(([, left], [, right]) => Number(left?.at || 0) - Number(right?.at || 0))
-        .slice(-ITEMX_AUX_ZERO_CHAT_LIMIT)
-    );
-    while (Object.keys(ring).length > 1 && storageBytes(JSON.stringify(ring)) > ITEMX_AUX_ZERO_MAX_BYTES)
-      delete ring[Object.keys(ring)[0]];
-    await Risuai.pluginStorage.setItem(ITEMX_AUX_ZERO_STORAGE_KEY, JSON.stringify(ring));
-    if (typeof Risuai.pluginStorage.removeItem === 'function')
-      await Risuai.pluginStorage.removeItem(`auxZero:${ctx.key}`).catch(() => {});
+    const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
+    if (!latest || JSON.stringify(latest.message) !== JSON.stringify(ctx.chat.message)) return;
+    const derived = ITEMXStorage.cache(latest);
+    derived.auxZero = boundedObjectTail({ ...derived.auxZero, [guardKey]: Date.now() }, 64, ITEMX_AUX_HISTORY_MAX_BYTES);
+    latest.scriptstate = { ...latest.scriptstate, [ITEMXStorage.CACHE]: JSON.stringify({ ...derived, v: 1 }) };
+    await saveChat(ctx.characterIndex, ctx.chatIndex, latest);
   }
 
   function messageMetadata(message) {
@@ -2747,7 +2500,6 @@ ${codexPageStyle()}
   }
 
   async function recoverAuxiliaryOutput(options = {}) {
-    if (storageState.frozen) return null;
     return recoverAuxiliaryOutputNow(options);
   }
 
@@ -2873,7 +2625,7 @@ ${codexPageStyle()}
     if (!ctx || !(await isEnabled(ctx.character))) return null;
     // Re-check against this chat rather than the cached flag: recovery commits
     // straight to the chat and must never land on an unreadable ledger.
-    if (checkpointFrozen(ctx.chat)) return null;
+    if (assertLogReadable(ctx.chat)) return null;
     const settings = await outputSettings(ctx.character);
     settingsState.debugEnabled = settings.debugEnabled;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
@@ -2897,7 +2649,7 @@ ${codexPageStyle()}
 
     return (async () => {
       if (!force) await delay(350);
-      const current = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const current = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!current || ITEMXCore.fnv1a(messageData(current.message?.[index])) !== sourceHash) return null;
       if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return null;
       if (auxiliaryHistory(current)[guardKey] && !force) return null;
@@ -3036,7 +2788,7 @@ ${codexPageStyle()}
       const allErrors = [...parsed.errors, ...codexParsed.errors];
       if (!valid.length && allErrors.length) throw new Error(`보조 출력 검증 실패 (${allErrors[0]})`);
 
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return null;
       if (!valid.length) {
         if (rejectedIds.length) {
@@ -3369,7 +3121,7 @@ ${codexPageStyle()}
   }
 
   async function repairCommittedTransport(ctx, index, source) {
-    if (checkpointFrozen(ctx?.chat)) return null;
+    if (assertLogReadable(ctx?.chat)) return null;
     const settings = await outputSettings(ctx.character);
     const lookup = buildMessageEventLookup(ctx.chat);
     const base = rebuildWithManual(ctx.chat, lookup).registry;
@@ -3387,7 +3139,7 @@ ${codexPageStyle()}
     ITEMXCore.MARKER_RE.lastIndex = 0;
     ITEMXCodex.MARKER_RE.lastIndex = 0;
     if (positioned === source && !needsCompaction) return { ctx, source };
-    const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+    const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
     if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== ITEMXCore.fnv1a(source)) return null;
     const next = ITEMXCore.clone(latest);
     const message = next.message?.[index];
@@ -4091,7 +3843,7 @@ ${codexPageStyle()}
 
   async function setSkin(character, value) {
     const next = SKIN_MODES.includes(value) ? value : 'dark';
-    await Risuai.pluginStorage.setItem(`skin:${settingsId(character)}`, next);
+    await writeSetting(character, 'skin', next);
     updateCachedSettings(character, { skin: next });
     await syncMainEffectsState();
   }
@@ -4203,7 +3955,7 @@ ${codexPageStyle()}
     if (!presentationState.presentationRecords) {
       const records = new Map(),
         chat = pipelineState.cachedLoaded?.chat;
-      const manual = [...(replayCheckpoint(chat)?.manual || []), ...manualLedger(chat)];
+      const manual = [...(readReplayBaseline(chat)?.manual || []), ...manualLedger(chat)];
       const manualByIndex = new Map();
       for (const row of manual) {
         const index = Math.min(Math.max(-1, row.afterIndex), (chat?.message?.length || 0) - 1);
@@ -4464,7 +4216,7 @@ ${codexPageStyle()}
       const active = await context();
       if (!active || active.key !== ctx.key) throw new Error('스캔 중 채팅이 바뀌었습니다. 다시 시도하세요.');
       const scanResult = await (async () => {
-        const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+        const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
         if (!latest) throw new Error('현재 채팅을 다시 불러오지 못했습니다.');
         if (
           latest.isStreaming ||
@@ -5227,7 +4979,7 @@ ${codexPageStyle()}
     await (async () => {
       const active = await context();
       if (!active || active.key !== loaded.key) throw new Error('채팅이 변경되었습니다.');
-      const latest = await Risuai.getChatFromIndex(active.characterIndex, active.chatIndex);
+      const latest = await readChat(active.characterIndex, active.chatIndex);
       if (!latest) throw new Error('현재 채팅을 찾을 수 없습니다.');
       if (latest?.isStreaming || latest?.message?.some((message) => message.isStreaming))
         throw new Error('응답이 끝난 뒤 기록 설정을 변경해 주세요.');
@@ -5570,11 +5322,7 @@ ${codexPageStyle()}
 
   // One banner, both render paths. The only difference between the native
   // drawer and the iframe fallback is the class prefix, so it is a parameter.
-  function frozenBannerHtml(native) {
-    if (!storageState.frozen) return '';
-    const cls = native ? 'itemx2-root-frozen' : 'itemx-frozen';
-    return `<div class="itemx2-frozen-banner ${cls}" role="alert"><strong>읽기 전용으로 잠김</strong><small>${ITEMXCore.esc(FROZEN_MESSAGE)}</small></div>`;
-  }
+  function frozenBannerHtml() { return ''; }
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open)
@@ -5768,7 +5516,6 @@ ${codexPageStyle()}
       Number(loaded.moduleAssetsEnabled),
       Number(loaded.lorebookEncounterEnabled),
       Number(loaded.debugEnabled),
-      Number(storageState.frozen),
       JSON.stringify(ITEMXHistory.preferences(loaded.chat)),
       ITEMXHistory.completedTurns(loaded.chat).total
     ].join(':');
@@ -5878,7 +5625,7 @@ ${codexPageStyle()}
         hook: `itemx2-position-${key}`,
         run: async () => {
           uiState.badgePosition = key;
-          await Risuai.pluginStorage.setItem('badgePosition', key);
+          await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: key });
           uiState.status = `배지 위치 · ${label}`;
           if (uiState.rootDrawer) {
             for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
@@ -7072,7 +6819,7 @@ ${codexPageStyle()}
             const value = button.dataset.position;
             if (!BADGE_POSITIONS.some(([key]) => key === value)) return;
             uiState.badgePosition = value;
-            await Risuai.pluginStorage.setItem('badgePosition', value);
+            await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: value });
             if (uiState.rootDrawer) {
               for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
               await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);

@@ -3884,11 +3884,7 @@ const ITEMXState = (() => {
         characterAssetCache: { key: '', at: 0, rows: [] },
         combinedAssetCache: { key: '', at: 0, rows: [] }
       }),
-      storage: owner({
-        checkpointCacheRecord: null,
-        frozen: false,
-        frozenReason: ''
-      }),
+      storage: owner({}),
       settings: owner({
         settingsCache: new Map(),
         debugEnabled: false,
@@ -3924,6 +3920,133 @@ const ITEMXState = (() => {
     });
   }
   return { create };
+})();
+
+const ITEMXStorage = (() => {
+  const LOG = 'itemx:log', PREFS = 'itemx:prefs', CACHE = 'itemx:cache';
+  const DTO = Object.freeze({ manual: '$__itemx2_manual_events', messages: '$__itemx2_message_events', baseline: '$__itemx2_checkpoint', aux: '$__itemx2_aux_processed', lore: '$__itemx2_lore_enrichment', prefs: '$__itemx2_history_preferences', item: '$__itemx2_state', codex: '$__itemx2_codex_state' });
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const parse = (raw, fallback) => raw == null || raw === '' ? fallback : typeof raw === 'string' ? JSON.parse(raw) : clone(raw);
+  function log(chat) {
+    const value = parse(chat?.scriptstate?.[LOG], { v: 1, rows: [] });
+    if (value?.v !== 1 || !Array.isArray(value.rows) || value.rows.some(row => !row?.id || !row.event?.kind)) throw new Error('ITEMX authoritative log is invalid');
+    return value;
+  }
+  function cache(chat) {
+    try { const value = parse(chat?.scriptstate?.[CACHE], {}); return value?.v === 1 ? value : {}; } catch { return {}; }
+  }
+  function append(rows, entry) {
+    const prior = rows.find(row => row.id === entry.id);
+    if (prior) { if (JSON.stringify(prior.event) !== JSON.stringify(entry.event)) throw new Error('ITEMX event identity collision'); return; }
+    rows.push(clone(entry));
+  }
+  function capture(chat, { legacy = false } = {}) {
+    const state = chat?.scriptstate || {}, document = log(chat), rows = document.rows;
+    const checkpoint = parse(state[DTO.baseline], null);
+    if (checkpoint && !rows.some(row => row.id === checkpoint.logId)) {
+      if (![1, 2].includes(checkpoint.v) || !checkpoint.item?.registry || !checkpoint.codex?.skills) throw new Error('Cannot import unreadable authoritative checkpoint');
+      const event = { kind: 'baseline', item: checkpoint.item, codex: checkpoint.codex, boundary: checkpoint.boundary, sealedThroughId: checkpoint.sealedThroughId || '', restored: Boolean(checkpoint.restored), storage: checkpoint.storage || {} };
+      append(rows, { id: `baseline:${ITEMXCore.fnv1a(JSON.stringify(event))}`, domain: 'baseline', event });
+    }
+    const messageRows = [...(legacy ? checkpoint?.rows || [] : []), ...parse(state[DTO.messages], [])];
+    for (const row of messageRows) if (row.payload?.event) {
+      const located = (chat.message || []).findIndex(message => ITEMXCore.messageText(message).includes(`@${row.ref}`));
+      const parsedIndex = parseInt(row.ref.slice(1).split('_')[0], 36);
+      const index = located >= 0 ? located : Number.isFinite(parsedIndex) ? parsedIndex : 0;
+      append(rows, { id: `${row.domain}:${row.ref}`, domain: row.domain, ref: row.ref, ...(legacy && (located < 0 || (checkpoint && index <= (checkpoint.sealedThroughId ? (chat.message || []).findIndex(message => message.chatId === checkpoint.sealedThroughId) : checkpoint.boundary))) ? { inactive: true } : {}), messageIndex: index, offset: located >= 0 ? ITEMXCore.messageText(chat.message[located]).indexOf(`@${row.ref}`) : 0, messageId: chat.message?.[index]?.chatId || '', ordinal: parseInt(row.ref.split('_')[1], 36) || 0, code: row.ref.split('_').at(-1), event: row.payload.event, ...(row.payload.review ? { review: row.payload.review } : {}) });
+    }
+    const manuals = [...(legacy ? checkpoint?.manual || [] : []), ...parse(state[DTO.manual], [])];
+    manuals.forEach((row, index) => {
+      if (!row.event?.kind) return;
+      const identity = row.id || `manual:${index}:${ITEMXCore.fnv1a(JSON.stringify([row.afterIndex, row.at, row.event]))}`;
+      append(rows, { id: identity, domain: 'item', afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, ...(row.presentation?.review ? { review: row.presentation.review } : {}) });
+    });
+    (chat.message || []).forEach((message, index) => {
+      const text = ITEMXCore.messageText(message);
+      for (const [domain, engine] of [['item', ITEMXCore], ['codex', ITEMXCodex]]) {
+        let ordinal = 0;
+        for (const match of text.matchAll(new RegExp(engine.MARKER_RE.source, 'g'))) {
+          const payload = engine.decodePayload(match[1]);
+          if (!payload?.event) continue;
+          const at = ordinal++;
+          const id = `inline:${domain}:${message.chatId || index}:${at}:${ITEMXCore.fnv1a(match[1])}`;
+          append(rows, { id, domain, messageId: message.chatId || '', messageIndex: index, offset: match.index, ordinal: at, code: ITEMXCore.fnv1a(match[1]), event: payload.event });
+        }
+      }
+    });
+    return document;
+  }
+  function replay(chat) {
+    const document = capture(chat), baselineIndex = document.rows.findLastIndex(row => row.domain === 'baseline');
+    const baseline = document.rows[baselineIndex]?.event;
+    const item = baseline ? clone(baseline.item) : { registry: ITEMXCore.newRegistry(), history: {} };
+    const codex = baseline ? clone(baseline.codex) : ITEMXCodex.snapshot();
+    item.history ||= {}; codex.history ||= { skill: {}, monster: {} };
+    const payloads = new Map(), manuals = [], occurrences = new Map();
+    const rows = document.rows.slice(baselineIndex + 1).map((row, order) => ({ ...row, order })).sort((a, b) =>
+      (a.afterIndex ?? a.messageIndex ?? 0) - (b.afterIndex ?? b.messageIndex ?? 0) || Number('afterIndex' in a) - Number('afterIndex' in b) || (a.offset ?? a.ordinal ?? a.order) - (b.offset ?? b.ordinal ?? b.order));
+    for (const row of rows) {
+      if (row.inactive) continue;
+      if (row.id.startsWith('inline:') && rows.some(other => !other.inactive && other.ref && other.domain === row.domain && other.code === row.code && (other.messageId || other.messageIndex) === (row.messageId || row.messageIndex))) continue;
+      const identity = row.id;
+      const event = row.event, domain = row.domain === 'item' ? 'item' : event.domain;
+      const registry = domain === 'item' ? item.registry.items : ITEMXCodex.storeFor(codex, domain).entries;
+      const id = event.item?.id || event.entity?.id || event.patch?.id;
+      const ids = [...new Set([id, event.patch?.equip, event.patch?.unequip, ...(event.patch?.inputs || []).map(x => x.id), ...(event.patch?.outputs || []).map(x => x.id)].filter(Boolean))];
+      const prior = new Map(ids.map(key => [key, registry[key] ? clone(registry[key]) : null]));
+      const engine = domain === 'item' ? ITEMXCore : ITEMXCodex;
+      const view = engine.applyEvent(domain === 'item' ? item.registry : codex, event);
+      const at = row.afterIndex ?? row.messageIndex ?? 0, occurrenceKey = `${row.domain}:${at}`, occurrence = occurrences.get(occurrenceKey) || 0;
+      occurrences.set(occurrenceKey, occurrence + 1);
+      if (view != null) for (const key of ids) ITEMXHistory.observe(domain === 'item' ? item.history : codex.history[domain], domain, prior.get(key), registry[key], event, at, () => `${row.messageId || chat.message?.[at]?.chatId || at}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`);
+      const payload = { v: engine.VERSION, event: clone(event), view: view == null ? null : clone(view), previous: domain === 'item' ? ITEMXCore.comparisonView(prior.get(id)) : prior.get(id) || null, ...(row.review ? { review: row.review } : {}) };
+      payloads.set(identity, payload);
+      if (row.ref) payloads.set(`${row.domain}:${row.ref}`, payload);
+      if ('afterIndex' in row) manuals.push({ id: row.id, afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, presentation: { previous: payload.previous, view: ITEMXCore.comparisonView(payload.view), review: row.review } });
+    }
+    return { item: { ...item, schema: ITEMXCore.VERSION, rev: 2, fingerprint: ITEMXCore.fnv1a(JSON.stringify(document)), updatedAt: 0 }, codex: { ...codex, updatedAt: 0 }, payloads, manuals };
+  }
+
+  function hydrate(chat) {
+    if (!chat || !chat.scriptstate?.[LOG]) return chat;
+    const next = clone(chat), state = next.scriptstate, document = log(next), derived = cache(next);
+    const baselineIndex = document.rows.findLastIndex(row => row.domain === 'baseline');
+    const baseline = document.rows[baselineIndex]?.event;
+    const rows = document.rows.slice(baselineIndex + 1);
+    const boundary = baseline?.sealedThroughId ? (next.message || []).findIndex(message => message.chatId === baseline.sealedThroughId) : baseline?.boundary ?? -1;
+    const projected = replay(chat);
+    state[DTO.messages] = JSON.stringify(rows.filter(row => row.ref).map(row => ({ ref: row.ref, domain: row.domain, payload: projected.payloads.get(`${row.domain}:${row.ref}`) })).filter(row => row.payload));
+    state[DTO.manual] = JSON.stringify(projected.manuals);
+    if (baseline) state[DTO.baseline] = JSON.stringify({ v: 2, ...baseline, logId: document.rows[baselineIndex].id, boundary, rows: [], manual: [] });
+    else delete state[DTO.baseline];
+    state[DTO.prefs] = JSON.stringify(parse(state[PREFS], { after: 10, keep: {}, archived: {} }));
+    for (const field of ['aux', 'lore', 'item', 'codex']) if (derived[field] !== undefined) state[DTO[field]] = JSON.stringify(derived[field]);
+    return next;
+  }
+  function persist(chat, options = {}) {
+    const next = clone(chat), state = next.scriptstate ||= {}, document = capture(next, options), prior = cache(next);
+    const prefs = parse(state[DTO.prefs], parse(state[PREFS], { after: 10, keep: {}, archived: {} }));
+    const derived = { v: 1, ...prior };
+    for (const field of ['aux', 'lore', 'item', 'codex']) if (state[DTO[field]] !== undefined) derived[field] = parse(state[DTO[field]], null);
+    for (const key of Object.values(DTO)) delete state[key];
+    state[LOG] = JSON.stringify(document); state[PREFS] = JSON.stringify(prefs); state[CACHE] = JSON.stringify(derived);
+    return next;
+  }
+  return { LOG, PREFS, CACHE, DTO, log, cache, capture, replay, hydrate, persist };
+})();
+const ITEMXSettings = (() => {
+  const KEY = 'itemx:settings';
+  const schema = Object.freeze({ enabled: true, mainOutput: true, auxOutput: ['off', 'missing', 'always'], rarityMode: ['world', 'itemx'], itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, debugEnabled: false, effectsEnabled: true, fontScale: ['small', 'medium', 'large'], moduleAssetsEnabled: false, lorebookEncounterEnabled: false, skin: ['dark', 'frost', 'hanji'] });
+  function normalize(value = {}) { return Object.fromEntries(Object.entries(schema).map(([key, rule]) => [key, Array.isArray(rule) ? rule.includes(value[key]) ? value[key] : rule[0] : typeof value[key] === 'boolean' ? value[key] : rule])); }
+  async function read(api) { const raw = await api.getItem(KEY); const value = typeof raw === 'string' ? JSON.parse(raw) : raw; if (value == null) return { v: 1, global: { badgePosition: 'rm' }, characters: {} }; if (value.v !== 1 || !value.global || !value.characters) throw new Error('Invalid ITEMX settings document'); return value; }
+  async function update(api, id, patch) { const doc = await read(api); if (id == null) Object.assign(doc.global, patch); else doc.characters[id] = normalize({ ...doc.characters[id], ...patch }); await api.setItem(KEY, JSON.stringify(doc)); return doc; }
+  function migrate(entries) {
+    const doc = { v: 1, global: { badgePosition: entries.badgePosition || 'rm' }, characters: {} };
+    for (const [key, value] of Object.entries(entries)) for (const [field, rule] of Object.entries(schema)) if (key.startsWith(field + ':')) { const id = key.slice(field.length + 1); doc.characters[id] ||= {}; doc.characters[id][field] = Array.isArray(rule) ? value : value === '1'; }
+    for (const id of Object.keys(doc.characters)) doc.characters[id] = normalize(doc.characters[id]);
+    return doc;
+  }
+  return { KEY, schema, normalize, read, update, migrate };
 })();
 
 const ITEMX_STYLE = ":root { color-scheme: dark; font-family: Inter, Pretendard, \"Noto Sans KR\", sans-serif; }\n    * { box-sizing: border-box; }\n    body { margin: 0; min-height: 100vh; background: #080a10; color: #e6ebf4; }\n    button, select { font: inherit; }\n    button { color: inherit; }\n\n    .risu-shell { min-height: 100vh; background: radial-gradient(900px 560px at 50% 20%, #171b27 0, #0b0e15 55%, #07090e 100%); }\n    .risu-topbar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #202532; background: rgba(12,15,23,.94); color: #aeb7c9; font-size: 13px; }\n    .risu-topbar strong { color: #f2f4f8; font-size: 14px; }\n    .stage { width: min(920px, 100%); margin: 0 auto; padding: 22px 18px 64px; }\n    .demo-note { display: flex; align-items: center; gap: 9px; margin: 0 auto 14px; width: min(760px,100%); padding: 9px 12px; border: 1px solid #30394a; border-radius: 10px; background: #111622; color: #919db2; font-size: 12px; line-height: 1.45; }\n    .demo-note b { color: #d8b25c; white-space: nowrap; }\n\n    .lab { width: min(760px, 100%); margin: 0 auto 14px; padding: 12px; border: 1px solid #252c3a; border-radius: 13px; background: rgba(13,17,26,.96); }\n    .lab-title { margin-bottom: 9px; color: #8e9ab0; font-size: 10px; font-weight: 800; letter-spacing: .22em; }\n    .lab-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }\n    .lab label { display: grid; gap: 5px; color: #79869d; font-size: 11px; }\n    .lab select, .lab button { min-height: 34px; border: 1px solid #31394a; border-radius: 8px; background: #171c28; color: #d9dfeb; padding: 0 9px; }\n    .lab button { cursor: pointer; }\n    .lab button[aria-pressed=\"true\"] { border-color: #806a3d; background: #2a2418; color: #f0d79d; }\n\n    \n    .itemx-panel { display: flex; flex-direction: column; width: min(560px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #232c3d; border-radius: 14px; background: #0a0d14; color: #e6ebf4; font-size: .9rem; box-shadow: 0 24px 70px rgba(0,0,0,.48); }\n    .itemx-ph { display: flex; align-items: center; gap: .45em; padding: 1em 1.05em .85em; border-bottom: 1px solid rgba(212,175,110,.14); background: radial-gradient(120% 150% at 18% -40%,rgba(212,175,110,.10),transparent 55%),linear-gradient(180deg,#131a28,#0c1019); }\n    .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }\n    .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }\n    .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }\n    .itemx-ph-sub { color: #77839c; font-size: .72rem; }\n    .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }\n    .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }\n    .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }\n    .itemx-seg-on { border-bottom-color: #d4af6e; color: #f2ead9; font-weight: 700; }\n    .itemx-seg-n { opacity: .65; font-size: .92em; }\n    .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }\n    .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }\n    .itemx-search { flex: 1; color: #64718c; }\n    .itemx-body { padding: .75em 1.05em .95em; }\n    .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }\n    .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }\n    .itemx-tile:hover,.itemx-tile:focus-visible { border-color: var(--p,#d4af6e); outline: none; background: #141d2c; }\n    .itemx-tile-bar { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rk); }\n    .itemx-tile-eq { position: absolute; top: 0; right: 0; border-top: 16px solid #ffd479; border-left: 16px solid transparent; opacity: .85; }\n    .itemx-tile-em { grid-row: 1/span 2; align-self: center; width: 2.55em; height: 2.55em; display: grid; place-items: center; border: 1px solid var(--rks); border-radius: 11px; background: radial-gradient(85% 85% at 50% 28%,var(--rks),transparent 80%); font-size: 1.1em; }\n    .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }\n    .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }\n    .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }\n    .itemx-tile-lc { color: #67748c; font-size: .7rem; }\n    .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }\n    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }\n\n    \n    .itemx-card { content-visibility:auto; contain:layout paint style; contain-intrinsic-size:auto 520px; }\n\n    \n    .itemx-back { display: inline-block; margin-bottom: .7em; border: 0; background: transparent; color: #9eabbf; font-size: .78rem; cursor: pointer; }\n    .itemx-detail { display: flex; justify-content: center; }\n    .itemx-card { --bg:#1c1610; --surf:rgba(92,74,46,.18); --fg:#e8dcc2; --dim:#a89372; --line:#5c4a2e; --p:#ff7a3d; --pg:rgba(255,122,61,.42); --s:#86e5c4; --sg:rgba(134,229,196,.34); --rk:#f0a640; --rks:rgba(240,166,64,.5); --int:.72; --spd:1.25; position: relative; width: min(360px,100%); overflow: hidden; isolation: isolate; border: 1px solid var(--line); border-radius: 3px; background: repeating-linear-gradient(102deg,rgba(255,235,190,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.14) 0 3px,transparent 3px 9px),radial-gradient(120% 80% at 50% -10%,#2b2117,#17120c 70%); color: var(--fg); font-family: \"Nanum Myeongjo\",\"Noto Serif KR\",Georgia,serif; font-size: .92rem; line-height: 1.62; --inset-sh:inset 0 0 60px rgba(0,0,0,.55); box-shadow: var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg); }\n    .craft-forged { --surf:rgba(74,60,45,.26);--fg:#f0e7dc;--dim:#b3a08c;--line:#4a3c2d;border-width:2px;border-radius:2px;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.022) 0 2px,transparent 2px 11px),linear-gradient(168deg,#221d19,#0d0c0b 74%);font-family:Inter,Pretendard,sans-serif; }\n    .craft-oriental { --surf:rgba(215,192,146,.075);--fg:#eee8dd;--dim:#aaa194;--line:#59482e;border-radius:2px;background:radial-gradient(100% 62% at 88% 0,rgba(135,89,35,.15),transparent 62%),repeating-linear-gradient(93deg,rgba(235,214,173,.018) 0 1px,transparent 1px 5px),repeating-linear-gradient(4deg,rgba(235,214,173,.014) 0 1px,transparent 1px 7px),linear-gradient(150deg,#191815,#0d1011 52%,#17130f);color:var(--fg);--inset-sh:inset 0 0 0 1px #151717,inset 0 0 52px rgba(0,0,0,.48);box-shadow:var(--inset-sh),0 0 calc(24px*var(--int)) var(--pg); }\n    .craft-clockwork { --surf:rgba(107,81,44,.2);--fg:#e3d5b8;--dim:#9d8a68;--line:#6b512c;border-width:2px;border-radius:4px;background:repeating-linear-gradient(88deg,rgba(255,220,160,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#241d15,#14100b 72%);font-family:ui-monospace,monospace; }\n    .craft-synthetic { --surf:rgba(31,53,70,.35);--fg:#d6e6ef;--dim:#6d8496;--line:#1f3546;border-radius:0;background:repeating-linear-gradient(0deg,rgba(120,220,255,.045) 0 1px,transparent 1px 4px),linear-gradient(150deg,#0d1420,#070a11 70%);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 24px),calc(100% - 24px) 100%,12px 100%,0 calc(100% - 12px));font-family:ui-monospace,monospace; }\n    .craft-celestial { --surf:rgba(45,61,117,.28);--fg:#dfe7ff;--dim:#8e9ccb;--line:#2d3d75;border-radius:3px 3px 22px 22px;background:radial-gradient(90% 60% at 50% -8%,rgba(255,217,138,.16),transparent 62%),radial-gradient(120% 100% at 50% 110%,#14204a,transparent 60%),linear-gradient(180deg,#070b1c,#050813); }\n    .craft-organic { --surf:rgba(44,74,51,.3);--fg:#dcecd8;--dim:#86a78d;--line:#2c4a33;border-radius:22px 4px 22px 4px;background:radial-gradient(100% 70% at 22% -6%,rgba(127,224,161,.1),transparent 60%),radial-gradient(120% 90% at 80% 110%,rgba(30,90,60,.5),transparent 62%),linear-gradient(170deg,#0d1b12,#071008);font-family:Inter,Pretendard,sans-serif; }\n    .craft-forged .itemx-medallion,.craft-oriental .itemx-medallion{border-radius:3px}.craft-synthetic .itemx-medallion{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}.craft-organic .itemx-medallion{border-radius:60% 12% 60% 12%}.craft-celestial .itemx-medallion{border-radius:50%}.craft-oriental .itemx-name{color:#f2eadb;text-shadow:0 1px 2px #000,0 0 7px rgba(232,210,170,.16)}.craft-oriental .itemx-badge,.craft-oriental .itemx-subline{color:#aaa194}.craft-oriental .itemx-eyebrow{color:#bb9659;letter-spacing:.2em}.craft-oriental .itemx-head{padding-right:2.55em}.craft-oriental .itemx-effect,.craft-oriental .itemx-stat{background:rgba(7,9,9,.38)}\n    .itemx-oriental-paper,.itemx-oriental-ink,.itemx-oriental-frame,.itemx-oriental-seal{display:none;position:absolute;pointer-events:none}\n    .craft-oriental .itemx-oriental-paper{display:block;inset:0;z-index:0;opacity:.32;background:repeating-linear-gradient(92deg,transparent 0 8px,rgba(224,200,154,.025) 9px,transparent 10px 17px),repeating-linear-gradient(4deg,transparent 0 10px,rgba(224,200,154,.018) 11px,transparent 12px 20px)}\n    .craft-oriental .itemx-oriental-ink{display:block;z-index:1;border:1px solid rgba(216,193,148,.08);border-radius:50%;filter:blur(1px);opacity:.7}\n    .craft-oriental .itemx-oriental-ink-a{width:78%;height:44%;right:-35%;top:7%;transform:rotate(-12deg);box-shadow:0 0 22px rgba(178,126,60,.05)}\n    .craft-oriental .itemx-oriental-ink-b{width:64%;height:36%;left:-34%;bottom:4%;transform:rotate(16deg);border-color:rgba(146,42,47,.09)}\n    .craft-oriental .itemx-oriental-frame{display:block;inset:10px;z-index:5;border:1px solid rgba(210,178,111,.18);box-shadow:inset 0 0 18px rgba(0,0,0,.18)}\n    .craft-oriental .itemx-oriental-frame::before,.craft-oriental .itemx-oriental-frame::after{content:\"\";position:absolute;width:18px;height:18px;border-color:rgba(229,195,125,.55);border-style:solid}\n    .craft-oriental .itemx-oriental-frame::before{left:-4px;top:-4px;border-width:2px 0 0 2px}\n    .craft-oriental .itemx-oriental-frame::after{right:-4px;bottom:-4px;border-width:0 2px 2px 0}\n    .craft-oriental .itemx-oriental-seal{display:grid;place-items:center;right:16px;top:18px;z-index:6;width:31px;height:38px;border:1px solid rgba(214,82,73,.66);background:rgba(116,20,25,.38);color:#e09186;font-size:.62em;font-weight:800;line-height:1.05;text-align:center;box-shadow:inset 0 0 0 2px rgba(18,8,8,.36),0 0 9px rgba(175,34,40,.16);transform:rotate(2deg)}\n    .itemx-card::before { content:\"\"; position:absolute; inset:0 0 auto; z-index:6; height:2px; background:linear-gradient(90deg,transparent,var(--rk) 18%,var(--rk) 82%,transparent); opacity:.85; }\n    \n    .itemx2-strong { animation:itemx2-aura 3.8s ease-in-out infinite; }\n    .itemx2-strong:has(.lightning-flash) { animation:itemx2-aura 3.8s ease-in-out infinite, itemx2-jolt 3.2s linear infinite; }\n    .itemx-edge { position:absolute; inset:0; z-index:6; border-radius:inherit; padding:1.5px; pointer-events:none; overflow:hidden; opacity:calc(.95*var(--int)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); mask-composite:exclude; }\n    .itemx-edge::before { content:\"\"; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }\n    .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }\n    .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }\n    .itemx-fx { z-index:1; }\n    .itemx-cond { z-index:2; }\n    .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}\n    \n    .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }\n    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }\n    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }\n    .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }\n    .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent);filter:blur(15px); }\n    .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }\n    .craft-mote.diamond { height:var(--z); border-radius:0; background:linear-gradient(135deg,var(--ca),var(--cb)); transform:rotate(45deg); }\n    .craft-mote.shape-ash { height:var(--z);border-radius:62% 38% 55% 45%;background:radial-gradient(circle at 38% 34%,var(--ca),var(--cb) 72%,transparent); }\n    .craft-mote.shape-petal { height:var(--mh);border-radius:100% 6% 100% 6%;background:linear-gradient(140deg,var(--ca),var(--cb)); }\n    .craft-mote.shape-block { height:var(--z);border-radius:0;background:var(--ca);box-shadow:1px 0 0 var(--cb); }\n    .craft-mote.shape-streak { width:2px;height:var(--mh);border-radius:2px;background:linear-gradient(to top,transparent,var(--ca) 45%,transparent); }\n    .craft-mote.shape-cross { height:var(--z);border-radius:0;background:linear-gradient(90deg,transparent,var(--ca),transparent); }\n    .craft-mote.shape-cross::after { content:\"\";position:absolute;inset:-70% 42%;background:linear-gradient(to bottom,transparent,var(--cb),transparent); }\n    .craft-mote.shape-gear { height:var(--z);border-radius:0;background:none;box-shadow:none;color:var(--ca);font-size:var(--mh);line-height:1; }\n    .craft-mote.shape-gear::before { content:\"⚙\";position:absolute;inset:0; }\n    .path-drift{animation-name:existing-drift}.path-pulse{animation-name:existing-pulse}.path-sway{animation-name:existing-sway}.path-turn{animation-name:existing-turn}.path-jitter{animation-name:existing-jitter}\n    .current-fog { position:absolute;right:-20%;bottom:-35%;left:-20%;height:85%;animation:existing-fog 17s ease-in-out infinite alternate; }\n    .current-fog-visual { position:absolute;inset:0;display:block;background:radial-gradient(60% 60% at 30% 70%,var(--pg),transparent 70%),radial-gradient(55% 55% at 75% 60%,var(--pg),transparent 72%);filter:blur(22px); }\n    .current-scan { position:absolute;top:-30%;right:0;left:0;height:42%;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.13),transparent);animation:existing-scan 5.5s linear infinite; }\n\n    \n    .affinity-fx { z-index:2; }\n    .afx { position:absolute; inset:0; opacity:1; filter:saturate(1.22) brightness(1.12); }\n    .afx-secondary { opacity:.68; clip-path:inset(0 0 0 46%); }\n    .afx i { position:absolute; display:block; color:var(--ac); }\n    .afx-fire i { left:var(--x); bottom:-12px; width:3px; height:var(--h); border-radius:60% 60% 30% 30%; background:linear-gradient(to top,transparent,var(--ac) 50%,#ffe2a6); box-shadow:0 0 7px var(--ac); transform:skewX(var(--sk)); animation:aff-fire var(--d) ease-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-flames { position:absolute; left:-4%; right:-4%; bottom:-8%; height:52%; pointer-events:none; }\n    .affinity-flames.secondary { clip-path:inset(0 0 0 46%); opacity:.6; }\n    .affinity-flames b { position:absolute; inset:0; display:block; mix-blend-mode:screen; transform-origin:50% 100%; }\n    .affinity-flames .af-f1 { filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(34% 82% at 14% 100%,color-mix(in srgb,var(--ac) 52%,transparent),transparent 70%),radial-gradient(26% 68% at 39% 100%,color-mix(in srgb,var(--ac) 44%,transparent),transparent 72%),radial-gradient(34% 88% at 66% 100%,color-mix(in srgb,var(--ac) 50%,transparent),transparent 70%),radial-gradient(24% 62% at 90% 100%,color-mix(in srgb,var(--ac) 42%,transparent),transparent 74%); animation:itemx2-flick1 2.3s ease-in-out infinite alternate; }\n    .affinity-flames .af-f2 { height:120%; bottom:0; filter:blur(16px); opacity:calc(.14 + .6*var(--int)); background:radial-gradient(46% 92% at 28% 100%,color-mix(in srgb,var(--ac) 36%,transparent),transparent 74%),radial-gradient(50% 96% at 76% 100%,color-mix(in srgb,var(--ac) 32%,transparent),transparent 76%); animation:itemx2-flick2 3.7s ease-in-out infinite alternate; }\n    .affinity-flames .af-f3 { height:64%; bottom:0; filter:blur(4px); opacity:calc(.18 + .78*var(--int)); background:radial-gradient(11% 74% at 18% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 26%),transparent 78%),radial-gradient(9% 64% at 43% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 24%),transparent 80%),radial-gradient(12% 78% at 71% 100%,color-mix(in srgb,var(--ac) 24%,#ffe9c0 24%),transparent 78%),radial-gradient(8% 58% at 91% 100%,color-mix(in srgb,var(--ac) 20%,#fff0d0 22%),transparent 80%); animation:itemx2-flick3 1.4s ease-in-out infinite alternate; }\n    .afx-ice i { left:var(--x); top:var(--y); width:var(--iw); height:var(--ih); background:linear-gradient(160deg,#fff 0 12%,#dff8ff 24%,var(--ac) 62%,transparent); clip-path:polygon(50% 0,82% 38%,66% 100%,29% 82%,12% 35%); filter:drop-shadow(0 0 3px #dff8ff) drop-shadow(0 0 6px var(--ac)); animation:aff-ice var(--d) linear infinite; animation-delay:var(--delay); }\n    .afx-lightning b { position:absolute; width:94px; height:7px; background:linear-gradient(90deg,transparent,var(--ac),#fff 48%,var(--ac),transparent); clip-path:polygon(0 38%,35% 18%,40% 60%,66% 5%,62% 48%,100% 28%,100% 65%,61% 78%,56% 45%,42% 100%,34% 58%,0 76%); filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px var(--ac)); opacity:0; animation:aff-lightning var(--d) step-end infinite; animation-delay:var(--delay); transform:rotate(var(--r)); }\n    \n    .lightning-flash { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; background:radial-gradient(ellipse at 66% 18%,color-mix(in srgb,var(--ac) 42%,#fff 10%),color-mix(in srgb,var(--ac) 14%,transparent) 42%,transparent 64%); animation:itemx2-boltflash 3.2s step-end infinite; }\n    .lightning-flash.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-wind i { left:-24%; top:var(--y); width:52%; height:1px; background:linear-gradient(90deg,transparent,var(--ac) 36%,transparent); box-shadow:0 0 5px var(--ac); transform:skewX(-24deg); animation:aff-wind var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    .afx-earth i { left:var(--x); bottom:-6px; width:var(--z); height:var(--z); background:linear-gradient(145deg,#f2cf8a,var(--ac) 52%,#4b3219); clip-path:polygon(16% 4%,92% 18%,75% 92%,8% 70%); filter:drop-shadow(0 0 3px var(--ac)); animation:aff-earth var(--d) ease-out infinite; animation-delay:var(--delay); }\n    .afx-light i { left:var(--x); top:-20%; width:var(--z); height:135%; transform:skewX(-18deg); background:linear-gradient(to bottom,transparent,var(--ac) 38%,transparent 72%); filter:blur(2px); animation:aff-light var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-dark i { left:var(--x); top:var(--y); width:var(--z); height:var(--h); background:linear-gradient(to bottom,transparent,var(--ac),transparent); transform:skewX(var(--sk)); filter:blur(4px); animation:aff-dark var(--d) ease-in-out infinite alternate; animation-delay:var(--delay); }\n    .afx-poison i { left:var(--x); top:var(--y); width:var(--z); height:var(--ph); border-radius:65% 35% 60% 40%; background:linear-gradient(145deg,#eaff9a,var(--ac) 58%,transparent); box-shadow:0 0 6px var(--ac); animation:aff-poison var(--d) ease-in-out infinite; animation-delay:var(--delay); }\n    \n    .affinity-body { position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; }\n    .affinity-body.secondary { clip-path:inset(0 0 0 46%); opacity:.62; }\n    .body-wind { background:linear-gradient(101deg,transparent 22%,color-mix(in srgb,var(--ac) 20%,transparent) 41%,transparent 47%,color-mix(in srgb,var(--ac) 13%,transparent) 63%,transparent 76%); filter:blur(7px); opacity:calc(.2 + .8*var(--int)); animation:itemx2-gust 6.5s ease-in-out infinite alternate; }\n    @keyframes itemx2-gust { from{transform:translateX(-11%)} to{transform:translateX(11%)} }\n    .body-earth { inset:auto -6% -14% -6%; height:66%; filter:blur(12px); opacity:calc(.18 + .82*var(--int)); background:radial-gradient(50% 66% at 26% 100%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 72%),radial-gradient(54% 60% at 76% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 74%); animation:itemx2-sediment 9s ease-in-out infinite alternate; }\n    @keyframes itemx2-sediment { from{transform:translateY(5px) scaleY(.94);opacity:.45} to{transform:translateY(-4px) scaleY(1.04);opacity:.95} }\n    \n    .body-dark { mix-blend-mode:multiply; background:radial-gradient(120% 96% at 50% 50%,transparent 34%,rgba(6,4,12,.5) 78%,rgba(3,2,8,.86)); opacity:calc(.24 + .76*var(--int)); animation:itemx2-encroach 7s ease-in-out infinite alternate; }\n    @keyframes itemx2-encroach { from{transform:scale(1.08);opacity:.4} to{transform:scale(.99);opacity:.95} }\n    .body-arcane { background:repeating-conic-gradient(from 0deg at 50% 42%,color-mix(in srgb,var(--ac) 16%,transparent) 0 3deg,transparent 3deg 26deg); -webkit-mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); mask:radial-gradient(circle at 50% 42%,#000 0 16%,transparent 62%); filter:blur(2px); opacity:calc(.16 + .84*var(--int)); animation:itemx2-sigil 26s linear infinite; }\n    @keyframes itemx2-sigil { to{transform:rotate(360deg)} }\n    .body-blood { inset:auto -4% -10% -4%; height:52%; filter:blur(9px); opacity:calc(.2 + .8*var(--int)); background:radial-gradient(60% 74% at 50% 100%,color-mix(in srgb,var(--ac) 40%,transparent),transparent 74%); animation:itemx2-pool 4.6s ease-in-out infinite alternate; }\n    @keyframes itemx2-pool { from{transform:scaleY(.86);opacity:.42} to{transform:scaleY(1.08);opacity:.92} }\n    .body-void { background:radial-gradient(closest-side at 62% 44%,transparent 38%,color-mix(in srgb,var(--ac) 30%,transparent) 52%,transparent 64%); filter:blur(3px); opacity:calc(.18 + .82*var(--int)); animation:itemx2-collapse 5.4s cubic-bezier(.6,0,.4,1) infinite; }\n    @keyframes itemx2-collapse { 0%{transform:scale(1.25);opacity:0} 22%{opacity:.9} 70%{transform:scale(.55);opacity:.5} 100%{transform:scale(.3);opacity:0} }\n\n    \n    .poison-miasma { position:absolute; left:-10%; right:-10%; bottom:-16%; height:78%; pointer-events:none; filter:blur(13px); mix-blend-mode:screen; background:radial-gradient(42% 58% at 22% 96%,color-mix(in srgb,var(--ac) 34%,transparent),transparent 70%),radial-gradient(48% 62% at 72% 100%,color-mix(in srgb,var(--ac) 26%,transparent),transparent 72%),radial-gradient(30% 44% at 50% 88%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%); animation:itemx2-miasma 8s ease-in-out infinite alternate; }\n    .poison-miasma.secondary { clip-path:inset(0 0 0 46%); }\n    .afx-blood i { left:var(--x); top:-15%; width:var(--z); height:var(--h); border-radius:0 0 70% 30%; background:linear-gradient(to bottom,var(--ac),transparent); box-shadow:0 4px 7px var(--ac); animation:aff-blood var(--d) ease-in infinite; animation-delay:var(--delay); }\n    .afx-void i { left:var(--x); top:var(--y); width:var(--z); height:2px; transform:rotate(var(--r)) skewX(-34deg); background:linear-gradient(90deg,transparent,#fff 16%,var(--ac) 48%,transparent); box-shadow:0 0 5px var(--ac),0 0 12px var(--ac); animation:aff-void var(--d) step-end infinite; animation-delay:var(--delay); }\n    \n    .affinity-signature { position:absolute; inset:0; color:var(--ac); pointer-events:none; mix-blend-mode:screen; opacity:.76; }\n    .affinity-signature-visual { position:absolute;inset:0;display:block; }\n    .affinity-signature.secondary { opacity:.48; clip-path:inset(0 0 0 48%); }\n    .sig-fire { animation:sig-fire 5.2s linear infinite; }\n    .sig-fire>.affinity-signature-visual { background:repeating-linear-gradient(0deg,transparent 0 36px,color-mix(in srgb,var(--ac) 12%,transparent) 38px,color-mix(in srgb,var(--ac) 38%,transparent) 39px,transparent 42px 76px);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .ice-cracks { position:absolute; inset:0; background:linear-gradient(32deg,transparent 0 31%,color-mix(in srgb,var(--ac) 62%,#fff) 31.4%,transparent 32% 100%),linear-gradient(147deg,transparent 0 67%,color-mix(in srgb,var(--ac) 45%,#fff) 67.4%,transparent 68% 100%),linear-gradient(81deg,transparent 0 78%,var(--ac) 78.3%,transparent 78.8% 100%); clip-path:polygon(0 0,17% 0,32% 38%,51% 21%,66% 54%,100% 39%,100% 52%,69% 65%,53% 34%,34% 53%,12% 18%,0 22%); filter:drop-shadow(0 0 4px var(--ac)); opacity:0; animation:ice-cracks 5.6s step-end infinite; }\n    .sig-lightning { background:linear-gradient(112deg,transparent 0 42%,color-mix(in srgb,var(--ac) 68%,transparent) 43%,#fff 44%,var(--ac) 45%,transparent 47% 100%); clip-path:polygon(0 9%,44% 9%,36% 37%,70% 31%,58% 61%,100% 56%,100% 68%,48% 75%,57% 46%,24% 51%,35% 22%,0 26%); filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 14px var(--ac)); opacity:0; animation:sig-lightning 3.2s step-end infinite; }\n    .lightning-field { position:absolute; inset:0; opacity:0; background:linear-gradient(28deg,transparent 0 22%,var(--ac) 22.5%,transparent 23.2% 100%),linear-gradient(151deg,transparent 0 58%,#fff 58.4%,var(--ac) 59%,transparent 59.8% 100%),linear-gradient(74deg,transparent 0 71%,var(--ac) 71.5%,transparent 72.3% 100%); clip-path:polygon(0 4%,100% 0,100% 17%,0 28%,0 42%,100% 31%,100% 51%,0 64%,0 79%,100% 69%,100% 88%,0 100%); box-shadow:inset 8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent),inset -8px 0 16px color-mix(in srgb,var(--ac) 55%,transparent); filter:drop-shadow(0 0 8px var(--ac)); animation:lightning-field 2.35s step-end infinite; }\n    .sig-wind { transform:translateX(-26%);animation:sig-wind 6.4s linear infinite; }\n    .sig-wind>.affinity-signature-visual { background:repeating-linear-gradient(164deg,transparent 0 34px,color-mix(in srgb,var(--ac) 45%,transparent) 35px,color-mix(in srgb,var(--ac) 15%,transparent) 37px,transparent 40px 69px);filter:drop-shadow(5px 0 7px var(--ac)); }\n    .sig-earth { animation:sig-earth 6s ease-in-out infinite alternate; }\n    .sig-earth>.affinity-signature-visual { background:linear-gradient(32deg,transparent 0 18%,color-mix(in srgb,var(--ac) 42%,transparent) 18.5%,transparent 19.4% 47%,color-mix(in srgb,var(--ac) 30%,transparent) 47.5%,transparent 48.4% 100%),linear-gradient(146deg,transparent 0 67%,color-mix(in srgb,var(--ac) 46%,transparent) 67.5%,transparent 68.4%);filter:drop-shadow(0 0 5px var(--ac)); }\n    .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }\n    .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:blur(3px) drop-shadow(0 0 9px var(--ac)); }\n    \n    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }\n    .light-veilfall::before { content:\"\"; position:absolute; inset:0; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); }\n    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }\n    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }\n    .light-ground.secondary { clip-path:inset(0 0 0 46%); }\n    .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }\n    .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:blur(9px) drop-shadow(0 0 10px var(--ac)); }\n    .sig-poison { animation:sig-poison 8s ease-in-out infinite alternate; }\n    .sig-poison>.affinity-signature-visual { background:repeating-linear-gradient(96deg,transparent 0 42px,color-mix(in srgb,var(--ac) 18%,transparent) 43px,var(--ac) 45px,transparent 49px 88px);clip-path:polygon(0 12%,100% 0,100% 21%,0 36%,0 55%,100% 38%,100% 58%,0 79%,0 100%,100% 72%,100% 100%,0 100%);filter:blur(2px) drop-shadow(0 0 7px var(--ac)); }\n    .sig-blood { animation:sig-blood 5.8s ease-in-out infinite alternate; }\n    .sig-blood>.affinity-signature-visual { background:repeating-linear-gradient(90deg,transparent 0 38px,color-mix(in srgb,var(--ac) 70%,transparent) 40px,color-mix(in srgb,var(--ac) 18%,transparent) 44px,transparent 49px 77px);clip-path:polygon(0 0,100% 0,100% 20%,92% 20%,90% 76%,86% 24%,75% 18%,72% 55%,67% 22%,58% 16%,55% 69%,51% 21%,37% 16%,35% 48%,29% 23%,17% 17%,13% 62%,9% 20%,0 18%);filter:drop-shadow(0 5px 8px var(--ac)); }\n    .sig-void { animation:sig-void 4.9s step-end infinite; }\n    .sig-void>.affinity-signature-visual { background:repeating-linear-gradient(176deg,transparent 0 47px,color-mix(in srgb,var(--ac) 22%,transparent) 48px,#fff 49px,var(--ac) 50px,transparent 52px 91px);clip-path:polygon(0 7%,100% 0,100% 18%,0 25%,0 45%,100% 35%,100% 52%,0 65%,0 82%,100% 70%,100% 90%,0 100%);filter:drop-shadow(0 0 11px var(--ac)); }\n    .itemx-content { position:relative; z-index:4; padding:1.35em; }\n    .itemx-head { display:flex; align-items:flex-start; gap:.85em; }\n    .itemx-medallion { flex:0 0 auto; width:3.3em; height:3.3em; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--rk) 38%,transparent); border-radius:50%; background:radial-gradient(circle at 32% 28%,#4a3a20,#201810); box-shadow:0 0 7px color-mix(in srgb,var(--rk) 22%,transparent),inset 0 0 10px color-mix(in srgb,var(--rk) 16%,transparent); }\n    .itemx-emoji { font-size:1.6em; }\n    .itemx-titles { flex:1; min-width:0; }\n    .itemx-eyebrow { color:var(--dim); font-size:.74em; letter-spacing:.2em; }\n    .itemx-name { display:block; margin:.2em 0 .3em; color:#f5efe4; font-size:1.42em; font-weight:800; line-height:1.22; text-shadow:0 1px 2px rgba(0,0,0,.92); }\n    .itemx-tier { display:inline-block; padding:.05em .45em; border:1px solid var(--rk); border-radius:3px; background:var(--rks); color:var(--rk); font-size:.74em; font-weight:700; letter-spacing:.08em; }\n    .itemx-subline { display:flex; margin-top:.18em; color:var(--dim); font-size:.76em; }\n    .itemx-subline span+span::before { content:\"·\"; margin:0 .55em; color:var(--line); }\n    .affinity-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:.75em; }\n    .affinity-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid color-mix(in srgb,var(--chip) 55%,transparent); border-radius:999px; background:color-mix(in srgb,var(--chip) 13%,transparent); color:color-mix(in srgb,var(--chip) 85%,white); font-family:Inter,Pretendard,sans-serif; font-size:10px; font-weight:800; }\n    .affinity-chip small { opacity:.62; font-size:9px; }\n    .reaction-chip { border-color:color-mix(in srgb,var(--p) 48%,var(--s)); background:linear-gradient(100deg,color-mix(in srgb,var(--p) 16%,transparent),color-mix(in srgb,var(--s) 16%,transparent)); color:#f6ebd5; }\n    .itemx-rule { height:1px; margin:1.05em 0; background:linear-gradient(90deg,transparent,var(--p) 18%,var(--s) 82%,transparent); opacity:.8; }\n    .itemx-stats { display:flex; gap:.45em; }\n    .itemx-stat { flex:1; padding:.5em .65em; border-top:1px solid var(--line); background:var(--surf); }\n    .itemx-statk { display:block; color:var(--dim); font-size:.74em; letter-spacing:.1em; }\n    .itemx-statv { display:block; margin-top:.1em; font-weight:700; }\n    .itemx-gap { height:1.1em; }\n    .itemx-section-label { margin-bottom:.5em; color:var(--p); font-size:.74em; font-weight:700; letter-spacing:.14em; }\n    .itemx-effects { display:grid; gap:.7em; }\n    .itemx-effect { position:relative; padding-left:1.1em; }\n    .itemx-effect::before { content:\"❧\"; position:absolute; left:0; color:var(--s); }\n    .itemx-efname { color:var(--p); font-weight:700; }\n    .itemx-flavor { margin:1.1em 0 0; padding-left:.8em; border-left:1px solid var(--s); color:var(--dim); font-size:.93em; font-style:italic; }\n    .motion-off * { animation:none!important; }\n\n    .rarity-normal{--rk:#788396;--rks:rgba(120,131,150,.28);--int:0}.rarity-magic{--rk:#6fa8e8;--rks:rgba(111,168,232,.32);--int:.14}.rarity-rare{--rk:#45c8c0;--rks:rgba(69,200,192,.36);--int:.28}.rarity-unique{--rk:#a888f0;--rks:rgba(168,136,240,.45);--int:.42}.rarity-epic{--rk:#dd7be0;--rks:rgba(221,123,224,.45);--int:.56}.rarity-legendary{--rk:#f0a640;--rks:rgba(240,166,64,.5);--int:.72}.rarity-mythical{--rk:#ff7a7a;--rks:rgba(255,122,122,.5);--int:.86}.rarity-empyrean{--rk:#ffe9a8;--rks:rgba(255,233,168,.55);--int:1}\n    .rarity-epic .itemx-medallion,.rarity-legendary .itemx-medallion,.rarity-mythical .itemx-medallion,.rarity-empyrean .itemx-medallion { border-width:2px; border-color:color-mix(in srgb,var(--rk) 78%,transparent); box-shadow:0 0 14px color-mix(in srgb,var(--rk) 42%,transparent),inset 0 0 12px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-epic .itemx-name,.rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { color:color-mix(in srgb,var(--rk) 72%,white); text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 7px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 24%,transparent); }\n    .rarity-legendary .itemx-name,.rarity-mythical .itemx-name,.rarity-empyrean .itemx-name { font-weight:900; letter-spacing:.012em; }\n    .rarity-empyrean .itemx-name { text-shadow:0 1px 2px rgba(0,0,0,.92),0 0 8px var(--rks),0 0 18px color-mix(in srgb,var(--rk) 38%,transparent); }\n    .craft-oriental.rarity-epic .itemx-name,.craft-oriental.rarity-legendary .itemx-name,.craft-oriental.rarity-mythical .itemx-name,.craft-oriental.rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 58%,#f7ecd7);text-shadow:0 1px 2px #000,0 0 8px var(--rks),0 0 15px color-mix(in srgb,var(--rk) 22%,transparent)}\n    .condition-cursed .itemx-cond { background:radial-gradient(85% 50% at 50% 112%,rgba(90,8,30,.55),transparent 68%); mix-blend-mode:multiply; }\n    .condition-blessed .itemx-cond { background:radial-gradient(90% 55% at 50% -12%,rgba(255,240,200,.22),transparent 64%); }\n    .condition-corrupted .itemx-cond { background:radial-gradient(60% 45% at 24% 88%,rgba(140,47,74,.42),transparent 70%),radial-gradient(55% 40% at 78% 20%,rgba(74,30,96,.40),transparent 72%); filter:blur(14px); }\n\n    @keyframes existing-spin { to { transform:rotate(360deg); } }\n    @keyframes existing-veil { 0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(34%);opacity:1} }\n    @keyframes existing-rise { 0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}92%{opacity:var(--o)}100%{transform:translate3d(var(--drift),-520px,0) rotate(220deg);opacity:0} }\n    @keyframes existing-drift { 0%{transform:translate(0,0);opacity:0}12%{opacity:var(--o)}55%{transform:translate(var(--drift),-230px) rotate(90deg)}100%{transform:translate(0,-520px) rotate(180deg);opacity:0} }\n    @keyframes existing-pulse { 0%,100%{transform:translateY(-160px) scale(.2);opacity:0}40%{transform:translate(var(--drift),-180px) scale(1);opacity:var(--o)}70%{transform:translateY(-200px) scale(.5);opacity:.2} }\n    @keyframes existing-sway { 0%{transform:translate(0,0);opacity:0}15%{opacity:var(--o)}35%{transform:translate(var(--drift),-160px) rotate(40deg)}65%{transform:translate(var(--drift2),-310px) rotate(-25deg)}100%{transform:translate(0,-520px) rotate(80deg);opacity:0} }\n    @keyframes existing-turn { 0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:var(--o)}100%{transform:translate(var(--drift),-520px) rotate(1080deg);opacity:0} }\n    @keyframes existing-jitter { 0%,100%{transform:translate(0,0);opacity:0}10%,25%,48%,73%{opacity:var(--o)}18%{transform:translate(18px,-100px)}39%{transform:translate(-24px,-210px)}62%{transform:translate(28px,-330px)}90%{transform:translate(-8px,-490px);opacity:0} }\n    @keyframes existing-fog { from{transform:translate(-4%,4%) scale(1);opacity:.45}to{transform:translate(6%,-3%) scale(1.18);opacity:.85} }\n    @keyframes existing-scan { from{transform:translateY(0);opacity:0}12%,88%{opacity:.9}to{transform:translateY(330%);opacity:0} }\n    @keyframes aff-fire { 0%{transform:translate3d(0,0,0) skewX(var(--sk)) scaleY(.5);opacity:0}15%{opacity:.9}100%{transform:translate3d(var(--drift),-300px,0) skewX(var(--sk)) scaleY(1.5);opacity:0} }\n    @keyframes aff-ice { 0%{transform:translate3d(0,-34px,0) rotate(-18deg);opacity:0}12%{opacity:.88}72%{opacity:.72}100%{transform:translate3d(var(--drift),130px,0) rotate(48deg);opacity:0} }\n    @keyframes aff-lightning { 0%,84%,89%,100%{opacity:0}85%,87%{opacity:1}86%,88%{opacity:.28} }\n    @keyframes aff-wind { 0%{transform:translateX(0) skewX(-24deg);opacity:0}25%{opacity:.75}100%{transform:translateX(620px) skewX(-24deg);opacity:0} }\n    @keyframes aff-earth { 0%{transform:translateY(0) rotate(0);opacity:0}18%{opacity:.75}100%{transform:translateY(-190px) rotate(150deg);opacity:0} }\n    @keyframes aff-light { from{transform:translateX(-12px) skewX(-18deg);opacity:.12}to{transform:translateX(16px) skewX(-18deg);opacity:.52} }\n    @keyframes aff-dark { from{transform:translateY(12%) skewX(-5deg);opacity:.18}to{transform:translateY(-7%) skewX(7deg);opacity:.58} }\n    @keyframes aff-poison { 0%{transform:translate(0,26px) scale(.7);opacity:0}12%{opacity:.85}70%{transform:translate(var(--drift,8px),-42px) scale(1);opacity:.8}95%{transform:translate(var(--drift,8px),-70px) scale(1.32);opacity:.9}100%{transform:translate(var(--drift,8px),-76px) scale(1.72);opacity:0} }\n    @keyframes aff-blood { 0%{transform:translateY(-28%);opacity:0}18%{opacity:.72}100%{transform:translateY(135%);opacity:0} }\n    @keyframes aff-void { 0%,72%,80%,100%{opacity:0;transform:translateX(-8px) rotate(var(--r)) skewX(-34deg)}73%,76%{opacity:.9;transform:translateX(6px) rotate(var(--r)) skewX(-34deg)}77%{opacity:.2} }\n    @keyframes sig-fire { from{transform:translateY(0);opacity:.38}to{transform:translateY(-38px);opacity:.78} }\n    @keyframes ice-cracks { 0%,69%,78%,100%{opacity:0}70%,75%{opacity:.75}72%{opacity:.25} }\n    @keyframes sig-lightning { 0%,78%,85%,100%{opacity:0}79%,81%,84%{opacity:.9}80%,82%{opacity:.24} }\n    @keyframes lightning-field { 0%,68%,76%,100%{opacity:0}69%,71%,74%{opacity:.86}70%,72%,75%{opacity:.18} }\n    @keyframes sig-wind { to{transform:translateX(28%)} }\n    @keyframes sig-earth { from{transform:translate(-2%,2%);opacity:.3}to{transform:translate(2%,-2%);opacity:.72} }\n    @keyframes sig-light { from{transform:translateX(-5%);opacity:.36}to{transform:translateX(6%);opacity:.82} }\n    @keyframes sig-dark { from{transform:translateX(-4%) skewX(-3deg);opacity:.32}to{transform:translateX(5%) skewX(3deg);opacity:.7} }\n    @keyframes sig-poison { from{transform:translateX(-4%);opacity:.34}to{transform:translateX(5%);opacity:.72} }\n    @keyframes sig-blood { from{transform:translateY(-6%);opacity:.42}to{transform:translateY(7%);opacity:.82} }\n    @keyframes sig-void { 0%,66%,75%,100%{opacity:.16;transform:translateX(-2%)}67%,70%,74%{opacity:.88;transform:translateX(2%)}71%{opacity:.3;transform:translateX(-1%)} }\n    @keyframes itemx2-aura { 0%,100%{box-shadow:var(--inset-sh),0 0 calc(30px*var(--int)) var(--pg)}50%{box-shadow:var(--inset-sh),0 0 calc(48px*var(--int)) var(--pg),0 0 calc(96px*var(--int)) color-mix(in srgb,var(--pg) 55%,transparent)} }\n    @keyframes itemx2-edge { to{transform:translate(-50%,-50%) rotate(360deg)} }\n    @keyframes itemx2-jolt { 0%,78.4%,84.5%,100%{transform:translate(0,0)}79%{transform:translate(calc(-1.5px*var(--int)),calc(1px*var(--int)))}80%{transform:translate(calc(2px*var(--int)),calc(-1px*var(--int)))}81.5%{transform:translate(calc(-1px*var(--int)),calc(-1.5px*var(--int)))}83%{transform:translate(calc(1px*var(--int)),calc(1px*var(--int)))} }\n    @keyframes itemx2-flick1 { 0%{transform:scaleY(.9) skewX(-1deg)}45%{transform:scaleY(1.08) skewX(1.6deg)}100%{transform:scaleY(.96) skewX(-.8deg)} }\n    @keyframes itemx2-flick2 { from{transform:scaleY(.85) translateX(-6px)}to{transform:scaleY(1.1) translateX(6px)} }\n    @keyframes itemx2-flick3 { 0%{transform:scaleY(.82)}38%{transform:scaleY(1.16) skewX(2deg)}72%{transform:scaleY(.94) skewX(-1.4deg)}100%{transform:scaleY(1.1)} }\n    @keyframes itemx2-boltflash { 0%,78%,85%,100%{opacity:0}79%,81%{opacity:calc(.25 + .7*var(--int))}80%,82.5%{opacity:calc(.1 + .16*var(--int))} }\n    @keyframes itemx2-miasma { from{transform:translateX(-14px) scaleY(.92);opacity:calc(.22 + .38*var(--int))}to{transform:translateX(14px) scaleY(1.05);opacity:calc(.34 + .56*var(--int))} }\n    @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }\n    @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }\n    @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }\n    @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }\n.itemx2-panel-actions {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex: 0 0 78px;\n  width: 78px;\n  height: 36px;\n}\n.itemx2-panel-actions > button {\n  box-sizing: border-box;\n  flex: 0 0 36px;\n  padding: 0;\n  cursor: pointer;\n  font-size: 16px;\n}\n.itemx2-panel-actions > .itemx2-history-open {\n  font-size: 11px;\n  color: #b7c4d8;\n}\n.itemx-ph-text > span {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.itemx2-history-pane button {\n  min-height: 38px;\n  padding: 7px 10px;\n  border: 1px solid #344159;\n  border-radius: 7px;\n  background: #172131;\n  color: #dde6f2;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-root-tab-body,\n.itemx2-iframe-content {\n  position: relative;\n}\n.itemx2-iframe-content {\n  display: flex;\n  flex: 1;\n  min-height: 0;\n  flex-direction: column;\n  overflow: hidden;\n}\n.itemx2-iframe-content > .itemx-body {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane),\n.itemx2-history-opened > :not(.itemx2-history-pane) * {\n  visibility: hidden !important;\n  pointer-events: none !important;\n  animation-play-state: paused !important;\n}\n.itemx2-history-opened > :not(.itemx2-history-pane) *::before,\n.itemx2-history-opened > :not(.itemx2-history-pane) *::after {\n  animation-play-state: paused !important;\n}\n.itemx2-root-tab-body > .itemx2-history-pane,\n.itemx2-iframe-content > .itemx2-history-pane {\n  position: absolute;\n  inset: 0;\n  z-index: 10;\n  display: flex;\n  flex-direction: column;\n  overflow: auto;\n  padding: 12px;\n  gap: 10px;\n  background: #0b111b;\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.75rem);\n}\n.itemx2-history-heading,\n.itemx2-history-filters,\n.itemx2-history-actions {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-pane .itemx2-history-filter-on {\n  border-color: #b69961;\n  color: #f0d79d;\n}\n.itemx2-history-policy {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.itemx2-history-policy small {\n  flex-basis: 100%;\n  color: #98a8bc;\n  line-height: 1.6;\n}\n.itemx2-history-list {\n  display: grid;\n  gap: 10px;\n  min-width: 0;\n}\n.itemx2-history-row {\n  padding: 10px;\n  border: 1px solid #29354a;\n  border-radius: 10px;\n}\n.itemx2-history-row > button {\n  display: grid;\n  gap: 6px;\n  width: 100%;\n  text-align: left;\n  overflow-wrap: anywhere;\n}\n.itemx2-history-row small {\n  color: #a9b6c8;\n}\n.itemx2-history-row .itemx2-history-actions {\n  margin-top: 7px;\n}\n\n.itemx2-root-settings > .itemx2-root-setting-card {\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n.itemx2-root-setting-card > span:first-child {\n  flex: 1 1 180px;\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n\n.itemx2-root-setting-card > .itemx2-manager-actions {\n  display: flex;\n  flex: 0 0 100%;\n  flex-wrap: wrap;\n  gap: 8px;\n  min-width: 0;\n}\n.itemx2-root-setting-card .itemx2-root-setting-button {\n  flex-shrink: 0;\n  white-space: nowrap;\n  word-break: normal;\n  overflow-wrap: normal;\n}\n.itemx2-root-setting-card > .itemx2-manager-actions > button {\n  flex: 0 0 auto;\n  min-height: 38px;\n}\n\n.itemx2-detail-stack {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  width: 100%;\n  min-width: 0;\n}\n.itemx2-detail-stack > * {\n  flex-shrink: 0;\n}\n.itemx2-change-note,\n.itemx2-review-note {\n  position: relative;\n  z-index: 2;\n  margin: 12px;\n  padding: 11px 13px;\n  border: 1px solid rgba(166, 180, 200, 0.17);\n  border-radius: 9px;\n  background: rgba(8, 13, 21, 0.88);\n  color: #cbd6e4;\n  font-size: var(--itemx-text-sm, 0.72rem);\n  line-height: 1.6;\n  overflow-wrap: anywhere;\n}\n.itemx2-change-note > strong {\n  display: block;\n  margin-bottom: 6px;\n  color: #e1c68b;\n  font-size: var(--itemx-text-sm, 0.72rem);\n}\n.itemx2-change-note > span {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: baseline;\n  gap: 5px 9px;\n  margin-top: 4px;\n}\n.itemx2-change-note small {\n  color: #9eacbf;\n  min-width: 48px;\n}\n.itemx2-change-note del {\n  color: #a0a9b8;\n  text-decoration-color: rgba(160, 169, 184, 0.45);\n}\n.itemx2-change-note em {\n  font-style: normal;\n  color: #f1e0b6;\n}\n.itemx2-change-note b {\n  color: #8494aa;\n}\n.itemx2-review-note {\n  display: grid;\n  gap: 3px;\n  background: rgba(13, 20, 30, 0.92);\n  color: #a4b3c6;\n}\n.itemx2-review-note small {\n  font-size: inherit;\n}\n.itemx2-review-partial {\n  border-left: 3px solid #bf9461;\n}\n.itemx2-review-partial strong {\n  color: #ecc99a;\n}\n.itemx2-repair-one {\n  display: block;\n  margin: 8px 12px 16px;\n  padding: 9px 14px;\n  border: 1px solid #7c684a;\n  border-radius: 8px;\n  background: #211e19;\n  color: #f0d7a7;\n  font: inherit;\n  cursor: pointer;\n}\n.itemx2-technique-material {\n  position: absolute;\n  inset: 9% 5%;\n  pointer-events: none;\n  opacity: 0.64;\n  contain: paint;\n}\n.itemx2-skill-form-slash .itemx2-technique-material {\n  background: linear-gradient(\n    147deg,\n    transparent 43%,\n    color-mix(in srgb, var(--p) 35%, transparent) 46%,\n    rgba(250, 247, 224, 0.9) 46.4%,\n    transparent 47.3% 56%,\n    color-mix(in srgb, var(--p) 35%, transparent) 57%,\n    transparent 59%\n  );\n  clip-path: polygon(8% 91%, 29% 46%, 94% 6%, 77% 44%, 47% 67%);\n  animation: itemx2-technique-shear 6s ease-in-out infinite;\n}\n.itemx2-skill-form-ward .itemx2-technique-material {\n  inset: 8% 12%;\n  background:\n    linear-gradient(\n      124deg,\n      transparent 20%,\n      color-mix(in srgb, var(--p) 24%, transparent) 21% 49%,\n      rgba(235, 248, 255, 0.45) 50%,\n      transparent 51%\n    ),\n    linear-gradient(36deg, transparent 38%, color-mix(in srgb, var(--p) 26%, transparent) 39% 70%, transparent 71%);\n  clip-path: polygon(24% 0, 81% 11%, 94% 62%, 55% 99%, 8% 75%, 0 22%);\n  animation: itemx2-technique-ward 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-heal .itemx2-technique-material {\n  inset: 0 9%;\n  background:\n    radial-gradient(ellipse at 36% 80%, color-mix(in srgb, var(--p) 45%, transparent), transparent 45%),\n    radial-gradient(ellipse at 68% 30%, rgba(255, 245, 206, 0.24), transparent 51%);\n  mask: linear-gradient(120deg, transparent 10%, #000 45% 72%, transparent);\n  animation: itemx2-technique-rise 9s ease-in-out infinite alternate;\n}\n.itemx2-skill-form-shadow .itemx2-technique-material {\n  background:\n    radial-gradient(ellipse at 41% 53%, rgba(3, 3, 9, 0.94) 15%, transparent 62%),\n    linear-gradient(\n      114deg,\n      transparent 25%,\n      color-mix(in srgb, var(--p) 36%, transparent) 27%,\n      transparent 29% 69%,\n      rgba(204, 176, 238, 0.22) 71%,\n      transparent 73%\n    );\n  clip-path: polygon(0 12%, 85% 0, 65% 38%, 100% 58%, 73% 96%, 16% 79%);\n  animation: itemx2-technique-shadow 11s ease-in-out infinite alternate;\n}\n@keyframes itemx2-technique-shear {\n  0%,\n  72%,\n  100% {\n    opacity: 0.32;\n    transform: translate(-3px, 2px);\n  }\n  80% {\n    opacity: 0.8;\n    transform: translate(4px, -3px);\n  }\n}\n@keyframes itemx2-technique-ward {\n  from {\n    opacity: 0.32;\n    transform: translate(-2px, 2px);\n  }\n  to {\n    opacity: 0.62;\n    transform: translate(3px, -2px);\n  }\n}\n@keyframes itemx2-technique-rise {\n  from {\n    opacity: 0.35;\n    transform: translateY(6px);\n  }\n  to {\n    opacity: 0.65;\n    transform: translateY(-6px);\n  }\n}\n@keyframes itemx2-technique-shadow {\n  from {\n    opacity: 0.48;\n    transform: translateX(-4px);\n  }\n  to {\n    opacity: 0.78;\n    transform: translateX(4px);\n  }\n}\n.itemx2-skill-type-passive .itemx2-technique-material {\n  animation-duration: 16s;\n}\n.itemx2-skill-type-sealed .itemx2-technique-material,\n.itemx2-skill-status-sealed .itemx2-technique-material {\n  animation: none;\n  opacity: 0.22;\n}\n.itemx2-skill-status-lost .itemx2-technique-material {\n  animation: none;\n  opacity: 0.1;\n}\n.itemx2-blend-fire-ice .affinity-fx::after {\n  content: '';\n  position: absolute;\n  inset: 18% 8%;\n  pointer-events: none;\n  background:\n    radial-gradient(ellipse at 34% 77%, rgba(195, 210, 218, 0.17), transparent 40%),\n    radial-gradient(ellipse at 72% 35%, rgba(239, 218, 206, 0.12), transparent 46%);\n}\n.itemx2-blend-dark-lightning .lightning-field {\n  clip-path: polygon(6% 0, 73% 0, 59% 24%, 97% 42%, 58% 60%, 82% 100%, 0 100%, 28% 65%, 4% 41%);\n}\n.itemx2-blend-fire-wind .sig-fire {\n  transform-origin: 30% 85%;\n  rotate: -13deg;\n}\n.itemx2-blend-ice-light .ice-cracks {\n  background-color: rgba(235, 240, 216, 0.025);\n}\n.itemx2-event-burst {\n  display: none;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  z-index: 1;\n  opacity: 0;\n  contain: paint;\n}\n.itemx2-burst-active > .itemx2-event-burst {\n  display: block;\n  animation: itemx2-event-reveal 1.25s ease-out both;\n}\n.itemx2-burst-enhanced {\n  background: linear-gradient(\n    125deg,\n    transparent 25%,\n    rgba(230, 190, 108, 0.16) 40%,\n    rgba(255, 238, 172, 0.6) 44%,\n    transparent 49%\n  );\n}\n.itemx2-burst-damage {\n  background: linear-gradient(\n    120deg,\n    transparent 37%,\n    rgba(236, 151, 131, 0.5) 38%,\n    transparent 39% 62%,\n    rgba(189, 118, 107, 0.3) 63%,\n    transparent 64%\n  );\n  clip-path: polygon(23% 0, 63% 0, 48% 39%, 73% 65%, 46% 100%, 39% 100%, 58% 63%, 32% 38%);\n}\n.itemx2-burst-learned {\n  background: radial-gradient(ellipse at 30% 45%, var(--pg, rgba(154, 128, 233, 0.35)), transparent 58%);\n}\n.itemx2-burst-resolved {\n  background: linear-gradient(120deg, rgba(148, 159, 175, 0.3), rgba(38, 42, 51, 0.25), transparent);\n  animation-name: itemx2-event-resolve !important;\n}\n@keyframes itemx2-event-reveal {\n  0% {\n    opacity: 0;\n    transform: translateX(-9%);\n  }\n  25% {\n    opacity: 0.9;\n  }\n  100% {\n    opacity: 0;\n    transform: translateX(9%);\n  }\n}\n@keyframes itemx2-event-resolve {\n  0% {\n    opacity: 0.8;\n  }\n  100% {\n    opacity: 0;\n  }\n}\n.motion-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-event-burst,\n.itemx2-effects-off .itemx2-technique-material,\n.itemx-body-scrolling .itemx2-event-burst {\n  display: none !important;\n  animation: none !important;\n}\n@media (prefers-reduced-motion: reduce) {\n  .itemx2-technique-material {\n    animation: none !important;\n  }\n  .itemx2-event-burst {\n    display: none !important;\n    animation: none !important;\n  }\n}\n\n\n.itemx2-frozen-banner{display:block;margin:0;padding:10px 14px;background:rgba(190,74,58,.16);border-top:1px solid rgba(214,108,90,.5);border-bottom:1px solid rgba(214,108,90,.5);color:#f6d9d2}\n.itemx2-frozen-banner strong{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;color:#ffb3a0}\n.itemx2-frozen-banner small{display:block;margin-top:3px;font-size:11px;line-height:1.5;opacity:.86}\n.itemx2-skin-frost .itemx2-frozen-banner,.x-risu-itemx2-skin-frost .itemx2-frozen-banner{background:rgba(190,74,58,.1);color:#7a2f22}\n.itemx2-skin-frost .itemx2-frozen-banner strong,.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong{color:#a8341f}\n.itemx2-skin-hanji .itemx2-frozen-banner,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner{background:rgba(160,66,50,.1);color:#6d2b1d}\n.itemx2-skin-hanji .itemx2-frozen-banner strong,.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong{color:#94301c}";
@@ -4037,16 +4160,6 @@ const ITEMX_AUX_SETTLE_MS = 1500;
 const ITEMX_AUX_PROMPT_REVISION = 2;
 const ITEMX_ROOT_PAGE_SIZE = 16;
 const ITEMX_CHECKPOINT_VERSION = 2;
-const ITEMX_CHECKPOINT_MIGRATIONS = {
-  1: (value) => ({
-    ...value,
-    v: 2,
-    sealedThroughId: typeof value.sealedThroughId === 'string' ? value.sealedThroughId : '',
-    rows: Array.isArray(value.rows) ? value.rows : [],
-    manual: Array.isArray(value.manual) ? value.manual : [],
-    storage: value.storage && typeof value.storage === 'object' ? value.storage : undefined
-  })
-};
 const ITEMX_CHECKPOINT_TAIL_EVENTS = 96;
 const ITEMX_CHECKPOINT_TAIL_MESSAGES = 24;
 const ITEMX_CHECKPOINT_TRIGGER_MESSAGES = 64;
@@ -4072,9 +4185,10 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     (kind, work, unique = false) =>
     (...args) =>
       dispatch(kind, () => work(...args), unique);
-  const saveChat = (...args) => {
+  const readChat = async (...args) => ITEMXStorage.hydrate(await Risuai.getChatFromIndex(...args));
+  const saveChat = (characterIndex, chatIndex, chat) => {
     workQueue.assertCurrent();
-    return Risuai.setChatToIndex(...args);
+    return Risuai.setChatToIndex(characterIndex, chatIndex, ITEMXStorage.persist(chat));
   };
   const stateOwners = ITEMXState.create();
   const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
@@ -4245,7 +4359,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
         Risuai.getCharacter()
       ]);
       if (characterIndex == null || chatIndex == null || !character) return null;
-      const chat = await Risuai.getChatFromIndex(characterIndex, chatIndex);
+      const chat = await readChat(characterIndex, chatIndex);
       if (!chat) return null;
       return {
         characterIndex,
@@ -4271,75 +4385,31 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   }
 
   async function outputSettings(character, { refresh = false } = {}) {
-    const id = character?.chaId || 'unknown';
+    const id = settingsId(character);
     if (!refresh && settingsState.settingsCache.has(id)) return { ...settingsState.settingsCache.get(id) };
-    const loading = Promise.all([
-      Risuai.pluginStorage.getItem(`enabled:${id}`),
-      Risuai.pluginStorage.getItem(`mainOutput:${id}`),
-      Risuai.pluginStorage.getItem(`auxOutput:${id}`),
-      Risuai.pluginStorage.getItem(`rarityMode:${id}`),
-      Risuai.pluginStorage.getItem(`itemsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`skillsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`encountersEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`debugEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`effectsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`fontScale:${id}`),
-      Risuai.pluginStorage.getItem(`moduleAssetsEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`lorebookEncounterEnabled:${id}`),
-      Risuai.pluginStorage.getItem(`skin:${id}`)
-    ]).then(
-      ([
-        enabled,
-        main,
-        aux,
-        rarity,
-        items,
-        skills,
-        encounters,
-        debug,
-        effects,
-        fontScale,
-        moduleAssets,
-        lorebookEncounter,
-        skin
-      ]) => {
-        const settings = {
-          enabled: enabled !== '0',
-          mainOutput: main !== '0',
-          auxOutput: ['off', 'missing', 'always'].includes(aux) ? aux : 'off',
-          rarityMode: ['world', 'itemx'].includes(rarity) ? rarity : 'world',
-          itemsEnabled: items !== '0',
-          skillsEnabled: skills !== '0',
-          encountersEnabled: encounters !== '0',
-          debugEnabled: debug === '1',
-          effectsEnabled: effects !== '0',
-          fontScale: ['small', 'medium', 'large'].includes(fontScale) ? fontScale : 'small',
-          moduleAssetsEnabled: moduleAssets === '1',
-          lorebookEncounterEnabled: lorebookEncounter === '1',
-          skin: SKIN_MODES.includes(skin) ? skin : 'dark'
-        };
-        settingsState.settingsCache.set(id, settings);
-        presentationState.visualEffectsEnabled = settings.effectsEnabled;
-        presentationState.visualSkin = settings.skin;
-        return settings;
-      }
-    );
-    return { ...(await loading) };
+    const document = await ITEMXSettings.read(Risuai.pluginStorage);
+    const settings = ITEMXSettings.normalize(document.characters[id]);
+    settingsState.settingsCache.set(id, settings);
+    presentationState.visualEffectsEnabled = settings.effectsEnabled;
+    presentationState.visualSkin = settings.skin;
+    return { ...settings };
   }
+
+  const writeSetting = (character, key, value) => ITEMXSettings.update(Risuai.pluginStorage, settingsId(character), { [key]: value });
 
   async function isEnabled(character) {
     return (cachedSettings(character) || (await outputSettings(character))).enabled;
   }
 
   async function setEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`enabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'enabled', Boolean(value));
     updateCachedSettings(character, { enabled: Boolean(value) });
   }
 
   async function setDomainEnabled(character, domain, value) {
     const keys = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
     if (!keys[domain]) throw new Error('Invalid ITEMX domain');
-    await Risuai.pluginStorage.setItem(`${keys[domain]}:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    await writeSetting(character, keys[domain], Boolean(value));
     updateCachedSettings(character, { [keys[domain]]: Boolean(value) });
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
@@ -4347,19 +4417,19 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function setDebugEnabled(character, value) {
     settingsState.debugEnabled = Boolean(value);
-    await Risuai.pluginStorage.setItem(`debugEnabled:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    await writeSetting(character, 'debugEnabled', Boolean(value));
     updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');
   }
 
   async function setMainOutput(character, value) {
-    await Risuai.pluginStorage.setItem(`mainOutput:${character?.chaId || 'unknown'}`, value ? '1' : '0');
+    await writeSetting(character, 'mainOutput', Boolean(value));
     updateCachedSettings(character, { mainOutput: Boolean(value) });
   }
 
   async function setAuxOutput(character, value) {
     if (!['off', 'missing', 'always'].includes(value)) throw new Error('Invalid auxiliary output mode');
-    await Risuai.pluginStorage.setItem(`auxOutput:${character?.chaId || 'unknown'}`, value);
+    await writeSetting(character, 'auxOutput', value);
     updateCachedSettings(character, { auxOutput: value });
     workQueue.forget('catch-up');
     workQueue.forget('aux-settle');
@@ -4367,12 +4437,12 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function setRarityMode(character, value) {
     if (!['world', 'itemx'].includes(value)) throw new Error('Invalid rarity mode');
-    await Risuai.pluginStorage.setItem(`rarityMode:${character?.chaId || 'unknown'}`, value);
+    await writeSetting(character, 'rarityMode', value);
     updateCachedSettings(character, { rarityMode: value });
   }
 
   async function setEffectsEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`effectsEnabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'effectsEnabled', Boolean(value));
     updateCachedSettings(character, { effectsEnabled: Boolean(value) });
     presentationState.markerHtmlCache.clear();
     presentationState.detailHtmlCache.clear();
@@ -4381,19 +4451,19 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
   async function setFontScale(character, value) {
     if (!['small', 'medium', 'large'].includes(value)) throw new Error('Invalid font scale');
-    await Risuai.pluginStorage.setItem(`fontScale:${settingsId(character)}`, value);
+    await writeSetting(character, 'fontScale', value);
     updateCachedSettings(character, { fontScale: value });
     await syncRootFontScale(value);
   }
 
   async function setModuleAssetsEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`moduleAssetsEnabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'moduleAssetsEnabled', Boolean(value));
     updateCachedSettings(character, { moduleAssetsEnabled: Boolean(value) });
     portraitsState.moduleAssetCache = { key: '', at: 0, rows: [] };
   }
 
   async function setLorebookEncounterEnabled(character, value) {
-    await Risuai.pluginStorage.setItem(`lorebookEncounterEnabled:${settingsId(character)}`, value ? '1' : '0');
+    await writeSetting(character, 'lorebookEncounterEnabled', Boolean(value));
     updateCachedSettings(character, { lorebookEncounterEnabled: Boolean(value) });
     workQueue.remember('lorebook', '');
   }
@@ -4575,7 +4645,7 @@ const ITEMX_BADGE_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   ];
 
   async function loadBadgePosition() {
-    const saved = await Risuai.pluginStorage.getItem('badgePosition');
+    const saved = (await ITEMXSettings.read(Risuai.pluginStorage)).global.badgePosition;
     if (BADGE_POSITIONS.some(([value]) => value === saved)) uiState.badgePosition = saved;
   }
 
@@ -5007,62 +5077,19 @@ ${codexPageStyle()}
 
   function readCheckpointRecord(chat) {
     const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
-    if (raw === undefined || raw === null || raw === '') return { status: 'absent', value: null, reason: '' };
-    if (typeof raw === 'string' && raw === storageState.checkpointCacheRecord?.raw)
-      return storageState.checkpointCacheRecord.record;
-    let record;
-    try {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-        record = { status: 'unreadable', value: null, reason: 'checkpoint_not_object' };
-      else if (!Number.isInteger(parsed.v))
-        record = { status: 'unreadable', value: null, reason: 'checkpoint_no_version' };
-      else if (parsed.v > ITEMX_CHECKPOINT_VERSION)
-        record = { status: 'unreadable', value: null, reason: `checkpoint_from_newer_build_v${parsed.v}` };
-      else {
-        let value = parsed;
-        while (value.v < ITEMX_CHECKPOINT_VERSION) {
-          const migrate = ITEMX_CHECKPOINT_MIGRATIONS[value.v];
-          if (typeof migrate !== 'function') {
-            value = null;
-            break;
-          }
-          const next = migrate(value);
-          if (!next || next.v <= value.v) {
-            value = null;
-            break;
-          }
-          value = next;
-        }
-        if (!value) record = { status: 'unreadable', value: null, reason: `checkpoint_no_migration_v${parsed.v}` };
-        else if (!checkpointShapeValid(value))
-          record = { status: 'unreadable', value: null, reason: 'checkpoint_shape_invalid' };
-        else record = { status: 'ok', value, reason: '' };
-      }
-    } catch {
-      record = { status: 'unreadable', value: null, reason: 'checkpoint_unparsable' };
-    }
-    if (typeof raw === 'string') {
-      storageState.checkpointCacheRecord = { raw, record };
-    }
-    return record;
+    if (!raw) return { status: 'absent', value: null, reason: '' };
+    const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!checkpointShapeValid(value)) throw new Error('Invalid imported baseline event');
+    return { status: 'ok', value, reason: '' };
   }
 
-  function replayCheckpoint(chat) {
+  function readReplayBaseline(chat) {
     return readCheckpointRecord(chat).value;
   }
 
-  function checkpointFrozen(chat) {
-    const record = readCheckpointRecord(chat);
-    const frozen = record.status === 'unreadable';
-    if (frozen && storageState.frozenReason !== record.reason) {
-      storageState.frozenReason = record.reason;
-      debugRecord('checkpoint frozen', record.reason);
-      log('checkpoint unreadable, chat frozen read-only:', record.reason);
-    }
-    if (!frozen && storageState.frozen) storageState.frozenReason = '';
-    storageState.frozen = frozen;
-    return frozen;
+  function assertLogReadable(chat) {
+    ITEMXStorage.log(chat); // Malformed authoritative data must be surfaced, never overwritten.
+    return false;
   }
 
   const FROZEN_MESSAGE =
@@ -5080,7 +5107,7 @@ ${codexPageStyle()}
   }
 
   function checkpointStatus(chat) {
-    const checkpoint = replayCheckpoint(chat);
+    const checkpoint = readReplayBaseline(chat);
     if (checkpoint?.v === ITEMX_CHECKPOINT_VERSION) {
       const messages = Array.isArray(chat?.message) ? chat.message : [];
       let boundary = checkpoint.boundary;
@@ -5099,7 +5126,7 @@ ${codexPageStyle()}
   }
 
   function buildMessageEventLookup(chat) {
-    const archived = replayCheckpoint(chat)?.rows || [];
+    const archived = readReplayBaseline(chat)?.rows || [];
     const rows = [...archived, ...messageEventLedger(chat)],
       itemByRef = new Map(),
       codexByRef = new Map(),
@@ -5143,7 +5170,7 @@ ${codexPageStyle()}
   }
 
   function itemxStorageFootprint(chat) {
-    const state = chat?.scriptstate || {};
+    const state = ITEMXStorage.persist(chat).scriptstate || {};
     let stateBytes = 0,
       markerBytes = 0,
       markerCount = 0;
@@ -5472,6 +5499,7 @@ ${codexPageStyle()}
   }
 
   function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
+    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replay(chat).codex;
     const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
     state.history ||= { skill: {}, monster: {} };
     const messages = chat?.message || [],
@@ -5545,129 +5573,20 @@ ${codexPageStyle()}
     const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(kept) };
     const reconciled = reconcileStoredRefViews(next, index).chat;
-    return { chat: checkpointReplay(reconciled), changed: true };
+    return { chat: refreshReplayCache(reconciled), changed: true };
   }
 
-  function checkpointReplay(chat, options = {}) {
-    const messages = Array.isArray(chat?.message) ? chat.message : [],
-      status = checkpointStatus(chat);
-    const liveRows = messageEventLedger(chat),
-      liveManual = manualLedger(chat);
-    const tailMessages = messages.length - (status.valid ? status.checkpoint.boundary + 1 : 0);
-    const eventPressure = liveRows.length + liveManual.length >= ITEMX_CHECKPOINT_TAIL_EVENTS;
-    const messagePressure = tailMessages >= ITEMX_CHECKPOINT_TRIGGER_MESSAGES;
-    const ledgerBytes = storageBytes(JSON.stringify(liveRows)) + storageBytes(JSON.stringify(liveManual));
-    const bytePressure = ledgerBytes >= ITEMX_CHECKPOINT_TAIL_BYTES;
-    if (checkpointFrozen(chat)) return chat;
-    if (!options.force && !eventPressure && !messagePressure && !bytePressure && !(status.checkpoint && !status.valid))
-      return chat;
-    const keepMessages = Math.max(
-      0,
-      Math.min(
-        ITEMX_CHECKPOINT_TAIL_MESSAGES,
-        Number.isInteger(options.keepMessages) ? options.keepMessages : ITEMX_CHECKPOINT_TAIL_MESSAGES
-      )
-    );
-    let tailStart = Math.max(0, messages.length - keepMessages);
-    const lookup = buildMessageEventLookup(chat),
-      payloadByKey = new Map(lookup.rows.map((row) => [`${row.domain}:${row.ref}`, row]));
-    const tailCost = (start) => {
-      const used = new Set();
-      let fullEvents = 0,
-        fullBytes = 0;
-      for (let index = start; index < messages.length; index += 1) {
-        const text = messageData(messages[index]);
-        for (const marker of text.match(ITEMXCore.MARKER_RE) || []) {
-          fullEvents += 1;
-          fullBytes += storageBytes(marker);
-        }
-        for (const marker of text.match(ITEMXCodex.MARKER_RE) || []) {
-          fullEvents += 1;
-          fullBytes += storageBytes(marker);
-        }
-        text.replace(ITEMX_REF_RE, (_, ref) => (used.add(`item:${ref}`), ''));
-        text.replace(ITEMX_CODEX_REF_RE, (_, ref) => (used.add(`codex:${ref}`), ''));
-      }
-      const rows = [...used].map((key) => payloadByKey.get(key)).filter(Boolean);
-      const manual = liveManual.filter((row) => row.afterIndex >= start);
-      return {
-        events: fullEvents + rows.length + manual.length,
-        bytes: fullBytes + storageBytes(JSON.stringify(rows)) + storageBytes(JSON.stringify(manual))
-      };
-    };
-    while (tailStart < messages.length) {
-      const cost = tailCost(tailStart);
-      if (cost.events <= ITEMX_CHECKPOINT_TAIL_EVENTS && cost.bytes <= ITEMX_CHECKPOINT_TAIL_BYTES) break;
-      tailStart += 1;
-    }
-    const boundary = tailStart - 1;
-    if (boundary < 0 || (status.valid && boundary <= status.checkpoint.boundary)) return chat;
-    const start = status.valid ? status.checkpoint.boundary + 1 : 0;
-    const baseManual = status.valid ? liveManual : [...(status.checkpoint?.manual || []), ...liveManual];
-    const item = rebuildWithManual(chat, lookup, {
-      start,
-      end: boundary,
-      registry: status.valid ? status.checkpoint.item.registry : undefined,
-      history: status.valid ? status.checkpoint.item.history : undefined,
-      manual: baseManual
-    });
-    const codex = rebuildCodexWithLedger(chat, lookup, {
-      start,
-      end: boundary,
-      base: status.valid ? status.checkpoint.codex : undefined
-    });
-    const next = ITEMXCore.clone(chat),
-      rowsByKey = new Map(lookup.rows.map((row) => [`${row.domain}:${row.ref}`, row]));
-    for (let index = 0; index <= boundary; index += 1) {
-      const message = next.message?.[index];
-      if (!message) continue;
-      const original = messageData(message);
-      const source = original
-        .replace(ITEMXCore.MARKER_RE, '')
-        .replace(ITEMXCodex.MARKER_RE, '')
-        .replace(ITEMX_REF_RE, '')
-        .replace(ITEMX_CODEX_REF_RE, '')
-        .replace(/[ \t]+\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n');
-      if (typeof message.data === 'string') message.data = source;
-      else if (typeof message.content === 'string') message.content = source;
-    }
-    const usedTail = new Set();
-    for (let index = boundary + 1; index < (next.message || []).length; index += 1) {
-      const text = messageData(next.message[index]);
-      text.replace(ITEMX_REF_RE, (_, ref) => (usedTail.add(`item:${ref}`), ''));
-      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => (usedTail.add(`codex:${ref}`), ''));
-    }
-    const tailRows = [...rowsByKey].filter(([key]) => usedTail.has(key)).map(([, row]) => row);
-    const tailManual = baseManual.filter((row) => row.afterIndex > boundary);
-    const sealed = createCheckpoint(
-      item,
-      codex,
-      boundary,
-      messages[boundary]?.chatId || '',
-      status.checkpoint?.storage?.pruned === true
-    );
-    if (status.checkpoint?.restored) {
-      sealed.checkpoint.restored = true;
-      sealed.encoded = JSON.stringify(sealed.checkpoint);
-    }
-    next.scriptstate = {
-      ...(next.scriptstate || {}),
-      [ITEMX_CHECKPOINT_KEY]: sealed.encoded,
-      [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(tailRows),
-      [ITEMX_MANUAL_KEY]: JSON.stringify(tailManual)
-    };
-    delete next.scriptstate[ITEMXCore.STATE_KEY];
-    delete next.scriptstate[ITEMXCodex.STATE_KEY];
-    return next;
+  function refreshReplayCache(chat, options = {}) {
+    return ITEMXStorage.hydrate(ITEMXStorage.persist(chat));
   }
 
   function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat), options = {}) {
+    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replay(chat).item;
     const messages = Array.isArray(chat?.message) ? chat.message : [];
     const start = Math.max(0, options.start || 0),
       end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
     const ledger = options.manual || [
-        ...(start === 0 ? replayCheckpoint(chat)?.manual || [] : []),
+        ...(start === 0 ? readReplayBaseline(chat)?.manual || [] : []),
         ...manualLedger(chat)
       ],
       manualByIndex = new Map(),
@@ -5736,11 +5655,11 @@ ${codexPageStyle()}
     const ctx = await context();
     if (!ctx) return null;
     return (async () => {
-      let latestChat = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      let latestChat = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latestChat) return null;
       if (
         upgradeDisplayRefs &&
-        !checkpointFrozen(latestChat) &&
+        !assertLogReadable(latestChat) &&
         !latestChat.isStreaming &&
         !(latestChat.message || []).some((message) => message?.isStreaming)
       ) {
@@ -5751,7 +5670,7 @@ ${codexPageStyle()}
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
       }
-      checkpointFrozen(latestChat);
+      assertLogReadable(latestChat);
       const lookup = buildMessageEventLookup(latestChat);
       const checkpoint = checkpointStatus(latestChat);
       const usableCheckpoint =
@@ -5800,6 +5719,7 @@ ${codexPageStyle()}
   }
 
   const CHAT_DATA_KEYS = [
+    ITEMXStorage.LOG, ITEMXStorage.PREFS, ITEMXStorage.CACHE,
     ITEMXCore.STATE_KEY,
     ITEMXCore.CHAT_KEY,
     ITEMXCodex.STATE_KEY,
@@ -5812,7 +5732,7 @@ ${codexPageStyle()}
   ];
 
   function backupState(ctx) {
-    const chat = ctx.chat,
+    const chat = ITEMXStorage.hydrate(ctx.chat),
       lookup = buildMessageEventLookup(chat),
       status = checkpointStatus(chat);
     const usable = status.valid && status.checkpoint.item.history && status.checkpoint.codex.history;
@@ -5896,7 +5816,7 @@ ${codexPageStyle()}
         }
         base.scriptstate = { ...base.scriptstate };
         for (const key of CHAT_DATA_KEYS)
-          if (![ITEMX_AUX_KEY, ITEMXCore.CHAT_KEY].includes(key)) delete base.scriptstate[key];
+          if (![ITEMX_AUX_KEY, ITEMXCore.CHAT_KEY, ITEMXStorage.LOG].includes(key)) delete base.scriptstate[key];
       }
       const next = {
         ...base,
@@ -5907,7 +5827,7 @@ ${codexPageStyle()}
           [ITEMX_MANUAL_KEY]: '[]'
         }
       };
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       const active = await context();
       if (
         !active ||
@@ -5920,8 +5840,6 @@ ${codexPageStyle()}
       pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
 
-      storageState.checkpointCacheRecord = null;
-      storageState.checkpointCacheRecord = null;
 
       presentationState.markerHtmlCache.clear();
       presentationState.detailHtmlCache.clear();
@@ -6116,13 +6034,14 @@ ${codexPageStyle()}
     const result = await (async () => {
       const active = await context();
       if (!active || active.key !== ctx.key) throw new Error('정리 중 채팅이 바뀌었습니다. 다시 시도하세요.');
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
         throw new Error('출력 스트리밍이 끝난 뒤 정리할 수 있습니다.');
       }
       const cleaned = cleanChatPluginData(latest);
-      await saveChat(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
+      workQueue.assertCurrent();
+      await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
       await setEnabled(ctx.character, false);
       return cleaned;
     })();
@@ -6170,13 +6089,13 @@ ${codexPageStyle()}
     const result = await (async () => {
       const active = await context();
       if (!active || active.key !== ctx.key) throw new Error('최적화 중 채팅이 바뀌었습니다. 다시 시도하세요.');
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest) throw new Error('현재 채팅을 불러오지 못했습니다.');
       if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue))
         throw new Error('출력 스트리밍이 끝난 뒤 최적화할 수 있습니다.');
-      if (checkpointFrozen(latest)) throw new Error(FROZEN_MESSAGE);
+      if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
       const before = itemxStorageFootprint(latest);
-      const compacted = checkpointReplay(latest, { force: true, keepMessages: 8 });
+      const compacted = refreshReplayCache(latest, { force: true, keepMessages: 8 });
       const aux = auxiliaryHistory(compacted);
       compacted.scriptstate = {
         ...(compacted.scriptstate || {}),
@@ -6190,7 +6109,6 @@ ${codexPageStyle()}
     pipelineState.cachedLoaded = null;
     workQueue.remember('loaded-generation', -1);
 
-    storageState.checkpointCacheRecord = null;
 
     pipelineState.eventPayloads = new Map();
     presentationState.markerHtmlCache.clear();
@@ -6230,9 +6148,9 @@ ${codexPageStyle()}
 
   async function commitManualEvents(loaded, events, label, review = { source: 'manual' }, refresh = true) {
     if (!loaded || !Array.isArray(events) || !events.length) throw new Error('No manual events to commit');
-    const latest = await Risuai.getChatFromIndex(loaded.characterIndex, loaded.chatIndex);
+    const latest = await readChat(loaded.characterIndex, loaded.chatIndex);
     if (!latest) throw new Error('Chat disappeared during manual operation');
-    if (checkpointFrozen(latest)) throw new Error(FROZEN_MESSAGE);
+    if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
     if (loaded.expectedChat && JSON.stringify(latest) !== JSON.stringify(loaded.expectedChat))
       throw new Error('저장 직전 대화가 변경되어 보완을 취소했습니다.');
     const ledger = manualLedger(latest);
@@ -6252,14 +6170,14 @@ ${codexPageStyle()}
     }
     let next = ITEMXCore.clone(latest);
     next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger) };
-    next = checkpointReplay(next);
+    next = refreshReplayCache(next);
     const snapshot = rebuildWithManual(
       next,
       buildMessageEventLookup(next),
       checkpointStatus(next).valid
         ? {
-            start: replayCheckpoint(next).boundary + 1,
-            registry: replayCheckpoint(next).item.registry,
+            start: readReplayBaseline(next).boundary + 1,
+            registry: readReplayBaseline(next).item.registry,
             manual: manualLedger(next)
           }
         : {}
@@ -6455,42 +6373,16 @@ ${codexPageStyle()}
   }
 
   async function auxiliaryZeroHistory(ctx) {
-    try {
-      const raw = await Risuai.pluginStorage.getItem(ITEMX_AUX_ZERO_STORAGE_KEY),
-        parsed = typeof raw === 'string' ? JSON.parse(raw) : raw,
-        current = parsed?.[ctx.key]?.history;
-      if (current && typeof current === 'object' && !Array.isArray(current)) return current;
-      const legacyRaw = await Risuai.pluginStorage.getItem(`auxZero:${ctx.key}`),
-        legacy = typeof legacyRaw === 'string' ? JSON.parse(legacyRaw) : legacyRaw;
-      return legacy && typeof legacy === 'object' && !Array.isArray(legacy) ? legacy : {};
-    } catch {
-      return {};
-    }
+    return ITEMXStorage.cache(ctx.chat).auxZero || {};
   }
 
   async function rememberAuxiliaryZero(ctx, guardKey) {
-    const history = await auxiliaryZeroHistory(ctx);
-    history[guardKey] = Date.now();
-    let ring = {};
-    try {
-      const raw = await Risuai.pluginStorage.getItem(ITEMX_AUX_ZERO_STORAGE_KEY),
-        parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ring = parsed;
-    } catch {}
-    ring[ctx.key] = {
-      at: Date.now(),
-      history: boundedObjectTail(history, 24, Math.floor(ITEMX_AUX_ZERO_MAX_BYTES / 4))
-    };
-    ring = Object.fromEntries(
-      Object.entries(ring)
-        .sort(([, left], [, right]) => Number(left?.at || 0) - Number(right?.at || 0))
-        .slice(-ITEMX_AUX_ZERO_CHAT_LIMIT)
-    );
-    while (Object.keys(ring).length > 1 && storageBytes(JSON.stringify(ring)) > ITEMX_AUX_ZERO_MAX_BYTES)
-      delete ring[Object.keys(ring)[0]];
-    await Risuai.pluginStorage.setItem(ITEMX_AUX_ZERO_STORAGE_KEY, JSON.stringify(ring));
-    if (typeof Risuai.pluginStorage.removeItem === 'function')
-      await Risuai.pluginStorage.removeItem(`auxZero:${ctx.key}`).catch(() => {});
+    const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
+    if (!latest || JSON.stringify(latest.message) !== JSON.stringify(ctx.chat.message)) return;
+    const derived = ITEMXStorage.cache(latest);
+    derived.auxZero = boundedObjectTail({ ...derived.auxZero, [guardKey]: Date.now() }, 64, ITEMX_AUX_HISTORY_MAX_BYTES);
+    latest.scriptstate = { ...latest.scriptstate, [ITEMXStorage.CACHE]: JSON.stringify({ ...derived, v: 1 }) };
+    await saveChat(ctx.characterIndex, ctx.chatIndex, latest);
   }
 
   function messageMetadata(message) {
@@ -6611,7 +6503,6 @@ ${codexPageStyle()}
   }
 
   async function recoverAuxiliaryOutput(options = {}) {
-    if (storageState.frozen) return null;
     return recoverAuxiliaryOutputNow(options);
   }
 
@@ -6733,7 +6624,7 @@ ${codexPageStyle()}
   async function recoverAuxiliaryOutputNow({ messageIndex = null, force = false } = {}) {
     const ctx = await context();
     if (!ctx || !(await isEnabled(ctx.character))) return null;
-    if (checkpointFrozen(ctx.chat)) return null;
+    if (assertLogReadable(ctx.chat)) return null;
     const settings = await outputSettings(ctx.character);
     settingsState.debugEnabled = settings.debugEnabled;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
@@ -6754,7 +6645,7 @@ ${codexPageStyle()}
 
     return (async () => {
       if (!force) await delay(350);
-      const current = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const current = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!current || ITEMXCore.fnv1a(messageData(current.message?.[index])) !== sourceHash) return null;
       if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return null;
       if (auxiliaryHistory(current)[guardKey] && !force) return null;
@@ -6893,7 +6784,7 @@ ${codexPageStyle()}
       const allErrors = [...parsed.errors, ...codexParsed.errors];
       if (!valid.length && allErrors.length) throw new Error(`보조 출력 검증 실패 (${allErrors[0]})`);
 
-      const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
       if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return null;
       if (!valid.length) {
         if (rejectedIds.length) {
@@ -7218,7 +7109,7 @@ ${codexPageStyle()}
   }
 
   async function repairCommittedTransport(ctx, index, source) {
-    if (checkpointFrozen(ctx?.chat)) return null;
+    if (assertLogReadable(ctx?.chat)) return null;
     const settings = await outputSettings(ctx.character);
     const lookup = buildMessageEventLookup(ctx.chat);
     const base = rebuildWithManual(ctx.chat, lookup).registry;
@@ -7236,7 +7127,7 @@ ${codexPageStyle()}
     ITEMXCore.MARKER_RE.lastIndex = 0;
     ITEMXCodex.MARKER_RE.lastIndex = 0;
     if (positioned === source && !needsCompaction) return { ctx, source };
-    const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+    const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
     if (!latest || ITEMXCore.fnv1a(messageData(latest.message?.[index])) !== ITEMXCore.fnv1a(source)) return null;
     const next = ITEMXCore.clone(latest);
     const message = next.message?.[index];
@@ -7927,7 +7818,7 @@ ${codexPageStyle()}
 
   async function setSkin(character, value) {
     const next = SKIN_MODES.includes(value) ? value : 'dark';
-    await Risuai.pluginStorage.setItem(`skin:${settingsId(character)}`, next);
+    await writeSetting(character, 'skin', next);
     updateCachedSettings(character, { skin: next });
     await syncMainEffectsState();
   }
@@ -8039,7 +7930,7 @@ ${codexPageStyle()}
     if (!presentationState.presentationRecords) {
       const records = new Map(),
         chat = pipelineState.cachedLoaded?.chat;
-      const manual = [...(replayCheckpoint(chat)?.manual || []), ...manualLedger(chat)];
+      const manual = [...(readReplayBaseline(chat)?.manual || []), ...manualLedger(chat)];
       const manualByIndex = new Map();
       for (const row of manual) {
         const index = Math.min(Math.max(-1, row.afterIndex), (chat?.message?.length || 0) - 1);
@@ -8298,7 +8189,7 @@ ${codexPageStyle()}
       const active = await context();
       if (!active || active.key !== ctx.key) throw new Error('스캔 중 채팅이 바뀌었습니다. 다시 시도하세요.');
       const scanResult = await (async () => {
-        const latest = await Risuai.getChatFromIndex(ctx.characterIndex, ctx.chatIndex);
+        const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
         if (!latest) throw new Error('현재 채팅을 다시 불러오지 못했습니다.');
         if (
           latest.isStreaming ||
@@ -9061,7 +8952,7 @@ ${codexPageStyle()}
     await (async () => {
       const active = await context();
       if (!active || active.key !== loaded.key) throw new Error('채팅이 변경되었습니다.');
-      const latest = await Risuai.getChatFromIndex(active.characterIndex, active.chatIndex);
+      const latest = await readChat(active.characterIndex, active.chatIndex);
       if (!latest) throw new Error('현재 채팅을 찾을 수 없습니다.');
       if (latest?.isStreaming || latest?.message?.some((message) => message.isStreaming))
         throw new Error('응답이 끝난 뒤 기록 설정을 변경해 주세요.');
@@ -9393,11 +9284,7 @@ ${codexPageStyle()}
     );
   }
 
-  function frozenBannerHtml(native) {
-    if (!storageState.frozen) return '';
-    const cls = native ? 'itemx2-root-frozen' : 'itemx-frozen';
-    return `<div class="itemx2-frozen-banner ${cls}" role="alert"><strong>읽기 전용으로 잠김</strong><small>${ITEMXCore.esc(FROZEN_MESSAGE)}</small></div>`;
-  }
+  function frozenBannerHtml() { return ''; }
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open)
@@ -9590,7 +9477,6 @@ ${codexPageStyle()}
       Number(loaded.moduleAssetsEnabled),
       Number(loaded.lorebookEncounterEnabled),
       Number(loaded.debugEnabled),
-      Number(storageState.frozen),
       JSON.stringify(ITEMXHistory.preferences(loaded.chat)),
       ITEMXHistory.completedTurns(loaded.chat).total
     ].join(':');
@@ -9692,7 +9578,7 @@ ${codexPageStyle()}
         hook: `itemx2-position-${key}`,
         run: async () => {
           uiState.badgePosition = key;
-          await Risuai.pluginStorage.setItem('badgePosition', key);
+          await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: key });
           uiState.status = `배지 위치 · ${label}`;
           if (uiState.rootDrawer) {
             for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
@@ -10874,7 +10760,7 @@ ${codexPageStyle()}
             const value = button.dataset.position;
             if (!BADGE_POSITIONS.some(([key]) => key === value)) return;
             uiState.badgePosition = value;
-            await Risuai.pluginStorage.setItem('badgePosition', value);
+            await ITEMXSettings.update(Risuai.pluginStorage, null, { badgePosition: value });
             if (uiState.rootDrawer) {
               for (const [other] of BADGE_POSITIONS) await uiState.rootDrawer.removeClass(`x-risu-itemx2-pos-${other}`);
               await uiState.rootDrawer.addClass(`x-risu-itemx2-pos-${value}`);

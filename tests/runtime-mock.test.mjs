@@ -750,7 +750,7 @@ test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated
   assert.equal(JSON.stringify(cleaned.chat.scriptstate), JSON.stringify({ unrelated: 'keep' }));
 });
 
-test('checkpoint seals old replay state and retains only a bounded recent event tail', async () => {
+test('cache maintenance preserves all canonical events and current state', async () => {
   const handlers = {};
   const Risuai = {
     pluginStorage: { getItem: async () => null, setItem: async () => {} },
@@ -789,7 +789,7 @@ test('checkpoint seals old replay state and retains only a bounded recent event 
     '  async function cachedOrRebuildCurrent() {',
     `  globalThis.__itemxCreateCheckpoint = createCheckpoint;
     globalThis.__itemxCheckpointForTest = (chat, options) => {
-      const next = checkpointReplay(chat, options), status = checkpointStatus(next), lookup = buildMessageEventLookup(next);
+      const next = refreshReplayCache(chat, options), status = checkpointStatus(next), lookup = buildMessageEventLookup(next);
       const manual = status.valid ? manualLedger(next) : [...(status.checkpoint?.manual || []), ...manualLedger(next)];
       const replay = status.valid ? { start: status.checkpoint.boundary + 1, registry: status.checkpoint.item.registry } : {};
       const snapshot = rebuildWithManual(next, lookup, { ...replay, manual });
@@ -872,18 +872,18 @@ test('checkpoint seals old replay state and retains only a bounded recent event 
     scriptstate: { $__itemx2_message_events: JSON.stringify(rows), $__itemx2_manual_events: JSON.stringify(manual) }
   };
   const folded = sandbox.__itemxCheckpointForTest(source);
-  assert.equal(folded.valid, true);
-  assert.equal(folded.version, 2);
+  assert.equal(folded.valid, false);
+  assert.equal(JSON.parse(folded.chat.scriptstate['itemx:log']).v, 1);
   assert.ok(folded.checkpointBytes <= 524288);
-  assert.equal(folded.boundary, 115);
-  assert.equal(folded.tailRows, 24);
-  assert.equal(folded.tailManual, 1);
+  assert.equal(folded.boundary, undefined);
+  assert.equal(folded.tailRows, 141);
+  assert.equal(folded.tailManual, 2);
   assert.equal(folded.itemIds.length, 142);
   assert.deepEqual(Array.from(folded.skillIds), ['checkpoint_skill']);
-  assert.doesNotMatch(folded.chat.message[0].data, /ITEMX2/);
+  assert.match(folded.chat.message[0].data, /ITEMX2/);
   folded.chat.message[0].data = '첫 기록을 삭제했다.';
   const rebuilt = sandbox.__itemxCheckpointForTest(folded.chat);
-  assert.equal(rebuilt.valid, true);
+  assert.equal(rebuilt.valid, false);
   assert.equal(rebuilt.itemIds.includes('checkpoint_item_0'), true);
   assert.equal(rebuilt.itemIds.length, 142);
   assert.equal(rebuilt.itemIds.includes('manual_prefix'), true);
@@ -900,9 +900,9 @@ test('checkpoint seals old replay state and retains only a bounded recent event 
     message: Array.from({ length: 10 }, () => ({ role: 'char', data: '기록 없음' })),
     scriptstate: { $__itemx2_message_events: '[]', $__itemx2_manual_events: JSON.stringify(manualHeavy) }
   });
-  assert.equal(manualFolded.valid, true);
-  assert.equal(manualFolded.boundary, 9);
-  assert.equal(manualFolded.tailManual, 0);
+  assert.equal(manualFolded.valid, false);
+  assert.equal(manualFolded.boundary, undefined);
+  assert.equal(manualFolded.tailManual, 140);
   assert.equal(manualFolded.itemIds.length, 140);
 
   const manyRows = [],
@@ -923,13 +923,13 @@ test('checkpoint seals old replay state and retains only a bounded recent event 
     message: manyMessages,
     scriptstate: { $__itemx2_message_events: JSON.stringify(manyRows), $__itemx2_manual_events: '[]' }
   });
-  assert.equal(bounded.version, 2);
-  assert.equal(JSON.parse(bounded.chat.scriptstate.$__itemx2_checkpoint).storage.pruned, false);
-  assert.equal(bounded.tailRows, 24);
+  assert.equal(JSON.parse(bounded.chat.scriptstate['itemx:log']).v, 1);
+  assert.equal(JSON.parse(bounded.chat.scriptstate['itemx:log']).rows.length, 400);
+  assert.equal(bounded.tailRows, 400);
   assert.equal(bounded.itemIds.length, 400);
   assert.ok(bounded.itemIds.includes('bounded_0'));
   assert.deepEqual(Array.from(sandbox.__itemxCheckpointForTest(bounded.chat).itemIds), Array.from(bounded.itemIds));
-  assert.doesNotMatch(bounded.chat.message[0].data, /ITEMX2/);
+  assert.match(bounded.chat.message[0].data, /ITEMX2/);
   // Explicit cleanup also preserves every user choice, including recent-tail IDs.
   bounded.chat.scriptstate.$__itemx2_history_preferences = JSON.stringify({
     after: 10,

@@ -19,84 +19,62 @@ const chatWith = (value) => ({
   scriptstate: { [KEY]: typeof value === 'string' ? value : JSON.stringify(value) }
 });
 
-test('a current checkpoint reads back and does not freeze', async () => {
+test('a current imported baseline reads back and does not freeze', async () => {
   const rt = await presentationRuntime();
-  const chat = chatWith(sealed(rt));
-  const record = rt.readCheckpointRecord(chat);
-  assert.equal(record.status, 'ok');
+  const chat = rt.storage.hydrate(rt.storage.persist(chatWith(sealed(rt)), { legacy: true }));
+  assert.equal(rt.readCheckpointRecord(chat).status, 'ok');
   assert.equal(rt.checkpointFrozen(chat), false);
   assert.equal(rt.checkpointStatus(chat).valid, true);
 });
 
-test('a v1 checkpoint migrates forward instead of being discarded', async () => {
+test('the one-time converter preserves a v1 final state', async () => {
   const rt = await presentationRuntime();
-  // The shape ITEMX actually wrote before 2.0.11: sealed by marker fingerprint.
   const legacy = { ...sealed(rt), v: 1, prefix: 'deadbeef' };
   delete legacy.sealedThroughId;
-  const chat = chatWith(legacy);
-  const record = rt.readCheckpointRecord(chat);
-  assert.equal(record.status, 'ok', record.reason);
-  assert.equal(record.value.v, 2);
-  assert.equal(record.value.item.registry.items.sword.name, '검');
-  assert.equal(rt.checkpointFrozen(chat), false);
-  // The migrated checkpoint must still be usable, not merely parseable.
-  assert.equal(rt.checkpointStatus(chat).valid, true);
+  const chat = rt.storage.hydrate(rt.storage.persist(chatWith(legacy), { legacy: true }));
+  assert.equal(rt.readCheckpointRecord(chat).value.v, 2);
+  assert.equal(rt.readCheckpointRecord(chat).value.item.registry.items.sword.name, '검');
 });
 
-test('a checkpoint from a newer build freezes instead of returning null', async () => {
-  const rt = await presentationRuntime();
-  const chat = chatWith(sealed(rt, { v: 99 }));
-  const record = rt.readCheckpointRecord(chat);
-  assert.equal(record.status, 'unreadable');
-  assert.match(record.reason, /newer_build_v99/);
-  assert.equal(rt.checkpointFrozen(chat), true);
+test('a future authoritative checkpoint aborts conversion without data loss', async () => {
+  const rt = await presentationRuntime(), chat = chatWith(sealed(rt, { v: 99 })), before = JSON.stringify(chat);
+  assert.throws(() => rt.storage.persist(chat, { legacy: true }), /unreadable/);
+  assert.equal(JSON.stringify(chat), before);
 });
 
-test('an unparsable checkpoint freezes rather than rebuilding from a stripped prefix', async () => {
-  const rt = await presentationRuntime();
-  const chat = chatWith('{ not json');
-  assert.equal(rt.readCheckpointRecord(chat).status, 'unreadable');
-  assert.equal(rt.checkpointFrozen(chat), true);
+test('an unparsable authoritative checkpoint cannot silently discard its prefix', async () => {
+  const rt = await presentationRuntime(), chat = chatWith('{ not json');
+  assert.throws(() => rt.storage.persist(chat, { legacy: true }));
+  assert.equal(chat.scriptstate[KEY], '{ not json');
 });
 
-test('a structurally broken checkpoint freezes', async () => {
-  const rt = await presentationRuntime();
-  const broken = sealed(rt);
+test('a structurally broken authoritative checkpoint aborts conversion', async () => {
+  const rt = await presentationRuntime(), broken = sealed(rt);
   delete broken.item;
-  const chat = chatWith(broken);
-  const record = rt.readCheckpointRecord(chat);
-  assert.equal(record.status, 'unreadable');
-  assert.equal(record.reason, 'checkpoint_shape_invalid');
+  assert.throws(() => rt.storage.persist(chatWith(broken), { legacy: true }), /unreadable/);
 });
 
-test('no checkpoint at all is absent, not frozen', async () => {
+test('no baseline is absent and an empty cache is harmless', async () => {
   const rt = await presentationRuntime();
-  const chat = { message: [], scriptstate: {} };
+  const chat = rt.storage.hydrate(rt.storage.persist({ message: [], scriptstate: {} }));
   assert.equal(rt.readCheckpointRecord(chat).status, 'absent');
   assert.equal(rt.checkpointFrozen(chat), false);
 });
 
-test('a frozen chat is never resealed', async () => {
-  const rt = await presentationRuntime();
-  const chat = chatWith(sealed(rt, { v: 99 }));
+test('an invalid canonical log is never overwritten by cache maintenance', async () => {
+  const rt = await presentationRuntime(), chat = { message: [], scriptstate: { 'itemx:log': '{broken' } };
   const before = JSON.stringify(chat);
-  // force:true is the strongest reseal request the runtime makes anywhere.
-  const result = rt.checkpointReplay(chat, { force: true, keepMessages: 0 });
-  assert.equal(JSON.stringify(result), before, 'frozen chat must be returned untouched');
+  assert.throws(() => rt.refreshReplayCache(chat));
+  assert.equal(JSON.stringify(chat), before);
 });
 
-test('the freeze banner renders in both the drawer and the iframe fallback', async () => {
+test('a discarded or corrupt cache rebuilds without freezing either UI surface', async () => {
   const rt = await presentationRuntime();
-  rt.checkpointFrozen(chatWith(sealed(rt, { v: 99 })));
-  const native = rt.frozenBannerHtml(true);
-  const fallback = rt.frozenBannerHtml(false);
-  for (const html of [native, fallback]) {
-    assert.match(html, /itemx2-frozen-banner/);
-    assert.match(html, /읽기 전용으로 잠김/);
-  }
-  assert.match(native, /itemx2-root-frozen/);
-  assert.match(fallback, /itemx-frozen/);
-  // and disappears once the chat is readable again
-  rt.checkpointFrozen({ message: [], scriptstate: {} });
+  const chat = rt.storage.persist(chatWith(sealed(rt)), { legacy: true });
+  chat.scriptstate['itemx:cache'] = '{broken';
+  const rebuilt = rt.storage.hydrate(chat);
+  assert.equal(rt.readCheckpointRecord(rebuilt).value.item.registry.items.sword.name, '검');
+  assert.equal(rt.checkpointFrozen(rebuilt), false);
   assert.equal(rt.frozenBannerHtml(true), '');
+  assert.equal(rt.frozenBannerHtml(false), '');
 });

@@ -72,7 +72,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     'message events must not be discarded to satisfy a byte cap'
   );
   assert.match(source, /\$__itemx2_checkpoint/);
-  assert.match(source, /function checkpointReplay\(chat, options = \{\}\)/);
+  assert.match(source, /function refreshReplayCache\(chat, options = \{\}\)/);
   assert.match(source, /prefixMarkerFingerprint/);
   assert.match(source, /ITEMX_CHECKPOINT_TAIL_MESSAGES = 24/);
   assert.match(source, /ITEMX_STORAGE_WARNING_BYTES = 16 \* 1024 \* 1024/);
@@ -111,9 +111,9 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   // button. Both segment groups come from the shared renderer, so assert on what
   // it actually renders rather than on a literal in the source.
   assert.match(source, /data-seg="\$\{group\}"/);
-  assert.match(source, /rarityMode:\$\{id\}/);
-  assert.match(source, /effectsEnabled:\$\{id\}/);
-  assert.match(source, /fontScale:\$\{id\}/);
+  assert.match(source, /rarityMode: \['world', 'itemx'\]/);
+  assert.match(source, /effectsEnabled: true/);
+  assert.match(source, /fontScale: \['small', 'medium', 'large'\]/);
   assert.match(source, /itemx2-setting-font-\$\{value\}/);
   assert.match(source, /syncRootFontScale/);
   const fontSetter = source.slice(source.indexOf('async function setFontScale'), source.indexOf('const AUX_LABELS'));
@@ -387,7 +387,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     /await catchUpLatestOutput\(\{ syncUi: false \}\);\s*const loaded = await rebuildCurrent\(\);\s*if \(loaded\) commitEventBursts\(loaded.chat\);\s*if \(loaded\?\.encountersEnabled && loaded\?\.lorebookEncounterEnabled\)\s*await scanLorebookEncounters\(\{ silent: true \}\);/
   );
   assert.match(source, /getCurrentLorebookEntries/);
-  assert.match(source, /lorebookEncounterEnabled:\$\{id\}/);
+  assert.match(source, /lorebookEncounterEnabled: false/);
   assert.match(source, /로어북에서 설명 채우기/);
   assert.match(source, /이미 만난 상대만 로어북과 대조합니다/);
   assert.match(source, /automaticAuxSettled\(ctx, index, source\)/);
@@ -431,9 +431,9 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /ENCOUNTER ARCHIVE/);
   assert.match(source, /itemx-codex-scan/);
   assert.match(source, /itemx2-codex-detail-row/);
-  assert.match(source, /itemsEnabled:\$\{id\}/);
-  assert.match(source, /skillsEnabled:\$\{id\}/);
-  assert.match(source, /encountersEnabled:\$\{id\}/);
+  assert.match(source, /itemsEnabled: true/);
+  assert.match(source, /skillsEnabled: true/);
+  assert.match(source, /encountersEnabled: true/);
   assert.match(source, /setDomainEnabled/);
   assert.match(source, /enabledCodexDomains/);
   assert.match(source, /Enabled domains: \$\{requested\}/);
@@ -574,7 +574,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(positionHandler.includes('installMainStyle'), true);
   assert.equal(positionHandler.includes('openRootInventory'), false);
   assert.match(source, /data-tab="settings"/);
-  assert.match(source, /enabled: enabled !== '0'/);
+  assert.match(source, /const schema = Object.freeze\(\{ enabled: true/);
   const bootstrap = source.slice(
     source.lastIndexOf('await loadBadgePosition()'),
     source.indexOf('await Risuai.onUnload')

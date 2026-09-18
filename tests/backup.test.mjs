@@ -1,3 +1,4 @@
+import { hydrate } from './helpers/storage.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { presentationRuntime } from './helpers/presentation-runtime.mjs';
@@ -18,7 +19,7 @@ async function harness() {
       capture: (v) => {
         api = v;
       },
-      current: () => ctx,
+      current: () => ({ ...ctx, chat: hydrate(ctx.chat) }),
       Risuai: {
         getChatFromIndex: async () => {
           if (mutateBeforeWrite) ctx.chat = { ...ctx.chat, note: 'concurrent' };
@@ -32,7 +33,7 @@ async function harness() {
         }
       }
     },
-    'context = async () => current(); isEnabled = async () => true; outputSettings = async () => ({itemsEnabled:true,skillsEnabled:true,encountersEnabled:true,auxOutput: "always"}); capture({recoverAuxiliaryOutputNow, backup:ITEMXBackup, history:ITEMXHistory, backupState, exportCurrentBackup, prepareBackupImport, commitBackupImport, checkpointReplay, cleanChatPluginData, backupSettingsHtml});'
+    'context = async () => current(); isEnabled = async () => true; outputSettings = async () => ({itemsEnabled:true,skillsEnabled:true,encountersEnabled:true,auxOutput: "always"}); capture({recoverAuxiliaryOutputNow, backup:ITEMXBackup, history:ITEMXHistory, backupState, exportCurrentBackup, prepareBackupImport, commitBackupImport, refreshReplayCache, cleanChatPluginData, backupSettingsHtml});'
   );
   return {
     p,
@@ -161,7 +162,7 @@ test('restored state survives new patches, compaction, restart-style rebuild and
   assert.equal(h.api.history.currentEntities(loaded, 'monster').length, 0);
   assert.equal(h.api.history.entries(loaded, 'item')[0].remaining, 8);
   for (let i = 0; i < 70; i++) h.ctx.chat.message.push({ role: 'user', data: '진행' }, { role: 'char', data: '응답' });
-  h.ctx.chat = h.api.checkpointReplay(h.ctx.chat, { force: true });
+  h.ctx.chat = h.api.refreshReplayCache(h.ctx.chat, { force: true });
   loaded = h.api.backupState(h.ctx);
   assert.equal(loaded.snapshot.registry.items.sword.location, 'equipped');
   assert.equal(loaded.codexSnapshot.skills.entries.s.mastery, 80);
@@ -269,7 +270,7 @@ test('explicit overwrite replaces all records and replay sources, preserving pro
   assert.equal(h.ctx.chat.scriptstate.$other, 'keep');
   assert.equal(h.ctx.chat.scriptstate.$__itemx2_lore_enrichment, undefined);
   assert.equal(h.ctx.chat.scriptstate.$__itemx2_message_events, undefined);
-  assert.equal(h.ctx.chat.scriptstate.$__itemx2_aux_processed, '{"already":true}');
+  assert.equal(hydrate(h.ctx.chat).scriptstate.$__itemx2_aux_processed, '{"already":true}');
   await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key, 'replace'));
   assert.deepEqual(plain((await h.api.exportCurrentBackup(h.ctx.key)).records), plain(backup.records));
   h.ctx.chat.message.pop();
