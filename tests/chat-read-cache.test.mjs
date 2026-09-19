@@ -7,10 +7,10 @@ import { runtimeSource } from '../scripts/runtime-source.mjs';
 const source = await runtimeSource();
 const queueSource = await readFile(new URL('../src/work-queue.js', import.meta.url), 'utf8');
 
-// Reading a chat marshals every message across the host bridge. Within one queue
-// job nothing else can run, so the first read must serve the rest of that job.
+// The host can change between any reads, including within a queue job.
 function harness() {
   const calls = { read: 0, write: 0 };
+  const chats = new Map();
   const slice = (start, end) => {
     const from = source.indexOf(start);
     const to = source.indexOf(end, from);
@@ -29,7 +29,7 @@ const ITEMXStorage = { hydrate: (c) => c, persist: (c) => c };
 `;
   const code =
     prelude +
-    slice('  let chatCache = null;', '  const stateOwners =') +
+    slice('  // Reading a chat', '  const stateOwners =') +
     `
 const saveChatFn = saveChat;
 globalThis.api = { readChat, saveChat: saveChatFn, workQueue, phaseStats };
@@ -37,15 +37,15 @@ globalThis.api = { readChat, saveChat: saveChatFn, workQueue, phaseStats };
   const sandbox = {
     setTimeout, clearTimeout, setInterval, clearInterval,
     Risuai: {
-      getChatFromIndex: async (c, i) => { calls.read += 1; return { id: `${c}:${i}`, message: [], scriptstate: {} }; },
-      setChatToIndex: async () => { calls.write += 1; }
+      getChatFromIndex: async (c, i) => { calls.read += 1; return structuredClone(chats.get(`${c}:${i}`) || { id: `${c}:${i}`, message: [], scriptstate: {} }); },
+      setChatToIndex: async (c, i, chat) => { calls.write += 1; chats.set(`${c}:${i}`, structuredClone(chat)); }
     }
   };
   vm.runInNewContext(code, sandbox);
   return { api: sandbox.api, calls };
 }
 
-test('repeat reads inside one job cost one host round-trip', async () => {
+test('repeat reads inside one job each observe the host', async () => {
   const { api, calls } = harness();
   await api.workQueue.enqueue({
     kind: 'turn',
@@ -53,12 +53,12 @@ test('repeat reads inside one job cost one host round-trip', async () => {
       const a = await api.readChat(0, 0);
       const b = await api.readChat(0, 0);
       const c = await api.readChat(0, 0);
-      assert.equal(a, b);
-      assert.equal(b, c);
+      assert.notEqual(a, b);
+      assert.notEqual(b, c);
     }
   });
-  assert.equal(calls.read, 1, 'three reads in one job must fetch once');
-  assert.equal(api.phaseStats.get('host:readChat:reused'), 2);
+  assert.equal(calls.read, 3, 'host changes are not serialized by our queue');
+  assert.equal(api.phaseStats.get('host:readChat:reused'), undefined);
 });
 
 test('a different chat in the same job is fetched separately', async () => {
@@ -88,7 +88,7 @@ test('a read outside any job is never served from the cache', async () => {
   assert.equal(calls.read, 2);
 });
 
-test('a write seeds the entry so the next read does not fetch it back', async () => {
+test('a write is verified and subsequent reads fetch committed host state', async () => {
   const { api, calls } = harness();
   await api.workQueue.enqueue({
     kind: 'turn',
@@ -100,6 +100,6 @@ test('a write seeds the entry so the next read does not fetch it back', async ()
       assert.equal(after.message.length, 1, 'the read sees what was just written');
     }
   });
-  assert.equal(calls.read, 1, 'writing then reading must not round-trip twice');
+  assert.equal(calls.read, 3, 'read, conflict check, then fresh read');
   assert.equal(calls.write, 1);
 });

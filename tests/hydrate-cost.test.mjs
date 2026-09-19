@@ -77,7 +77,7 @@ test('an unrelated scriptstate change is never masked', async () => {
   assert.notEqual(JSON.stringify(before.scriptstate), JSON.stringify(after.scriptstate));
 });
 
-test('the memo keys on the log, the cache and the message identities only', async () => {
+test('hydrate uses the projection memo; replay input regressions cover its key', async () => {
   const source = await readFile(new URL('../src/storage.js', import.meta.url), 'utf8');
   assert.match(source, /function projectReplay\(chat\)/);
   assert.match(source, /const projected = projectReplay\(chat\)/);

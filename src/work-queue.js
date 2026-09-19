@@ -163,8 +163,7 @@ const ITEMXWorkQueue = (() => {
       assertCurrent() {
         if (closed || active?.cancelled) throw aborted();
       },
-      // Identity of the job that owns the turn. The queue runs one at a time, so
-      // anything read during a job cannot change under it.
+      // Identity of our current job, not a lock on host-owned chat state.
       get token() {
         return active;
       },

@@ -4042,15 +4042,11 @@ const ITEMXStorage = (() => {
   }
 
   let replayMemo = null;
-  const replayKey = (chat) => {
-    const messages = chat.message || [];
-    return {
-      log: chat.scriptstate?.[LOG],
-      cache: chat.scriptstate?.[CACHE],
-      ids: messages.length + ':' + (messages[0]?.chatId || '') + ':' + (messages[messages.length - 1]?.chatId || '')
-    };
-  };
-  const sameReplayKey = (a, b) => !!a && !!b && a.log === b.log && a.cache === b.cache && a.ids === b.ids;
+  const replayKey = chat => JSON.stringify([
+    ...[LOG, CACHE, DTO.baseline, DTO.messages, DTO.manual].map(key => chat.scriptstate?.[key]),
+    (chat.message || []).map(message => [message.chatId, ITEMXCore.messageText(message)])
+  ]);
+  const sameReplayKey = (a, b) => a !== undefined && a === b;
   function projectReplay(chat) {
     const key = replayKey(chat);
     if (sameReplayKey(replayMemo?.key, key)) return replayMemo.value;
@@ -4127,28 +4123,25 @@ const ITEMXSettings = (() => {
     (kind, work, unique = false) =>
     (...args) =>
       dispatch(kind, () => work(...args), unique);
-  let chatCache = null;
-  const chatCacheKey = (characterIndex, chatIndex) => `${characterIndex}:${chatIndex}`;
-  const invalidateChatCache = () => {
-    chatCache = null;
-  };
+  const chatReads = new WeakMap();
   const readChat = async (characterIndex, chatIndex, ...rest) => {
-    const token = workQueue.token,
-      key = chatCacheKey(characterIndex, chatIndex);
-    if (token && chatCache && chatCache.token === token && chatCache.key === key) {
-      phaseCount('host:readChat:reused');
-      return chatCache.chat;
-    }
     const raw = await timed('host:readChat', () => Risuai.getChatFromIndex(characterIndex, chatIndex, ...rest));
+    const original = JSON.stringify(raw);
     const chat = timedSync('storage:hydrate', () => ITEMXStorage.hydrate(raw));
-    if (token) chatCache = { token, key, chat };
+    if (chat) chatReads.set(chat, { characterIndex, chatIndex, original });
     return chat;
   };
-  const saveChat = (characterIndex, chatIndex, chat) => {
+  const saveChat = async (characterIndex, chatIndex, chat, base = chat, { cleanup = false } = {}) => {
     workQueue.assertCurrent();
-    const persisted = timedSync('storage:persist', () => ITEMXStorage.persist(chat));
-    const token = workQueue.token;
-    chatCache = token ? { token, key: chatCacheKey(characterIndex, chatIndex), chat } : null;
+    const read = chatReads.get(base);
+    if (!read || read.characterIndex !== characterIndex || read.chatIndex !== chatIndex)
+      throw new Error('ITEMX write requires its original chat read');
+    const detached = JSON.parse(JSON.stringify(chat));
+    const persisted = cleanup ? detached : timedSync('storage:persist', () => ITEMXStorage.persist(detached));
+    const latest = await timed('host:readChat', () => Risuai.getChatFromIndex(characterIndex, chatIndex));
+    workQueue.assertCurrent();
+    if (JSON.stringify(latest) !== read.original)
+      throw new Error('ITEMX chat changed before saving; retry the operation');
     return timed('host:writeChat', () => Risuai.setChatToIndex(characterIndex, chatIndex, persisted));
   };
   const stateOwners = ITEMXState.create();
@@ -6784,7 +6777,7 @@ ${codexPageStyle()}
       ) {
         const reconciled = reconcileStoredRefViews(latestChat);
         if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
-          await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat);
+          await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat, latestChat);
           latestChat = reconciled.chat;
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
@@ -6955,7 +6948,7 @@ ${codexPageStyle()}
         JSON.stringify(active.chat) !== preview.expected
       )
         throw new Error('저장 직전 채팅이 변경되어 불러오기를 취소했습니다.');
-      await saveChat(ctx.characterIndex, ctx.chatIndex, next);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
       pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
 
@@ -7015,7 +7008,7 @@ ${codexPageStyle()}
       }
       const cleaned = cleanChatPluginData(latest);
       workQueue.assertCurrent();
-      await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, cleaned.chat, latest, { cleanup: true });
       await setEnabled(ctx.character, false);
       return cleaned;
     })();
@@ -7075,7 +7068,7 @@ ${codexPageStyle()}
         ...(compacted.scriptstate || {}),
         [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(aux, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
       };
-      await saveChat(ctx.characterIndex, ctx.chatIndex, compacted);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, compacted, latest);
       const legacyKeysRemoved = await removeLegacyPluginStorage();
       return { chat: compacted, before, after: itemxStorageFootprint(compacted), legacyKeysRemoved };
     })();
@@ -7156,7 +7149,7 @@ ${codexPageStyle()}
           }
         : {}
     );
-    await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
+    await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot), latest);
     uiState.status = `${label} · ${events.length}건`;
     return refresh ? rebuildCurrent() : null;
   }
@@ -7780,7 +7773,7 @@ ${codexPageStyle()}
             ...(next.scriptstate || {}),
             [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(history, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
           };
-          await saveChat(ctx.characterIndex, ctx.chatIndex, next);
+          await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
           if (pipelineState.activeContextKey === ctx.key) {
             uiState.status = '보조 출력 · 근거 불충분';
             await setAuxOutcome('failed', '보조 검사 보류 · 수동 재검사 가능', 0);
@@ -7842,7 +7835,7 @@ ${codexPageStyle()}
         refreshLatest(compacted, compactedLookup);
         workQueue.remember('host-settling', ctx.key);
       }
-      await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt));
+      await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt), latest);
       if (stillActive) {
         armEventBursts(markerText);
         commitEventBursts(compacted);
@@ -8212,7 +8205,7 @@ ${codexPageStyle()}
       pipelineState.generation += 1;
       workQueue.remember('host-settling', ctx.key);
     }
-    await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot));
+    await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot), latest);
     const errors = parsed.errors.length + codexParsed.errors.length,
       events = parsed.events.length + codexParsed.events.length;
     if (stillActive) uiState.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
@@ -9384,7 +9377,7 @@ ${codexPageStyle()}
           return { ...scanned, changed: false, sourceFingerprint };
         const next = ITEMXCore.clone(latest);
         next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) };
-        await saveChat(ctx.characterIndex, ctx.chatIndex, next);
+        await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
         return {
           ...scanned,
           changed: true,
@@ -9969,7 +9962,7 @@ ${codexPageStyle()}
       const prefs = ITEMXHistory.preferences(latest);
       update(prefs);
       const next = { ...latest, scriptstate: { ...latest.scriptstate, [ITEMXHistory.KEY]: JSON.stringify(prefs) } };
-      await saveChat(active.characterIndex, active.chatIndex, next);
+      await saveChat(active.characterIndex, active.chatIndex, next, latest);
       loaded.chat = next;
       if (pipelineState.cachedLoaded?.key === loaded.key) pipelineState.cachedLoaded.chat = next;
     })();

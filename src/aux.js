@@ -626,7 +626,7 @@
             ...(next.scriptstate || {}),
             [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(history, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
           };
-          await saveChat(ctx.characterIndex, ctx.chatIndex, next);
+          await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
           if (pipelineState.activeContextKey === ctx.key) {
             uiState.status = ITEMXText("aux.031");
             await setAuxOutcome('failed', ITEMXText("aux.030"), 0);
@@ -688,7 +688,7 @@
         refreshLatest(compacted, compactedLookup);
         workQueue.remember('host-settling', ctx.key);
       }
-      await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt));
+      await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt), latest);
       if (stillActive) {
         armEventBursts(markerText);
         commitEventBursts(compacted);

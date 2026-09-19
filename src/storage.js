@@ -127,21 +127,15 @@ const ITEMXStorage = (() => {
       checkpoint: { ...next, checksum: digest(next) } };
   }
 
-  // Folding the canonical log costs ~12ms on a 49 message chat and grows with
-  // it. Every chat read pays it, including the host DOM sync that runs when
-  // scrolling stops, so an unchanged chat was replayed over and over. Only the
-  // projection is cached: the rest of hydrate still runs against this caller's
-  // chat, so a change to anyone else's scriptstate is never masked.
+  // Projection also consumes full transport text, every message identity, and
+  // unpersisted DTO events. Exact serialized inputs avoid hash collisions and
+  // mutable-object identity hits; unrelated scriptstate is still passed through.
   let replayMemo = null;
-  const replayKey = (chat) => {
-    const messages = chat.message || [];
-    return {
-      log: chat.scriptstate?.[LOG],
-      cache: chat.scriptstate?.[CACHE],
-      ids: messages.length + ':' + (messages[0]?.chatId || '') + ':' + (messages[messages.length - 1]?.chatId || '')
-    };
-  };
-  const sameReplayKey = (a, b) => !!a && !!b && a.log === b.log && a.cache === b.cache && a.ids === b.ids;
+  const replayKey = chat => JSON.stringify([
+    ...[LOG, CACHE, DTO.baseline, DTO.messages, DTO.manual].map(key => chat.scriptstate?.[key]),
+    (chat.message || []).map(message => [message.chatId, ITEMXCore.messageText(message)])
+  ]);
+  const sameReplayKey = (a, b) => a !== undefined && a === b;
   function projectReplay(chat) {
     const key = replayKey(chat);
     if (sameReplayKey(replayMemo?.key, key)) return replayMemo.value;

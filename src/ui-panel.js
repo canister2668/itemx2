@@ -300,7 +300,7 @@
           return { ...scanned, changed: false, sourceFingerprint };
         const next = ITEMXCore.clone(latest);
         next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) };
-        await saveChat(ctx.characterIndex, ctx.chatIndex, next);
+        await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
         return {
           ...scanned,
           changed: true,
@@ -890,7 +890,7 @@
       const prefs = ITEMXHistory.preferences(latest);
       update(prefs);
       const next = { ...latest, scriptstate: { ...latest.scriptstate, [ITEMXHistory.KEY]: JSON.stringify(prefs) } };
-      await saveChat(active.characterIndex, active.chatIndex, next);
+      await saveChat(active.characterIndex, active.chatIndex, next, latest);
       loaded.chat = next;
       if (pipelineState.cachedLoaded?.key === loaded.key) pipelineState.cachedLoaded.chat = next;
     })();

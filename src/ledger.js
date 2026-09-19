@@ -658,7 +658,7 @@
       ) {
         const reconciled = reconcileStoredRefViews(latestChat);
         if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
-          await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat);
+          await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat, latestChat);
           latestChat = reconciled.chat;
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
@@ -832,7 +832,7 @@
         JSON.stringify(active.chat) !== preview.expected
       )
         throw new Error(ITEMXText("ledger.016"));
-      await saveChat(ctx.characterIndex, ctx.chatIndex, next);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
       pipelineState.cachedLoaded = null;
       workQueue.remember('loaded-generation', -1);
 
@@ -892,7 +892,7 @@
       }
       const cleaned = cleanChatPluginData(latest);
       workQueue.assertCurrent();
-      await Risuai.setChatToIndex(ctx.characterIndex, ctx.chatIndex, cleaned.chat);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, cleaned.chat, latest, { cleanup: true });
       // Cleanup is intended for leaving ITEMX behind. Disable this bot only
       // after the chat write succeeds so catch-up cannot immediately recreate
       // the markers that were just removed.
@@ -955,7 +955,7 @@
         ...(compacted.scriptstate || {}),
         [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(aux, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
       };
-      await saveChat(ctx.characterIndex, ctx.chatIndex, compacted);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, compacted, latest);
       const legacyKeysRemoved = await removeLegacyPluginStorage();
       return { chat: compacted, before, after: itemxStorageFootprint(compacted), legacyKeysRemoved };
     })();
@@ -1036,7 +1036,7 @@
           }
         : {}
     );
-    await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot));
+    await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot), latest);
     uiState.status = ITEMXText("ledger.001", label, events.length);
     return refresh ? rebuildCurrent() : null;
   }

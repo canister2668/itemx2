@@ -14,33 +14,30 @@
     (kind, work, unique = false) =>
     (...args) =>
       dispatch(kind, () => work(...args), unique);
-  // Reading a chat marshals every message across the host bridge, and a single
-  // reply walks that path several times. The queue runs one job at a time, so
-  // within a job nothing can change the chat under us: the first read serves the
-  // rest, and a write replaces the entry with what we just stored instead of
-  // fetching it straight back. Outside a job nothing is reused.
-  let chatCache = null;
-  const chatCacheKey = (characterIndex, chatIndex) => `${characterIndex}:${chatIndex}`;
-  const invalidateChatCache = () => {
-    chatCache = null;
-  };
+  // Reading a chat must observe the host, which runs outside our queue.
+  // Keep immutable read provenance, never a cache of mutable host state.
+  const chatReads = new WeakMap();
   const readChat = async (characterIndex, chatIndex, ...rest) => {
-    const token = workQueue.token,
-      key = chatCacheKey(characterIndex, chatIndex);
-    if (token && chatCache && chatCache.token === token && chatCache.key === key) {
-      phaseCount('host:readChat:reused');
-      return chatCache.chat;
-    }
     const raw = await timed('host:readChat', () => Risuai.getChatFromIndex(characterIndex, chatIndex, ...rest));
+    const original = JSON.stringify(raw);
     const chat = timedSync('storage:hydrate', () => ITEMXStorage.hydrate(raw));
-    if (token) chatCache = { token, key, chat };
+    if (chat) chatReads.set(chat, { characterIndex, chatIndex, original });
     return chat;
   };
-  const saveChat = (characterIndex, chatIndex, chat) => {
+  const saveChat = async (characterIndex, chatIndex, chat, base = chat, { cleanup = false } = {}) => {
     workQueue.assertCurrent();
-    const persisted = timedSync('storage:persist', () => ITEMXStorage.persist(chat));
-    const token = workQueue.token;
-    chatCache = token ? { token, key: chatCacheKey(characterIndex, chatIndex), chat } : null;
+    const read = chatReads.get(base);
+    if (!read || read.characterIndex !== characterIndex || read.chatIndex !== chatIndex)
+      throw new Error('ITEMX write requires its original chat read');
+    // Detach before the first await: persist intentionally shares message arrays.
+    const detached = JSON.parse(JSON.stringify(chat));
+    const persisted = cleanup ? detached : timedSync('storage:persist', () => ITEMXStorage.persist(detached));
+    const latest = await timed('host:readChat', () => Risuai.getChatFromIndex(characterIndex, chatIndex));
+    workQueue.assertCurrent();
+    if (JSON.stringify(latest) !== read.original)
+      throw new Error('ITEMX chat changed before saving; retry the operation');
+    // Stock API has no atomic compare-and-set. This rejects observed conflicts;
+    // the host still owns the interval between the final read and whole-chat set.
     return timed('host:writeChat', () => Risuai.setChatToIndex(characterIndex, chatIndex, persisted));
   };
   const stateOwners = ITEMXState.create();
