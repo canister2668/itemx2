@@ -6283,11 +6283,9 @@ ${codexPageStyle()}
   }
 
   function chatCarriesDisplayRefs(chat) {
-    const item = new RegExp(ITEMX_REF_RE.source),
-      codex = new RegExp(ITEMX_CODEX_REF_RE.source);
     return (chat?.message || []).some((message) => {
       const text = messageData(message);
-      return item.test(text) || codex.test(text);
+      return text.includes('<!--ITEMX2') || text.includes('<!--CODEX2');
     });
   }
 

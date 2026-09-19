@@ -68,9 +68,9 @@ test('bootstrap repaints the body once, and only when a ref needs it', async () 
   assert.match(ledger, /if \(!ctx\?\.chat \|\| !chatCarriesDisplayRefs\(ctx\.chat\)\) return false;/);
   // Streaming must never be interrupted by a cosmetic write.
   assert.match(ledger, /isStreaming[\s\S]{0,120}?return false;/);
-  // The ref scan must not reuse the global regexes' lastIndex.
-  assert.match(ledger, /new RegExp\(ITEMX_REF_RE\.source\)/);
-  assert.match(ledger, /new RegExp\(ITEMX_CODEX_REF_RE\.source\)/);
+  // Self-contained markers need the repaint just as much as compact refs: the
+  // cause is Risu painting before the display hook is live, not the ledger.
+  assert.match(ledger, /text\.includes\('<!--ITEMX2'\) \|\| text\.includes\('<!--CODEX2'\)/);
 });
 
 test('the rebuild reports whether it already rewrote the chat', async () => {
@@ -80,13 +80,21 @@ test('the rebuild reports whether it already rewrote the chat', async () => {
   assert.match(ledger, /^\s*wroteDisplayRefs,$/m, 'the flag must reach the caller');
 });
 
-test('the ref scan is stateless across calls', async () => {
+test('every marker form asks for the repaint, and a plain chat does not', async () => {
   const rt = await presentationRuntime();
-  const withRef = { message: [{ chatId: 'm', role: 'char', data: 'x<!--ITEMX2@r1-->' }] };
-  const withoutRef = { message: [{ chatId: 'm', role: 'char', data: '평범한 본문' }] };
-  // A global regex keeps lastIndex between tests and would alternate its answer.
-  for (let i = 0; i < 4; i += 1) {
-    assert.equal(rt.chatCarriesDisplayRefs(withRef), true, `ref chat, pass ${i}`);
-    assert.equal(rt.chatCarriesDisplayRefs(withoutRef), false, `plain chat, pass ${i}`);
-  }
+  const chat = (data) => ({ message: [{ chatId: 'm', role: 'char', data }] });
+  // The live chat that still failed carried four self-contained markers and no
+  // compact ref, so gating the repaint on refs alone never fired for it.
+  const cases = [
+    ['<!--ITEMX2:payload-->', true],
+    ['<!--ITEMX2@r1-->', true],
+    ['<!--ITEMX2@r1:view-->', true],
+    ['<!--CODEX2:payload-->', true],
+    ['<!--CODEX2@r1-->', true],
+    ['평범한 본문', false]
+  ];
+  // Repeat: a stateful scan would alternate its answer between calls.
+  for (let pass = 0; pass < 3; pass += 1)
+    for (const [body, expected] of cases)
+      assert.equal(rt.chatCarriesDisplayRefs(chat(`서사 ${body}`)), expected, `${body} pass ${pass}`);
 });
