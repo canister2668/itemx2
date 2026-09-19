@@ -108,13 +108,20 @@ for (const el of document.querySelectorAll('button, label[for], [role="switch"],
 }
 for (const el of document.querySelectorAll('*')) {
   const r = rect(el); if (r.w === 0) continue;
-  if (pr && (r.x < pr.x - 1 || r.x + r.w > pr.x + pr.w + 1)) {
+  const insidePanel = panel && panel !== el && panel.contains(el);
+  if (pr && insidePanel && (r.x < pr.x - 1 || r.x + r.w > pr.x + pr.w + 1)) {
     const cls=(el.className||'').toString().replace(/x-risu-/g,'').split(' ').filter(Boolean)[0]||el.tagName;
     if(!out.overflow.some(o=>o.cls===cls)) out.overflow.push({ cls, x: Math.round(r.x), right: Math.round(r.x+r.w), panelRight: Math.round(pr.x+pr.w) });
   }
-  if (el.children.length === 0 && el.scrollWidth > el.clientWidth + 1 && el.textContent.trim()) {
+  const textWidth = el => { const t = el.firstChild;
+    if (!t || t.nodeType !== 3) return 0;
+    const g = document.createRange(); g.selectNodeContents(el);
+    return g.getBoundingClientRect().width; };
+  if (el.children.length === 0 && el.textContent.trim()
+      && getComputedStyle(el).display !== 'inline'
+      && textWidth(el) > el.clientWidth + 1) {
     const cls=(el.className||'').toString().replace(/x-risu-/g,'').split(' ').filter(Boolean)[0]||el.tagName;
-    if(!out.truncated.some(o=>o.cls===cls)) out.truncated.push({ cls, text: el.textContent.trim().slice(0,20), scroll: el.scrollWidth, client: el.clientWidth });
+    if(!out.truncated.some(o=>o.cls===cls)) out.truncated.push({ cls, text: el.textContent.trim().slice(0,20), scroll: Math.round(textWidth(el)), client: el.clientWidth });
   }
   if (el.children.length === 0 && el.textContent.trim().length > 1 && r.w > 0 && r.h > 0) {
     const s = getComputedStyle(el), size = parseFloat(s.fontSize);
