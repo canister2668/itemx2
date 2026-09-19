@@ -11,7 +11,31 @@
   padding: 0;
   cursor: pointer;
   font-size: 16px;
-}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw{ margin-left: 44px; }.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw::before{
+}.chattext .x-risu-itemx2-panel-actions > button, .chattext .x-risu-itemx2-panel-actions > label{ position: relative; }.chattext .x-risu-itemx2-panel-actions > button::after, .chattext .x-risu-itemx2-panel-actions > label::after{
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}.chattext .x-risu-itemx2-sw-power::after{ width: auto; height: auto; transform: rotate(-32deg); }.chattext .x-risu-itemx2-sw-power::before{
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}.chattext .x-risu-itemx-seg-i{ min-height: 44px; }.chattext .x-risu-itemx2-sw{ position: relative; }.chattext .x-risu-itemx2-sw::after{
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}.chattext .x-risu-itemx2-search-controls button, .chattext .x-risu-itemx2-search-query{ min-height: 44px; }.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw{ margin-left: 44px; }.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw::before{
   content: '꺼짐';
   position: absolute;
   right: calc(100% + 8px);
@@ -145,7 +169,7 @@
   overflow-wrap: normal;
 }.chattext .x-risu-itemx2-root-setting-card > .x-risu-itemx2-manager-actions > button{
   flex: 0 0 auto;
-  min-height: 38px;
+  min-height: 44px;
 }.chattext .x-risu-itemx2-detail-stack{
   display: flex;
   flex-direction: column;

@@ -285,6 +285,49 @@
   cursor: pointer;
   font-size: 16px;
 }
+/* Touch targets. The header keeps its 36px look - four 44px boxes would eat the
+   title - so the tappable area is grown with a pseudo-element instead. The list
+   controls have room and simply get taller. Measured at 411x891: header buttons
+   were 36x36, filter chips 47x38, search buttons 40x25. */
+.itemx2-panel-actions > button,
+.itemx2-panel-actions > label { position: relative; }
+.itemx2-panel-actions > button::after,
+.itemx2-panel-actions > label::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+/* The power button already draws a struck-through state with ::after. */
+.itemx2-sw-power::after { width: auto; height: auto; transform: rotate(-32deg); }
+.itemx2-sw-power::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.itemx-seg-i { min-height: 44px; }
+/* The switch keeps its 44x26 shape and grows its hit area instead, because a
+   taller pill stops reading as a switch. Its height and the settings buttons'
+   live in ITEMX_CONTROL_STYLE, which is appended later and would win here. */
+.itemx2-sw { position: relative; }
+.itemx2-sw::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.itemx2-search-controls button,
+.itemx2-search-query { min-height: 44px; }
 /* A switch alone asks the reader to decode knob position. The state is spelled
    out beside it, drawn from aria-checked so it can never disagree with it. */
 .itemx2-root-setting-card .itemx2-sw { margin-left: 44px; }
@@ -461,7 +504,7 @@
 }
 .itemx2-root-setting-card > .itemx2-manager-actions > button {
   flex: 0 0 auto;
-  min-height: 38px;
+  min-height: 44px;
 }
 
 .itemx2-detail-stack {

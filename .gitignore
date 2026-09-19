@@ -7,3 +7,4 @@ coverage/
 __pycache__/
 *.pyc
 dist/risu-pipeline-mobile-preview*.png
+artifacts/
