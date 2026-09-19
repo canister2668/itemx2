@@ -11,7 +11,40 @@
   padding: 0;
   cursor: pointer;
   font-size: 16px;
-}.chattext .x-risu-itemx2-panel-actions > .x-risu-itemx2-history-open{
+}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw{ margin-left: 44px; }.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw::before{
+  content: '꺼짐';
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: #6b7789;
+  white-space: nowrap;
+}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw[aria-checked='true']::before{
+  content: '켜짐';
+  color: #a9e6c2;
+}.chattext .x-risu-itemx2-sw-power{
+  position: relative;
+  font-size: 17px;
+  color: #6b7789;
+  border-color: rgba(255,255,255,.07);
+}.chattext .x-risu-itemx2-sw-power::after{
+  content: '';
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(-32deg);
+  opacity: .75;
+}.chattext .x-risu-itemx2-sw-power.x-risu-itemx2-power-on{
+  color: #f0d79d;
+  border-color: #6e5a32;
+  background: rgba(212,175,110,.12);
+}.chattext .x-risu-itemx2-sw-power.x-risu-itemx2-power-on::after{ display: none; }.chattext .x-risu-itemx2-panel-actions > .x-risu-itemx2-history-open{
   font-size: 11px;
   color: #b7c4d8;
 }.chattext .x-risu-itemx-ph-text > span{

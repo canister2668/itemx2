@@ -457,10 +457,6 @@
       ITEMXText("ui-settings.079"),
       ITEMXText("ui-settings.078")
     ), parts.domainControls, setCard(
-      ITEMXText("ui-settings.082"),
-      enabled ? ITEMXText("ui-settings.081") : ITEMXText("ui-settings.080"),
-      setSwitch(skin, 'toggle', enabled)
-    ), setCard(
       ITEMXText("ui-settings.084"),
       ITEMXText("ui-settings.083"),
       setSwitch(skin, 'main-output', loaded.mainOutput)

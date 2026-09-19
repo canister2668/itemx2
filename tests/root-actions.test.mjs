@@ -17,7 +17,13 @@ const LOADED = {
   }
 };
 
+// The action table serves the whole drawer, not the settings body alone: the
+// power control lives in the header now. Render the panel the router sees.
 function drawerSettings(rt) {
+  return rt.rootInventoryHtml(LOADED, true, 'settings');
+}
+
+function settingsBodyOnly(rt) {
   const skin = rt.SETTINGS_SKINS.native;
   return rt.settingsPanelHtml(LOADED, skin, {
     connection: { ready: false }, chips: '', permissionLabel: '', styleLabel: '',

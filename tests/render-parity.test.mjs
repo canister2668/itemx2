@@ -67,10 +67,10 @@ test('each skin binds every control its own way and never both', async () => {
     'the drawer routes by class, not by attribute'
   );
   assert.ok(!/class="[^"]*itemx2-setting-toggle/.test(fallback), 'the fallback routes by attribute, not class');
-  for (const action of ['toggle', 'effects', 'module-assets', 'lorebook-scan', 'rebuild', 'storage-cleanup'])
+  for (const action of ['effects', 'module-assets', 'lorebook-scan', 'rebuild', 'storage-cleanup'])
     assert.ok(fallback.includes(`data-action="${action}"`), `fallback lost ${action}`);
   // The drawer's router looks these up by class, including its three aliases.
-  for (const hook of ['toggle', 'main', 'lorebook', 'cleanup', 'effects', 'rebuild', 'storage-cleanup'])
+  for (const hook of ['main', 'lorebook', 'cleanup', 'effects', 'rebuild', 'storage-cleanup'])
     assert.ok(drawer.includes(`itemx2-setting-${hook}`), `drawer lost itemx2-setting-${hook}`);
 });
 
@@ -142,6 +142,17 @@ test('search is a header toggle, not a permanent bar', async () => {
   );
 });
 
+test('the power control is not duplicated in settings', async () => {
+  const rt = await presentationRuntime();
+  const skin = rt.SETTINGS_SKINS.native;
+  const body = rt.settingsPanelHtml(LOADED, skin, {
+    connection: { ready: false }, chips: '', permissionLabel: '', styleLabel: '',
+    domainControls: '', fontChoices: '', positionChoices: '', manager: '', debugPanel: '',
+    ...rt.settingsStorageParts(LOADED)
+  });
+  assert.equal(/itemx2-setting-toggle/.test(body), false, 'two elements would leave one dead');
+});
+
 test('the settings tab has no search affordance', async () => {
   const rt = await presentationRuntime();
   const html = rt.rootInventoryHtml(LOADED, true, 'settings');
@@ -186,5 +197,12 @@ test('the header renders exactly the three controls, all with one class', async 
   const html = rt.rootInventoryHtml(LOADED, true, 'inventory');
   const actions = html.slice(html.indexOf('itemx2-panel-actions'), html.indexOf('</header>'));
   const controls = actions.match(/<(button|label)[^>]*class="itemx-ph-btn/g) || [];
-  assert.equal(controls.length, 3, 'search, history and close');
+  assert.equal(controls.length, 4, 'power, search, history and close');
+  // Power decides whether the plugin runs at all and is toggled per bot, so it
+  // sits in the header rather than behind a scroll in settings.
+  assert.match(actions, /itemx2-sw-power itemx2-setting-toggle/);
+  assert.equal(actions.indexOf('itemx2-sw-power') < actions.indexOf('itemx2-root-close'), true,
+    'power must not sit beside close, where a mistap stops recording');
+  // It carries both hooks because one header serves the drawer and the fallback.
+  assert.match(actions, /data-action="toggle"/);
 });

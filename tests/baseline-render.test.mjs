@@ -30,14 +30,23 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
     // Search arrived in 2.3.0 and is not in the oracle. It is three pieces - the
     // toggle, the header button that flips it and the bar itself - so all three
     // come out before comparing, or the oracle would reject its own addition.
+    // Two deliberate departures from the 2.2.0 oracle, both normalised on the
+    // side that has them: search arrived in 2.3.0, and the power toggle moved
+    // out of settings into the header because it is a per-bot control.
     const withoutSearch = (html) =>
       html
         .replace(/<!--ITEMX2-SEARCH-START-->[\s\S]*?<!--ITEMX2-SEARCH-END-->/g, '')
         .replace(/<input class="itemx2-root-control itemx2-search-toggle"[^>]*>/g, '')
-        .replace(/<label class="itemx-ph-btn itemx2-search-open"[^>]*>[\s\S]*?<\/label>/g, '');
+        .replace(/<label class="itemx-ph-btn itemx2-search-open"[^>]*>[\s\S]*?<\/label>/g, '')
+        .replace(/<button class="itemx-ph-btn itemx2-sw-power[^>]*>[\s\S]*?<\/button>/g, '');
+    const withoutMovedToggle = (html) =>
+      html.replace(
+        /<section class="itemx2-root-setting-card"><span><strong>이 봇에서 사용<\/strong>[\s\S]*?<\/section>/g,
+        ''
+      );
     assert.equal(
       withoutSearch(next.rootInventoryHtml(input, open, tab)),
-      old.rootInventoryHtml(input, open, tab),
+      withoutMovedToggle(old.rootInventoryHtml(input, open, tab)),
       `${enabled}/${tab}/${open}`
     );
   }
