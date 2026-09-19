@@ -8,7 +8,11 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-COMMAND = ['docker', 'exec', '-i', 'risu-haejeok-trial-postgres', 'sh', '-c',
+import os
+# The database container was renamed from risu-haejeok-trial-postgres to
+# LIVE-DB. Overridable so a rename does not silently abort a deployment.
+DB_CONTAINER = os.environ.get('ITEMX_DB_CONTAINER', 'LIVE-DB')
+COMMAND = ['docker', 'exec', '-i', DB_CONTAINER, 'sh', '-c',
            'exec psql -X -qAt -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d risuai_trial']
 
 def sql(query):
