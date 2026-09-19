@@ -493,7 +493,7 @@
         presentationState.bodyFxScrollActive = false;
         if (presentationState.bodyFxClassOwner)
           void presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
-        scheduleHostDomSync(180);
+        scheduleHostDomSync(180, { light: true });
         workQueue.wake();
       },
       delayMs

@@ -350,11 +350,16 @@
     return false;
   }
 
-  function scheduleHostDomSync(delayMs = 320) {
+  // `light` is the pass that runs when scrolling stops. Nothing changed while the
+  // reader was scrolling, but ensureRootInventory reads the whole chat back
+  // across the host bridge - a structured clone of every message - and that
+  // marshalling is what the reader feels as a hitch. With the drawer closed
+  // there is nothing on screen for it to refresh, so it waits for a real change.
+  function scheduleHostDomSync(delayMs = 320, { light = false } = {}) {
     workQueue.schedule('hostSyncTimer', async () => {
       try {
         await installBodyEffectGovernor();
-        await ensureRootInventory();
+        if (!light || uiState.rootOpen) await ensureRootInventory();
         await syncHostSettingsVisibility();
         await flushEventBursts();
       } catch (error) {

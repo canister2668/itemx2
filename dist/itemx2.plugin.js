@@ -188,14 +188,12 @@ const ITEMXCore = (() => {
       /[&<>"']/g,
       (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
     );
+  const fnvEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
   const fnv1a = (value) => {
     let h = 0x811c9dc5;
-    const bytes =
-      typeof TextEncoder !== 'undefined'
-        ? new TextEncoder().encode(String(value))
-        : Array.from(Buffer.from(String(value)));
-    for (const b of bytes) {
-      h ^= b;
+    const bytes = fnvEncoder ? fnvEncoder.encode(String(value)) : Buffer.from(String(value));
+    for (let i = 0; i < bytes.length; i += 1) {
+      h ^= bytes[i];
       h = Math.imul(h, 0x01000193) >>> 0;
     }
     return h.toString(16).padStart(8, '0');
@@ -8973,7 +8971,7 @@ ${codexPageStyle()}
         presentationState.bodyFxScrollActive = false;
         if (presentationState.bodyFxClassOwner)
           void presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
-        scheduleHostDomSync(180);
+        scheduleHostDomSync(180, { light: true });
         workQueue.wake();
       },
       delayMs
@@ -9371,11 +9369,11 @@ ${codexPageStyle()}
     return false;
   }
 
-  function scheduleHostDomSync(delayMs = 320) {
+  function scheduleHostDomSync(delayMs = 320, { light = false } = {}) {
     workQueue.schedule('hostSyncTimer', async () => {
       try {
         await installBodyEffectGovernor();
-        await ensureRootInventory();
+        if (!light || uiState.rootOpen) await ensureRootInventory();
         await syncHostSettingsVisibility();
         await flushEventBursts();
       } catch (error) {
