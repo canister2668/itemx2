@@ -257,7 +257,7 @@
       pipelineState.generation += 1;
       workQueue.remember('host-settling', ctx.key);
     }
-    await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot), latest);
+    await saveChat(ctx.characterIndex, ctx.chatIndex, await enrichPendingChat(ctx, ITEMXCore.writeSnapshot(compacted, snapshot)), latest);
     const errors = parsed.errors.length + codexParsed.errors.length,
       events = parsed.events.length + codexParsed.events.length;
     if (stillActive) uiState.status = errors ? ITEMXText("pipeline.010", errors) : ITEMXText("pipeline.009", events);

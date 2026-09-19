@@ -247,6 +247,37 @@
         catalog,
         narrative
       };
+    // Only host I/O yields ownership. The external region uses local values;
+    // cache/catalog writes happen after our queue job resumes. Yield once for
+    // the whole batch, never once per concurrent worker (which has no owner).
+    const missingAssets = new Map();
+    for (const monster of monsters) {
+      const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
+      if (!asset) continue;
+      const key = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
+      if (!(inlineOnly && portraitsState.portraitThumbnailCache.has(key)) && !portraitsState.portraitCache.has(key))
+        missingAssets.set(asset.id, asset);
+    }
+    const portraitJob = workQueue.token;
+    const rawAssets = missingAssets.size ? await workQueue.external(async () => {
+      const entries = [...missingAssets.values()], values = new Map();
+      const deadline = Date.now() + 5000; // One budget for all optional images.
+      let cursor = 0;
+      await Promise.all(Array.from({ length: Math.min(4, entries.length) }, async () => {
+        while (cursor < entries.length) {
+          const asset = entries[cursor++];
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            if (hostState.unloading || portraitJob?.cancelled || Date.now() >= deadline) return;
+            let raw = null;
+            try { raw = await withTimeout(Risuai.readImage(asset.id), Math.max(1, deadline - Date.now()), 'Portrait read timed out'); } catch {}
+            if (raw) { values.set(asset.id, raw); break; }
+            if (attempt < 2) await delay(Math.max(0, Math.min(280 * (attempt + 1), deadline - Date.now())));
+          }
+        }
+      }));
+      return values;
+    }) : new Map();
+    if (pipelineState.activeContextKey !== ownerKey) return result;
     let portraitCursor = 0;
     const loadNextPortrait = async () => {
       while (portraitCursor < monsters.length) {
@@ -265,17 +296,7 @@
           continue;
         }
         try {
-          let raw = null;
-          for (let attempt = 0; attempt < 3; attempt += 1) {
-            try {
-              raw = await Risuai.readImage(asset.id);
-              if (raw) break;
-            } catch {
-              raw = null;
-            }
-            if (attempt < 2) await delay(280 * (attempt + 1));
-          }
-          const image = asDataUrl(raw, asset.ext);
+          const image = asDataUrl(rawAssets.get(asset.id), asset.ext);
           if (image) {
             const thumbnail = await portraitThumbnail(cacheKey, image);
             result[monster.id] = inlineOnly ? thumbnail : image;

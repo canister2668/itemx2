@@ -55,19 +55,20 @@ const ITEMXCodex = (() => {
       .slice(0, max);
   const emptySkillValue = (value) =>
     /^(?:|[.\u2026\-_?]+|none|null|unknown|n\/a|tbd|example|placeholder|없음|해당\s*없음|미상|미정)$/i.test(clean(value, 120));
+  const explicitNoSkillValue = value => /^(?:none|없음|해당\s*없음|n\/a|[-_])$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (!emptySkillValue(result)) return result;
     if (type === 'passive') return '상시 효과 · 별도 소모 없음';
     if (type === 'sealed' || status === 'sealed') return '봉인 상태 · 발동 불가';
-    return result ? '별도 소모 없음' : '발동 자원 · 서사 기준';
+    return explicitNoSkillValue(result) ? '별도 소모 없음' : '발동 자원 · 서사 기준';
   };
   const cooldownValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (emptySkillValue(result)) {
       if (type === 'passive') return '상시 적용';
       if (type === 'sealed' || status === 'sealed') return '봉인 해제 후 사용 가능';
-      return result ? '재사용 제한 없음' : '사용 후 회복 필요';
+      return explicitNoSkillValue(result) ? '재사용 제한 없음' : result ? '재사용 조건 · 서사 기준' : '사용 후 회복 필요';
     }
     return /(?:\d+\s*)?(?:턴|라운드|turns?|rounds?|actions?|initiative)/i.test(result) ? '상황 조건 충족 후' : result;
   };

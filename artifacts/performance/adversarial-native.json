@@ -1,0 +1,85 @@
+{
+  "engine": "v22.19.0",
+  "execution": "native Function, no vm",
+  "benchmarks": {
+    "before": [
+      {
+        "events": 90,
+        "footprintMedianMs": 7.8,
+        "footprintPersistCalls": 1,
+        "persistMedianMs": 7.47,
+        "persistFolds": 0,
+        "oneAppendFolds": 1,
+        "cacheLossFolds": 90,
+        "logBytes": 15683,
+        "cacheBytes": 18297
+      },
+      {
+        "events": 900,
+        "footprintMedianMs": 43.5,
+        "footprintPersistCalls": 1,
+        "persistMedianMs": 58.01,
+        "persistFolds": 0,
+        "oneAppendFolds": 1,
+        "cacheLossFolds": 900,
+        "logBytes": 159823,
+        "cacheBytes": 179478
+      },
+      {
+        "events": 3000,
+        "footprintMedianMs": 131.04,
+        "footprintPersistCalls": 1,
+        "persistMedianMs": 119.77,
+        "persistFolds": 0,
+        "oneAppendFolds": 1,
+        "cacheLossFolds": 3000,
+        "logBytes": 541623,
+        "cacheBytes": 599379
+      }
+    ],
+    "after": [
+      {
+        "events": 90,
+        "footprintMedianMs": 0.34,
+        "footprintPersistCalls": 0,
+        "persistMedianMs": 3.81,
+        "persistFolds": 0,
+        "oneAppendFolds": 1,
+        "cacheLossFolds": 90,
+        "logBytes": 15683,
+        "cacheBytes": 18297
+      },
+      {
+        "events": 900,
+        "footprintMedianMs": 3.19,
+        "footprintPersistCalls": 0,
+        "persistMedianMs": 38.01,
+        "persistFolds": 0,
+        "oneAppendFolds": 1,
+        "cacheLossFolds": 900,
+        "logBytes": 159823,
+        "cacheBytes": 179478
+      },
+      {
+        "events": 3000,
+        "footprintMedianMs": 8.47,
+        "footprintPersistCalls": 0,
+        "persistMedianMs": 120.56,
+        "persistFolds": 0,
+        "oneAppendFolds": 1,
+        "cacheLossFolds": 3000,
+        "logBytes": 541623,
+        "cacheBytes": 599379
+      }
+    ]
+  },
+  "live": {
+    "currentChats": 20,
+    "migratedChats": 19,
+    "oldRows": 88,
+    "preserved": 88,
+    "baselineRows": 4,
+    "cacheEqual": 20,
+    "binaryMessages": 0
+  }
+}

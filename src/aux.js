@@ -688,7 +688,7 @@
         refreshLatest(compacted, compactedLookup);
         workQueue.remember('host-settling', ctx.key);
       }
-      await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt), latest);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, await enrichPendingChat(ctx, ITEMXCore.writeSnapshot(compacted, rebuilt)), latest);
       if (stillActive) {
         armEventBursts(markerText);
         commitEventBursts(compacted);

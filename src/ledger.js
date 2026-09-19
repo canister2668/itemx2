@@ -156,11 +156,15 @@
   }
 
   function itemxStorageFootprint(chat) {
-    const state = ITEMXStorage.persist(chat).scriptstate || {};
+    // Measure documents already on this chat, not a hypothetical rewrite.
+    const state = chat?.scriptstate || {};
+    const keys = state[ITEMXStorage.LOG]
+      ? [ITEMXStorage.LOG, ITEMXStorage.PREFS, ITEMXStorage.CACHE]
+      : CHAT_DATA_KEYS;
     let stateBytes = 0,
       markerBytes = 0,
       markerCount = 0;
-    for (const key of CHAT_DATA_KEYS || []) {
+    for (const key of keys) {
       if (!Object.prototype.hasOwnProperty.call(state, key)) continue;
       stateBytes += storageBytes(typeof state[key] === 'string' ? state[key] : JSON.stringify(state[key]));
     }
@@ -648,7 +652,9 @@
     const ctx = await context();
     if (!ctx) return null;
     return (async () => {
-      let latestChat = await readChat(ctx.characterIndex, ctx.chatIndex);
+      // A read-only projection uses the snapshot context just fetched. Any
+      // optional write below still verifies this read against the live host.
+      let latestChat = ctx.chat;
       if (!latestChat) return null;
       if (
         upgradeDisplayRefs &&

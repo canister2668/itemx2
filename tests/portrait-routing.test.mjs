@@ -106,17 +106,17 @@ test('cold concurrent display returns immediately without host reads or writes',
 });
 
 test('portrait preparation coalesces concurrent recovery work without waiting for a stalled image read', async () => {
-  let reads = 0;
+  let reads = 0, release;
   const p = await presentationRuntime(
     {
       Risuai: {
         readImage: () => {
           reads++;
-          return new Promise(() => {});
+          return new Promise(resolve => { release = resolve; });
         }
       }
     },
-    'runtime.testPrepare = prepareInlinePortraits; runtime.testDisplay = displayWithPortraits;'
+    'runtime.testPrepare = prepareInlinePortraits; runtime.testDisplay = displayWithPortraits; runtime.testQueue = workQueue;'
   );
   p.runtime.activeContextKey = 'murim';
   const entity = {
@@ -143,6 +143,9 @@ test('portrait preparation coalesces concurrent recovery work without waiting fo
   p.runtime.activeContextKey = 'another-chat';
   p.runtime.portraitThumbnailCache.set('murim:assets/mayuri.png:avif', 'data:image/avif;base64,AAAA');
   assert.doesNotMatch(p.runtime.testDisplay(marker), /<img/, 'old chat portraits must not leak across contexts');
+  const closed = p.runtime.testQueue.close();
+  release('data:image/png;base64,AAAA');
+  await closed;
 });
 
 test('large original images never enter inline HTML or the inline-only original cache', async () => {

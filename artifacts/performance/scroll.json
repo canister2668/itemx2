@@ -16,21 +16,21 @@
     ],
     "chatContainers": 2,
     "cards": 72,
-    "activeAnimationsBefore": 262,
+    "activeAnimationsBefore": 1734,
     "scroll": {
       "active": true,
       "ownerClass": "x-risu-itemx-body-scrolling",
       "heavy": 0,
       "running": [],
-      "paused": 545
+      "paused": 1734
     },
     "scrollEndWhileModelPending": true,
-    "scenarioWallMs": 1821,
+    "scenarioWallMs": 3217,
     "after": {
-      "heavy": 9,
+      "heavy": 6,
       "committedBatches": 2,
       "heavyCallsDuringScroll": 0,
-      "running": 578,
+      "running": 1734,
       "active": false
     }
   },
@@ -51,21 +51,21 @@
     ],
     "chatContainers": 2,
     "cards": 72,
-    "activeAnimationsBefore": 389,
+    "activeAnimationsBefore": 1734,
     "scroll": {
       "active": true,
       "ownerClass": "x-risu-itemx-body-scrolling",
       "heavy": 0,
       "running": [],
-      "paused": 507
+      "paused": 1734
     },
     "scrollEndWhileModelPending": true,
-    "scenarioWallMs": 1547,
+    "scenarioWallMs": 3051,
     "after": {
-      "heavy": 7,
+      "heavy": 6,
       "committedBatches": 2,
       "heavyCallsDuringScroll": 0,
-      "running": 534,
+      "running": 1734,
       "active": false
     }
   }

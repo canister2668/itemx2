@@ -12,11 +12,11 @@ test('an echoed template does not become an item', async () => {
   assert.equal(result.registry.order.length, 0, 'placeholder appraisal must be rejected');
 });
 
-test('every placeholder spelling is rejected as a name', async () => {
+test('placeholder names paired with template IDs are rejected', async () => {
   const { core } = await presentationRuntime();
   for (const name of ['...', '…', '....', '-', '_', '?', 'none', 'N/A', 'unknown', 'TBD', 'placeholder', '없음', '미상', '미정'])
     assert.equal(
-      core.extractResponse(`<itemExam><id>x</id><name>${name}</name></itemExam>`, core.newRegistry()).registry
+      core.extractResponse(`<itemExam><id>...</id><name>${name}</name></itemExam>`, core.newRegistry()).registry
         .order.length,
       0,
       `${name} must not register`

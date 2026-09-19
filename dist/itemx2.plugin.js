@@ -318,7 +318,7 @@ const ITEMXCore = (() => {
         const [name, ...rest] = part.split('::');
         return { name: clean(name, 160), desc: clean(rest.join('::'), 800) };
       })
-      .filter((one) => one.name && !placeholderValue(one.name));
+      .filter((one) => one.name && (!placeholderValue(one.name) || (one.desc && !placeholderValue(one.desc))));
   }
 
   function nestedPairs(xml, singular, max = 12) {
@@ -361,7 +361,8 @@ const ITEMXCore = (() => {
     const _provided = providedFields(raw);
     const name = clean(f.name, 160);
     if (!name) return { error: 'exam_no_name' };
-    if (placeholderValue(name)) return { error: 'exam_placeholder_name' };
+    if (placeholderValue(name) && (!ID_RE.test(f.id || '') || placeholderValue(f.id)))
+      return { error: 'exam_placeholder_name' };
     const id = ID_RE.test(f.id || '') ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
     const rarity = RARITIES.has((f.internalrarity || '').toLowerCase()) ? f.internalrarity.toLowerCase() : 'normal';
     const theme = THEMES.has((f.theme || '').toLowerCase()) ? f.theme.toLowerCase() : 'arcane';
@@ -1446,19 +1447,20 @@ const ITEMXCodex = (() => {
       .slice(0, max);
   const emptySkillValue = (value) =>
     /^(?:|[.\u2026\-_?]+|none|null|unknown|n\/a|tbd|example|placeholder|없음|해당\s*없음|미상|미정)$/i.test(clean(value, 120));
+  const explicitNoSkillValue = value => /^(?:none|없음|해당\s*없음|n\/a|[-_])$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (!emptySkillValue(result)) return result;
     if (type === 'passive') return '상시 효과 · 별도 소모 없음';
     if (type === 'sealed' || status === 'sealed') return '봉인 상태 · 발동 불가';
-    return result ? '별도 소모 없음' : '발동 자원 · 서사 기준';
+    return explicitNoSkillValue(result) ? '별도 소모 없음' : '발동 자원 · 서사 기준';
   };
   const cooldownValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (emptySkillValue(result)) {
       if (type === 'passive') return '상시 적용';
       if (type === 'sealed' || status === 'sealed') return '봉인 해제 후 사용 가능';
-      return result ? '재사용 제한 없음' : '사용 후 회복 필요';
+      return explicitNoSkillValue(result) ? '재사용 제한 없음' : result ? '재사용 조건 · 서사 기준' : '사용 후 회복 필요';
     }
     return /(?:\d+\s*)?(?:턴|라운드|turns?|rounds?|actions?|initiative)/i.test(result) ? '상황 조건 충족 후' : result;
   };
@@ -6078,6 +6080,34 @@ ${codexPageStyle()}
         catalog,
         narrative
       };
+    const missingAssets = new Map();
+    for (const monster of monsters) {
+      const asset = ITEMXCodex.assetForEntity(catalog, monster, narrative);
+      if (!asset) continue;
+      const key = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
+      if (!(inlineOnly && portraitsState.portraitThumbnailCache.has(key)) && !portraitsState.portraitCache.has(key))
+        missingAssets.set(asset.id, asset);
+    }
+    const portraitJob = workQueue.token;
+    const rawAssets = missingAssets.size ? await workQueue.external(async () => {
+      const entries = [...missingAssets.values()], values = new Map();
+      const deadline = Date.now() + 5000; // One budget for all optional images.
+      let cursor = 0;
+      await Promise.all(Array.from({ length: Math.min(4, entries.length) }, async () => {
+        while (cursor < entries.length) {
+          const asset = entries[cursor++];
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            if (hostState.unloading || portraitJob?.cancelled || Date.now() >= deadline) return;
+            let raw = null;
+            try { raw = await withTimeout(Risuai.readImage(asset.id), Math.max(1, deadline - Date.now()), 'Portrait read timed out'); } catch {}
+            if (raw) { values.set(asset.id, raw); break; }
+            if (attempt < 2) await delay(Math.max(0, Math.min(280 * (attempt + 1), deadline - Date.now())));
+          }
+        }
+      }));
+      return values;
+    }) : new Map();
+    if (pipelineState.activeContextKey !== ownerKey) return result;
     let portraitCursor = 0;
     const loadNextPortrait = async () => {
       while (portraitCursor < monsters.length) {
@@ -6096,17 +6126,7 @@ ${codexPageStyle()}
           continue;
         }
         try {
-          let raw = null;
-          for (let attempt = 0; attempt < 3; attempt += 1) {
-            try {
-              raw = await Risuai.readImage(asset.id);
-              if (raw) break;
-            } catch {
-              raw = null;
-            }
-            if (attempt < 2) await delay(280 * (attempt + 1));
-          }
-          const image = asDataUrl(raw, asset.ext);
+          const image = asDataUrl(rawAssets.get(asset.id), asset.ext);
           if (image) {
             const thumbnail = await portraitThumbnail(cacheKey, image);
             result[monster.id] = inlineOnly ? thumbnail : image;
@@ -6282,11 +6302,14 @@ ${codexPageStyle()}
   }
 
   function itemxStorageFootprint(chat) {
-    const state = ITEMXStorage.persist(chat).scriptstate || {};
+    const state = chat?.scriptstate || {};
+    const keys = state[ITEMXStorage.LOG]
+      ? [ITEMXStorage.LOG, ITEMXStorage.PREFS, ITEMXStorage.CACHE]
+      : CHAT_DATA_KEYS;
     let stateBytes = 0,
       markerBytes = 0,
       markerCount = 0;
-    for (const key of CHAT_DATA_KEYS || []) {
+    for (const key of keys) {
       if (!Object.prototype.hasOwnProperty.call(state, key)) continue;
       stateBytes += storageBytes(typeof state[key] === 'string' ? state[key] : JSON.stringify(state[key]));
     }
@@ -6767,7 +6790,7 @@ ${codexPageStyle()}
     const ctx = await context();
     if (!ctx) return null;
     return (async () => {
-      let latestChat = await readChat(ctx.characterIndex, ctx.chatIndex);
+      let latestChat = ctx.chat;
       if (!latestChat) return null;
       if (
         upgradeDisplayRefs &&
@@ -7835,7 +7858,7 @@ ${codexPageStyle()}
         refreshLatest(compacted, compactedLookup);
         workQueue.remember('host-settling', ctx.key);
       }
-      await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, rebuilt), latest);
+      await saveChat(ctx.characterIndex, ctx.chatIndex, await enrichPendingChat(ctx, ITEMXCore.writeSnapshot(compacted, rebuilt)), latest);
       if (stillActive) {
         armEventBursts(markerText);
         commitEventBursts(compacted);
@@ -8205,7 +8228,7 @@ ${codexPageStyle()}
       pipelineState.generation += 1;
       workQueue.remember('host-settling', ctx.key);
     }
-    await saveChat(ctx.characterIndex, ctx.chatIndex, ITEMXCore.writeSnapshot(compacted, snapshot), latest);
+    await saveChat(ctx.characterIndex, ctx.chatIndex, await enrichPendingChat(ctx, ITEMXCore.writeSnapshot(compacted, snapshot)), latest);
     const errors = parsed.errors.length + codexParsed.errors.length,
       events = parsed.events.length + codexParsed.events.length;
     if (stillActive) uiState.status = errors ? `깨진 전송 격리 · ${errors}건` : `누락 훅 복구 · ${events}건`;
@@ -8989,6 +9012,7 @@ ${codexPageStyle()}
   }
 
   function beginBodyScrollEffects() {
+    if (hostState.unloading) return;
     presentationState.bodyFxSawScroll = false;
     if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
     scrollStartTimer = globalThis.setTimeout(() => {
@@ -8998,26 +9022,27 @@ ${codexPageStyle()}
   }
 
   function activateBodyScrollEffects() {
+    if (hostState.unloading) return;
     if (presentationState.bodyFxScrollActive || !presentationState.bodyFxClassOwner) return;
     presentationState.bodyFxScrollActive = true;
     void presentationState.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
   }
 
   function continueBodyScrollEffects() {
+    if (hostState.unloading) return;
     presentationState.bodyFxSawScroll = true;
     const now = Date.now();
     if (now - scrollArmedAt < 60 && scrollStopTimer) return;
     scrollArmedAt = now;
-    if (!presentationState.bodyFxScrollActive && !scrollStartTimer)
-      scrollStartTimer = globalThis.setTimeout(() => {
-        scrollStartTimer = null;
-        activateBodyScrollEffects();
-      }, 80);
-    endBodyScrollEffects(220);
+    if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
+    scrollStartTimer = null;
+    activateBodyScrollEffects();
+    endBodyScrollEffects(220, true);
   }
 
-  function endBodyScrollEffects(delayMs = 0) {
-    if (scrollStartTimer) {
+  function endBodyScrollEffects(delayMs = 0, continuing = false) {
+    if (hostState.unloading) return;
+    if (!continuing && scrollStartTimer) {
       globalThis.clearTimeout(scrollStartTimer);
       scrollStartTimer = null;
     }
@@ -9350,6 +9375,23 @@ ${codexPageStyle()}
     return rows;
   }
 
+  async function enrichPendingChat(ctx, chat) {
+    try {
+      const settings = await outputSettings(ctx.character);
+      if (!settings.encountersEnabled || !settings.lorebookEncounterEnabled) return chat;
+      const entries = await lorebookEntries(ctx.key);
+      const active = await context();
+      if (!active || active.key !== ctx.key) return chat;
+      const base = rebuildCodexWithLedger(chat, buildMessageEventLookup(chat));
+      const scanned = ITEMXLorebook.scan(base, entries, ITEMXLorebook.read(chat));
+      if (!scanned.result.enriched && !scanned.result.removed) return chat;
+      return { ...chat, scriptstate: { ...chat.scriptstate, [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) } };
+    } catch (error) {
+      debugRecord('pending lore enrichment', error?.message || String(error));
+      return chat;
+    }
+  }
+
   async function scanLorebookEncounters({ refresh = false, silent = false } = {}) {
     const pending = (async () => {
       const ctx = await context();
@@ -9428,7 +9470,7 @@ ${codexPageStyle()}
   }
 
   function scheduleHostDomSync(delayMs = 320, { light = false } = {}) {
-    workQueue.schedule('hostSyncTimer', async () => {
+    workQueue.schedule(light ? 'hostLightSyncTimer' : 'hostSyncTimer', async () => {
       try {
         await installBodyEffectGovernor();
         if (!light || uiState.rootOpen) await ensureRootInventory();
@@ -10118,7 +10160,7 @@ ${codexPageStyle()}
       )
       .join('');
     const searchToggle =
-      '<input class="itemx2-root-control itemx2-search-toggle" id="itemx2-search-toggle" type="checkbox">';
+      `<input class="itemx2-root-control itemx2-search-toggle" id="itemx2-search-toggle" type="checkbox"${ui.query ? ' checked' : ''}>`;
     const skillList =
       tab === 'skills'
         ? skills

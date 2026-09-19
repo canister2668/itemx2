@@ -1,0 +1,114 @@
+{
+  "engine": "149.0.7827.55",
+  "viewport": "390x844 desktop headless Chromium; FX disabled to isolate layout",
+  "results": [
+    {
+      "mode": "contain-only",
+      "run": 0,
+      "cards": 120,
+      "intrinsic": 520,
+      "measurementMs": 0,
+      "initialLayoutMs": 343.89999985694885,
+      "initialHeight": 32803,
+      "finalHeight": 32803,
+      "cumulativeHeightChange": 0,
+      "frameP95": 59.299999952316284
+    },
+    {
+      "mode": "contain-only",
+      "run": 1,
+      "cards": 120,
+      "intrinsic": 520,
+      "measurementMs": 0,
+      "initialLayoutMs": 326.2999999523163,
+      "initialHeight": 32803,
+      "finalHeight": 32803,
+      "cumulativeHeightChange": 0,
+      "frameP95": 60.299999952316284
+    },
+    {
+      "mode": "contain-only",
+      "run": 2,
+      "cards": 120,
+      "intrinsic": 520,
+      "measurementMs": 0,
+      "initialLayoutMs": 385.2000000476837,
+      "initialHeight": 32803,
+      "finalHeight": 32803,
+      "cumulativeHeightChange": 0,
+      "frameP95": 66
+    },
+    {
+      "mode": "auto-520",
+      "run": 0,
+      "cards": 120,
+      "intrinsic": 520,
+      "measurementMs": 0,
+      "initialLayoutMs": 152.60000014305115,
+      "initialHeight": 62640,
+      "finalHeight": 54435,
+      "cumulativeHeightChange": 8205,
+      "frameP95": 56.09999990463257
+    },
+    {
+      "mode": "auto-520",
+      "run": 1,
+      "cards": 120,
+      "intrinsic": 520,
+      "measurementMs": 0,
+      "initialLayoutMs": 152.70000004768372,
+      "initialHeight": 62640,
+      "finalHeight": 54435,
+      "cumulativeHeightChange": 8205,
+      "frameP95": 77.59999990463257
+    },
+    {
+      "mode": "auto-520",
+      "run": 2,
+      "cards": 120,
+      "intrinsic": 520,
+      "measurementMs": 0,
+      "initialLayoutMs": 155.70000004768372,
+      "initialHeight": 62640,
+      "finalHeight": 54435,
+      "cumulativeHeightChange": 8205,
+      "frameP95": 110.5
+    },
+    {
+      "mode": "auto-measured",
+      "run": 0,
+      "cards": 120,
+      "intrinsic": 273.359375,
+      "measurementMs": 388.2000000476837,
+      "initialLayoutMs": 578.1000001430511,
+      "initialHeight": 33043,
+      "finalHeight": 32977,
+      "cumulativeHeightChange": 66,
+      "frameP95": 231.40000009536743
+    },
+    {
+      "mode": "auto-measured",
+      "run": 1,
+      "cards": 120,
+      "intrinsic": 273.359375,
+      "measurementMs": 250.09999990463257,
+      "initialLayoutMs": 433.7999999523163,
+      "initialHeight": 33043,
+      "finalHeight": 32977,
+      "cumulativeHeightChange": 66,
+      "frameP95": 88.10000014305115
+    },
+    {
+      "mode": "auto-measured",
+      "run": 2,
+      "cards": 120,
+      "intrinsic": 273.359375,
+      "measurementMs": 262.40000009536743,
+      "initialLayoutMs": 423.89999985694885,
+      "initialHeight": 33043,
+      "finalHeight": 32977,
+      "cumulativeHeightChange": 66,
+      "frameP95": 146.90000009536743
+    }
+  ]
+}

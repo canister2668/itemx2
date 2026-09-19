@@ -273,6 +273,25 @@
     return rows;
   }
 
+  async function enrichPendingChat(ctx, chat) {
+    // This derived update can share the transport write; no host mutation here.
+    try {
+      const settings = await outputSettings(ctx.character);
+      if (!settings.encountersEnabled || !settings.lorebookEncounterEnabled) return chat;
+      const entries = await lorebookEntries(ctx.key);
+      const active = await context();
+      if (!active || active.key !== ctx.key) return chat;
+      const base = rebuildCodexWithLedger(chat, buildMessageEventLookup(chat));
+      const scanned = ITEMXLorebook.scan(base, entries, ITEMXLorebook.read(chat));
+      if (!scanned.result.enriched && !scanned.result.removed) return chat;
+      return { ...chat, scriptstate: { ...chat.scriptstate, [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) } };
+    } catch (error) {
+      // Optional enrichment must not prevent committing authoritative events.
+      debugRecord('pending lore enrichment', error?.message || String(error));
+      return chat;
+    }
+  }
+
   async function scanLorebookEncounters({ refresh = false, silent = false } = {}) {
     const pending = (async () => {
       const ctx = await context();
@@ -350,13 +369,10 @@
     return false;
   }
 
-  // `light` is the pass that runs when scrolling stops. Nothing changed while the
-  // reader was scrolling, but ensureRootInventory reads the whole chat back
-  // across the host bridge - a structured clone of every message - and that
-  // marshalling is what the reader feels as a hitch. With the drawer closed
-  // there is nothing on screen for it to refresh, so it waits for a real change.
+  // Scroll completion may skip a closed drawer. It must not coalesce away a
+  // full refresh scheduled by a host mutation while scrolling was active.
   function scheduleHostDomSync(delayMs = 320, { light = false } = {}) {
-    workQueue.schedule('hostSyncTimer', async () => {
+    workQueue.schedule(light ? 'hostLightSyncTimer' : 'hostSyncTimer', async () => {
       try {
         await installBodyEffectGovernor();
         if (!light || uiState.rootOpen) await ensureRootInventory();
@@ -1048,7 +1064,7 @@
     // CSS-only, like the tab radios: the header label flips this and the search
     // bar appears. No proxy round-trip, and the bar costs no height until asked.
     const searchToggle =
-      '<input class="itemx2-root-control itemx2-search-toggle" id="itemx2-search-toggle" type="checkbox">';
+      `<input class="itemx2-root-control itemx2-search-toggle" id="itemx2-search-toggle" type="checkbox"${ui.query ? ' checked' : ''}>`;
     const skillList =
       tab === 'skills'
         ? skills

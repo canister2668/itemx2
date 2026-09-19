@@ -436,10 +436,8 @@
     return displayHandler(content, portraits);
   }
 
-  // The scroll governor is a display affordance, not a state change, so it runs
-  // on plain timers. Routing it through the work queue put an enqueue, a promise
-  // and two array-allocating pump() passes on every scroll event; at 60-120Hz
-  // that cost alone made scrolling stutter.
+  // FX timers must run even while a queued host/model operation is suspended.
+  // Their callbacks only change presentation; heavy work stays in the queue.
   let scrollStartTimer = null,
     scrollStopTimer = null,
     scrollArmedAt = 0;
@@ -450,6 +448,7 @@
   }
 
   function beginBodyScrollEffects() {
+    if (hostState.unloading) return;
     presentationState.bodyFxSawScroll = false;
     if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
     scrollStartTimer = globalThis.setTimeout(() => {
@@ -459,12 +458,14 @@
   }
 
   function activateBodyScrollEffects() {
+    if (hostState.unloading) return;
     if (presentationState.bodyFxScrollActive || !presentationState.bodyFxClassOwner) return;
     presentationState.bodyFxScrollActive = true;
     void presentationState.bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
   }
 
   function continueBodyScrollEffects() {
+    if (hostState.unloading) return;
     presentationState.bodyFxSawScroll = true;
     // Scroll fires continuously. Re-arming the stop timer on every event is the
     // only work this path may do, and even that is throttled: once armed, a
@@ -472,16 +473,18 @@
     const now = Date.now();
     if (now - scrollArmedAt < 60 && scrollStopTimer) return;
     scrollArmedAt = now;
-    if (!presentationState.bodyFxScrollActive && !scrollStartTimer)
-      scrollStartTimer = globalThis.setTimeout(() => {
-        scrollStartTimer = null;
-        activateBodyScrollEffects();
-      }, 80);
-    endBodyScrollEffects(220);
+    // A real scroll event confirms movement. Waiting another 80 ms can miss
+    // short wheel/programmatic increments whose scrollend arrives immediately.
+    if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
+    scrollStartTimer = null;
+    activateBodyScrollEffects();
+    endBodyScrollEffects(220, true);
   }
 
-  function endBodyScrollEffects(delayMs = 0) {
-    if (scrollStartTimer) {
+  function endBodyScrollEffects(delayMs = 0, continuing = false) {
+    if (hostState.unloading) return;
+    // Continued scrolling must retain the initial debounce; release cancels it.
+    if (!continuing && scrollStartTimer) {
       globalThis.clearTimeout(scrollStartTimer);
       scrollStartTimer = null;
     }

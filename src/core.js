@@ -181,7 +181,7 @@ const ITEMXCore = (() => {
   // Same bytes, same hash: stored fingerprints, checkpoint prefixes and
   // generated ids all depend on the value, so only the work changes. Building a
   // TextEncoder per call and walking the bytes through the iterator protocol
-  // cost 5ms on a 9KB fingerprint, and this runs on every replay check.
+  // adds avoidable allocations on every replay check.
   const fnvEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
   const fnv1a = (value) => {
     let h = 0x811c9dc5;
@@ -312,7 +312,7 @@ const ITEMXCore = (() => {
         const [name, ...rest] = part.split('::');
         return { name: clean(name, 160), desc: clean(rest.join('::'), 800) };
       })
-      .filter((one) => one.name && !placeholderValue(one.name));
+      .filter((one) => one.name && (!placeholderValue(one.name) || (one.desc && !placeholderValue(one.desc))));
   }
 
   function nestedPairs(xml, singular, max = 12) {
@@ -349,8 +349,8 @@ const ITEMXCore = (() => {
 
   // The transport documentation uses `...` as a field placeholder, and a model
   // that echoes the template instead of filling it in used to register a real
-  // item whose every field was an ellipsis. A name that carries no information
-  // is not an appraisal.
+  // item whose every field was an ellipsis. Names alone are not evidence:
+  // literal symbolic names or Unknown are valid when paired with a concrete ID.
   const PLACEHOLDER_RE = /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
   const placeholderValue = (value) => PLACEHOLDER_RE.test(clean(value, 160));
 
@@ -359,7 +359,8 @@ const ITEMXCore = (() => {
     const _provided = providedFields(raw);
     const name = clean(f.name, 160);
     if (!name) return { error: 'exam_no_name' };
-    if (placeholderValue(name)) return { error: 'exam_placeholder_name' };
+    if (placeholderValue(name) && (!ID_RE.test(f.id || '') || placeholderValue(f.id)))
+      return { error: 'exam_placeholder_name' };
     const id = ID_RE.test(f.id || '') ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
     const rarity = RARITIES.has((f.internalrarity || '').toLowerCase()) ? f.internalrarity.toLowerCase() : 'normal';
     const theme = THEMES.has((f.theme || '').toLowerCase()) ? f.theme.toLowerCase() : 'arcane';

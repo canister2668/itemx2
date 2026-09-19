@@ -59,7 +59,7 @@ await page.evaluate(()=>clearInterval(probe.scrollInterval));
 await page.waitForFunction(()=>!probe.active());
 await page.waitForFunction(()=>probe.commits>=2);await page.waitForTimeout(260);
 const after=await page.evaluate(()=>({heavy:probe.heavy,committedBatches:probe.commits,heavyCallsDuringScroll:probe.violations,running:document.body.getAnimations({subtree:true}).filter(a=>a.playState==='running').length,active:probe.active()}));
-if(after.active||!after.running)throw Error('FX failed to resume');
+if(after.active||!after.running)throw Error('FX failed to resume '+JSON.stringify(after)+' '+await page.evaluate(()=>document.body.className));
 if(after.heavyCallsDuringScroll||after.committedBatches!==2)throw Error('scroll work deferral or deduplication failed');
 if(errors.length)throw Error(errors.join(';'));
 results.push({width,...setup,activeAnimationsBefore:before,scroll: during,scrollEndWhileModelPending:endWhileModelPending,scenarioWallMs:Date.now()-start,after});

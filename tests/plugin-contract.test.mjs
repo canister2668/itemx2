@@ -63,12 +63,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(source.includes("entry('scroll', handler)"), false, 'scroll must not be queued per event');
   assert.match(source, /scrollStartTimer = globalThis\.setTimeout/);
   assert.match(source, /now - scrollArmedAt < 60 && scrollStopTimer\) return/);
-  // Suppression hides the effect layers, so it must be armed with a delay a
-  // short scroll can cancel. Firing it on the first scroll event blinks every
-  // card on screen.
+  // Suppression only pauses animations. Actual movement confirms scrolling;
+  // pointerdown alone retains its debounce so taps do not pause effects.
   assert.match(
     source,
-    /function continueBodyScrollEffects\(\)[\s\S]*?globalThis\.setTimeout\([\s\S]*?endBodyScrollEffects\(220\)/
+    /function continueBodyScrollEffects\(\)[\s\S]*?activateBodyScrollEffects\(\)[\s\S]*?endBodyScrollEffects\(220, true\)/
   );
   // wake() once when scrolling stops is fine; per-event scheduling is not.
   assert.equal(
@@ -390,7 +389,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /ready: \(\) => !presentationState\.bodyFxScrollActive/);
   assert.match(
     source,
-    /workQueue\.schedule\('hostSyncTimer'/
+    /workQueue\.schedule\(light \? 'hostLightSyncTimer' : 'hostSyncTimer'/
   );
   assert.match(source, /itemx2-effects-off/);
   assert.match(source, /itemx-codex-scan\{0%,100%\{opacity:\.2;transform:translate3d/);

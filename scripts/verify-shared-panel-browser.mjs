@@ -39,6 +39,8 @@ try { for(const mode of ['frame','drawer']) for(const width of [390,900]) {
  await page.locator('.itemx2-root-tile-0').click();
  await page.waitForFunction(()=>document.querySelector('.itemx2-root-detail-body-0')?.textContent.includes('검'));
  await page.locator('label[for="itemx2-detail-none"]').first().click();
+ await page.locator('label[for="itemx2-search-toggle"]').click();
+ if(!await page.locator('.itemx2-search-query').isVisible())throw Error('header search toggle failed');
  await page.locator('.itemx2-search-query').fill('목걸이');
  if(await page.locator('.itemx2-root-item').count()!==2)throw Error('search changed before confirmation');
  await page.locator('.itemx2-search-apply').click();
