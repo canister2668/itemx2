@@ -206,3 +206,34 @@ test('the header renders exactly the three controls, all with one class', async 
   // It carries both hooks because one header serves the drawer and the fallback.
   assert.match(actions, /data-action="toggle"/);
 });
+
+// One narrow-screen block owns the panel box. A second block competing with it
+// is how the earlier widening silently lost: it was written before this one and
+// carried the same specificity, so this one won and kept the old gutter.
+const narrowPanelBlocks = (css) => {
+  const out = [];
+  for (const match of css.matchAll(/@media\s*\(max-width:(\d+)px\)\{/g)) {
+    const body = css.slice(match.index + match[0].length, css.indexOf('}}', match.index) + 1);
+    if (body.includes('root-panel{')) out.push(body);
+  }
+  return out;
+};
+
+test('the narrow-screen panel box is declared once and uses the screen', async () => {
+  const style = await readFile(new URL('../src/style.js', import.meta.url), 'utf8');
+  const blocks = narrowPanelBlocks(style);
+  assert.equal(blocks.length, 1, 'two narrow-screen panel rules will shadow each other');
+  const box = blocks[0].match(/root-panel\{([^}]*)\}/)[1];
+  // A gutter the size of the badge is 15% of a phone, and the panel has its own
+  // close button while it is open.
+  assert.match(box, /width:calc\(100vw - 16px\)/);
+  assert.match(box, /height:min\(900px,88dvh\)/);
+  assert.equal(/100vw - 6[0-9]px/.test(box), false, 'the badge gutter must not come back');
+});
+
+test('the drawer sits against the edge on a narrow screen', async () => {
+  const style = await readFile(new URL('../src/style.js', import.meta.url), 'utf8');
+  const block = narrowPanelBlocks(style)[0];
+  for (const side of ['left:8px', 'right:8px', 'bottom:8px']) assert.ok(block.includes(side), side);
+  assert.equal(/(left|right):5[0-9]px/.test(block), false, 'no badge-sized offset should survive');
+});
