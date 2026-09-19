@@ -518,11 +518,12 @@
     try {
       const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      // Scroll events are only observable on body, but the suppression class
-      // belongs on .chattext. Putting it on body widens the rule to every card
-      // on screen, so each scroll blinks all of them at once.
-      presentationState.bodyFxClassOwner =
-        (await hostState.mainDoc.querySelector('.chattext')) || presentationState.bodyFxClassOwner;
+      // RisuAI renders one .chattext per message, so querySelector would only
+      // ever reach the first one and leave every later card animating. The class
+      // goes on body and the rules descend into .chattext from there. That is
+      // only safe because suppression now pauses animation and nothing else; the
+      // compositing properties that made this scope blink are gone.
+      presentationState.bodyFxClassOwner = body;
       if (presentationState.bodyFxEventIds[0]?.owner) {
         try {
           if (await presentationState.bodyFxEventIds[0]?.owner.getParent()) return;

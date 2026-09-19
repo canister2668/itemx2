@@ -78,12 +78,29 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     false,
     'the scroll governor must not queue work per event'
   );
-  // The class belongs on .chattext. On body the rule reaches every card at once.
-  assert.match(source, /querySelector\('\.chattext'\)\) \|\| presentationState\.bodyFxClassOwner/);
+  // RisuAI renders one .chattext per message, so the class goes on body and the
+  // rules descend from there; scoping to a single .chattext would leave every
+  // later card animating.
+  assert.match(source, /presentationState\.bodyFxClassOwner = body;/);
+  assert.match(source, /body\.x-risu-itemx-body-scrolling \.chattext/);
   assert.equal(
-    source.includes("'body.x-risu-itemx-body-scrolling .chattext'"),
+    /\.chattext\.x-risu-itemx-body-scrolling/.test(source),
     false,
-    'scroll suppression must not be emitted a second time at body scope'
+    'suppression must not also be emitted scoped to a single .chattext'
+  );
+  // Body scope is only safe while suppression pauses animation and nothing else.
+  assert.match(source, /body\.x-risu-itemx-body-scrolling[^{]*\{animation-play-state:paused!important\}/);
+  assert.equal(
+    /body\.x-risu-itemx-body-scrolling[^{]*\{[^}]*(?:visibility|filter|mix-blend-mode|box-shadow)/.test(source),
+    false,
+    'suppression at body scope must not touch compositing'
+  );
+  // content-visibility on a chat-body card re-renders it at the viewport edge,
+  // which makes a slow scroll stutter and the card blink.
+  assert.equal(
+    /itemx-card\s*\{[^}]*content-visibility/.test(source),
+    false,
+    'chat-body cards must not toggle rendering at the viewport edge'
   );
   assert.match(source, /scrollStopTimer = globalThis\.setTimeout\(/);
   assert.match(source, /const ITEMX_ROOT_PAGE_SIZE = 16/);
@@ -356,20 +373,20 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /content-visibility:auto/);
   assert.match(source, /async function installBodyEffectGovernor/);
   assert.equal(source.includes('getBoundingClientRect();\n        const active = rect.bottom'), false);
-  assert.match(source, /chattext\.x-risu-itemx-body-scrolling/);
+  assert.match(source, /body\.x-risu-itemx-body-scrolling \.chattext/);
   assert.match(source, /animation-play-state:paused!important/);
   assert.match(source, /itemx2-inline-main::before/);
   // Scroll suppression must not toggle anything that changes layerisation.
   // filter and mix-blend-mode create and destroy stacking contexts, which makes
   // the whole chat column re-rasterise and blink on every scroll.
-  const scrollRule = source.slice(
-    source.indexOf('.chattext.x-risu-itemx-body-scrolling'),
-    source.indexOf('}', source.indexOf('.chattext.x-risu-itemx-body-scrolling')) + 1
-  );
+  const anchor = 'body.x-risu-itemx-body-scrolling .chattext';
+  const scrollRule = source.slice(source.indexOf(anchor), source.indexOf('}', source.indexOf(anchor)) + 1);
   assert.match(scrollRule, /\{animation-play-state:paused!important\}$/);
   for (const unsafe of ['visibility:hidden', 'filter:none', 'mix-blend-mode', 'box-shadow'])
     assert.equal(scrollRule.includes(unsafe), false, `scroll suppression must not toggle ${unsafe}`);
-  assert.match(source, /contain-intrinsic-size:auto 128px/);
+  // Panel tiles live in a bounded scroller and keep content-visibility; the
+  // chat-body cards do not, so they never re-render at the viewport edge.
+  assert.match(source, /\.itemx-tile,\.itemx2-codex-card\{content-visibility:auto/);
   assert.match(source, /ready: \(\) => !presentationState\.bodyFxScrollActive/);
   assert.match(
     source,
