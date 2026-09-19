@@ -58,9 +58,19 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /\['scroll', continueBodyScrollEffects\]/);
   assert.match(source, /\['scrollend', \(\) => endBodyScrollEffects\(40\)\]/);
   assert.match(source, /addEventListener\(type, entry\('scroll', handler\), true\)/);
+  // Suppression hides the effect layers, so it must be armed with a delay a
+  // short scroll can cancel. Firing it on the first scroll event blinks every
+  // card on screen.
   assert.match(
     source,
-    /function continueBodyScrollEffects\(\)[\s\S]*activateBodyScrollEffects\(\);[\s\S]*endBodyScrollEffects\(220\)/
+    /function continueBodyScrollEffects\(\)[\s\S]*?workQueue\.schedule\('bodyFxStartTimer', \(\) => activateBodyScrollEffects\(\), 80, false\)[\s\S]*?endBodyScrollEffects\(220\)/
+  );
+  // The class belongs on .chattext. On body the rule reaches every card at once.
+  assert.match(source, /querySelector\('\.chattext'\)\) \|\| presentationState\.bodyFxClassOwner/);
+  assert.equal(
+    source.includes("'body.x-risu-itemx-body-scrolling .chattext'"),
+    false,
+    'scroll suppression must not be emitted a second time at body scope'
   );
   assert.match(source, /workQueue\.schedule\(\s*'bodyFxScrollTimer'/);
   assert.match(source, /const ITEMX_ROOT_PAGE_SIZE = 16/);

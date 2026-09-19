@@ -457,8 +457,11 @@
 
   function continueBodyScrollEffects() {
     presentationState.bodyFxSawScroll = true;
-    workQueue.clearTimer('bodyFxStartTimer');
-    activateBodyScrollEffects();
+    // Suppression hides the effect layers, so firing it on the first scroll
+    // event makes a short flick blink every card. Arm it and let a scroll that
+    // stops inside the delay cancel it; only sustained scrolling pays.
+    if (!presentationState.bodyFxScrollActive)
+      workQueue.schedule('bodyFxStartTimer', () => activateBodyScrollEffects(), 80, false);
     endBodyScrollEffects(220);
   }
 
@@ -498,7 +501,11 @@
     try {
       const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      presentationState.bodyFxClassOwner = body;
+      // Scroll events are only observable on body, but the suppression class
+      // belongs on .chattext. Putting it on body widens the rule to every card
+      // on screen, so each scroll blinks all of them at once.
+      presentationState.bodyFxClassOwner =
+        (await hostState.mainDoc.querySelector('.chattext')) || presentationState.bodyFxClassOwner;
       if (presentationState.bodyFxEventIds[0]?.owner) {
         try {
           if (await presentationState.bodyFxEventIds[0]?.owner.getParent()) return;

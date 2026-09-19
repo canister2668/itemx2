@@ -506,7 +506,7 @@ ${codexPageStyle()}
   const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
 
   const mainStyleText = () =>
-    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyScrollStyle.replaceAll('.chattext.x-risu-itemx-body-scrolling', 'body.x-risu-itemx-body-scrolling .chattext')}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
+    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
 
   async function setSkin(character, value) {
     const next = SKIN_MODES.includes(value) ? value : 'dark';

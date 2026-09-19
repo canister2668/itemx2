@@ -53,7 +53,8 @@ const ITEMXCodex = (() => {
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, max);
-  const emptySkillValue = (value) => /^(?:|none|null|unknown|n\/a|없음|해당\s*없음|미상)$/i.test(clean(value, 120));
+  const emptySkillValue = (value) =>
+    /^(?:|[.\u2026\-_?]+|none|null|unknown|n\/a|tbd|example|placeholder|없음|해당\s*없음|미상|미정)$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (!emptySkillValue(result)) return result;

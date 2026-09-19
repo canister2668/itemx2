@@ -320,7 +320,7 @@ const ITEMXCore = (() => {
         const [name, ...rest] = part.split('::');
         return { name: clean(name, 160), desc: clean(rest.join('::'), 800) };
       })
-      .filter((one) => one.name);
+      .filter((one) => one.name && !placeholderValue(one.name));
   }
 
   function nestedPairs(xml, singular, max = 12) {
@@ -355,11 +355,15 @@ const ITEMXCore = (() => {
     return [...new Set(out)];
   }
 
+  const PLACEHOLDER_RE = /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
+  const placeholderValue = (value) => PLACEHOLDER_RE.test(clean(value, 160));
+
   function normalizeItem(raw, seed = '') {
     const f = canonicalFields(raw);
     const _provided = providedFields(raw);
     const name = clean(f.name, 160);
     if (!name) return { error: 'exam_no_name' };
+    if (placeholderValue(name)) return { error: 'exam_placeholder_name' };
     const id = ID_RE.test(f.id || '') ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
     const rarity = RARITIES.has((f.internalrarity || '').toLowerCase()) ? f.internalrarity.toLowerCase() : 'normal';
     const theme = THEMES.has((f.theme || '').toLowerCase()) ? f.theme.toLowerCase() : 'arcane';
@@ -378,11 +382,11 @@ const ITEMXCore = (() => {
     const item = {
       id,
       name,
-      itemType: clean(f.type, 160) || '기타',
+      itemType: (placeholderValue(f.type) ? '' : clean(f.type, 160)) || '기타',
       emoji: clean(f.emoji, 24),
       rarity,
-      displayRarity: clean(f.displayrarity, 80) || RARITY_LABELS[rarity],
-      power: clean(f.power, 160),
+      displayRarity: (placeholderValue(f.displayrarity) ? '' : clean(f.displayrarity, 80)) || RARITY_LABELS[rarity],
+      power: placeholderValue(f.power) ? '' : clean(f.power, 160),
       required: clean(f.required, 160),
       durability: clean(f.durability, 160),
       cost: clean(f.cost, 160),
@@ -391,7 +395,7 @@ const ITEMXCore = (() => {
       count,
       slot: clean(f.slot, 80) || null,
       pin: /^(1|true)$/i.test(f.pin || ''),
-      trivia: clean(f.trivia, 1200),
+      trivia: placeholderValue(f.trivia) ? '' : clean(f.trivia, 1200),
       theme,
       affinity,
       affinity2,
@@ -1442,7 +1446,8 @@ const ITEMXCodex = (() => {
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, max);
-  const emptySkillValue = (value) => /^(?:|none|null|unknown|n\/a|없음|해당\s*없음|미상)$/i.test(clean(value, 120));
+  const emptySkillValue = (value) =>
+    /^(?:|[.\u2026\-_?]+|none|null|unknown|n\/a|tbd|example|placeholder|없음|해당\s*없음|미상|미정)$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (!emptySkillValue(result)) return result;
@@ -4703,7 +4708,7 @@ ${codexPageStyle()}
   const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
 
   const mainStyleText = () =>
-    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyScrollStyle.replaceAll('.chattext.x-risu-itemx-body-scrolling', 'body.x-risu-itemx-body-scrolling .chattext')}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
+    `${ITEMX_MAIN_STYLE}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
 
   async function setSkin(character, value) {
     const next = SKIN_MODES.includes(value) ? value : 'dark';
@@ -8922,8 +8927,8 @@ ${codexPageStyle()}
 
   function continueBodyScrollEffects() {
     presentationState.bodyFxSawScroll = true;
-    workQueue.clearTimer('bodyFxStartTimer');
-    activateBodyScrollEffects();
+    if (!presentationState.bodyFxScrollActive)
+      workQueue.schedule('bodyFxStartTimer', () => activateBodyScrollEffects(), 80, false);
     endBodyScrollEffects(220);
   }
 
@@ -8963,7 +8968,8 @@ ${codexPageStyle()}
     try {
       const body = await hostState.mainDoc.querySelector('body');
       if (!body) return;
-      presentationState.bodyFxClassOwner = body;
+      presentationState.bodyFxClassOwner =
+        (await hostState.mainDoc.querySelector('.chattext')) || presentationState.bodyFxClassOwner;
       if (presentationState.bodyFxEventIds[0]?.owner) {
         try {
           if (await presentationState.bodyFxEventIds[0]?.owner.getParent()) return;

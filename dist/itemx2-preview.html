@@ -1018,7 +1018,7 @@ const ITEMXCore = (() => {
         const [name, ...rest] = part.split('::');
         return { name: clean(name, 160), desc: clean(rest.join('::'), 800) };
       })
-      .filter((one) => one.name);
+      .filter((one) => one.name && !placeholderValue(one.name));
   }
 
   function nestedPairs(xml, singular, max = 12) {
@@ -1053,11 +1053,19 @@ const ITEMXCore = (() => {
     return [...new Set(out)];
   }
 
+  // The transport documentation uses `...` as a field placeholder, and a model
+  // that echoes the template instead of filling it in used to register a real
+  // item whose every field was an ellipsis. A name that carries no information
+  // is not an appraisal.
+  const PLACEHOLDER_RE = /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
+  const placeholderValue = (value) => PLACEHOLDER_RE.test(clean(value, 160));
+
   function normalizeItem(raw, seed = '') {
     const f = canonicalFields(raw);
     const _provided = providedFields(raw);
     const name = clean(f.name, 160);
     if (!name) return { error: 'exam_no_name' };
+    if (placeholderValue(name)) return { error: 'exam_placeholder_name' };
     const id = ID_RE.test(f.id || '') ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
     const rarity = RARITIES.has((f.internalrarity || '').toLowerCase()) ? f.internalrarity.toLowerCase() : 'normal';
     const theme = THEMES.has((f.theme || '').toLowerCase()) ? f.theme.toLowerCase() : 'arcane';
@@ -1076,11 +1084,11 @@ const ITEMXCore = (() => {
     const item = {
       id,
       name,
-      itemType: clean(f.type, 160) || '기타',
+      itemType: (placeholderValue(f.type) ? '' : clean(f.type, 160)) || '기타',
       emoji: clean(f.emoji, 24),
       rarity,
-      displayRarity: clean(f.displayrarity, 80) || RARITY_LABELS[rarity],
-      power: clean(f.power, 160),
+      displayRarity: (placeholderValue(f.displayrarity) ? '' : clean(f.displayrarity, 80)) || RARITY_LABELS[rarity],
+      power: placeholderValue(f.power) ? '' : clean(f.power, 160),
       required: clean(f.required, 160),
       durability: clean(f.durability, 160),
       cost: clean(f.cost, 160),
@@ -1089,7 +1097,7 @@ const ITEMXCore = (() => {
       count,
       slot: clean(f.slot, 80) || null,
       pin: /^(1|true)$/i.test(f.pin || ''),
-      trivia: clean(f.trivia, 1200),
+      trivia: placeholderValue(f.trivia) ? '' : clean(f.trivia, 1200),
       theme,
       affinity,
       affinity2,
