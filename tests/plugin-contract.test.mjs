@@ -346,7 +346,16 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /chattext\.x-risu-itemx-body-scrolling/);
   assert.match(source, /animation-play-state:paused!important/);
   assert.match(source, /itemx2-inline-main::before/);
-  assert.match(source, /mix-blend-mode:normal!important/);
+  // Scroll suppression must not toggle anything that changes layerisation.
+  // filter and mix-blend-mode create and destroy stacking contexts, which makes
+  // the whole chat column re-rasterise and blink on every scroll.
+  const scrollRule = source.slice(
+    source.indexOf('.chattext.x-risu-itemx-body-scrolling'),
+    source.indexOf('}', source.indexOf('.chattext.x-risu-itemx-body-scrolling')) + 1
+  );
+  assert.match(scrollRule, /\{animation-play-state:paused!important\}$/);
+  for (const unsafe of ['visibility:hidden', 'filter:none', 'mix-blend-mode', 'box-shadow'])
+    assert.equal(scrollRule.includes(unsafe), false, `scroll suppression must not toggle ${unsafe}`);
   assert.match(source, /contain-intrinsic-size:auto 128px/);
   assert.match(source, /ready: \(\) => !presentationState\.bodyFxScrollActive/);
   assert.match(
