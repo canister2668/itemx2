@@ -125,3 +125,38 @@ test('the build no longer reads the design mockup', async () => {
   assert.ok(!build.includes('itemx-multi-affinity-demo'), 'mockup must not be a build input');
   assert.ok(build.includes('styleSources()'), 'card styling must come from src/');
 });
+
+// Search costs panel height, and the panel is short. It hides behind a header
+// button and opens through the same CSS-only control the tabs use, so showing it
+// needs no round trip to the host document.
+test('search is a header toggle, not a permanent bar', async () => {
+  const rt = await presentationRuntime();
+  const html = rt.rootInventoryHtml(LOADED, true, 'inventory');
+  assert.match(html, /<input class="itemx2-root-control itemx2-search-toggle" id="itemx2-search-toggle" type="checkbox">/);
+  assert.match(html, /<label class="itemx-ph-btn itemx2-search-open" for="itemx2-search-toggle"/);
+  assert.match(html, /itemx2-search-controls/);
+  // The toggle sits beside the layer so the checked sibling selector can reach in.
+  assert.ok(
+    html.indexOf('itemx2-search-toggle') < html.indexOf('itemx2-root-layer'),
+    'the toggle must precede the layer it reveals'
+  );
+});
+
+test('the settings tab has no search affordance', async () => {
+  const rt = await presentationRuntime();
+  const html = rt.rootInventoryHtml(LOADED, true, 'settings');
+  assert.equal(/itemx2-search-controls/.test(html), false);
+});
+
+test('the search bar is hidden until the toggle is checked', async () => {
+  // The sheet is authored unprefixed; prefixRisuClasses rewrites it for the main
+  // document at install time, so assert both the rule and that rewriting.
+  const bundle = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
+  assert.match(bundle, /\.itemx2-search-controls\{display:none/);
+  assert.match(
+    bundle,
+    /\.itemx2-search-toggle:checked~\.itemx2-root-layer \.itemx2-search-controls\{display:flex\}/
+  );
+  const rt = await presentationRuntime();
+  assert.match(rt.style, /\.itemx2-search-toggle:checked~\.itemx2-root-layer \.itemx2-search-controls\{display:flex\}/);
+});

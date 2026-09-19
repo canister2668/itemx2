@@ -27,6 +27,18 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
   };
   for (const enabled of [true, false]) for (const tab of ['inventory', 'skills', 'bestiary', 'settings']) for (const open of [true, false]) {
     const input = { ...loaded, enabled };
-    assert.equal(next.rootInventoryHtml(input, open, tab).replace(/<!--ITEMX2-SEARCH-START-->[\s\S]*?<!--ITEMX2-SEARCH-END-->/g, ''), old.rootInventoryHtml(input, open, tab), `${enabled}/${tab}/${open}`);
+    // Search arrived in 2.3.0 and is not in the oracle. It is three pieces - the
+    // toggle, the header button that flips it and the bar itself - so all three
+    // come out before comparing, or the oracle would reject its own addition.
+    const withoutSearch = (html) =>
+      html
+        .replace(/<!--ITEMX2-SEARCH-START-->[\s\S]*?<!--ITEMX2-SEARCH-END-->/g, '')
+        .replace(/<input class="itemx2-root-control itemx2-search-toggle"[^>]*>/g, '')
+        .replace(/<label class="itemx-ph-btn itemx2-search-open"[^>]*>[\s\S]*?<\/label>/g, '');
+    assert.equal(
+      withoutSearch(next.rootInventoryHtml(input, open, tab)),
+      old.rootInventoryHtml(input, open, tab),
+      `${enabled}/${tab}/${open}`
+    );
   }
 });
