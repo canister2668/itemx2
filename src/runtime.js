@@ -144,7 +144,8 @@
       await updateRootLoading(ITEMXText("runtime.006"));
       connected = await installPipelineHooks();
       await updateRootLoading(ITEMXText("runtime.005"));
-      await rebuildCurrent({ upgradeDisplayRefs: true });
+      const upgraded = await rebuildCurrent({ upgradeDisplayRefs: true });
+      if (!upgraded?.wroteDisplayRefs) await repaintChatBody(await context());
       if (loadingStarted) await delay(Math.max(0, 320 - (Date.now() - loadingStarted)));
       if (styled) await openRootInventory({ open: false });
       void dispatch('update', checkForUpdate);

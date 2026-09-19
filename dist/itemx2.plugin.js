@@ -6282,6 +6282,28 @@ ${codexPageStyle()}
     return ITEMXCore.fnv1a(source);
   }
 
+  function chatCarriesDisplayRefs(chat) {
+    const item = new RegExp(ITEMX_REF_RE.source),
+      codex = new RegExp(ITEMX_CODEX_REF_RE.source);
+    return (chat?.message || []).some((message) => {
+      const text = messageData(message);
+      return item.test(text) || codex.test(text);
+    });
+  }
+
+  async function repaintChatBody(ctx) {
+    if (!ctx?.chat || !chatCarriesDisplayRefs(ctx.chat)) return false;
+    if (ctx.chat.isStreaming || (ctx.chat.message || []).some((message) => message?.isStreaming)) return false;
+    try {
+      await saveChat(ctx.characterIndex, ctx.chatIndex, ctx.chat);
+      debugRecord('repaint', 'rewrote the chat so resolved refs paint as cards');
+      return true;
+    } catch (error) {
+      debugRecord('repaint skipped', error?.message || String(error));
+      return false;
+    }
+  }
+
   function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
     pipelineState.eventPayloads = new Map(lookup.payloads);
     presentationState.presentationRecords = null;
@@ -6784,6 +6806,7 @@ ${codexPageStyle()}
   }
 
   async function rebuildCurrent({ upgradeDisplayRefs = false } = {}) {
+    let wroteDisplayRefs = false;
     const ctx = await context();
     if (!ctx) return null;
     return (async () => {
@@ -6799,6 +6822,7 @@ ${codexPageStyle()}
         if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
           await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat, latestChat);
           latestChat = reconciled.chat;
+          wroteDisplayRefs = true;
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
       }
@@ -6841,6 +6865,7 @@ ${codexPageStyle()}
         codexSnapshot,
         lorebookSourceFingerprint,
         replayFingerprint: replaySourceFingerprint(latestChat),
+        wroteDisplayRefs,
         ...settings
       };
       prepareInlinePortraits(loaded, codexSnapshot, settings);
@@ -10865,7 +10890,8 @@ ${codexPageStyle()}
       await updateRootLoading('모델 처리 연결 중…');
       connected = await installPipelineHooks();
       await updateRootLoading('채팅 인벤토리 복원 중…');
-      await rebuildCurrent({ upgradeDisplayRefs: true });
+      const upgraded = await rebuildCurrent({ upgradeDisplayRefs: true });
+      if (!upgraded?.wroteDisplayRefs) await repaintChatBody(await context());
       if (loadingStarted) await delay(Math.max(0, 320 - (Date.now() - loadingStarted)));
       if (styled) await openRootInventory({ open: false });
       void dispatch('update', checkForUpdate);

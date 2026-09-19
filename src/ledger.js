@@ -139,6 +139,35 @@
     return ITEMXCore.fnv1a(source);
   }
 
+  // Risu paints the chat body before the plugin can resolve a compact ref, and
+  // the stock API has no re-render call: writing the chat is the only way to
+  // make it paint again. That is why leaving the chat and coming back shows the
+  // cards while a refresh does not. Only a chat that actually carries a ref pays
+  // for this, and only once per load.
+  function chatCarriesDisplayRefs(chat) {
+    const item = new RegExp(ITEMX_REF_RE.source),
+      codex = new RegExp(ITEMX_CODEX_REF_RE.source);
+    return (chat?.message || []).some((message) => {
+      const text = messageData(message);
+      return item.test(text) || codex.test(text);
+    });
+  }
+
+  async function repaintChatBody(ctx) {
+    if (!ctx?.chat || !chatCarriesDisplayRefs(ctx.chat)) return false;
+    if (ctx.chat.isStreaming || (ctx.chat.message || []).some((message) => message?.isStreaming)) return false;
+    try {
+      await saveChat(ctx.characterIndex, ctx.chatIndex, ctx.chat);
+      debugRecord('repaint', 'rewrote the chat so resolved refs paint as cards');
+      return true;
+    } catch (error) {
+      // A conflicting write means the host already changed the chat, which
+      // repaints it anyway. Nothing to recover.
+      debugRecord('repaint skipped', error?.message || String(error));
+      return false;
+    }
+  }
+
   function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
     pipelineState.eventPayloads = new Map(lookup.payloads);
     presentationState.presentationRecords = null;
@@ -649,6 +678,7 @@
   }
 
   async function rebuildCurrent({ upgradeDisplayRefs = false } = {}) {
+    let wroteDisplayRefs = false;
     const ctx = await context();
     if (!ctx) return null;
     return (async () => {
@@ -666,6 +696,7 @@
         if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
           await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat, latestChat);
           latestChat = reconciled.chat;
+          wroteDisplayRefs = true;
           debugRecord('display refs', 'kept one self-contained view and compacted older refs');
         }
       }
@@ -711,6 +742,9 @@
         codexSnapshot,
         lorebookSourceFingerprint,
         replayFingerprint: replaySourceFingerprint(latestChat),
+        // Bootstrap needs to know whether this rebuild already rewrote the chat,
+        // so it does not pay for a second whole-chat write just to repaint.
+        wroteDisplayRefs,
         ...settings
       };
       prepareInlinePortraits(loaded, codexSnapshot, settings);
