@@ -160,3 +160,31 @@ test('the search bar is hidden until the toggle is checked', async () => {
   const rt = await presentationRuntime();
   assert.match(rt.style, /\.itemx2-search-toggle:checked~\.itemx2-root-layer \.itemx2-search-controls\{display:flex\}/);
 });
+
+// The header actions row was sized for exactly two buttons. Adding a third
+// pushed the close button outside the panel's rounded frame, and the search
+// control - a label, not a button - missed the border-box rule its neighbours
+// had, so it measured wider than them.
+test('the header actions row is sized by its contents, not a button count', async () => {
+  const css = await readFile(new URL('../src/style.css', import.meta.url), 'utf8');
+  const box = css.slice(css.indexOf('.itemx2-panel-actions {'), css.indexOf('}', css.indexOf('.itemx2-panel-actions {')));
+  assert.match(box, /flex:\s*0 0 auto/);
+  assert.equal(/width:\s*\d+px/.test(box), false, 'a fixed width cannot survive another header button');
+});
+
+test('every header control gets the same box', async () => {
+  const css = await readFile(new URL('../src/style.css', import.meta.url), 'utf8');
+  const start = css.indexOf('.itemx2-panel-actions > button');
+  const rule = css.slice(start, css.indexOf('}', start));
+  assert.match(css.slice(start, start + 120), /\.itemx2-panel-actions > label/);
+  assert.match(rule, /box-sizing:\s*border-box/);
+  assert.match(rule, /flex:\s*0 0 36px/);
+});
+
+test('the header renders exactly the three controls, all with one class', async () => {
+  const rt = await presentationRuntime();
+  const html = rt.rootInventoryHtml(LOADED, true, 'inventory');
+  const actions = html.slice(html.indexOf('itemx2-panel-actions'), html.indexOf('</header>'));
+  const controls = actions.match(/<(button|label)[^>]*class="itemx-ph-btn/g) || [];
+  assert.equal(controls.length, 3, 'search, history and close');
+});

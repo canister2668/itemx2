@@ -2,10 +2,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 0 0 78px;
-  width: 78px;
+  
+  flex: 0 0 auto;
   height: 36px;
-}.chattext .x-risu-itemx2-panel-actions > button{
+}.chattext .x-risu-itemx2-panel-actions > button, .chattext .x-risu-itemx2-panel-actions > label{
   box-sizing: border-box;
   flex: 0 0 36px;
   padding: 0;

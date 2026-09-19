@@ -269,11 +269,16 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 0 0 78px;
-  width: 78px;
+  /* Sized by its contents. A fixed width was set for two buttons, so adding a
+     third pushed the last one outside the panel's rounded frame. */
+  flex: 0 0 auto;
   height: 36px;
 }
-.itemx2-panel-actions > button {
+/* The search control is a label so a checkbox can drive it without a round trip
+   to the host. It has to get the same box as the buttons beside it, including
+   border-box, or its border makes it the odd one out. */
+.itemx2-panel-actions > button,
+.itemx2-panel-actions > label {
   box-sizing: border-box;
   flex: 0 0 36px;
   padding: 0;
