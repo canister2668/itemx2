@@ -495,8 +495,7 @@
     uiState.cleanupArmedUntil = 0;
 
     workQueue.clearTimer('legacyCommitTimer');
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.clearTimer('bodyFxScrollTimer');
+    clearScrollTimers();
     if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
         await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');

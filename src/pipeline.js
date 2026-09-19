@@ -553,8 +553,7 @@
     if (hostState.unloading) return;
     workQueue.cancel(intent => intent.kind === 'committed-output', false);
     const pending = (async () => {
-      workQueue.clearTimer('bodyFxStartTimer');
-      workQueue.clearTimer('bodyFxScrollTimer');
+      clearScrollTimers();
       presentationState.bodyFxScrollActive = false;
       presentationState.bodyFxSawScroll = false;
 

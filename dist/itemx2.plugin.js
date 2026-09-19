@@ -4040,6 +4040,24 @@ const ITEMXStorage = (() => {
       checkpoint: { ...next, checksum: digest(next) } };
   }
 
+  let replayMemo = null;
+  const replayKey = (chat) => {
+    const messages = chat.message || [];
+    return {
+      log: chat.scriptstate?.[LOG],
+      cache: chat.scriptstate?.[CACHE],
+      ids: messages.length + ':' + (messages[0]?.chatId || '') + ':' + (messages[messages.length - 1]?.chatId || '')
+    };
+  };
+  const sameReplayKey = (a, b) => !!a && !!b && a.log === b.log && a.cache === b.cache && a.ids === b.ids;
+  function projectReplay(chat) {
+    const key = replayKey(chat);
+    if (sameReplayKey(replayMemo?.key, key)) return replayMemo.value;
+    const value = replay(chat);
+    replayMemo = { key, value };
+    return value;
+  }
+
   function hydrate(chat) {
     if (!chat || !chat.scriptstate?.[LOG]) return chat;
     const next = clone(chat), state = next.scriptstate, document = log(next), derived = cache(next);
@@ -4047,7 +4065,7 @@ const ITEMXStorage = (() => {
     const baseline = document.rows[baselineIndex]?.event;
     const rows = document.rows.slice(baselineIndex + 1);
     const boundary = baseline?.sealedThroughId ? (next.message || []).findIndex(message => message.chatId === baseline.sealedThroughId) : baseline?.boundary ?? -1;
-    const projected = replay(chat);
+    const projected = projectReplay(chat);
     delete derived.item; delete derived.codex;
     if (projected.checkpoint.count) derived.replay = projected.checkpoint;
     else delete derived.replay; // A canonical baseline already needs zero folds.
@@ -8419,8 +8437,7 @@ ${codexPageStyle()}
     if (hostState.unloading) return;
     workQueue.cancel(intent => intent.kind === 'committed-output', false);
     const pending = (async () => {
-      workQueue.clearTimer('bodyFxStartTimer');
-      workQueue.clearTimer('bodyFxScrollTimer');
+      clearScrollTimers();
       presentationState.bodyFxScrollActive = false;
       presentationState.bodyFxSawScroll = false;
 
@@ -8906,17 +8923,22 @@ ${codexPageStyle()}
     return displayHandler(content, portraits);
   }
 
+  let scrollStartTimer = null,
+    scrollStopTimer = null,
+    scrollArmedAt = 0;
+  function clearScrollTimers() {
+    if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
+    if (scrollStopTimer) globalThis.clearTimeout(scrollStopTimer);
+    scrollStartTimer = scrollStopTimer = null;
+  }
+
   function beginBodyScrollEffects() {
     presentationState.bodyFxSawScroll = false;
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.schedule(
-      'bodyFxStartTimer',
-      () => {
-        activateBodyScrollEffects();
-      },
-      80,
-      false
-    );
+    if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
+    scrollStartTimer = globalThis.setTimeout(() => {
+      scrollStartTimer = null;
+      activateBodyScrollEffects();
+    }, 80);
   }
 
   function activateBodyScrollEffects() {
@@ -8927,17 +8949,26 @@ ${codexPageStyle()}
 
   function continueBodyScrollEffects() {
     presentationState.bodyFxSawScroll = true;
-    if (!presentationState.bodyFxScrollActive)
-      workQueue.schedule('bodyFxStartTimer', () => activateBodyScrollEffects(), 80, false);
+    const now = Date.now();
+    if (now - scrollArmedAt < 60 && scrollStopTimer) return;
+    scrollArmedAt = now;
+    if (!presentationState.bodyFxScrollActive && !scrollStartTimer)
+      scrollStartTimer = globalThis.setTimeout(() => {
+        scrollStartTimer = null;
+        activateBodyScrollEffects();
+      }, 80);
     endBodyScrollEffects(220);
   }
 
   function endBodyScrollEffects(delayMs = 0) {
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.clearTimer('bodyFxScrollTimer');
-    workQueue.schedule(
-      'bodyFxScrollTimer',
+    if (scrollStartTimer) {
+      globalThis.clearTimeout(scrollStartTimer);
+      scrollStartTimer = null;
+    }
+    if (scrollStopTimer) globalThis.clearTimeout(scrollStopTimer);
+    scrollStopTimer = globalThis.setTimeout(
       () => {
+        scrollStopTimer = null;
         if (!presentationState.bodyFxScrollActive) return;
         presentationState.bodyFxScrollActive = false;
         if (presentationState.bodyFxClassOwner)
@@ -8945,8 +8976,7 @@ ${codexPageStyle()}
         scheduleHostDomSync(180);
         workQueue.wake();
       },
-      delayMs,
-      false
+      delayMs
     );
   }
 
@@ -8984,7 +9014,7 @@ ${codexPageStyle()}
         ['scrollend', () => endBodyScrollEffects(40)]
       ];
       for (const [type, handler] of bindings) {
-        const id = await body.addEventListener(type, entry('scroll', handler), true);
+        const id = await body.addEventListener(type, handler, true);
         presentationState.bodyFxEventIds.push({ owner: body, type, id });
       }
     } catch (error) {
@@ -9487,8 +9517,7 @@ ${codexPageStyle()}
     uiState.cleanupArmedUntil = 0;
 
     workQueue.clearTimer('legacyCommitTimer');
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.clearTimer('bodyFxScrollTimer');
+    clearScrollTimers();
     if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
         await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
@@ -10778,8 +10807,7 @@ ${codexPageStyle()}
     workQueue.clearTimer('feedbackTimer');
     workQueue.clearTimer('auxToastTimer');
     workQueue.clearTimer('legacyCommitTimer');
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.clearTimer('bodyFxScrollTimer');
+    clearScrollTimers();
     if (presentationState.bodyFxScrollActive && presentationState.bodyFxClassOwner) {
       try {
         await presentationState.bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');

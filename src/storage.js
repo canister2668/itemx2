@@ -127,6 +127,29 @@ const ITEMXStorage = (() => {
       checkpoint: { ...next, checksum: digest(next) } };
   }
 
+  // Folding the canonical log costs ~12ms on a 49 message chat and grows with
+  // it. Every chat read pays it, including the host DOM sync that runs when
+  // scrolling stops, so an unchanged chat was replayed over and over. Only the
+  // projection is cached: the rest of hydrate still runs against this caller's
+  // chat, so a change to anyone else's scriptstate is never masked.
+  let replayMemo = null;
+  const replayKey = (chat) => {
+    const messages = chat.message || [];
+    return {
+      log: chat.scriptstate?.[LOG],
+      cache: chat.scriptstate?.[CACHE],
+      ids: messages.length + ':' + (messages[0]?.chatId || '') + ':' + (messages[messages.length - 1]?.chatId || '')
+    };
+  };
+  const sameReplayKey = (a, b) => !!a && !!b && a.log === b.log && a.cache === b.cache && a.ids === b.ids;
+  function projectReplay(chat) {
+    const key = replayKey(chat);
+    if (sameReplayKey(replayMemo?.key, key)) return replayMemo.value;
+    const value = replay(chat);
+    replayMemo = { key, value };
+    return value;
+  }
+
   function hydrate(chat) {
     if (!chat || !chat.scriptstate?.[LOG]) return chat;
     const next = clone(chat), state = next.scriptstate, document = log(next), derived = cache(next);
@@ -134,7 +157,7 @@ const ITEMXStorage = (() => {
     const baseline = document.rows[baselineIndex]?.event;
     const rows = document.rows.slice(baselineIndex + 1);
     const boundary = baseline?.sealedThroughId ? (next.message || []).findIndex(message => message.chatId === baseline.sealedThroughId) : baseline?.boundary ?? -1;
-    const projected = replay(chat);
+    const projected = projectReplay(chat);
     delete derived.item; delete derived.codex;
     if (projected.checkpoint.count) derived.replay = projected.checkpoint;
     else delete derived.replay; // A canonical baseline already needs zero folds.

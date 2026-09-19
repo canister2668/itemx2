@@ -193,6 +193,7 @@ test('browser resume rebinds hooks and clears suspended effects without regenera
         addRisuScriptHandler: async (mode) => calls.push(`script:${mode}`),
         addRisuReplacer: async (mode) => calls.push(`replacer:${mode}`)
       },
+      clearScrollTimers: () => {},
       installMainStyle: async () => calls.push('style'),
       catchUpLatestOutput: async () => calls.push('catch-up'),
       rebuildCurrent: async () => {

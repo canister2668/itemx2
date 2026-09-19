@@ -57,13 +57,26 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /\['pointerdown', beginBodyScrollEffects\]/);
   assert.match(source, /\['scroll', continueBodyScrollEffects\]/);
   assert.match(source, /\['scrollend', \(\) => endBodyScrollEffects\(40\)\]/);
-  assert.match(source, /addEventListener\(type, entry\('scroll', handler\), true\)/);
+  // The scroll governor binds directly. Wrapping it in entry() would push every
+  // scroll event through the work queue, which is what made scrolling stutter.
+  assert.match(source, /addEventListener\(type, handler, true\)/);
+  assert.equal(source.includes("entry('scroll', handler)"), false, 'scroll must not be queued per event');
+  assert.match(source, /scrollStartTimer = globalThis\.setTimeout/);
+  assert.match(source, /now - scrollArmedAt < 60 && scrollStopTimer\) return/);
   // Suppression hides the effect layers, so it must be armed with a delay a
   // short scroll can cancel. Firing it on the first scroll event blinks every
   // card on screen.
   assert.match(
     source,
-    /function continueBodyScrollEffects\(\)[\s\S]*?workQueue\.schedule\('bodyFxStartTimer', \(\) => activateBodyScrollEffects\(\), 80, false\)[\s\S]*?endBodyScrollEffects\(220\)/
+    /function continueBodyScrollEffects\(\)[\s\S]*?globalThis\.setTimeout\([\s\S]*?endBodyScrollEffects\(220\)/
+  );
+  // wake() once when scrolling stops is fine; per-event scheduling is not.
+  assert.equal(
+    /function (?:begin|continue|end)BodyScrollEffects\(\)?[\s\S]{0,700}?workQueue\.(?:schedule|clearTimer|enqueue)\(/.test(
+      source
+    ),
+    false,
+    'the scroll governor must not queue work per event'
   );
   // The class belongs on .chattext. On body the rule reaches every card at once.
   assert.match(source, /querySelector\('\.chattext'\)\) \|\| presentationState\.bodyFxClassOwner/);
@@ -72,7 +85,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     false,
     'scroll suppression must not be emitted a second time at body scope'
   );
-  assert.match(source, /workQueue\.schedule\(\s*'bodyFxScrollTimer'/);
+  assert.match(source, /scrollStopTimer = globalThis\.setTimeout\(/);
   assert.match(source, /const ITEMX_ROOT_PAGE_SIZE = 16/);
   assert.equal(source.includes('.slice(-512)'), false, 'message event replay must never drop live refs by count');
   assert.equal(source.includes('.slice(-256)'), false, 'manual replay must never drop authoritative events by count');

@@ -436,17 +436,26 @@
     return displayHandler(content, portraits);
   }
 
+  // The scroll governor is a display affordance, not a state change, so it runs
+  // on plain timers. Routing it through the work queue put an enqueue, a promise
+  // and two array-allocating pump() passes on every scroll event; at 60-120Hz
+  // that cost alone made scrolling stutter.
+  let scrollStartTimer = null,
+    scrollStopTimer = null,
+    scrollArmedAt = 0;
+  function clearScrollTimers() {
+    if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
+    if (scrollStopTimer) globalThis.clearTimeout(scrollStopTimer);
+    scrollStartTimer = scrollStopTimer = null;
+  }
+
   function beginBodyScrollEffects() {
     presentationState.bodyFxSawScroll = false;
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.schedule(
-      'bodyFxStartTimer',
-      () => {
-        activateBodyScrollEffects();
-      },
-      80,
-      false
-    );
+    if (scrollStartTimer) globalThis.clearTimeout(scrollStartTimer);
+    scrollStartTimer = globalThis.setTimeout(() => {
+      scrollStartTimer = null;
+      activateBodyScrollEffects();
+    }, 80);
   }
 
   function activateBodyScrollEffects() {
@@ -457,20 +466,29 @@
 
   function continueBodyScrollEffects() {
     presentationState.bodyFxSawScroll = true;
-    // Suppression hides the effect layers, so firing it on the first scroll
-    // event makes a short flick blink every card. Arm it and let a scroll that
-    // stops inside the delay cancel it; only sustained scrolling pays.
-    if (!presentationState.bodyFxScrollActive)
-      workQueue.schedule('bodyFxStartTimer', () => activateBodyScrollEffects(), 80, false);
+    // Scroll fires continuously. Re-arming the stop timer on every event is the
+    // only work this path may do, and even that is throttled: once armed, a
+    // further event within the window changes nothing.
+    const now = Date.now();
+    if (now - scrollArmedAt < 60 && scrollStopTimer) return;
+    scrollArmedAt = now;
+    if (!presentationState.bodyFxScrollActive && !scrollStartTimer)
+      scrollStartTimer = globalThis.setTimeout(() => {
+        scrollStartTimer = null;
+        activateBodyScrollEffects();
+      }, 80);
     endBodyScrollEffects(220);
   }
 
   function endBodyScrollEffects(delayMs = 0) {
-    workQueue.clearTimer('bodyFxStartTimer');
-    workQueue.clearTimer('bodyFxScrollTimer');
-    workQueue.schedule(
-      'bodyFxScrollTimer',
+    if (scrollStartTimer) {
+      globalThis.clearTimeout(scrollStartTimer);
+      scrollStartTimer = null;
+    }
+    if (scrollStopTimer) globalThis.clearTimeout(scrollStopTimer);
+    scrollStopTimer = globalThis.setTimeout(
       () => {
+        scrollStopTimer = null;
         if (!presentationState.bodyFxScrollActive) return;
         presentationState.bodyFxScrollActive = false;
         if (presentationState.bodyFxClassOwner)
@@ -478,8 +496,7 @@
         scheduleHostDomSync(180);
         workQueue.wake();
       },
-      delayMs,
-      false
+      delayMs
     );
   }
 
@@ -520,7 +537,9 @@
         ['scrollend', () => endBodyScrollEffects(40)]
       ];
       for (const [type, handler] of bindings) {
-        const id = await body.addEventListener(type, entry('scroll', handler), true);
+        // Bound directly: entry() would push every scroll event through the
+        // work queue, which is the cost this governor exists to avoid.
+        const id = await body.addEventListener(type, handler, true);
         presentationState.bodyFxEventIds.push({ owner: body, type, id });
       }
     } catch (error) {
