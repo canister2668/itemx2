@@ -27,7 +27,7 @@
     .itemx-ph-text { display: flex; flex: 1; flex-direction: column; gap: .15em; min-width: 0; }
     .itemx-ph-eyebrow { color: #b39355; font-size: .6rem; font-weight: 700; letter-spacing: .3em; }
     .itemx-ph-title { color: #f4f0e6; font-size: 1.12rem; font-weight: 800; }
-    .itemx-ph-sub { color: #77839c; font-size: .72rem; }
+    .itemx-ph-sub { color: #7f8ba4; font-size: .72rem; }
     .itemx-ph-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.03); color: #8b99b2; }
     .itemx-seg { display: flex; gap: .15em; margin: .35em 1.05em 0; overflow-x: auto; border-bottom: 1px solid #171d2b; scrollbar-width: none; }
     .itemx-seg-i { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: .32em; padding: 0 .6em; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #6e7b93; font-size: .78rem; cursor: pointer; }
@@ -35,7 +35,7 @@
     .itemx-seg-n { opacity: .65; font-size: .92em; }
     .itemx-tools { display: flex; gap: .4em; margin: .6em 1.05em 0; }
     .itemx-tool,.itemx-search { min-height: 34px; display: inline-flex; align-items: center; padding: 0 .7em; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.025); color: #93a2ba; font-size: .76rem; }
-    .itemx-search { flex: 1; color: #64718c; }
+    .itemx-search { flex: 1; color: #74819c; }
     .itemx-body { padding: .75em 1.05em .95em; }
     .itemx-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55em; }
     .itemx-tile { --rk:#8b94a6; --rks:rgba(139,148,166,.38); position: relative; display: grid; grid-template-columns: 2.4em minmax(0,1fr); grid-template-rows: 1fr auto; gap: .15em .6em; height: 82px; padding: .6em .7em .55em .85em; overflow: hidden; border: 1px solid #1c2331; border-radius: 13px; background: linear-gradient(160deg,#121826,#0d111b 78%); text-align: left; cursor: pointer; }
@@ -46,9 +46,9 @@
     .itemx-tile-nm { align-self: center; overflow: hidden; color: #edf2fb; font-size: .85rem; font-weight: 700; line-height: 1.32; }
     .itemx-tile-meta { display: flex; justify-content: space-between; gap: .5em; align-self: end; }
     .itemx-tile-rk { color: var(--rk); font-size: .7rem; font-weight: 700; }
-    .itemx-tile-lc { color: #67748c; font-size: .7rem; }
+    .itemx-tile-lc { color: #77849c; font-size: .7rem; }
     .itemx-tile-aff { position:absolute; right:8px; top:7px; display:flex; gap:2px; font-size:9px; filter:drop-shadow(0 0 4px rgba(0,0,0,.8)); }
-    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #59657a; font-size: .7rem; text-align: right; }
+    .itemx-pf { padding: .68em 1.1em; border-top: 1px solid #171d2b; color: #717d92; font-size: .7rem; text-align: right; }
 
     /* Off-screen cards keep their effects and DOM, while the browser may skip
        their layout and paint work until they approach the viewport. */

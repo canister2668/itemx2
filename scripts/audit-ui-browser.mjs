@@ -46,30 +46,39 @@ const probe = `(() => {
 const rect = el => { const r = el.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height}; };
 const lum = c => { const m=c.match(/[\\d.]+/g)||[0,0,0]; const f=m.slice(0,3).map(v=>{v=v/255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}); return 0.2126*f[0]+0.7152*f[1]+0.0722*f[2]; };
 const contrast = (a,b) => { const l1=lum(a),l2=lum(b); return ((Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05)); };
-const parse = c => { const m = (c || '').match(/[\d.]+/g) || [0,0,0]; return { r:+m[0]||0, g:+m[1]||0, b:+m[2]||0, a: m.length > 3 ? +m[3] : 1 }; };
+const parse = c => { const m = (c || '').match(/[\\d.]+/g) || [0,0,0]; return { r:+m[0]||0, g:+m[1]||0, b:+m[2]||0, a: m.length > 3 ? +m[3] : 1 }; };
 const transparent = c => { const p = parse(c); return !c || p.a === 0; };
 // A translucent layer is not the colour the reader sees: it has to be composited
 // over whatever is behind it, or a 14% tint of the text colour measures as the
 // text colour and reports a contrast of 1.0 where the real one is fine.
-const bgOf = el => {
+const stopsOf = el => {
+  const img = getComputedStyle(el).backgroundImage || '';
+  if (!/gradient/.test(img)) return [];
+  return (img.match(/rgba?\\([^)]*\\)/g) || []).map(parse).filter(p => p.a > 0);
+};
+const over = (top, under) => ({ r: top.r*top.a + under.r*(1-top.a), g: top.g*top.a + under.g*(1-top.a), b: top.b*top.a + under.b*(1-top.a), a:1 });
+// 반투명 층은 독자가 보는 색이 아니다. 뒤에 있는 것 위로 합성해야 한다.
+// 합성하지 않으면 글자색의 14% 틴트가 글자색 자체로 읽혀 대비가 1.0 으로 나온다.
+const bgsOf = el => {
   const stack = [];
   let n = el;
   while (n && n !== document.documentElement) {
-    const c = getComputedStyle(n).backgroundColor, p = parse(c);
-    if (p.a > 0) { stack.push(p); if (p.a >= 1) break; }
+    const p = parse(getComputedStyle(n).backgroundColor);
+    const stops = stopsOf(n);
+    if (stops.length) { stack.push({ stops }); if (stops.every(s => s.a >= 1)) break; }
+    if (p.a > 0) { stack.push({ stops: [p] }); if (p.a >= 1) break; }
     n = n.parentElement;
   }
-  const base = (() => {
-    const panelEl = document.querySelector('.x-risu-itemx-panel');
-    const p = parse(panelEl ? getComputedStyle(panelEl).backgroundColor : '');
-    return p.a >= 1 ? p : { r:0, g:0, b:0, a:1 };
-  })();
-  let out = stack.length && stack[stack.length-1].a >= 1 ? stack.pop() : base;
+  const panelEl = document.querySelector('.x-risu-itemx-panel');
+  const pp = parse(panelEl ? getComputedStyle(panelEl).backgroundColor : '');
+  let outs = [pp.a >= 1 ? pp : { r:0, g:0, b:0, a:1 }];
   while (stack.length) {
-    const top = stack.pop();
-    out = { r: top.r*top.a + out.r*(1-top.a), g: top.g*top.a + out.g*(1-top.a), b: top.b*top.a + out.b*(1-top.a), a:1 };
+    const layer = stack.pop();
+    const next = [];
+    for (const under of outs) for (const top of layer.stops) next.push(over(top, under));
+    outs = next.slice(0, 8);
   }
-  return 'rgb(' + Math.round(out.r) + ', ' + Math.round(out.g) + ', ' + Math.round(out.b) + ')';
+  return outs.map(o => 'rgb(' + Math.round(o.r) + ', ' + Math.round(o.g) + ', ' + Math.round(o.b) + ')');
 };
 const panel = document.querySelector('.x-risu-itemx2-root-panel');
 const pr = panel ? rect(panel) : null;
@@ -109,11 +118,11 @@ for (const el of document.querySelectorAll('*')) {
   }
   if (el.children.length === 0 && el.textContent.trim().length > 1 && r.w > 0 && r.h > 0) {
     const s = getComputedStyle(el), size = parseFloat(s.fontSize);
-    const ratio = contrast(s.color, bgOf(el));
+    const ratio = Math.min(...bgsOf(el).map(b => contrast(s.color, b)));
     const need = size >= 18.66 || (size >= 14 && s.fontWeight >= 700) ? 3 : 4.5;
     if (ratio < need) {
       const cls=(el.className||'').toString().replace(/x-risu-/g,'').split(' ').filter(Boolean)[0]||el.tagName;
-      if(!out.contrast.some(o=>o.cls===cls)) out.contrast.push({ cls, text: el.textContent.trim().slice(0,16), ratio: +ratio.toFixed(2), need, size: Math.round(size) });
+      if(!out.contrast.some(o=>o.cls===cls)) out.contrast.push({ cls, text: el.textContent.trim().slice(0,16), ratio: +ratio.toFixed(2), need, size: Math.round(size), fg: s.color, bg: bgsOf(el)[0] });
     }
   }
 }
@@ -127,7 +136,7 @@ out.probe = [...document.querySelectorAll('.x-risu-itemx-ph-title, .x-risu-itemx
   const st = getComputedStyle(el);
   let n = el, bg = null, bgEl = null;
   while (n && n !== document.documentElement) { const c = getComputedStyle(n).backgroundColor; if (!transparent(c)) { bg = c; bgEl = (n.className||'').toString().replace(/x-risu-/g,'').split(' ')[0]; break; } n = n.parentElement; }
-  return { text: el.textContent.trim().slice(0,10), color: st.color, composited: bgOf(el), bgFrom: bgEl, parentCls: (el.parentElement.className||'').toString().replace(/x-risu-/g,'').split(' ').slice(0,3).join(' ') };
+  return { text: el.textContent.trim().slice(0,10), color: st.color, composited: bgsOf(el), bgFrom: bgEl, parentCls: (el.parentElement.className||'').toString().replace(/x-risu-/g,'').split(' ').slice(0,3).join(' ') };
 });
 out.debug = out_debug;
 return out;
@@ -178,7 +187,7 @@ for (const r of results) if (r.tab === 'settings') console.log(r.skin, 'panelBg=
 for (const [ko, key] of [['터치 타깃 44px 미만', 'touch'], ['패널 밖으로 넘침', 'overflow'], ['글자 잘림', 'truncated'], ['대비 부족', 'contrast']]) {
   const rows = agg(key);
   console.log(`\n=== ${ko}: ${rows.length}건 ===`);
-  for (const row of rows.slice(0, 12)) {
+  for (const row of rows.slice(0, Number(process.env.AUDIT_ROWS || 12))) {
     const { where, ...rest } = row;
     console.log(' ', JSON.stringify(rest), where.length > 6 ? `(${where.length}곳)` : where.join(','));
   }
