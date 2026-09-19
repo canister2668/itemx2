@@ -173,7 +173,11 @@ const ITEMXStorage = (() => {
     return next;
   }
   function persist(chat, options = {}) {
-    const next = clone(chat), state = next.scriptstate ||= {}, document = capture(next, options), prior = cache(next);
+    // Only scriptstate is rewritten here; capture reads the messages but never
+    // edits them. Deep cloning the whole chat to change a few strings copied
+    // every message on every write, and a model reply triggers several.
+    const next = { ...chat, scriptstate: { ...(chat.scriptstate || {}) } },
+      state = next.scriptstate, document = capture(next, options), prior = cache(next);
     const prefs = parse(state[DTO.prefs], parse(state[PREFS], { after: 10, keep: {}, archived: {} }));
     const derived = { v: 1, ...prior };
     const checkpoint = replay(next, document).checkpoint;

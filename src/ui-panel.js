@@ -1092,7 +1092,11 @@
     const positionChoices = tab === 'settings' ? settingsPositionChoices(skin) : '';
     const fontChoices = tab === 'settings' ? settingsFontChoices(loaded, skin) : '';
     const domainControls = settingsDomainControls(loaded, skin);
-    const debugLog = settingsDebugLog();
+    // Phase timings go above the log: they are what a stutter report needs. Only
+    // with debug on, so the panel a reader normally sees is unchanged.
+    const debugLog = loaded.debugEnabled
+      ? `-- phase cost --\n${phaseReport()}\n\n${settingsDebugLog()}`
+      : settingsDebugLog();
     const storageParts = settingsStorageParts(loaded);
     // A map of the screen beats six abbreviations: the slot sits where the badge will.
     const managerRows =

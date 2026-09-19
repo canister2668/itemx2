@@ -4079,7 +4079,8 @@ const ITEMXStorage = (() => {
     return next;
   }
   function persist(chat, options = {}) {
-    const next = clone(chat), state = next.scriptstate ||= {}, document = capture(next, options), prior = cache(next);
+    const next = { ...chat, scriptstate: { ...(chat.scriptstate || {}) } },
+      state = next.scriptstate, document = capture(next, options), prior = cache(next);
     const prefs = parse(state[DTO.prefs], parse(state[PREFS], { after: 10, keep: {}, archived: {} }));
     const derived = { v: 1, ...prior };
     const checkpoint = replay(next, document).checkpoint;
@@ -4123,10 +4124,14 @@ const ITEMXSettings = (() => {
     (kind, work, unique = false) =>
     (...args) =>
       dispatch(kind, () => work(...args), unique);
-  const readChat = async (...args) => ITEMXStorage.hydrate(await Risuai.getChatFromIndex(...args));
+  const readChat = async (...args) => {
+    const raw = await timed('host:readChat', () => Risuai.getChatFromIndex(...args));
+    return timedSync('storage:hydrate', () => ITEMXStorage.hydrate(raw));
+  };
   const saveChat = (characterIndex, chatIndex, chat) => {
     workQueue.assertCurrent();
-    return Risuai.setChatToIndex(characterIndex, chatIndex, ITEMXStorage.persist(chat));
+    const persisted = timedSync('storage:persist', () => ITEMXStorage.persist(chat));
+    return timed('host:writeChat', () => Risuai.setChatToIndex(characterIndex, chatIndex, persisted));
   };
   const stateOwners = ITEMXState.create();
   const { host: hostState, pipeline: pipelineState, aux: auxState, presentation: presentationState, portraits: portraitsState, storage: storageState, settings: settingsState, ui: uiState } = stateOwners;
@@ -4139,6 +4144,43 @@ const ITEMXSettings = (() => {
     if (settingsState.debugEntries.length > 30) settingsState.debugEntries.splice(0, settingsState.debugEntries.length - 30);
     console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
   };
+  const phaseStats = new Map();
+  const now = () => (typeof performance === 'object' && performance?.now ? performance.now() : Date.now());
+  const mark = (phase, startedAt) => {
+    const ms = now() - startedAt;
+    const row = phaseStats.get(phase) || { calls: 0, total: 0, worst: 0 };
+    row.calls += 1;
+    row.total += ms;
+    if (ms > row.worst) row.worst = ms;
+    phaseStats.set(phase, row);
+    return ms;
+  };
+  const timed = async (phase, work) => {
+    const startedAt = now();
+    try {
+      return await work();
+    } finally {
+      mark(phase, startedAt);
+    }
+  };
+  const timedSync = (phase, work) => {
+    const startedAt = now();
+    try {
+      return work();
+    } finally {
+      mark(phase, startedAt);
+    }
+  };
+  const phaseReport = () =>
+    [...phaseStats]
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 8)
+      .map(
+        ([phase, row]) =>
+          `${phase} x${row.calls} avg ${(row.total / row.calls).toFixed(1)}ms max ${row.worst.toFixed(1)}ms`
+      )
+      .join('\n') || '-';
+
   const fail = (where, error) => {
     debugRecord(`ERROR · ${where}`, error?.message || String(error));
     console.error(`[ITEMX 2] ${where}`, error);
@@ -10104,7 +10146,9 @@ ${codexPageStyle()}
     const positionChoices = tab === 'settings' ? settingsPositionChoices(skin) : '';
     const fontChoices = tab === 'settings' ? settingsFontChoices(loaded, skin) : '';
     const domainControls = settingsDomainControls(loaded, skin);
-    const debugLog = settingsDebugLog();
+    const debugLog = loaded.debugEnabled
+      ? `-- phase cost --\n${phaseReport()}\n\n${settingsDebugLog()}`
+      : settingsDebugLog();
     const storageParts = settingsStorageParts(loaded);
     const managerRows =
       tab === 'settings'
