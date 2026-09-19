@@ -5548,7 +5548,7 @@ ${codexPageStyle()}
             const next = !(await isEnabled(loaded.character));
             await setEnabled(loaded.character, next);
             uiState.status = next ? '현재 봇 활성화' : '현재 봇 비활성화';
-            await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
+            await updateRootSwitch('.x-risu-itemx2-setting-toggle', next);
           })
       },
       ...[
@@ -5599,7 +5599,7 @@ ${codexPageStyle()}
             const value = !(await outputSettings(loaded.character)).mainOutput;
             await setMainOutput(loaded.character, value);
             uiState.status = `메인 출력 · ${value ? 'ON' : 'OFF'}`;
-            await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
+            await updateRootSwitch('.x-risu-itemx2-setting-main', value);
           })
       },
       ...[
@@ -7258,6 +7258,15 @@ ${codexPageStyle()}
     await button.setTextContent(workQueue.isActive('connect') ? '확인 중…' : connection.ready ? '다시 확인' : '연결하기');
     if (workQueue.isActive('connect')) await button.addClass('x-risu-itemx2-root-setting-button-busy');
     else await button.removeClass('x-risu-itemx2-root-setting-button-busy');
+  }
+
+  async function updateRootSwitch(selector, on) {
+    if (!panelDocument()) return;
+    const control = await panelDocument().querySelector(selector);
+    if (!control) return;
+    await control.setAttribute('aria-checked', on ? 'true' : 'false');
+    if (on) await control.addClass('x-risu-itemx2-setting-on');
+    else await control.removeClass('x-risu-itemx2-setting-on');
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {

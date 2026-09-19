@@ -81,6 +81,18 @@
     else await button.removeClass('x-risu-itemx2-root-setting-button-busy');
   }
 
+  // A switch draws its knob with a child <i>, so setTextContent would delete it:
+  // the control turns into a bare pill that shows nothing while on, because the
+  // on state paints text transparent. Patch the state only and leave the knob.
+  async function updateRootSwitch(selector, on) {
+    if (!panelDocument()) return;
+    const control = await panelDocument().querySelector(selector);
+    if (!control) return;
+    await control.setAttribute('aria-checked', on ? 'true' : 'false');
+    if (on) await control.addClass('x-risu-itemx2-setting-on');
+    else await control.removeClass('x-risu-itemx2-setting-on');
+  }
+
   async function updateRootSettingButton(selector, label, enabled = null) {
     if (!panelDocument()) return;
     const button = await panelDocument().querySelector(selector);

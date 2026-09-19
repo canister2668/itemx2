@@ -663,7 +663,7 @@
             const next = !(await isEnabled(loaded.character));
             await setEnabled(loaded.character, next);
             uiState.status = next ? ITEMXText("ui-settings.048") : ITEMXText("ui-settings.047");
-            await updateRootSettingButton('.x-risu-itemx2-setting-toggle', next ? 'ON' : 'OFF', next);
+            await updateRootSwitch('.x-risu-itemx2-setting-toggle', next);
           })
       },
       ...[
@@ -714,7 +714,7 @@
             const value = !(await outputSettings(loaded.character)).mainOutput;
             await setMainOutput(loaded.character, value);
             uiState.status = ITEMXText("ui-settings.041", value ? 'ON' : 'OFF');
-            await updateRootSettingButton('.x-risu-itemx2-setting-main', value ? 'ON' : 'OFF', value);
+            await updateRootSwitch('.x-risu-itemx2-setting-main', value);
           })
       },
       // Multi-choice settings render every option, so one row per option.
