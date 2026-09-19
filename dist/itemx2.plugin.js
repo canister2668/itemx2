@@ -9901,7 +9901,7 @@ ${codexPageStyle()}
       : '';
 
   function panelMenuHtml(native = true) {
-    return `<div class="itemx2-panel-actions"><label class="itemx-ph-btn itemx2-search-open" for="itemx2-search-toggle" role="button" aria-label="검색" title="검색"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3 14 14"/></svg></label><button class="itemx-ph-btn itemx2-history-open" data-action="history-open" type="button" aria-label="기록 보기" title="기록 보기">기록</button><button class="itemx-ph-btn ${native ? 'itemx2-root-close' : ''}" data-action="close" type="button" aria-label="닫기" title="닫기">✕</button></div>`;
+    return `<div class="itemx2-panel-actions"><label class="itemx-ph-btn itemx2-search-open" for="itemx2-search-toggle" role="button" aria-label="검색" title="검색">🔍</label><button class="itemx-ph-btn itemx2-history-open" data-action="history-open" type="button" aria-label="기록 보기" title="기록 보기">기록</button><button class="itemx-ph-btn ${native ? 'itemx2-root-close' : ''}" data-action="close" type="button" aria-label="닫기" title="닫기">✕</button></div>`;
   }
 
   function historyDomain(tab) {
