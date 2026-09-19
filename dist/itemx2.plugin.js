@@ -10856,6 +10856,7 @@ ${codexPageStyle()}
       styled = false;
     if (initial) {
       pipelineState.activeContextKey = initial.key;
+      refreshLatest(initial.chat);
       uiState.status = '초기 화면 연결 중';
       await outputSettings(initial.character);
       styled = await installMainStyle();

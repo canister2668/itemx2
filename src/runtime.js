@@ -131,6 +131,11 @@
       styled = false;
     if (initial) {
       pipelineState.activeContextKey = initial.key;
+      // The display hook is already live, and a compact ref can only become a
+      // card once the event ledger is loaded. Load it from the chat we just
+      // read, before anything slow runs, or the first paint after a refresh
+      // shows the restoring chip where a card belongs.
+      refreshLatest(initial.chat);
       uiState.status = ITEMXText("runtime.008");
       await outputSettings(initial.character);
       styled = await installMainStyle();
