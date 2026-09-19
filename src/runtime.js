@@ -14,13 +14,33 @@
     (kind, work, unique = false) =>
     (...args) =>
       dispatch(kind, () => work(...args), unique);
-  const readChat = async (...args) => {
-    const raw = await timed('host:readChat', () => Risuai.getChatFromIndex(...args));
-    return timedSync('storage:hydrate', () => ITEMXStorage.hydrate(raw));
+  // Reading a chat marshals every message across the host bridge, and a single
+  // reply walks that path several times. The queue runs one job at a time, so
+  // within a job nothing can change the chat under us: the first read serves the
+  // rest, and a write replaces the entry with what we just stored instead of
+  // fetching it straight back. Outside a job nothing is reused.
+  let chatCache = null;
+  const chatCacheKey = (characterIndex, chatIndex) => `${characterIndex}:${chatIndex}`;
+  const invalidateChatCache = () => {
+    chatCache = null;
+  };
+  const readChat = async (characterIndex, chatIndex, ...rest) => {
+    const token = workQueue.token,
+      key = chatCacheKey(characterIndex, chatIndex);
+    if (token && chatCache && chatCache.token === token && chatCache.key === key) {
+      phaseCount('host:readChat:reused');
+      return chatCache.chat;
+    }
+    const raw = await timed('host:readChat', () => Risuai.getChatFromIndex(characterIndex, chatIndex, ...rest));
+    const chat = timedSync('storage:hydrate', () => ITEMXStorage.hydrate(raw));
+    if (token) chatCache = { token, key, chat };
+    return chat;
   };
   const saveChat = (characterIndex, chatIndex, chat) => {
     workQueue.assertCurrent();
     const persisted = timedSync('storage:persist', () => ITEMXStorage.persist(chat));
+    const token = workQueue.token;
+    chatCache = token ? { token, key: chatCacheKey(characterIndex, chatIndex), chat } : null;
     return timed('host:writeChat', () => Risuai.setChatToIndex(characterIndex, chatIndex, persisted));
   };
   const stateOwners = ITEMXState.create();
@@ -49,6 +69,11 @@
     if (ms > row.worst) row.worst = ms;
     phaseStats.set(phase, row);
     return ms;
+  };
+  const phaseCount = (phase) => {
+    const row = phaseStats.get(phase) || { calls: 0, total: 0, worst: 0 };
+    row.calls += 1;
+    phaseStats.set(phase, row);
   };
   const timed = async (phase, work) => {
     const startedAt = now();
