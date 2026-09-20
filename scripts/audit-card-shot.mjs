@@ -52,7 +52,8 @@ try {
   await page.evaluate(${JSON.stringify(fixture)});
   await page.evaluate(([t,s])=>itemxAudit.setup(t,s),['full', process.env.ITEMX_SKIN||'dark']);
   await page.waitForTimeout(600);
-  await page.addStyleTag({content:'*,*::before,*::after{animation-delay:-2s!important;animation-play-state:paused!important}'});
+  if (process.env.ITEMX_KILL) await page.addStyleTag({content: process.env.ITEMX_KILL});
+  await page.addStyleTag({content:'*,*::before,*::after{animation-delay:-'+(process.env.ITEMX_PHASE||2)+'s!important;animation-play-state:paused!important}'});
   await page.waitForTimeout(150);
   await page.locator('#itemx2-root').screenshot({path:process.argv[2]});
 } finally { await browser.close(); }

@@ -83,7 +83,7 @@
     .itemx-edge::before { content:""; position:absolute; left:50%; top:50%; width:290%; aspect-ratio:1; background:conic-gradient(transparent 0 206deg,color-mix(in srgb,var(--p) 60%,transparent) 236deg,#fff3da 251deg,color-mix(in srgb,var(--p) 60%,transparent) 266deg,transparent 296deg 360deg); transform:translate(-50%,-50%) rotate(0deg); animation:itemx2-edge 6.5s linear infinite; }
     .motion-off.itemx-card,.motion-off .itemx-edge::before { animation:none!important; }
     .itemx-fx,.itemx-cond { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
-    .itemx-fx { z-index:1; }
+    .itemx-fx { z-index:1; opacity:.62; }
     .itemx-cond { z-index:2; }
     .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}
     /* Existing ITEMX effects: arcane gold rays and deterministic gold shards. */

@@ -288,7 +288,7 @@ ${codexPageStyle()}
       repairBg: '#eef4fb',
       tileEq: '#4a9fd8',
       fxFilter: 'saturate(.92)',
-      fxOpacity: '1'
+      fxOpacity: '.62'
     },
     hanji: {
       lineRGB: '120,95,55',
@@ -355,7 +355,7 @@ ${codexPageStyle()}
       repairBg: '#f6ecd4',
       tileEq: '#c8901f',
       fxFilter: 'saturate(.82)',
-      fxOpacity: '1'
+      fxOpacity: '.62'
     }
   };
 
