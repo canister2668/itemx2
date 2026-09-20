@@ -652,6 +652,7 @@
       })),
       {
         hook: 'itemx2-setting-toggle',
+        header: true,
         run: () =>
           applyRootSetting(async () => {
             const loaded = await rebuildCurrent();

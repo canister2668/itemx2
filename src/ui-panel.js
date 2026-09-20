@@ -1326,6 +1326,12 @@
           return;
         }
         // Header actions are handled before tab and body controls.
+        for (const action of rootSettingActions()) {
+          if (!action.header) continue;
+          if (!(await eventHitsMainClass(event, action.hook))) continue;
+          await action.run();
+          return;
+        }
         if (await eventHitsMainClass(event, 'itemx2-history-open')) {
           await routeHistoryControls(event);
           return;

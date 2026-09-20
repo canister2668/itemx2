@@ -5545,6 +5545,7 @@ ${codexPageStyle()}
       })),
       {
         hook: 'itemx2-setting-toggle',
+        header: true,
         run: () =>
           applyRootSetting(async () => {
             const loaded = await rebuildCurrent();
@@ -10501,6 +10502,12 @@ ${codexPageStyle()}
           ui.query = clear ? '' : String(await input?.textContent() || '').trim().slice(0, 200);
           uiState.rootItemPage = 0;
           await openRootInventory({ open: true, tab: uiState.activeRootTab });
+          return;
+        }
+        for (const action of rootSettingActions()) {
+          if (!action.header) continue;
+          if (!(await eventHitsMainClass(event, action.hook))) continue;
+          await action.run();
           return;
         }
         if (await eventHitsMainClass(event, 'itemx2-history-open')) {
