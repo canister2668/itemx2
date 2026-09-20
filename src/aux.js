@@ -84,13 +84,25 @@
   // A switch draws its knob with a child <i>, so setTextContent would delete it:
   // the control turns into a bare pill that shows nothing while on, because the
   // on state paints text transparent. Patch the state only and leave the knob.
-  async function updateRootSwitch(selector, on) {
+  async function updateRootSwitch(selector, on, onClass = 'x-risu-itemx2-setting-on') {
     if (!panelDocument()) return;
     const control = await panelDocument().querySelector(selector);
     if (!control) return;
     await control.setAttribute('aria-checked', on ? 'true' : 'false');
-    if (on) await control.addClass('x-risu-itemx2-setting-on');
-    else await control.removeClass('x-risu-itemx2-setting-on');
+    if (on) await control.addClass(onClass);
+    else await control.removeClass(onClass);
+  }
+
+  // 도메인 카드는 스위치가 아니다. 자식 <i> 가 노브가 아니라 상태 글자라서
+  // 여기서만 글자를 갱신한다. 이 둘을 한 함수로 합치면 언젠가 노브를 지운다.
+  async function updateRootDomainCard(selector, on, label) {
+    if (!panelDocument()) return;
+    const card = await panelDocument().querySelector(selector);
+    if (!card) return;
+    if (on) await card.addClass('x-risu-itemx2-setting-on');
+    else await card.removeClass('x-risu-itemx2-setting-on');
+    const state = await card.querySelector('i');
+    if (state) await state.setTextContent(label);
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {

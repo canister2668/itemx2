@@ -265,11 +265,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.ok(rootToggleHandler.length > 100, 'toggle action row not found');
   // A switch keeps its knob in a child <i>, so the state patch must not write
   // text into it; setTextContent would delete the knob and leave a bare pill.
-  assert.match(rootToggleHandler, /updateRootSwitch\('\.x-risu-itemx2-setting-toggle', next\)/);
+  assert.match(rootToggleHandler, /updateRootSwitch\('\.x-risu-itemx2-setting-toggle', next, 'x-risu-itemx2-power-on'\)/);
   assert.equal(rootToggleHandler.includes('updateRootSettingButton'), false, 'a switch is not a text button');
-  assert.match(source, /async function updateRootSwitch\(selector, on\)[\s\S]{0,400}?setAttribute\('aria-checked'/);
+  assert.match(source, /async function updateRootSwitch\(selector, on, onClass[\s\S]{0,400}?setAttribute\('aria-checked'/);
   assert.equal(
-    /async function updateRootSwitch\(selector, on\)[\s\S]{0,400}?setTextContent/.test(source),
+    /async function updateRootSwitch\(selector, on, onClass[\s\S]{0,400}?setTextContent/.test(source),
     false,
     'the switch patch must never replace the knob with text'
   );

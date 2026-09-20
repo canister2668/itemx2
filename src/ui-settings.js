@@ -659,7 +659,7 @@
             const next = !(await isEnabled(loaded.character));
             await setEnabled(loaded.character, next);
             uiState.status = next ? ITEMXText("ui-settings.048") : ITEMXText("ui-settings.047");
-            await updateRootSwitch('.x-risu-itemx2-setting-toggle', next);
+            await updateRootSwitch('.x-risu-itemx2-setting-toggle', next, 'x-risu-itemx2-power-on');
           })
       },
       ...[
@@ -677,7 +677,11 @@
             await setDomainEnabled(loaded.character, domain, value);
             pipelineState.cachedLoaded = null;
             uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
-            await openRootInventory({ open: true, tab: 'settings' });
+            await updateRootDomainCard(
+              `.x-risu-itemx2-setting-domain-${domain}`,
+              value,
+              value ? ITEMXText("ui-settings.067") : ITEMXText("ui-settings.066")
+            );
           })
       })),
       {

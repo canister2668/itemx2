@@ -35,21 +35,7 @@
   width: 100%;
   height: 44px;
   transform: translate(-50%, -50%);
-}.chattext .x-risu-itemx2-search-controls button, .chattext .x-risu-itemx2-search-query{ min-height: 44px; }.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw{ margin-left: 44px; }.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw::before{
-  content: '꺼짐';
-  position: absolute;
-  right: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: .68rem;
-  font-weight: 700;
-  letter-spacing: .02em;
-  color: #6b7789;
-  white-space: nowrap;
-}.chattext .x-risu-itemx2-root-setting-card .x-risu-itemx2-sw[aria-checked='true']::before{
-  content: '켜짐';
-  color: #a9e6c2;
-}.chattext .x-risu-itemx2-sw-power{
+}.chattext .x-risu-itemx2-search-controls button, .chattext .x-risu-itemx2-search-query{ min-height: 44px; }.chattext .x-risu-itemx2-sw-power{
   position: relative;
   font-size: 17px;
   color: #6b7789;
