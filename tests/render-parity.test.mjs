@@ -230,7 +230,8 @@ test('the narrow-screen panel box is declared once and uses the screen', async (
   // A gutter the size of the badge is 15% of a phone, and the panel has its own
   // close button while it is open.
   assert.match(box, /width:calc\(100vw - 16px\)/);
-  assert.match(box, /height:min\(900px,88dvh\)/);
+  assert.match(box, /height:min\(900px,88svh\)/);
+  assert.equal(/dvh/.test(box), false, 'dvh resizes the panel every time the URL bar animates');
   assert.equal(/100vw - 6[0-9]px/.test(box), false, 'the badge gutter must not come back');
 });
 
