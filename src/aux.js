@@ -87,10 +87,26 @@
   async function updateRootSwitch(selector, on, onClass = 'x-risu-itemx2-setting-on') {
     const control = await findRootControl(selector);
     if (!control) return repaintRootFallback();
-    await control.setAttribute('aria-checked', on ? 'true' : 'false');
     if (on) await control.addClass(onClass);
     else await control.removeClass(onClass);
+    if (uiState.panelOpen) await control.setAttribute('aria-checked', on ? 'true' : 'false');
+    else await updateHostSwitchAria(control, selector, on);
     return true;
+  }
+
+  async function updateHostSwitchAria(control, selector, on) {
+    // Stock SafeElement rejects non-x- attributes. Its sanitized HTML setter is
+    // the supported way to update ARIA. Replace only this button, retaining its
+    // contents; clicks are delegated on the drawer, not bound to the button.
+    const html = await control.getOuterHTML();
+    const next = html.replace(/^(<button\b[^>]*\baria-checked=")(true|false)(")/, `$1${on ? 'true' : 'false'}$3`);
+    if (next === html) return;
+    const focused = await findRootControl(`${selector}:focus`);
+    await control.setOuterHTML(next);
+    if (focused) {
+      const replacement = await findRootControl(selector);
+      if (replacement) await replacement.focus();
+    }
   }
 
   // 도메인 카드는 스위치가 아니다. 자식 <i> 가 노브가 아니라 상태 글자라서
@@ -106,18 +122,17 @@
   }
 
   async function findRootControl(selector) {
+    // Use the same surface as click hit-testing. A hidden host drawer can still
+    // match while the iframe panel is open; searching it first patches a copy.
+    const doc = panelDocument();
+    if (!doc) return null;
     const bare = selector.replace('.x-risu-', '.');
-    const docs = [];
-    if (hostState.mainDoc) docs.push(hostState.mainDoc);
-    const panel = panelDocument();
-    if (panel && panel !== hostState.mainDoc) docs.push(panel);
-    for (const doc of docs)
-      for (const query of [selector, bare]) {
-        try {
-          const found = await doc.querySelector(query);
-          if (found) return found;
-        } catch {}
-      }
+    for (const query of [selector, bare]) {
+      try {
+        const found = await doc.querySelector(query);
+        if (found) return found;
+      } catch {}
+    }
     return null;
   }
 

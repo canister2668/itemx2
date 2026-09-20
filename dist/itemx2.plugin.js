@@ -7294,10 +7294,23 @@ ${codexPageStyle()}
   async function updateRootSwitch(selector, on, onClass = 'x-risu-itemx2-setting-on') {
     const control = await findRootControl(selector);
     if (!control) return repaintRootFallback();
-    await control.setAttribute('aria-checked', on ? 'true' : 'false');
     if (on) await control.addClass(onClass);
     else await control.removeClass(onClass);
+    if (uiState.panelOpen) await control.setAttribute('aria-checked', on ? 'true' : 'false');
+    else await updateHostSwitchAria(control, selector, on);
     return true;
+  }
+
+  async function updateHostSwitchAria(control, selector, on) {
+    const html = await control.getOuterHTML();
+    const next = html.replace(/^(<button\b[^>]*\baria-checked=")(true|false)(")/, `$1${on ? 'true' : 'false'}$3`);
+    if (next === html) return;
+    const focused = await findRootControl(`${selector}:focus`);
+    await control.setOuterHTML(next);
+    if (focused) {
+      const replacement = await findRootControl(selector);
+      if (replacement) await replacement.focus();
+    }
   }
 
   async function updateRootDomainCard(selector, on, label) {
@@ -7311,18 +7324,15 @@ ${codexPageStyle()}
   }
 
   async function findRootControl(selector) {
+    const doc = panelDocument();
+    if (!doc) return null;
     const bare = selector.replace('.x-risu-', '.');
-    const docs = [];
-    if (hostState.mainDoc) docs.push(hostState.mainDoc);
-    const panel = panelDocument();
-    if (panel && panel !== hostState.mainDoc) docs.push(panel);
-    for (const doc of docs)
-      for (const query of [selector, bare]) {
-        try {
-          const found = await doc.querySelector(query);
-          if (found) return found;
-        } catch {}
-      }
+    for (const query of [selector, bare]) {
+      try {
+        const found = await doc.querySelector(query);
+        if (found) return found;
+      } catch {}
+    }
     return null;
   }
 
