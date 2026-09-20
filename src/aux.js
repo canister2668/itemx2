@@ -86,27 +86,47 @@
   // on state paints text transparent. Patch the state only and leave the knob.
   async function updateRootSwitch(selector, on, onClass = 'x-risu-itemx2-setting-on') {
     const control = await findRootControl(selector);
-    if (!control) return;
+    if (!control) return repaintRootFallback();
     await control.setAttribute('aria-checked', on ? 'true' : 'false');
     if (on) await control.addClass(onClass);
     else await control.removeClass(onClass);
+    return true;
   }
 
   // 도메인 카드는 스위치가 아니다. 자식 <i> 가 노브가 아니라 상태 글자라서
   // 여기서만 글자를 갱신한다. 이 둘을 한 함수로 합치면 언젠가 노브를 지운다.
   async function updateRootDomainCard(selector, on, label) {
     const card = await findRootControl(selector);
-    if (!card) return;
+    if (!card) return repaintRootFallback();
     if (on) await card.addClass('x-risu-itemx2-setting-on');
     else await card.removeClass('x-risu-itemx2-setting-on');
     const state = await card.querySelector('i');
     if (state) await state.setTextContent(label);
+    return true;
   }
 
   async function findRootControl(selector) {
-    const doc = panelDocument();
-    if (!doc) return null;
-    return (await doc.querySelector(selector)) || (await doc.querySelector(selector.replace('.x-risu-', '.')));
+    const bare = selector.replace('.x-risu-', '.');
+    const docs = [];
+    if (hostState.mainDoc) docs.push(hostState.mainDoc);
+    const panel = panelDocument();
+    if (panel && panel !== hostState.mainDoc) docs.push(panel);
+    for (const doc of docs)
+      for (const query of [selector, bare]) {
+        try {
+          const found = await doc.querySelector(query);
+          if (found) return found;
+        } catch {}
+      }
+    return null;
+  }
+
+  // 제자리 패치가 실패해도 화면이 옛 상태로 남지 않게 하는 단 하나의 대비.
+  // 호출부에 흩어 두면 토글이 늘 때마다 같은 코드를 또 쓰게 된다.
+  async function repaintRootFallback() {
+    if (!uiState.rootOpen) return false;
+    await openRootInventory({ open: true, tab: uiState.activeRootTab });
+    return true;
   }
 
   async function updateRootSettingButton(selector, label, enabled = null) {
