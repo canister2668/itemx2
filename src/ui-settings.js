@@ -183,6 +183,8 @@
 
   async function setDebugEnabled(character, value) {
     settingsState.debugEnabled = Boolean(value);
+    if (settingsState.debugEnabled) startFlickerWatch();
+    else stopFlickerWatch();
     await writeSetting(character, 'debugEnabled', Boolean(value));
     updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');

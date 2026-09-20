@@ -4163,6 +4163,44 @@ const ITEMXSettings = (() => {
     if (settingsState.debugEntries.length > 30) settingsState.debugEntries.splice(0, settingsState.debugEntries.length - 30);
     console.log(`[ITEMX 2 · DEBUG] ${where}`, detail);
   };
+  const flickerWatch = { on: false, raf: 0, last: 0, bound: [], lastResize: 0 };
+  function startFlickerWatch() {
+    if (flickerWatch.on || typeof window === 'undefined') return;
+    flickerWatch.on = true;
+    const vv = window.visualViewport || null;
+    const size = () =>
+      `${window.innerWidth}x${window.innerHeight}` + (vv ? ` visual=${Math.round(vv.width)}x${Math.round(vv.height)} off=${Math.round(vv.offsetTop)}` : '');
+    const onResize = () => {
+      const now = Date.now();
+      if (now - flickerWatch.lastResize < 120) return;
+      flickerWatch.lastResize = now;
+      debugRecord('watch:resize', size());
+    };
+    const onVisible = () => debugRecord('watch:visibility', document.visibilityState);
+    const bind = (target, type, handler) => { if (!target) return; target.addEventListener(type, handler); flickerWatch.bound.push([target, type, handler]); };
+    bind(window, 'resize', onResize);
+    bind(vv, 'resize', onResize);
+    bind(vv, 'scroll', onResize);
+    bind(document, 'visibilitychange', onVisible);
+    debugRecord('watch:start', `${size()} dpr=${window.devicePixelRatio}`);
+    flickerWatch.last = now();
+    const tick = () => {
+      if (!flickerWatch.on) return;
+      const at = now(), gap = at - flickerWatch.last;
+      flickerWatch.last = at;
+      if (gap > 120) debugRecord('watch:stall', `${Math.round(gap)}ms ${size()}`);
+      flickerWatch.raf = requestAnimationFrame(tick);
+    };
+    flickerWatch.raf = requestAnimationFrame(tick);
+  }
+  function stopFlickerWatch() {
+    if (!flickerWatch.on) return;
+    flickerWatch.on = false;
+    if (flickerWatch.raf) cancelAnimationFrame(flickerWatch.raf);
+    for (const [target, type, handler] of flickerWatch.bound) target.removeEventListener(type, handler);
+    flickerWatch.bound = [];
+  }
+
   const phaseStats = new Map();
   const now = () => (typeof performance === 'object' && performance?.now ? performance.now() : Date.now());
   const mark = (phase, startedAt) => {
@@ -5084,6 +5122,8 @@ ${codexPageStyle()}
 
   async function setDebugEnabled(character, value) {
     settingsState.debugEnabled = Boolean(value);
+    if (settingsState.debugEnabled) startFlickerWatch();
+    else stopFlickerWatch();
     await writeSetting(character, 'debugEnabled', Boolean(value));
     updateCachedSettings(character, { debugEnabled: Boolean(value) });
     debugRecord('debug', value ? 'enabled' : 'disabled');
