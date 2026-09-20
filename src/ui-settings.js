@@ -578,7 +578,7 @@
           const value = !read(current);
           await write(loaded, value);
           uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
-          await openRootInventory({ open: true, tab: 'settings', loaded });
+          await updateRootSwitch(`.x-risu-${hook}`, value);
         })
     });
     const armed = (key, arm, confirmed) => async () => {
@@ -752,7 +752,7 @@
               const loaded = await cachedOrRebuildCurrent();
               if (!loaded) return;
               await apply(loaded, value);
-              await openRootInventory({ open: true, tab: 'settings', loaded });
+              await updateRootSegment(group, values, value);
             })
         }))
       ),
@@ -777,7 +777,7 @@
             loaded.lorebookEncounterEnabled = value;
             uiState.status = ITEMXText("ui-settings.036", value ? 'ON' : 'OFF');
             if (value) await scanLorebookEncounters({ refresh: true, silent: true });
-            await openRootInventory({ open: true, tab: 'settings' });
+            await updateRootSwitch('.x-risu-itemx2-setting-lorebook', value);
           })
       },
       {
@@ -811,7 +811,7 @@
                 ? ITEMXText("ui-settings.033")
                 : ITEMXText("ui-settings.032");
             workQueue.remember('render', '');
-            await openRootInventory({ open: true, tab: 'settings', loaded });
+            await updateRootSwitch('.x-risu-itemx2-setting-module-assets', value);
           })
       },
       ...[

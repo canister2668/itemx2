@@ -109,6 +109,18 @@
     }
   }
 
+  async function updateRootSegment(group, values, current) {
+    let patched = false;
+    for (const value of values) {
+      const button = await findRootControl(`.x-risu-itemx2-seg-${group}-${value}`);
+      if (!button) continue;
+      patched = true;
+      if (value === current) await button.addClass('x-risu-itemx2-seg-on');
+      else await button.removeClass('x-risu-itemx2-seg-on');
+    }
+    return patched || repaintRootFallback();
+  }
+
   // 도메인 카드는 스위치가 아니다. 자식 <i> 가 노브가 아니라 상태 글자라서
   // 여기서만 글자를 갱신한다. 이 둘을 한 함수로 합치면 언젠가 노브를 지운다.
   async function updateRootDomainCard(selector, on, label) {

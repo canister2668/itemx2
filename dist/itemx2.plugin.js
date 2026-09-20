@@ -5471,7 +5471,7 @@ ${codexPageStyle()}
           const value = !read(current);
           await write(loaded, value);
           uiState.status = `${label} · ${value ? 'ON' : 'OFF'}`;
-          await openRootInventory({ open: true, tab: 'settings', loaded });
+          await updateRootSwitch(`.x-risu-${hook}`, value);
         })
     });
     const armed = (key, arm, confirmed) => async () => {
@@ -5644,7 +5644,7 @@ ${codexPageStyle()}
               const loaded = await cachedOrRebuildCurrent();
               if (!loaded) return;
               await apply(loaded, value);
-              await openRootInventory({ open: true, tab: 'settings', loaded });
+              await updateRootSegment(group, values, value);
             })
         }))
       ),
@@ -5669,7 +5669,7 @@ ${codexPageStyle()}
             loaded.lorebookEncounterEnabled = value;
             uiState.status = `조우 로어북 자동 보완 · ${value ? 'ON' : 'OFF'}`;
             if (value) await scanLorebookEncounters({ refresh: true, silent: true });
-            await openRootInventory({ open: true, tab: 'settings' });
+            await updateRootSwitch('.x-risu-itemx2-setting-lorebook', value);
           })
       },
       {
@@ -5701,7 +5701,7 @@ ${codexPageStyle()}
                 ? '모듈 에셋 초상화 · OFF'
                 : '모듈 에셋 권한 없음 · 이모지 폴백';
             workQueue.remember('render', '');
-            await openRootInventory({ open: true, tab: 'settings', loaded });
+            await updateRootSwitch('.x-risu-itemx2-setting-module-assets', value);
           })
       },
       ...[
@@ -7311,6 +7311,18 @@ ${codexPageStyle()}
       const replacement = await findRootControl(selector);
       if (replacement) await replacement.focus();
     }
+  }
+
+  async function updateRootSegment(group, values, current) {
+    let patched = false;
+    for (const value of values) {
+      const button = await findRootControl(`.x-risu-itemx2-seg-${group}-${value}`);
+      if (!button) continue;
+      patched = true;
+      if (value === current) await button.addClass('x-risu-itemx2-seg-on');
+      else await button.removeClass('x-risu-itemx2-seg-on');
+    }
+    return patched || repaintRootFallback();
   }
 
   async function updateRootDomainCard(selector, on, label) {

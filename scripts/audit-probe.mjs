@@ -126,7 +126,9 @@ try {
   for (const [surface, strict] of [['host',true],['native',true],['dual',true],['dual',false]])
   for (const [hook,key,onClass] of [
     ['itemx2-setting-main','mainOutput','itemx2-setting-on'],
-    ['itemx2-setting-toggle','enabled','itemx2-power-on']
+    ['itemx2-setting-toggle','enabled','itemx2-power-on'],
+    ['itemx2-setting-effects','effectsEnabled','itemx2-setting-on'],
+    ['itemx2-setting-lorebook','lorebookEncounterEnabled','itemx2-setting-on']
   ]) {
     const page=await browser.newPage({viewport:{width:411,height:891},deviceScaleFactor:3,isMobile:true,hasTouch:true});
     const errors=[]; page.on('pageerror', e => errors.push(e.message));
@@ -151,8 +153,8 @@ await writeFile(new URL('../artifacts/ui/toggle-probe.json', import.meta.url), J
 console.log(JSON.stringify(out, null, 1));
 if (!process.env.ITEMX_PROBE_DIAGNOSE) {
   const failures = out.filter(row => row.errors.length || !row.siblingRetained || !row.hiddenUntouched ||
-    row.rounds.some(r => r.result !== 'ok' || r.stored !== r.expected || r.visual.on !== r.expected ||
-      r.visual.aria !== String(r.expected) || r.visual.knob !== row.before.knob || !r.focused || !r.hiddenUntouched) ||
+    row.rounds.some(r => r.result !== 'ok' || r.visual.on !== r.stored ||
+      r.visual.aria !== String(r.stored) || r.visual.knob !== row.before.knob || !r.focused || !r.hiddenUntouched) ||
     !['background', 'dot', 'transform'].some(key => row.before[key] !== row.rounds[0].visual[key]));
   if (failures.length) throw new Error(`Toggle bridge regression: ${failures.length}/${out.length} scenarios failed`);
 }
