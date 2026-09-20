@@ -30,7 +30,9 @@ const fixture = bundle.replace(anchor, `
     const prefixMarkup = html => html.replace(/class="([^"]*)"/g, (_, list) =>
       'class="' + list.trim().split(/\\s+/).filter(Boolean)
         .map(c => c.startsWith('x-risu-') ? c : 'x-risu-' + c).join(' ') + '"');
-    root.innerHTML=prefixMarkup(items.slice(0, Number(globalThis.ITEMX_CARDS||8)).map(i=>ITEMXRenderer.renderCard(i,{motion:tab})).join(''));
+    root.innerHTML = tab === 'panel'
+      ? prefixMarkup(rootInventoryHtml(loaded, true, 'inventory'))
+      : prefixMarkup(items.slice(0, Number(globalThis.ITEMX_CARDS||8)).map(i=>ITEMXRenderer.renderCard(i,{motion:tab})).join(''));
     const radio = document.querySelector('#itemx2-tab-' + tab) || document.querySelector('.x-risu-itemx2-tab-' + tab);
     if (radio) radio.checked = true;
     return true;
