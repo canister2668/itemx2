@@ -85,8 +85,7 @@
   // the control turns into a bare pill that shows nothing while on, because the
   // on state paints text transparent. Patch the state only and leave the knob.
   async function updateRootSwitch(selector, on, onClass = 'x-risu-itemx2-setting-on') {
-    if (!panelDocument()) return;
-    const control = await panelDocument().querySelector(selector);
+    const control = await findRootControl(selector);
     if (!control) return;
     await control.setAttribute('aria-checked', on ? 'true' : 'false');
     if (on) await control.addClass(onClass);
@@ -96,8 +95,7 @@
   // 도메인 카드는 스위치가 아니다. 자식 <i> 가 노브가 아니라 상태 글자라서
   // 여기서만 글자를 갱신한다. 이 둘을 한 함수로 합치면 언젠가 노브를 지운다.
   async function updateRootDomainCard(selector, on, label) {
-    if (!panelDocument()) return;
-    const card = await panelDocument().querySelector(selector);
+    const card = await findRootControl(selector);
     if (!card) return;
     if (on) await card.addClass('x-risu-itemx2-setting-on');
     else await card.removeClass('x-risu-itemx2-setting-on');
@@ -105,9 +103,14 @@
     if (state) await state.setTextContent(label);
   }
 
+  async function findRootControl(selector) {
+    const doc = panelDocument();
+    if (!doc) return null;
+    return (await doc.querySelector(selector)) || (await doc.querySelector(selector.replace('.x-risu-', '.')));
+  }
+
   async function updateRootSettingButton(selector, label, enabled = null) {
-    if (!panelDocument()) return;
-    const button = await panelDocument().querySelector(selector);
+    const button = await findRootControl(selector);
     if (!button) return;
     await button.setTextContent(label);
     if (enabled === true) await button.addClass('x-risu-itemx2-setting-on');

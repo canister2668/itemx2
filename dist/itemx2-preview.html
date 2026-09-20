@@ -300,16 +300,13 @@
   height: 44px;
   transform: translate(-50%, -50%);
 }
-/* The power button already draws a struck-through state with ::after. */
-.itemx2-sw-power::after { width: auto; height: auto; transform: rotate(-32deg); }
 .itemx2-sw-power::before {
   content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .itemx-seg-i { min-height: 44px; }
 /* The switch keeps its 44x26 shape and grows its hit area instead, because a
@@ -336,23 +333,11 @@
   color: #6b7789;
   border-color: rgba(255,255,255,.07);
 }
-.itemx2-sw-power::after {
-  content: '';
-  position: absolute;
-  left: 7px;
-  right: 7px;
-  top: 50%;
-  height: 1px;
-  background: currentColor;
-  transform: rotate(-32deg);
-  opacity: .75;
-}
 .itemx2-sw-power.itemx2-power-on {
   color: #f0d79d;
   border-color: #6e5a32;
   background: rgba(212,175,110,.12);
 }
-.itemx2-sw-power.itemx2-power-on::after { display: none; }
 .itemx2-panel-actions > .itemx2-history-open {
   font-size: 11px;
   color: #b7c4d8;
