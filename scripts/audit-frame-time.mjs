@@ -64,7 +64,7 @@ try {
         try { return [...sh.cssRules]; } catch { return []; } })
         .filter((r) => r.type === 7 && r.cssText.includes('var('))
         .map((r) => r.cssText.replace(/var\\(--int[^)]*\\)/g, '1').replace(/var\\(--[\\w-]+[^)]*\\)/g, '1')).join('\\n'))),
-      big: '.x-risu-current-rays,.x-risu-current-veil,.x-risu-current-fog,.x-risu-light-veilfall,.x-risu-light-ground,.x-risu-affinity-signature{display:none!important}'
+      aura: '.x-risu-itemx-card{animation:none!important}',\n      fb: '*{filter:none!important;mix-blend-mode:normal!important}',\n      fbc: '*{filter:none!important;mix-blend-mode:normal!important}.x-risu-itemx-card{contain:none!important}',\n      contain: '.x-risu-itemx-card{contain:none!important}',\n      isolate: '.x-risu-itemx-card{isolation:auto!important}',\n      big: '.x-risu-current-rays,.x-risu-current-veil,.x-risu-current-fog,.x-risu-light-veilfall,.x-risu-light-ground,.x-risu-affinity-signature{display:none!important}'
     }))().then((m) => m[kill]);
     if (css) await page.addStyleTag({content:css});
     await page.waitForTimeout(500);
