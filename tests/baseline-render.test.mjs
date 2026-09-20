@@ -19,7 +19,7 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
   const loaded = {
     key: 'c:chat', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
     itemsEnabled: true, skillsEnabled: true, encountersEnabled: true,
-    lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsLevel: 'full',
+    lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsLevel: 'full', effectsEnabled: true,
     debugEnabled: false, fontScale: 'small', skin: 'dark',
     character: { name: 'Test' }, chat: { message: [], scriptstate: {} },
     snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },

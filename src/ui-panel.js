@@ -718,7 +718,7 @@
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || ITEMXText("ui-panel.117");
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.fxMotion === 'off' ? 'off' : 'off');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.fxMotion);
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return ITEMXText("ui-panel.109", back, skillFxClasses(skill, rarityMode), vars, fx, ITEMXCore.esc(skillEmoji(skill)), ITEMXCore.esc(skill.name), ITEMXCore.esc(skill.rank), ITEMXCore.esc(skill.school || ITEMXText("ui-panel.110")), ITEMXCore.esc(skill.status), levelLabel, ITEMXCore.esc(skill.type || ITEMXText("ui-panel.111")), ITEMXCore.esc(skill.target || ITEMXText("ui-panel.112")), ITEMXCore.esc(skill.cost || ITEMXText("ui-panel.113")), ITEMXCore.esc(skill.cooldown || ITEMXText("ui-panel.114")), masteryLabel, Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join(''), skill.description ? ITEMXText("ui-panel.115", ITEMXCore.esc(skill.description)) : '', effects, ITEMXCore.esc(skill.growth || ITEMXText("ui-panel.116")), ITEMXCore.esc(skill.id), detailAnnotations('skill', skill));
   }
@@ -1160,7 +1160,7 @@
         ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
         : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
-    const inventoryContent = ITEMXText("ui-panel.033", filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join(''), loaded.effectsEnabled ? ITEMXText("ui-panel.035") : ITEMXText("ui-panel.034"), list, all.length ? `${pageStart + 1}-${shownEnd}` : '0', all.length, itemsOf(loaded.snapshot).length > 60 ? ITEMXText("ui-panel.036") : '', pager);
+    const inventoryContent = ITEMXText("ui-panel.033", filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join(''), loaded.effectsLevel !== 'off' ? ITEMXText("ui-panel.035") : ITEMXText("ui-panel.034"), list, all.length ? `${pageStart + 1}-${shownEnd}` : '0', all.length, itemsOf(loaded.snapshot).length > 60 ? ITEMXText("ui-panel.036") : '', pager);
     const skillsContent = ITEMXText("ui-panel.032", skillList);
     const bestiaryContent = ITEMXText("ui-panel.031", monsterList);
     const activeContent =
@@ -1635,7 +1635,7 @@
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(
-        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsLevel !== 'off' ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
       );
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
@@ -1685,7 +1685,7 @@
     if (!root) return;
     uiState.activeRootTab = tab;
     uiState.rootOpen = true;
-    root.className = `itemx2-root-drawer itemx2-frame itemx2-is-open itemx2-font-${loaded.fontScale || 'small'}${loaded.effectsEnabled ? '' : ' itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` itemx2-skin-${loaded.skin}` : ''}`;
+    root.className = `itemx2-root-drawer itemx2-frame itemx2-is-open itemx2-font-${loaded.fontScale || 'small'}${loaded.effectsLevel !== 'off' ? '' : ' itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` itemx2-skin-${loaded.skin}` : ''}`;
     root.innerHTML = rootInventoryHtml(loaded, true, tab);
     await drawRootHistory(loaded);
     await installRootClickRouter(nativeElement(root));

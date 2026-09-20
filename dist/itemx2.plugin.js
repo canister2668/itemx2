@@ -9924,7 +9924,7 @@ ${codexPageStyle()}
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.fxMotion === 'off' ? 'off' : 'off');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.fxMotion);
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
   }
@@ -10353,7 +10353,7 @@ ${codexPageStyle()}
         ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
         : '';
     const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
-    const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsEnabled ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
+    const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsLevel !== 'off' ? '✨ 이펙트 ON' : '◇ 이펙트 OFF'}</span><span class="itemx-search">채팅별 저장소</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}점${itemsOf(loaded.snapshot).length > 60 ? ' · 첫 60점' : ''}</span>${pager}</footer></div>`;
     const skillsContent = `<div class="itemx2-root-skills itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-skill-none" name="itemx2-skill-detail" type="radio" checked><div class="itemx2-codex-note">장착·봉인·본문에서 다시 언급된 스킬만 모델 문맥에 제한적으로 전달됩니다.</div>${skillList}</div>`;
     const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">단순 등장인물 목록이 아니라 실제 적대·전투·합의된 대련만 기록합니다.</div>${monsterList}</div>`;
     const activeContent =
@@ -10822,7 +10822,7 @@ ${codexPageStyle()}
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(
-        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsEnabled ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsLevel !== 'off' ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
       );
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
@@ -10870,7 +10870,7 @@ ${codexPageStyle()}
     if (!root) return;
     uiState.activeRootTab = tab;
     uiState.rootOpen = true;
-    root.className = `itemx2-root-drawer itemx2-frame itemx2-is-open itemx2-font-${loaded.fontScale || 'small'}${loaded.effectsEnabled ? '' : ' itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` itemx2-skin-${loaded.skin}` : ''}`;
+    root.className = `itemx2-root-drawer itemx2-frame itemx2-is-open itemx2-font-${loaded.fontScale || 'small'}${loaded.effectsLevel !== 'off' ? '' : ' itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` itemx2-skin-${loaded.skin}` : ''}`;
     root.innerHTML = rootInventoryHtml(loaded, true, tab);
     await drawRootHistory(loaded);
     await installRootClickRouter(nativeElement(root));
