@@ -88,8 +88,8 @@
     .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}
     /* Existing ITEMX effects: arcane gold rays and deterministic gold shards. */
     .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }
-    .current-rays { position:absolute; inset:-15%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
-    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 94%); }
+    .current-rays { position:absolute; inset:-15%; opacity:calc(.12 * var(--int)); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
+    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:radial-gradient(ellipse 52% 100% at 50% 100%,var(--p) 0%,color-mix(in srgb,var(--p) 52%,transparent) 30%,color-mix(in srgb,var(--p) 18%,transparent) 60%,transparent 92%); }
     .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }
     .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent) }
     .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }
@@ -171,7 +171,7 @@
     .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:drop-shadow(0 0 9px var(--ac)) }
     /* Light descends: a veil of radiance falling from above, pooling on the ground line. */
     .light-veilfall { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-    .light-veilfall::before { content:""; position:absolute; top:-58%; left:-6%; right:-6%; height:88%; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); animation:itemx2-veilfall 7.5s ease-in-out infinite; }
+    .light-veilfall::before { content:""; position:absolute; top:-58%; left:-6%; right:-6%; height:88%; background:linear-gradient(to bottom,transparent 0%,color-mix(in srgb,var(--ac) 8%,transparent) 18%,color-mix(in srgb,var(--ac) 24%,transparent) 34%,color-mix(in srgb,var(--ac) 40%,transparent) 50%,color-mix(in srgb,var(--ac) 24%,transparent) 66%,color-mix(in srgb,var(--ac) 8%,transparent) 82%,transparent 100%); animation:itemx2-veilfall 7.5s ease-in-out infinite; }
         .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }
     .light-ground { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
     .light-ground::before { content:""; position:absolute; left:6%; right:6%; bottom:-14%; height:46%; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }
