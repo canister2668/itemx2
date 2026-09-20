@@ -266,6 +266,10 @@
     @keyframes itemx2-veilfall { 0%,100%{transform:translateY(0);opacity:calc(.2 + .25*var(--int))}50%{transform:translateY(36%);opacity:calc(.4 + .6*var(--int))} }
     @keyframes itemx2-ground { from{opacity:calc(.18 + .3*var(--int))}to{opacity:calc(.35 + .65*var(--int))} }
     @media (prefers-reduced-motion:reduce) { .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) * { animation:none!important; } }
+    @media (max-width:620px) and (pointer:coarse) {
+      .itemx-card:not(.force-motion), .itemx-card:not(.force-motion) *,
+      .itemx-card:not(.force-motion) *::before, .itemx-card:not(.force-motion) *::after { animation:none!important; }
+    }
     @media (max-width:620px) { .stage{padding:12px 8px 40px}.risu-topbar{padding:0 12px}.lab-grid{grid-template-columns:1fr 1fr}.itemx-grid{grid-template-columns:1fr}.itemx-panel{border-radius:12px}.demo-note{align-items:flex-start}.itemx-card{font-size:.86rem}.itemx-content{padding:1.05em} }/* ITEMX_CSS_PRESENTATION */
 .itemx2-panel-actions {
   display: flex;

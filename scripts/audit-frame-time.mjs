@@ -30,7 +30,7 @@ const fixture = bundle.replace(anchor, `
     const prefixMarkup = html => html.replace(/class="([^"]*)"/g, (_, list) =>
       'class="' + list.trim().split(/\\s+/).filter(Boolean)
         .map(c => c.startsWith('x-risu-') ? c : 'x-risu-' + c).join(' ') + '"');
-    root.innerHTML=prefixMarkup(items.map(i=>ITEMXRenderer.renderCard(i,{motion:tab})).join(''));
+    root.innerHTML=prefixMarkup(items.slice(0, Number(globalThis.ITEMX_CARDS||8)).map(i=>ITEMXRenderer.renderCard(i,{motion:tab})).join(''));
     const radio = document.querySelector('#itemx2-tab-' + tab) || document.querySelector('.x-risu-itemx2-tab-' + tab);
     if (radio) radio.checked = true;
     return true;
@@ -40,35 +40,46 @@ ${anchor}`);
 if (fixture === bundle) throw new Error('bootstrap anchor missing');
 
 
-const probe = "(() => {\nconst dpr = window.devicePixelRatio || 1;\nconst panel = document.querySelector('#itemx2-root');\nconst rows = []; let bytes = 0, blend = 0, animated = 0, blendAnim = 0, blendOutside = 0, blendOutsidePx = 0;\nfor (const el of (panel ? panel.querySelectorAll('*') : [])) {\n  const s = getComputedStyle(el), r = el.getBoundingClientRect();\n  if (r.width < 1 || r.height < 1) continue;\n  const bm = s.mixBlendMode && s.mixBlendMode !== 'normal';\n  const bl = /blur\\(([\\d.]+)px\\)/.exec(s.filter || '');\n  const an = s.animationName && s.animationName !== 'none';\n  if (!bm && !bl && !an) continue;\n  // 블러는 반경의 약 3배까지 바깥을 읽어야 해서 버퍼가 그만큼 부풀어난다.\n  const pad = bl ? parseFloat(bl[1]) * 3 : 0;\n  const local = s.transform && s.transform !== 'none';\n  const bw = local ? el.offsetWidth || r.width : r.width;\n  const bh = local ? el.offsetHeight || r.height : r.height;\n  const w = bw + pad * 2, h = bh + pad * 2;\n  const b = Math.ceil(w * dpr) * Math.ceil(h * dpr) * 4;\n  bytes += b; if (bm) blend++; if (an) animated++; if (bm && an) blendAnim++;\n  if (bm) { const card = el.closest('.x-risu-itemx-card');\n    if (card) { const cr = card.getBoundingClientRect();\n      const out = Math.max(0, cr.top - r.top) + Math.max(0, r.bottom - cr.bottom)\n               + Math.max(0, cr.left - r.left) + Math.max(0, r.right - cr.right);\n      if (out > 1) { blendOutside++; blendOutsidePx += out; } } }\n  const cls = (el.className || '').toString().replace(/x-risu-/g, '').split(' ').filter(Boolean)[0] || el.tagName;\n  rows.push({ cls, w: Math.round(bw), h: Math.round(bh), blur: bl ? +bl[1] : 0,\n              blend: bm ? s.mixBlendMode : '', anim: an ? s.animationName.split(' ')[0].slice(0,16) : '', mb: +(b/1048576).toFixed(2) });\n}\nrows.sort((a,b) => b.mb - a.mb);\nreturn { dpr, cards: (panel ? panel.querySelectorAll('.x-risu-itemx-card').length : 0),\n         layers: rows.length, blend, animated, blendAnim, blendOutside, blendOutsidePx: Math.round(blendOutsidePx), totalMB: +(bytes/1048576).toFixed(1), top: rows.slice(0, 400) };\n})()";
+
+const probe = "(async () => {\nconst live = () => [...document.querySelectorAll('*')].filter((el) => {\n  const c = getComputedStyle(el);\n  return c.animationName && c.animationName !== 'none' && c.display !== 'none' &&\n         el.getBoundingClientRect().width > 0;\n}).length;\nconst animated = live();\nconst deltas = [];\nawait new Promise((done) => {\n  let last = performance.now(); const stop = last + 4000;\n  const tick = (now) => { deltas.push(now - last); last = now;\n    if (now < stop) requestAnimationFrame(tick); else done(); };\n  requestAnimationFrame(tick);\n});\ndeltas.shift();\nconst sorted = [...deltas].sort((a, b) => a - b);\nconst q = (p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];\nreturn { animated, frames: deltas.length, p50: +q(0.5).toFixed(1), p95: +q(0.95).toFixed(1),\n         max: +sorted[sorted.length - 1].toFixed(1) };\n})()";
 
 const script = `const {chromium}=require('playwright-core');
 (async()=>{ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const out={};
 try {
-  for (const motion of (process.env.ITEMX_AFF||'light,fire,ice,dark').split(','))\n  for (const [name, vp] of [['폰 DPR3',{width:411,height:891,dpr:3}]]) {
-    const page=await browser.newPage({viewport:{width:vp.width,height:vp.height},deviceScaleFactor:vp.dpr});
-    const errors=[]; page.on('pageerror',e=>errors.push(e.message));
-    await page.setContent('<html><head></head><body style="margin:0"><div id="itemx2-root"></div></body></html>');
+  for (const label of (process.env.ITEMX_CASES||'full,full:blend,full:blur,full:anim,full:particles,full:big,off').split(',')) {
+    const page=await browser.newPage({viewport:{width:411,height:891},deviceScaleFactor:3,hasTouch:process.env.ITEMX_TOUCH!=='0',isMobile:process.env.ITEMX_TOUCH!=='0'});
+    await page.setContent('<html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"><div id="itemx2-root"></div></body></html>');
     await page.evaluate(()=>{const store=new Map();window.Risuai={pluginStorage:{getItem:async k=>store.get(k)??null,setItem:async(k,v)=>store.set(k,v)},getDatabase:async()=>({}),nativeFetch:async()=>({}),};});
     await page.evaluate(${JSON.stringify(fixture)});
-    await page.evaluate(([t,s])=>itemxAudit.setup(t,s),['full','aff:'+motion]);
-    await page.waitForTimeout(400);
-    out[motion+' | '+name]={...await page.evaluate(${JSON.stringify(probe)}), errors};
+    await page.evaluate('globalThis.ITEMX_CARDS=' + (process.env.ITEMX_CARDS || 8));
+    const [motion, kill] = label.split(':');
+    await page.evaluate(([t,s])=>itemxAudit.setup(t,s),[motion,'aff:mixed']);
+    const css = await (async () => ({
+      blend: '*{mix-blend-mode:normal!important}',
+      blur: '*{filter:none!important}',
+      anim: '*,*::before,*::after{animation:none!important}',
+      particles: '.x-risu-afx>*,.x-risu-craft-mote{display:none!important}',
+      novar: (await page.evaluate(() => [...document.styleSheets].flatMap((sh) => {
+        try { return [...sh.cssRules]; } catch { return []; } })
+        .filter((r) => r.type === 7 && r.cssText.includes('var('))
+        .map((r) => r.cssText.replace(/var\\(--int[^)]*\\)/g, '1').replace(/var\\(--[\\w-]+[^)]*\\)/g, '1')).join('\\n'))),
+      big: '.x-risu-current-rays,.x-risu-current-veil,.x-risu-current-fog,.x-risu-light-veilfall,.x-risu-light-ground,.x-risu-affinity-signature{display:none!important}'
+    }))().then((m) => m[kill]);
+    if (css) await page.addStyleTag({content:css});
+    await page.waitForTimeout(500);
+    out[label]=await page.evaluate(${JSON.stringify(probe)});
     await page.close();
   }
 } finally { await browser.close(); }
-console.log(JSON.stringify(out));
+console.log('@@'+JSON.stringify(out));
 })().catch(e=>{console.error(e);process.exit(1);});`;
 
 await mkdir(new URL('../artifacts/ui/', import.meta.url), { recursive: true });
-const runner = new URL('../artifacts/ui/gpu-runner.cjs', import.meta.url);
+const runner = new URL('../artifacts/ui/frame-runner.cjs', import.meta.url);
 await writeFile(runner, script);
-const raw = execFileSync('node', [runner.pathname], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-const out = JSON.parse(raw.trim().split('\n').pop());
-for (const [name, d] of Object.entries(out)) {
-  console.log(`\n=== ${name} ===`);
-  console.log(`카드 ${d.cards}장 · 합성 레이어 ${d.layers}개 (블렌드 ${d.blend} · 애니 ${d.animated} · 블렌드+애니 ${d.blendAnim} · 카드밖 블렌드 ${d.blendOutside}개/${d.blendOutsidePx}px) · 추정 버퍼 ${d.totalMB} MB`);
-  if (d.errors.length) console.log('오류:', d.errors.slice(0,2));
-  for (const r of d.top) console.log(`  ${String(r.mb).padStart(6)} MB  ${r.cls.slice(0,26).padEnd(28)}${r.w}x${r.h}  blur${r.blur}  ${r.blend}  ${r.anim}`);
-}
+const raw = execFileSync('node', [runner.pathname], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+const line = raw.split('\n').find((l) => l.startsWith('@@'));
+if (!line) { console.log(raw.slice(-800)); process.exit(1); }
+for (const [name, d] of Object.entries(JSON.parse(line.slice(2))))
+  console.log(`${name.padEnd(16)} 살아있는애니 ${String(d.animated).padStart(4)}개  p50 ${String(d.p50).padStart(6)}ms  p95 ${String(d.p95).padStart(7)}ms`);
