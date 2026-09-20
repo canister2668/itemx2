@@ -8,7 +8,7 @@ const fixture = bundle.replace(anchor, `
     const names = ['청상벽려검(靑霜霹靂劍)','흑염단마도','칠성벽해인','만겁유혼검','태을진령비갑','태초무극검','단검','목걸이'];
     const items = names.map((name,i) => ITEMXCore.normalizeItem({
       id:'item'+i, name, type:i%2?'장신구':'검', internalrarity:'empyrean',
-      affinity:['fire','ice','lightning','wind','earth','dark','light','poison'][i],
+      affinity: process.env.ITEMX_AFF || ['fire','ice','lightning','wind','earth','dark','light','poison'][i],
       possession:'owned', location:i===0?'equipped':'inventory', count:1,
       power:'7800', durability:'950/1000', cost:'350,000 냥', required:'초절정 이상',
       effects:'극한지기::검신에서 뿜어지는 극한의 한기가 닿는 대상의 혈류와 경락을 서서히 동결시킴 ;; 빙화만개::초식 전개 시 얼음꽃 형상의 서리 검기가 허공을 가르며 방어막을 형성함'

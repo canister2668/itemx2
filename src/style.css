@@ -172,10 +172,11 @@
     .sig-light { animation:sig-light 7s ease-in-out infinite alternate; }
     .sig-light>.affinity-signature-visual { background:repeating-linear-gradient(112deg,transparent 0 54px,color-mix(in srgb,var(--ac) 32%,transparent) 55px,color-mix(in srgb,var(--ac) 8%,transparent) 68px,transparent 80px 122px);filter:drop-shadow(0 0 9px var(--ac)) }
     /* Light descends: a veil of radiance falling from above, pooling on the ground line. */
-    .light-veilfall { position:absolute; top:-58%; left:-6%; right:-6%; height:88%; pointer-events:none; mix-blend-mode:screen; animation:itemx2-veilfall 7.5s ease-in-out infinite; }
-    .light-veilfall::before { content:""; position:absolute; inset:0; background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent) }
-    .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }
-    .light-ground { position:absolute; left:6%; right:6%; bottom:-14%; height:46%; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }
+    .light-veilfall { position:absolute; inset:0; overflow:hidden; pointer-events:none; mix-blend-mode:screen; }
+    .light-veilfall::before { content:""; position:absolute; top:-58%; left:-6%; right:-6%; height:88%; filter:blur(16px); background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--ac) 40%,transparent),transparent); animation:itemx2-veilfall 7.5s ease-in-out infinite; }
+        .light-veilfall.secondary { clip-path:inset(0 0 0 46%); }
+    .light-ground { position:absolute; inset:0; overflow:hidden; pointer-events:none; mix-blend-mode:screen; }
+    .light-ground::before { content:""; position:absolute; left:6%; right:6%; bottom:-14%; height:46%; background:radial-gradient(ellipse at 44% 100%,color-mix(in srgb,var(--ac) 38%,transparent),transparent 66%); animation:itemx2-ground 5s ease-in-out infinite alternate; }
     .light-ground.secondary { clip-path:inset(0 0 0 46%); }
     .sig-dark { animation:sig-dark 7.5s ease-in-out infinite alternate; }
     .sig-dark>.affinity-signature-visual { background:repeating-linear-gradient(106deg,transparent 0 47px,color-mix(in srgb,var(--ac) 11%,transparent) 49px,color-mix(in srgb,var(--ac) 34%,transparent) 52px,transparent 58px 104px);filter:drop-shadow(0 0 10px var(--ac)) }
