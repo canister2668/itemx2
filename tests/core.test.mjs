@@ -335,7 +335,10 @@ test('inline lite motion preserves the theme while bounding animated particle DO
   const lite = renderer.renderCard(item, { inline: true, motion: 'lite' });
   const off = renderer.renderCard(item, { inline: true, motion: 'off' });
   assert.equal((full.match(/craft-mote /g) || []).length, 16);
-  assert.equal((lite.match(/craft-mote /g) || []).length, 10);
+  // 파티클 하나가 합성 레이어 하나다. CDP 레이어 트리 실측에서 카드 1장이
+  // 56개, 2장이 119개였고 4장부터는 크롬이 승격 상한에 걸렸다. lite 의
+  // 상한을 낮추면 1장 26개 / 2장 48개가 된다.
+  assert.equal((lite.match(/craft-mote /g) || []).length, 3);
   assert.equal((full.match(/afx-fire i/g) || []).length, 0);
   assert.equal((full.match(/<i style=/g) || []).length >= 16, true);
   assert.equal((lite.match(/<i style=/g) || []).length < (full.match(/<i style=/g) || []).length, true);

@@ -176,7 +176,7 @@ const ITEMXRenderer = (() => {
     const craft = crafts[item.theme] || crafts.arcane,
       rarity = item.rarity || 'normal';
     const level = ambientLevel[rarity] || 1,
-      count = motion === 'lite' ? Math.min(10, particleBudget[rarity] || 4) : particleBudget[rarity] || 4;
+      count = motion === 'lite' ? Math.min(3, particleBudget[rarity] || 4) : particleBudget[rarity] || 4;
     let rays = '';
     if (craft.ambient.rays && level >= craft.ambient.rays)
       [4, 44, 77, 119, 158, 196, 233, 271, 306, 339].forEach((r, i) => {
@@ -225,8 +225,8 @@ const ITEMXRenderer = (() => {
                 ? 18
                 : 16;
     count = Math.max(
-      3,
-      Math.ceil(count * budgetScale * (role === 'secondary' ? 0.68 : 1) * (motion === 'lite' ? 0.72 : 1))
+      motion === 'lite' ? 1 : 3,
+      Math.ceil(count * budgetScale * (role === 'secondary' ? 0.68 : 1) * (motion === 'lite' ? 0.2 : 1))
     );
     let bits = '';
     for (let i = 0; i < count; i++) {
