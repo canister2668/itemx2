@@ -53,7 +53,7 @@ function loaded(chat) {
     snapshot: h.rebuildWithManual(chat, lookup, { ...replay, manual }),
     codexSnapshot: h.rebuildCodexWithLedger(chat, lookup, replay),
     enabled: true,
-    effectsEnabled: true,
+    effectsLevel: 'full',
     rarityMode: 'world'
   };
 }

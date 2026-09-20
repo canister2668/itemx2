@@ -1,7 +1,12 @@
 const ITEMXSettings = (() => {
   const KEY = 'itemx:settings';
-  const schema = Object.freeze({ enabled: true, mainOutput: true, auxOutput: ['off', 'missing', 'always'], rarityMode: ['world', 'itemx'], itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, debugEnabled: false, effectsEnabled: true, fontScale: ['small', 'medium', 'large'], moduleAssetsEnabled: false, lorebookEncounterEnabled: false, skin: ['dark', 'frost', 'hanji'] });
-  function normalize(value = {}) { return Object.fromEntries(Object.entries(schema).map(([key, rule]) => [key, Array.isArray(rule) ? rule.includes(value[key]) ? value[key] : rule[0] : typeof value[key] === 'boolean' ? value[key] : rule])); }
+  const schema = Object.freeze({ enabled: true, mainOutput: true, auxOutput: ['off', 'missing', 'always'], rarityMode: ['world', 'itemx'], itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, debugEnabled: false, effectsLevel: ['full', 'lite', 'off'], fontScale: ['small', 'medium', 'large'], moduleAssetsEnabled: false, lorebookEncounterEnabled: false, skin: ['dark', 'frost', 'hanji'] });
+  function normalize(value = {}) {
+    const source = value.effectsLevel === undefined && typeof value.effectsEnabled === 'boolean'
+      ? { ...value, effectsLevel: value.effectsEnabled ? 'full' : 'off' }
+      : value;
+    return Object.fromEntries(Object.entries(schema).map(([key, rule]) => [key, Array.isArray(rule) ? rule.includes(source[key]) ? source[key] : rule[0] : typeof source[key] === 'boolean' ? source[key] : rule]));
+  }
   async function read(api) { const raw = await api.getItem(KEY); const value = typeof raw === 'string' ? JSON.parse(raw) : raw; if (value == null) return { v: 1, global: { badgePosition: 'rm' }, characters: {} }; if (value.v !== 1 || !value.global || !value.characters) throw new Error('Invalid ITEMX settings document'); return value; }
   async function update(api, id, patch) { const doc = await read(api); if (id == null) Object.assign(doc.global, patch); else doc.characters[id] = normalize({ ...doc.characters[id], ...patch }); await api.setItem(KEY, JSON.stringify(doc)); return doc; }
   function migrate(entries) {

@@ -7,7 +7,7 @@ import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 const LOADED = {
   key: 'c0:ch0', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
   itemsEnabled: true, skillsEnabled: true, encountersEnabled: false,
-  lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsEnabled: true,
+  lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsLevel: 'full',
   debugEnabled: false, fontScale: 'small', skin: 'dark',
   character: { name: 'T' }, chat: { message: [], scriptstate: {} },
   snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },
@@ -37,7 +37,7 @@ function settingsBodyOnly(rt) {
 test('the drawer dispatches settings from one ordered table', async () => {
   const rt = await presentationRuntime();
   const hooks = rt.rootSettingActions().map((a) => a.hook);
-  assert.equal(hooks.length, 33);
+  assert.equal(hooks.length, 35);
   assert.equal(new Set(hooks).size, hooks.length, 'duplicate hook would shadow a later control');
   for (const action of rt.rootSettingActions()) assert.equal(typeof action.run, 'function');
 });
@@ -55,8 +55,9 @@ test('the table keeps the dispatch order the chain had', async () => {
     'itemx2-setting-debug', 'itemx2-setting-debug-clear', 'itemx2-setting-main',
     'itemx2-seg-aux-off', 'itemx2-seg-aux-missing', 'itemx2-seg-aux-always',
     'itemx2-seg-rarity-world', 'itemx2-seg-rarity-itemx',
+    'itemx2-seg-fx-full', 'itemx2-seg-fx-lite', 'itemx2-seg-fx-off',
     'itemx2-seg-skin-dark', 'itemx2-seg-skin-frost', 'itemx2-seg-skin-hanji',
-    'itemx2-setting-effects', 'itemx2-setting-lorebook', 'itemx2-setting-lorebook-scan',
+    'itemx2-setting-lorebook', 'itemx2-setting-lorebook-scan',
     'itemx2-setting-module-assets',
     'itemx2-setting-font-small', 'itemx2-setting-font-medium', 'itemx2-setting-font-large',
     'itemx2-setting-storage-cleanup', 'itemx2-setting-cleanup', 'itemx2-setting-rebuild'

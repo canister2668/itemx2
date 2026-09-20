@@ -142,7 +142,10 @@
     const id = settingsId(character),
       current = settingsState.settingsCache.get(id);
     if (current) settingsState.settingsCache.set(id, { ...current, ...patch });
-    if ('effectsEnabled' in patch) presentationState.visualEffectsEnabled = Boolean(patch.effectsEnabled);
+    if ('effectsLevel' in patch) {
+      presentationState.fxMotion = FX_MODES.includes(patch.effectsLevel) ? patch.effectsLevel : 'full';
+      presentationState.visualEffectsEnabled = presentationState.fxMotion !== 'off';
+    }
     if ('skin' in patch) presentationState.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
   }
 
@@ -152,7 +155,8 @@
     const document = await ITEMXSettings.read(Risuai.pluginStorage);
     const settings = ITEMXSettings.normalize(document.characters[id]);
     settingsState.settingsCache.set(id, settings);
-    presentationState.visualEffectsEnabled = settings.effectsEnabled;
+    presentationState.fxMotion = settings.effectsLevel;
+    presentationState.visualEffectsEnabled = settings.effectsLevel !== 'off';
     presentationState.visualSkin = settings.skin;
     return { ...settings };
   }
@@ -203,9 +207,10 @@
     updateCachedSettings(character, { rarityMode: value });
   }
 
-  async function setEffectsEnabled(character, value) {
-    await writeSetting(character, 'effectsEnabled', Boolean(value));
-    updateCachedSettings(character, { effectsEnabled: Boolean(value) });
+  async function setEffectsLevel(character, value) {
+    if (!FX_MODES.includes(value)) throw new Error('Invalid ITEMX effect level');
+    await writeSetting(character, 'effectsLevel', value);
+    updateCachedSettings(character, { effectsLevel: value });
     presentationState.markerHtmlCache.clear();
     presentationState.detailHtmlCache.clear();
     await syncMainEffectsState();
@@ -230,6 +235,8 @@
     workQueue.remember('lorebook', '');
   }
 
+  const FX_MODES = ['full', 'lite', 'off'];
+  const FX_LABELS = { full: ITEMXText("ui-settings.fx-full"), lite: ITEMXText("ui-settings.fx-lite"), off: ITEMXText("ui-settings.fx-off") };
   const AUX_LABELS = { off: ITEMXText("ui-settings.147"), missing: ITEMXText("ui-settings.146"), always: ITEMXText("ui-settings.145") };
 
   const RARITY_MODE_LABELS = { world: ITEMXText("ui-settings.144"), itemx: ITEMXText("ui-settings.143") };
@@ -486,9 +493,9 @@
         loaded.skin || 'dark'
       )
     ), setCard(
-      ITEMXText("ui-settings.097"),
-      ITEMXText("ui-settings.096"),
-      setSwitch(skin, 'effects', loaded.effectsEnabled)
+      ITEMXText("ui-settings.fx-title"),
+      ITEMXText("ui-settings.fx-note"),
+      setSegment(skin, 'fx', Object.entries(FX_LABELS), loaded.effectsLevel)
     ), setCard(ITEMXText("ui-settings.099"), ITEMXText("ui-settings.098")), parts.fontChoices, setCard(
       ITEMXText("ui-settings.101"),
       ITEMXText("ui-settings.100")
@@ -737,6 +744,15 @@
           }
         ],
         [
+          'fx',
+          FX_MODES,
+          async (loaded, value) => {
+            await setEffectsLevel(loaded.character, value);
+            loaded.effectsLevel = value;
+            uiState.status = ITEMXText("ui-settings.fx-status", FX_LABELS[value]);
+          }
+        ],
+        [
           'skin',
           SKIN_MODES,
           async (loaded, value) => {
@@ -757,15 +773,7 @@
             })
         }))
       ),
-      toggleSetting(
-        'itemx2-setting-effects',
-        (current) => current.effectsEnabled,
-        async (loaded, value) => {
-          await setEffectsEnabled(loaded.character, value);
-          loaded.effectsEnabled = value;
-        },
-        ITEMXText("ui-settings.037")
-      ),
+
       {
         hook: 'itemx2-setting-lorebook',
         run: () =>

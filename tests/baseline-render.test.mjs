@@ -19,7 +19,7 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
   const loaded = {
     key: 'c:chat', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
     itemsEnabled: true, skillsEnabled: true, encountersEnabled: true,
-    lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsEnabled: true,
+    lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsLevel: 'full',
     debugEnabled: false, fontScale: 'small', skin: 'dark',
     character: { name: 'Test' }, chat: { message: [], scriptstate: {} },
     snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },
@@ -44,9 +44,14 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
         /<section class="itemx2-root-setting-card"><span><strong>이 봇에서 사용<\/strong>[\s\S]*?<\/section>/g,
         ''
       );
+    const withoutEffectCard = (html) =>
+      html.replace(
+        /<section class="itemx2-root-setting-card"><span><strong>이펙트[\s\S]*?<\/section>/g,
+        ''
+      );
     assert.equal(
-      withoutSearch(next.rootInventoryHtml(input, open, tab)),
-      withoutMovedToggle(old.rootInventoryHtml(input, open, tab)),
+      withoutEffectCard(withoutSearch(next.rootInventoryHtml(input, open, tab))),
+      withoutEffectCard(withoutMovedToggle(old.rootInventoryHtml(input, open, tab))),
       `${enabled}/${tab}/${open}`
     );
   }

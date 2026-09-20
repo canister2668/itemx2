@@ -326,7 +326,7 @@
       return html;
     };
     const markerMotion = (key) => {
-      if (!presentationState.visualEffectsEnabled) return 'off';
+      if (presentationState.fxMotion === 'off') return 'off';
       if (!pipelineState.latestMarkers.size) return 'lite';
       return pipelineState.latestMarkers.has(key) ? 'lite' : 'off';
     };

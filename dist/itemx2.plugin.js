@@ -3884,6 +3884,7 @@ const ITEMXState = (() => {
         bodyFxSawScroll: false,
         bodyFxScrollActive: false,
         visualEffectsEnabled: true,
+        fxMotion: 'full',
         visualSkin: 'dark'
       }),
       portraits: owner({
@@ -4097,8 +4098,13 @@ const ITEMXStorage = (() => {
 })();
 const ITEMXSettings = (() => {
   const KEY = 'itemx:settings';
-  const schema = Object.freeze({ enabled: true, mainOutput: true, auxOutput: ['off', 'missing', 'always'], rarityMode: ['world', 'itemx'], itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, debugEnabled: false, effectsEnabled: true, fontScale: ['small', 'medium', 'large'], moduleAssetsEnabled: false, lorebookEncounterEnabled: false, skin: ['dark', 'frost', 'hanji'] });
-  function normalize(value = {}) { return Object.fromEntries(Object.entries(schema).map(([key, rule]) => [key, Array.isArray(rule) ? rule.includes(value[key]) ? value[key] : rule[0] : typeof value[key] === 'boolean' ? value[key] : rule])); }
+  const schema = Object.freeze({ enabled: true, mainOutput: true, auxOutput: ['off', 'missing', 'always'], rarityMode: ['world', 'itemx'], itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, debugEnabled: false, effectsLevel: ['full', 'lite', 'off'], fontScale: ['small', 'medium', 'large'], moduleAssetsEnabled: false, lorebookEncounterEnabled: false, skin: ['dark', 'frost', 'hanji'] });
+  function normalize(value = {}) {
+    const source = value.effectsLevel === undefined && typeof value.effectsEnabled === 'boolean'
+      ? { ...value, effectsLevel: value.effectsEnabled ? 'full' : 'off' }
+      : value;
+    return Object.fromEntries(Object.entries(schema).map(([key, rule]) => [key, Array.isArray(rule) ? rule.includes(source[key]) ? source[key] : rule[0] : typeof source[key] === 'boolean' ? source[key] : rule]));
+  }
   async function read(api) { const raw = await api.getItem(KEY); const value = typeof raw === 'string' ? JSON.parse(raw) : raw; if (value == null) return { v: 1, global: { badgePosition: 'rm' }, characters: {} }; if (value.v !== 1 || !value.global || !value.characters) throw new Error('Invalid ITEMX settings document'); return value; }
   async function update(api, id, patch) { const doc = await read(api); if (id == null) Object.assign(doc.global, patch); else doc.characters[id] = normalize({ ...doc.characters[id], ...patch }); await api.setItem(KEY, JSON.stringify(doc)); return doc; }
   function migrate(entries) {
@@ -5037,7 +5043,10 @@ ${codexPageStyle()}
     const id = settingsId(character),
       current = settingsState.settingsCache.get(id);
     if (current) settingsState.settingsCache.set(id, { ...current, ...patch });
-    if ('effectsEnabled' in patch) presentationState.visualEffectsEnabled = Boolean(patch.effectsEnabled);
+    if ('effectsLevel' in patch) {
+      presentationState.fxMotion = FX_MODES.includes(patch.effectsLevel) ? patch.effectsLevel : 'full';
+      presentationState.visualEffectsEnabled = presentationState.fxMotion !== 'off';
+    }
     if ('skin' in patch) presentationState.visualSkin = SKIN_MODES.includes(patch.skin) ? patch.skin : 'dark';
   }
 
@@ -5047,7 +5056,8 @@ ${codexPageStyle()}
     const document = await ITEMXSettings.read(Risuai.pluginStorage);
     const settings = ITEMXSettings.normalize(document.characters[id]);
     settingsState.settingsCache.set(id, settings);
-    presentationState.visualEffectsEnabled = settings.effectsEnabled;
+    presentationState.fxMotion = settings.effectsLevel;
+    presentationState.visualEffectsEnabled = settings.effectsLevel !== 'off';
     presentationState.visualSkin = settings.skin;
     return { ...settings };
   }
@@ -5098,9 +5108,10 @@ ${codexPageStyle()}
     updateCachedSettings(character, { rarityMode: value });
   }
 
-  async function setEffectsEnabled(character, value) {
-    await writeSetting(character, 'effectsEnabled', Boolean(value));
-    updateCachedSettings(character, { effectsEnabled: Boolean(value) });
+  async function setEffectsLevel(character, value) {
+    if (!FX_MODES.includes(value)) throw new Error('Invalid ITEMX effect level');
+    await writeSetting(character, 'effectsLevel', value);
+    updateCachedSettings(character, { effectsLevel: value });
     presentationState.markerHtmlCache.clear();
     presentationState.detailHtmlCache.clear();
     await syncMainEffectsState();
@@ -5125,6 +5136,8 @@ ${codexPageStyle()}
     workQueue.remember('lorebook', '');
   }
 
+  const FX_MODES = ['full', 'lite', 'off'];
+  const FX_LABELS = { full: '가득', lite: '절제', off: '끔' };
   const AUX_LABELS = { off: '끔', missing: '누락 시', always: '항상 검토' };
 
   const RARITY_MODE_LABELS = { world: '세계관 우선', itemx: 'ITEMX 강제' };
@@ -5380,9 +5393,9 @@ ${codexPageStyle()}
         loaded.skin || 'dark'
       )
     )}${setCard(
-      '이펙트',
-      '카드의 불꽃·서리 같은 장식입니다. 끄면 스크롤이 가벼워집니다.',
-      setSwitch(skin, 'effects', loaded.effectsEnabled)
+      '이펙트 강도',
+      '카드 이펙트의 양을 정합니다. 모바일에서 화면이 깜빡이면 낮추세요.',
+      setSegment(skin, 'fx', Object.entries(FX_LABELS), loaded.effectsLevel)
     )}${setCard('글자 크기', '인벤토리·도감의 본문 글자에 바로 적용됩니다.')}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
       '배지 위치',
       '화면에서 CODEX 배지가 붙을 자리입니다.'
@@ -5629,6 +5642,15 @@ ${codexPageStyle()}
           }
         ],
         [
+          'fx',
+          FX_MODES,
+          async (loaded, value) => {
+            await setEffectsLevel(loaded.character, value);
+            loaded.effectsLevel = value;
+            uiState.status = `이펙트 강도 · ${FX_LABELS[value]}`;
+          }
+        ],
+        [
           'skin',
           SKIN_MODES,
           async (loaded, value) => {
@@ -5649,15 +5671,7 @@ ${codexPageStyle()}
             })
         }))
       ),
-      toggleSetting(
-        'itemx2-setting-effects',
-        (current) => current.effectsEnabled,
-        async (loaded, value) => {
-          await setEffectsEnabled(loaded.character, value);
-          loaded.effectsEnabled = value;
-        },
-        '시각 이펙트'
-      ),
+
       {
         hook: 'itemx2-setting-lorebook',
         run: () =>
@@ -8988,7 +9002,7 @@ ${codexPageStyle()}
       return html;
     };
     const markerMotion = (key) => {
-      if (!presentationState.visualEffectsEnabled) return 'off';
+      if (presentationState.fxMotion === 'off') return 'off';
       if (!pipelineState.latestMarkers.size) return 'lite';
       return pipelineState.latestMarkers.has(key) ? 'lite' : 'off';
     };
@@ -9271,7 +9285,7 @@ ${codexPageStyle()}
   }
 
   function itemDetailHtml(item) {
-    const motion = presentationState.visualEffectsEnabled ? 'full' : 'off';
+    const motion = presentationState.fxMotion;
     const record = presentationRecord('item', item.id);
     const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
     if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
@@ -9910,7 +9924,7 @@ ${codexPageStyle()}
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || '<i>기록 없음</i>';
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.visualEffectsEnabled ? 'full' : 'off');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.fxMotion === 'off' ? 'off' : 'off');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${ITEMXCore.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${ITEMXCore.esc(skill.name)}</strong><span>${ITEMXCore.esc(skill.rank)} · ${ITEMXCore.esc(skill.school || '미분류')} · ${ITEMXCore.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${ITEMXCore.esc(skill.type || '미분류')} · ${ITEMXCore.esc(skill.target || '미상')}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${ITEMXCore.esc(skill.cost || '없음')}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${ITEMXCore.esc(skill.cooldown || '없음')}</strong></span></div><section class="itemx-codex-section"><h4>✨ 숙련도 · ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>📜 기술 해설</h4><p>${ITEMXCore.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>💫 발현 효과</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>📈 성장 기록</h4><p>${ITEMXCore.esc(skill.growth || '기록 없음')}</p><small>ID · ${ITEMXCore.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
   }
@@ -9959,7 +9973,7 @@ ${codexPageStyle()}
   function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
     const record = presentationRecord(domain, entity?.id);
     const fingerprint = ITEMXCore.fnv1a(
-      JSON.stringify([entity || {}, record.previous, record.review, presentationState.visualEffectsEnabled])
+      JSON.stringify([entity || {}, record.previous, record.review, presentationState.fxMotion])
     );
     return domain === 'skill'
       ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`

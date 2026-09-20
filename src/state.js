@@ -49,6 +49,7 @@ const ITEMXState = (() => {
         bodyFxSawScroll: false,
         bodyFxScrollActive: false,
         visualEffectsEnabled: true,
+        fxMotion: 'full',
         visualSkin: 'dark'
       }),
       portraits: owner({

@@ -127,7 +127,7 @@ try {
   for (const [hook,key,onClass] of [
     ['itemx2-setting-main','mainOutput','itemx2-setting-on'],
     ['itemx2-setting-toggle','enabled','itemx2-power-on'],
-    ['itemx2-setting-effects','effectsEnabled','itemx2-setting-on'],
+    
     ['itemx2-setting-lorebook','lorebookEncounterEnabled','itemx2-setting-on']
   ]) {
     const page=await browser.newPage({viewport:{width:411,height:891},deviceScaleFactor:3,isMobile:true,hasTouch:true});

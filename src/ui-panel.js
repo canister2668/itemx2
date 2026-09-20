@@ -73,7 +73,7 @@
   }
 
   function itemDetailHtml(item) {
-    const motion = presentationState.visualEffectsEnabled ? 'full' : 'off';
+    const motion = presentationState.fxMotion;
     const record = presentationRecord('item', item.id);
     const key = `${item.id}:${ITEMXCore.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
     if (presentationState.detailHtmlCache.has(key)) return presentationState.detailHtmlCache.get(key);
@@ -718,7 +718,7 @@
     const effects = (skill.effects || []).map((one) => `<i>${ITEMXCore.esc(one)}</i>`).join('') || ITEMXText("ui-panel.117");
     const affinity = skillTheme(skill),
       tier = skillRankTier(skill.rank, rarityMode);
-    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.visualEffectsEnabled ? 'full' : 'off');
+    const fx = ITEMXRenderer.renderSkillFx({ ...skill, affinity }, tier, presentationState.fxMotion === 'off' ? 'off' : 'off');
     const vars = ITEMXRenderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
     return ITEMXText("ui-panel.109", back, skillFxClasses(skill, rarityMode), vars, fx, ITEMXCore.esc(skillEmoji(skill)), ITEMXCore.esc(skill.name), ITEMXCore.esc(skill.rank), ITEMXCore.esc(skill.school || ITEMXText("ui-panel.110")), ITEMXCore.esc(skill.status), levelLabel, ITEMXCore.esc(skill.type || ITEMXText("ui-panel.111")), ITEMXCore.esc(skill.target || ITEMXText("ui-panel.112")), ITEMXCore.esc(skill.cost || ITEMXText("ui-panel.113")), ITEMXCore.esc(skill.cooldown || ITEMXText("ui-panel.114")), masteryLabel, Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join(''), skill.description ? ITEMXText("ui-panel.115", ITEMXCore.esc(skill.description)) : '', effects, ITEMXCore.esc(skill.growth || ITEMXText("ui-panel.116")), ITEMXCore.esc(skill.id), detailAnnotations('skill', skill));
   }
@@ -767,7 +767,7 @@
   function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 'world') {
     const record = presentationRecord(domain, entity?.id);
     const fingerprint = ITEMXCore.fnv1a(
-      JSON.stringify([entity || {}, record.previous, record.review, presentationState.visualEffectsEnabled])
+      JSON.stringify([entity || {}, record.previous, record.review, presentationState.fxMotion])
     );
     return domain === 'skill'
       ? `skill:${entity?.id || ''}:${fingerprint}:${rarityMode}`

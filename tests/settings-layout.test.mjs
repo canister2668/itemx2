@@ -28,7 +28,7 @@ test(
     const LOADED = {
       key: 'k', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
       itemsEnabled: true, skillsEnabled: true, encountersEnabled: false,
-      lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsEnabled: true,
+      lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsLevel: 'full',
       debugEnabled: false, fontScale: 'small', skin: 'dark',
       character: { name: 'T' }, chat: { message: [], scriptstate: {} },
       snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },

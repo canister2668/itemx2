@@ -151,7 +151,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   // it actually renders rather than on a literal in the source.
   assert.match(source, /data-seg="\$\{group\}"/);
   assert.match(source, /rarityMode: \['world', 'itemx'\]/);
-  assert.match(source, /effectsEnabled: true/);
+  assert.match(source, /effectsLevel: \['full', 'lite', 'off'\]/);
   assert.match(source, /fontScale: \['small', 'medium', 'large'\]/);
   assert.match(source, /itemx2-setting-font-\$\{value\}/);
   assert.match(source, /syncRootFontScale/);
@@ -185,7 +185,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   const materialFx = source.slice(source.indexOf('.itemx2-codex-fx{'), source.indexOf('const rootDrawerStyle'));
   assert.equal(materialFx.includes('will-change'), false);
   assert.equal(materialFx.includes('itemx2-codex-spin'), true);
-  assert.match(source, /itemx2-setting-effects/);
+  assert.match(source, /const FX_MODES = \['full', 'lite', 'off'\]/);
   // The drawer and the iframe fallback must offer the same controls.
   assert.match(source, /const ITEMX_CONTROL_STYLE =/);
   assert.match(source, /setSegment\(\s*skin,\s*'skin',/);
@@ -195,8 +195,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /data: \(action\) => ` data-action="\$\{action\}"`/);
   assert.match(source, /settingsPositionChoices\(skin\)/);
   assert.match(source, /settingsFontChoices\(loaded, skin\)/);
-  assert.match(source, /setSwitch\(skin, 'effects', loaded\.effectsEnabled\)/);
-  assert.match(source, /setCard\(\s*'이펙트',/);
+  assert.match(source, /setSegment\(skin, 'fx', Object\.entries\(FX_LABELS\), loaded\.effectsLevel\)/);
+  assert.match(source, /setCard\(\s*'이펙트 강도',/);
   assert.match(source, /settingsCache: new Map\(\)/);
   assert.match(source, /const workQueue = ITEMXWorkQueue\.create\(\)/);
   assert.match(source, /await outputSettings\(initial\.character\)/);
@@ -673,7 +673,7 @@ test('guide settings preview is generated from the real root settings renderer',
     '메인 모델에 형식 알리기',
     '보조 모델로 보완',
     '등급 판정 기준',
-    '이펙트',
+    '이펙트 강도',
     '모듈 초상화 사용',
     '글자 크기',
     '저장 공간',

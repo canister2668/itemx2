@@ -9,7 +9,7 @@ const src = () => runtimeSource();
 const LOADED = {
   key: 'c0:ch0', enabled: true, mainOutput: true, auxOutput: 'off', rarityMode: 'itemx',
   itemsEnabled: true, skillsEnabled: true, encountersEnabled: false,
-  lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsEnabled: true,
+  lorebookEncounterEnabled: false, moduleAssetsEnabled: true, effectsLevel: 'full',
   debugEnabled: false, fontScale: 'small', skin: 'dark',
   character: { name: '테스트' }, chat: { message: [], scriptstate: {} },
   snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },
@@ -67,11 +67,14 @@ test('each skin binds every control its own way and never both', async () => {
     'the drawer routes by class, not by attribute'
   );
   assert.ok(!/class="[^"]*itemx2-setting-toggle/.test(fallback), 'the fallback routes by attribute, not class');
-  for (const action of ['effects', 'module-assets', 'lorebook-scan', 'rebuild', 'storage-cleanup'])
+  for (const action of ['module-assets', 'lorebook-scan', 'rebuild', 'storage-cleanup'])
     assert.ok(fallback.includes(`data-action="${action}"`), `fallback lost ${action}`);
+  assert.ok(fallback.includes('data-seg="fx"'), 'fallback lost the effect level segment');
   // The drawer's router looks these up by class, including its three aliases.
-  for (const hook of ['main', 'lorebook', 'cleanup', 'effects', 'rebuild', 'storage-cleanup'])
+  for (const hook of ['main', 'lorebook', 'cleanup', 'rebuild', 'storage-cleanup'])
     assert.ok(drawer.includes(`itemx2-setting-${hook}`), `drawer lost itemx2-setting-${hook}`);
+  for (const level of ['full', 'lite', 'off'])
+    assert.ok(drawer.includes(`itemx2-seg-fx-${level}`), `drawer lost itemx2-seg-fx-${level}`);
 });
 
 test('every control is a real button with an explicit type', async () => {

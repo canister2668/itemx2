@@ -9,7 +9,7 @@ const built = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
 const bootstrap = '  try {\n    await loadBadgePosition();';
 const instrumented = built.replace(
   bootstrap,
-  `  globalThis.__itemxGuideUi = { rootInventoryHtml, codexInlineEventHtml, mainStyleText, runtime };\n${bootstrap}`
+  `  globalThis.__itemxGuideUi = { rootInventoryHtml, codexInlineEventHtml, mainStyleText, hostState, uiState };\n${bootstrap}`
 );
 if (instrumented === built) throw new Error('ITEMX guide UI export point not found');
 
@@ -47,10 +47,10 @@ const sandbox = vm.createContext({
 await vm.runInContext(instrumented, sandbox);
 const guide = sandbox.__itemxGuideUi;
 if (!guide) throw new Error('ITEMX guide UI export failed');
-guide.runtime.permissions.replacer = true;
-guide.runtime.permissions.mainDom = true;
-guide.runtime.hooks.listener = true;
-guide.runtime.status = '정상 · 아이템 4 · 스킬 3 · 도감 2';
+guide.hostState.permissions.replacer = true;
+guide.hostState.permissions.mainDom = true;
+guide.hostState.hooks.listener = true;
+guide.uiState.status = '정상 · 아이템 4 · 스킬 3 · 도감 2';
 
 const item = (id, name, emoji, rarity, location = 'inventory') => ({
   id,
