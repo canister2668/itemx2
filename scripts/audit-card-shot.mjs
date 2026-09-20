@@ -50,7 +50,7 @@ try {
   await page.evaluate('globalThis.ITEMX_AFF=' + JSON.stringify(process.env.ITEMX_AFF || null));
   await page.evaluate('globalThis.ITEMX_MOTION=' + JSON.stringify(process.env.ITEMX_MOTION || 'full'));
   await page.evaluate(${JSON.stringify(fixture)});
-  await page.evaluate(([t,s])=>itemxAudit.setup(t,s),['full','dark']);
+  await page.evaluate(([t,s])=>itemxAudit.setup(t,s),['full', process.env.ITEMX_SKIN||'dark']);
   await page.waitForTimeout(600);
   await page.addStyleTag({content:'*,*::before,*::after{animation-delay:-2s!important;animation-play-state:paused!important}'});
   await page.waitForTimeout(150);

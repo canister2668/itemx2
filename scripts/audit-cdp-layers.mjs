@@ -7,7 +7,7 @@ const fixture = bundle.replace(anchor, `
     const root = document.querySelector('#itemx2-root');
     const names = ['청상벽려검(靑霜霹靂劍)','흑염단마도','칠성벽해인','만겁유혼검','태을진령비갑','태초무극검','단검','목걸이'];
     const items = names.map((name,i) => ITEMXCore.normalizeItem({
-      id:'item'+i, name, type:i%2?'장신구':'검', internalrarity:'empyrean',
+      id:'item'+i, name, type:i%2?'장신구':'검', internalrarity: globalThis.ITEMX_RARITY || 'empyrean',
       affinity: (skin.startsWith('aff:') && skin.slice(4) !== 'mixed') ? skin.slice(4) : ['fire','ice','lightning','wind','earth','dark','light','poison'][i],
       possession:'owned', location:i===0?'equipped':'inventory', count:1,
       power:'7800', durability:'950/1000', cost:'350,000 냥', required:'초절정 이상',
@@ -50,8 +50,9 @@ try {
     await page.setContent('<html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"><div id="itemx2-root"></div></body></html>');
     await page.evaluate(()=>{const store=new Map();window.Risuai={pluginStorage:{getItem:async k=>store.get(k)??null,setItem:async(k,v)=>store.set(k,v)},getDatabase:async()=>({}),nativeFetch:async()=>({}),};});
     await page.evaluate('globalThis.ITEMX_CARDS=' + n);
+    await page.evaluate('globalThis.ITEMX_RARITY=' + JSON.stringify(process.env.ITEMX_RARITY||'empyrean'));
     await page.evaluate(${JSON.stringify(fixture)});
-    await page.evaluate(([t,s])=>itemxAudit.setup(t,s),[process.env.ITEMX_MOTION||'full','aff:mixed']);
+    await page.evaluate(([t,s])=>itemxAudit.setup(t,s),[process.env.ITEMX_MOTION||'full','aff:'+(process.env.ITEMX_AFF||'mixed')]);
     if (process.env.ITEMX_KILL) await page.addStyleTag({content: process.env.ITEMX_KILL});
     await page.waitForTimeout(600);
     const cdp = await page.context().newCDPSession(page);
