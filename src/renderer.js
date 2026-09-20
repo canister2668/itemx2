@@ -180,7 +180,7 @@ const ITEMXRenderer = (() => {
     let rays = '';
     if (craft.ambient.rays && level >= craft.ambient.rays)
       [4, 44, 77, 119, 158, 196, 233, 271, 306, 339].forEach((r, i) => {
-        rays += `<i style="--r:${r}deg;--w:${[5.1, 2.8, 7.4, 3.3, 6, 4.2, 8.1, 3, 5.6, 2.5][i]}%"></i>`;
+        rays += `<i style="--r:${r}deg;--w:${[9.81, 5.38, 14.23, 6.35, 11.54, 8.08, 15.58, 5.77, 10.77, 4.81][i]}%"></i>`;
       });
     let motes = '';
     const seed = parseInt(ITEMXCore.fnv1a(item.id || item.name || '?'), 16) || 1;

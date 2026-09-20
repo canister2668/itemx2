@@ -88,8 +88,8 @@
     .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}
     /* Existing ITEMX effects: arcane gold rays and deterministic gold shards. */
     .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }
-    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
-    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }
+    .current-rays { position:absolute; inset:-15%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
+    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 94%); }
     .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }
     .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent) }
     .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }
@@ -2145,7 +2145,7 @@ const ITEMXRenderer = (() => {
     let rays = '';
     if (craft.ambient.rays && level >= craft.ambient.rays)
       [4, 44, 77, 119, 158, 196, 233, 271, 306, 339].forEach((r, i) => {
-        rays += `<i style="--r:${r}deg;--w:${[5.1, 2.8, 7.4, 3.3, 6, 4.2, 8.1, 3, 5.6, 2.5][i]}%"></i>`;
+        rays += `<i style="--r:${r}deg;--w:${[9.81, 5.38, 14.23, 6.35, 11.54, 8.08, 15.58, 5.77, 10.77, 4.81][i]}%"></i>`;
       });
     let motes = '';
     const seed = parseInt(ITEMXCore.fnv1a(item.id || item.name || '?'), 16) || 1;

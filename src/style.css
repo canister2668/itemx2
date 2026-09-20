@@ -90,8 +90,8 @@
     .craft-oriental .itemx-fx{z-index:2}.craft-oriental .current-fx{opacity:.42}.craft-oriental .current-fog{opacity:.28}.craft-oriental .current-veil,.craft-oriental .current-rays{opacity:.44}.craft-oriental .affinity-fx{z-index:3;filter:saturate(1.2) brightness(1.16)}
     /* Existing ITEMX effects: arcane gold rays and deterministic gold shards. */
     .current-fx,.affinity-fx { position:absolute; inset:0; overflow:hidden; }
-    .current-rays { position:absolute; inset:-75%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
-    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 49%); }
+    .current-rays { position:absolute; inset:-15%; opacity:calc(.12 * var(--int)); filter:blur(9px); animation:existing-spin calc(96s/var(--spd)) linear infinite; }
+    .current-rays i { position:absolute; top:50%; left:50%; width:var(--w); height:100%; transform:translateX(-50%) translateY(-100%) rotate(var(--r)); transform-origin:center bottom; border-radius:80% 80% 0 0; background:linear-gradient(to top,var(--p),transparent 94%); }
     .current-veil { position:absolute; top:-55%; right:0; left:0; height:85%; animation:existing-veil calc(8.5s/var(--spd)) ease-in-out infinite; }
     .current-veil-visual { position:absolute;inset:0;display:block;background:linear-gradient(to bottom,transparent,var(--pg),transparent) }
     .craft-mote { position:absolute; left:var(--x); top:108%; width:var(--z); height:var(--mh); border-radius:42% 42% 56% 56%/62% 62% 38% 38%; background:linear-gradient(to top,var(--ca),transparent); box-shadow:0 0 6px var(--ca); opacity:var(--o); animation:existing-rise var(--d) linear infinite; animation-delay:var(--delay); }
