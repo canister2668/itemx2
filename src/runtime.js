@@ -75,6 +75,8 @@
     flickerWatch.last = now();
     const tick = () => {
       if (!flickerWatch.on) return;
+      // Switching to a bot without debug rewrites debugEnabled without calling stop.
+      if (!settingsState.debugEnabled) return stopFlickerWatch();
       const at = now(), gap = at - flickerWatch.last;
       flickerWatch.last = at;
       if (gap > 120) debugRecord('watch:stall', `${Math.round(gap)}ms ${size()}`);
@@ -216,7 +218,19 @@
 
   await Risuai.onUnload(async () => {
     hostState.unloading = true;
-    await workQueue.close();
+    stopFlickerWatch();
+    // The host gives unload callbacks one second before terminating the iframe and does not
+    // drop script handlers or replacers itself. Detach those first, all at once.
+    const quiet = (work) => Promise.resolve().then(work).catch(() => {});
+    await Promise.all([
+      quiet(() => Risuai.removeRisuScriptHandler('output', pipelineEntries.output)),
+      quiet(() => Risuai.removeRisuScriptHandler('display', pipelineEntries.display)),
+      quiet(() => Risuai.removeRisuScriptHandler('process', pipelineEntries.process)),
+      quiet(() => Risuai.removeRisuReplacer('beforeRequest', pipelineEntries.before)),
+      quiet(() => Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after)),
+      ...hostState.uiParts.map((id) => quiet(() => Risuai.unregisterUIPart(id)))
+    ]);
+    await Promise.race([workQueue.close(), delay(250)]);
     clearEventBursts();
     uiState.panelOpen = false;
     workQueue.clearTimer('resumeTimer');
@@ -229,6 +243,7 @@
     workQueue.clearTimer('remountTimer');
 
     workQueue.clearTimer('catchUpTimer');
+    workQueue.clearTimer('auxSettleTimer');
     workQueue.clearTimer('updateTimer');
     workQueue.clearTimer('hostSyncTimer');
     workQueue.clearTimer('feedbackTimer');
@@ -253,26 +268,6 @@
       if (hostState.hostObserver?.disconnect) await hostState.hostObserver.disconnect();
     } catch {}
     hostState.hostObserver = null;
-    try {
-      await Risuai.removeRisuScriptHandler('output', pipelineEntries.output);
-    } catch {}
-    try {
-      await Risuai.removeRisuScriptHandler('display', pipelineEntries.display);
-    } catch {}
-    try {
-      await Risuai.removeRisuScriptHandler('process', pipelineEntries.process);
-    } catch {}
-    try {
-      await Risuai.removeRisuReplacer('beforeRequest', pipelineEntries.before);
-    } catch {}
-    try {
-      await Risuai.removeRisuReplacer('afterRequest', pipelineEntries.after);
-    } catch {}
-    for (const id of hostState.uiParts) {
-      try {
-        await Risuai.unregisterUIPart(id);
-      } catch {}
-    }
     try {
       if (hostState.mainStyle) await hostState.mainStyle.remove();
     } catch {}

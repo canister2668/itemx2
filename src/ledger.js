@@ -14,6 +14,7 @@
     const persisted = markerCodes(latest);
     for (const marker of workQueue.recent('uncommitted-markers', 12000) || []) persisted.add(marker);
     pipelineState.latestMarkers = persisted;
+    void syncBadgeDelta();
   }
 
   function manualLedger(chat) {
@@ -99,7 +100,9 @@
       let boundary = checkpoint.boundary;
       if (checkpoint.sealedThroughId) {
         const located = messages.findIndex((message) => message?.chatId === checkpoint.sealedThroughId);
-        boundary = located >= 0 ? located : -1;
+        // The sealed message is gone: replaying from 0 on top of the sealed registry would double-apply.
+        if (located < 0) return { checkpoint: { ...checkpoint, boundary: -1 }, valid: false };
+        boundary = located;
       } else boundary = Math.min(boundary, messages.length - 1);
       return { checkpoint: { ...checkpoint, boundary }, valid: true };
     }
@@ -518,7 +521,7 @@
   }
 
   function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
-    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replay(chat).codex;
+    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replayedCodex(chat);
     const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
     state.history ||= { skill: {}, monster: {} };
     const messages = chat?.message || [],
@@ -605,7 +608,7 @@
   }
 
   function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat), options = {}) {
-    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replay(chat).item;
+    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replayedItem(chat);
     const messages = Array.isArray(chat?.message) ? chat.message : [];
     const start = Math.max(0, options.start || 0),
       end = Math.min(messages.length - 1, options.end ?? messages.length - 1);

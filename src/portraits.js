@@ -304,8 +304,7 @@
               portraitsState.portraitCache.set(cacheKey, image);
 
               while (portraitsState.portraitCache.size > 24 || [...portraitsState.portraitCache.values()].reduce((sum, value) => sum + value.length, 0) > 16 * 1024 * 1024) {
-                const oldest = portraitsState.portraitCache.keys().next().value,
-                  removed = portraitsState.portraitCache.get(oldest) || '';
+                const oldest = portraitsState.portraitCache.keys().next().value;
                 portraitsState.portraitCache.delete(oldest);
 
               }

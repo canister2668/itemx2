@@ -729,15 +729,20 @@ const ITEMXCore = (() => {
           diagnostic(reg, 'action_bad_quantity', item.id);
           return null;
         }
+        const held = item.possession === 'owned' && item.location !== 'unknown';
         const have = item.possession === 'owned' ? available(item) : 0;
         item.count = have + (patch.quantity || 1);
         item.possession = 'owned';
-        item.location = 'inventory';
+        if (!held) {
+          item.location = 'inventory';
+          item.slot = null;
+        }
         item.removedReason = null;
       } else if (patch.action === 'restore') {
         item.count = patch.quantity === 'all' ? 1 : patch.quantity || Math.max(available(item), 1);
         item.possession = 'owned';
         item.location = 'inventory';
+        item.slot = null;
         item.removedReason = null;
       } else if (patch.action === 'equip') {
         const conflict = slotConflict(reg, item.id, patch.slot);
@@ -784,9 +789,10 @@ const ITEMXCore = (() => {
       item.removedReason = patch.reason;
     } else if (patch.op === 'restore') {
       applyFields(item, patch.fields);
-      item.possession ||= 'owned';
-      if (item.possession === 'removed') item.possession = 'owned';
-      item.location = item.location === 'unknown' ? 'inventory' : item.location;
+      if (!POSSESSIONS.has(item.possession) || item.possession === 'removed') item.possession = 'owned';
+      if (!LOCATIONS.has(item.location) || item.location === 'unknown') item.location = 'inventory';
+      if (item.location === 'equipped' && (!item.slot || slotConflict(reg, item.id, item.slot))) item.location = 'inventory';
+      if (item.location !== 'equipped') item.slot = null;
       item.count = Math.max(1, Number(item.count) || 1);
       item.removedReason = null;
     }
@@ -843,6 +849,7 @@ const ITEMXCore = (() => {
     const keys = [
       'id',
       'name',
+      'possession',
       'power',
       'durability',
       'rarity',

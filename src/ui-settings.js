@@ -170,6 +170,54 @@
   async function setEnabled(character, value) {
     await writeSetting(character, 'enabled', Boolean(value));
     updateCachedSettings(character, { enabled: Boolean(value) });
+    // The drawer's render fingerprint predates this change; force the next open to redraw.
+    workQueue.remember('render', '');
+    await syncPowerUi(value);
+  }
+
+  const POWER_BUTTON_ID = 'itemx2-power-toggle';
+  const powerIcon = (on) =>
+    `<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><rect x="1" y="5" width="18" height="10" rx="5" fill="${on ? '#2f9e62' : '#4b5363'}"/><circle cx="${on ? 14 : 6}" cy="10" r="3.6" fill="${on ? '#ffffff' : '#c3c9d3'}"/></svg>`;
+
+  // The chat-menu switch is the way back once the side badge is hidden for an off bot.
+  async function syncPowerUi(enabled) {
+    const on = Boolean(enabled);
+    if (uiState.powerButtonState !== on) {
+      try {
+        const part = await Risuai.registerButton(
+          {
+            name: on ? ITEMXText("ui-settings.power-on") : ITEMXText("ui-settings.power-off"),
+            icon: powerIcon(on),
+            iconType: 'html',
+            location: 'chat',
+            id: POWER_BUTTON_ID
+          },
+          entry('power-toggle', togglePowerFromChatMenu)
+        );
+        if (part?.id && !hostState.uiParts.includes(part.id)) hostState.uiParts.push(part.id);
+        uiState.powerButtonState = on;
+      } catch (error) {
+        fail('chat menu power button', error);
+      }
+    }
+    if (!uiState.rootDrawer) return;
+    try {
+      if (on) await uiState.rootDrawer.removeClass('x-risu-itemx2-bot-off');
+      else await uiState.rootDrawer.addClass('x-risu-itemx2-bot-off');
+    } catch {}
+  }
+
+  async function togglePowerFromChatMenu() {
+    const ctx = await context();
+    if (!ctx) {
+      await notifyUser(ITEMXText("ui-settings.008"), 'error');
+      return;
+    }
+    const next = !(await isEnabled(ctx.character));
+    await setEnabled(ctx.character, next);
+    uiState.status = next ? ITEMXText("ui-settings.011") : ITEMXText("ui-settings.010");
+    await notifyUser(next ? ITEMXText("ui-settings.power-toast-on") : ITEMXText("ui-settings.power-toast-off"), 'success');
+    if (uiState.rootOpen) await openRootInventory({ open: true, tab: uiState.activeRootTab || 'settings' });
   }
 
   async function setDomainEnabled(character, domain, value) {
@@ -514,7 +562,7 @@
         parts.cleanupArmed ? ITEMXText("ui-settings.108") : ITEMXText("ui-settings.107"),
         parts.cleanupArmed ? ' itemx2-setting-cleanup-armed' : ''
       )
-    ), parts.debugPanel, setCard(ITEMXText("ui-settings.111"), `ITEMX CODEX ${ITEMX_PLUGIN_VERSION}`));
+    ), parts.debugPanel, setCard(ITEMXText("ui-settings.111"), `ITEMX ${ITEMX_PLUGIN_VERSION}`));
   }
 
   function settingsDomainControls(loaded, skin) {
@@ -919,15 +967,6 @@
         }
       }
     ];
-  }
-
-  async function toggleCurrentBot() {
-    const ctx = await context();
-    if (!ctx) return;
-    const next = !(await isEnabled(ctx.character));
-    await setEnabled(ctx.character, next);
-    uiState.status = next ? ITEMXText("ui-settings.011") : ITEMXText("ui-settings.010");
-    await openRootInventory({ open: true, tab: 'settings' });
   }
 
   async function openSettingsFromRisuMenu() {

@@ -130,7 +130,7 @@
         .filter(Boolean)
         .join(' · ');
       // The chips already carry every change, so the separate change block is gone.
-      return `<section class="${classes}" style="${appraisal.style}">${codexInlineBody(entity.affinity)}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc([entity.rank, meta].filter(Boolean).join(' · '))}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? ITEMXText("presentation.026") : ITEMXText("presentation.025")}</b><span>${ITEMXCore.esc(effect)}</span><em class="itemx2-inline-more">CODEX &#8250;</em></footer></section>`;
+      return `<section class="${classes}" style="${appraisal.style}">${codexInlineBody(entity.affinity)}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${ITEMXCore.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${ITEMXCore.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${ITEMXCore.esc([entity.rank, meta].filter(Boolean).join(' · '))}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? ITEMXText("presentation.026") : ITEMXText("presentation.025")}</b><span>${ITEMXCore.esc(effect)}</span><em class="itemx2-inline-more">ITEMX &#8250;</em></footer></section>`;
     }
     const appraisal = codexInlineAppraisalStyle(entity, 'monster');
     const labels = {
@@ -378,7 +378,7 @@
         const item = payload.view || payload.event?.item;
         return item
           ? `<span class="itemx-event-chip">${ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item))} ${ITEMXCore.esc(item.name || item.id)}</span>`
-          : `<span class="itemx-event-chip">📦 ITEMX CODEX · ${ITEMXCore.esc(ref)}</span>`;
+          : `<span class="itemx-event-chip">📦 ITEMX · ${ITEMXCore.esc(ref)}</span>`;
       })
       .replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
         found = true;

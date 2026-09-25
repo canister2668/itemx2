@@ -24,7 +24,7 @@ const ITEMXRenderer = (() => {
   const crafts = {
     arcane: {
       name: '마도',
-      eyebrow: 'CODEX · APPRAISAL',
+      eyebrow: 'ITEMX · APPRAISAL',
       shapes: ['shard', 'shard', 'shard', 'diamond'],
       paths: ['rise', 'drift', 'pulse'],
       colors: [
@@ -214,16 +214,16 @@ const ITEMXRenderer = (() => {
       budgetScale = Math.max(0.28, (particleBudget[rarity] || 4) / 16);
     let count =
       kind === 'lightning'
-        ? 14
+        ? 10
         : kind === 'ice'
-          ? 18
+          ? 12
           : kind === 'wind'
-            ? 11
+            ? 8
             : kind === 'fire'
-              ? 22
+              ? 14
               : kind === 'poison'
-                ? 18
-                : 16;
+                ? 12
+                : 10;
     count = Math.max(
       motion === 'lite' ? 1 : 3,
       Math.ceil(count * budgetScale * (role === 'secondary' ? 0.68 : 1) * (motion === 'lite' ? 0.2 : 1))
@@ -481,7 +481,7 @@ const ITEMXRenderer = (() => {
         `${changesHtml(payload.previous, payload.view)}</article>`
       );
     const id = payload.event?.patch?.id;
-    return id ? `<span class="itemx-event-chip">ITEMX CODEX · ${esc(id)} 변경</span>` : '';
+    return id ? `<span class="itemx-event-chip">ITEMX · ${esc(id)} 변경</span>` : '';
   }
 
   return {

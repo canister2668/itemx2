@@ -1,6 +1,6 @@
 {
   "runtime.001": [
-    "ITEMX CODEX 초기화 실패: ",
+    "ITEMX 초기화 실패: ",
     ""
   ],
   "runtime.002": "초기화 오류",
@@ -8,9 +8,9 @@
   "runtime.004": "채팅 진입 대기",
   "runtime.005": "채팅 인벤토리 복원 중…",
   "runtime.006": "모델 처리 연결 중…",
-  "runtime.007": "ITEMX CODEX 초기화 중…",
+  "runtime.007": "ITEMX 초기화 중…",
   "runtime.008": "초기 화면 연결 중",
-  "runtime.009": "ITEMX CODEX · 권한 및 설정",
+  "runtime.009": "ITEMX · 권한 및 설정",
   "style.001": "알 수 없는 DOM 오류",
   "style.002": "메인 문서 API가 null을 반환했습니다",
   "style.003": "한지",
@@ -26,15 +26,15 @@
   "ui-settings.002": "화면 연결 실패",
   "ui-settings.003": "연결 및 권한 정상",
   "ui-settings.004": "인벤토리 상태 확인 중…",
-  "ui-settings.005": "ITEMX CODEX 설정 불러오는 중…",
+  "ui-settings.005": "ITEMX 설정 불러오는 중…",
   "ui-settings.006": "연결과 권한 확인 중…",
-  "ui-settings.007": "ITEMX CODEX 설정 불러오는 중…",
-  "ui-settings.008": "ITEMX CODEX는 채팅봇에 진입한 뒤 사용할 수 있습니다.",
+  "ui-settings.007": "ITEMX 설정 불러오는 중…",
+  "ui-settings.008": "ITEMX는 채팅봇에 진입한 뒤 사용할 수 있습니다.",
   "ui-settings.009": "채팅 진입 대기",
   "ui-settings.010": "현재 봇 비활성화",
   "ui-settings.011": "현재 봇 활성화",
   "ui-settings.012": [
-    "ITEMX CODEX 정리 실패: ",
+    "ITEMX 정리 실패: ",
     ""
   ],
   "ui-settings.013": [
@@ -52,7 +52,7 @@
   "ui-settings.018": "되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.",
   "ui-settings.019": "정리 확인 대기 · 7초 안에 다시 누르세요",
   "ui-settings.020": [
-    "ITEMX CODEX 저장소 최적화 실패: ",
+    "ITEMX 저장소 최적화 실패: ",
     ""
   ],
   "ui-settings.021": [
@@ -117,18 +117,18 @@
   ],
   "ui-settings.050": "보조 모델 수동 검사 중",
   "ui-settings.051": [
-    "ITEMX CODEX 연결 확인 실패: ",
+    "ITEMX 연결 확인 실패: ",
     ""
   ],
   "ui-settings.052": [
     "연결 확인 실패 · ",
     ""
   ],
-  "ui-settings.053": "ITEMX CODEX 연결 및 권한 확인 완료",
+  "ui-settings.053": "ITEMX 연결 및 권한 확인 완료",
   "ui-settings.054": "모델 훅 연결 실패",
   "ui-settings.055": "화면 연결 실패",
   "ui-settings.056": "연결 및 권한 정상",
-  "ui-settings.057": "ITEMX CODEX 연결과 권한을 확인하는 중입니다…",
+  "ui-settings.057": "ITEMX 연결과 권한을 확인하는 중입니다…",
   "ui-settings.058": "연결 및 권한 확인 중",
   "ui-settings.059": "기록 없음",
   "ui-settings.060": [
@@ -208,7 +208,7 @@
   "ui-settings.097": "이펙트",
   "ui-settings.098": "인벤토리·도감의 본문 글자에 바로 적용됩니다.",
   "ui-settings.099": "글자 크기",
-  "ui-settings.100": "화면에서 CODEX 배지가 붙을 자리입니다.",
+  "ui-settings.100": "화면에서 ITEMX 배지가 붙을 자리입니다.",
   "ui-settings.101": "배지 위치",
   "ui-settings.102": "저장소 최적화",
   "ui-settings.103": "다시 눌러 최적화",
@@ -242,7 +242,7 @@
   "ui-settings.122": "Risu 연결",
   "ui-settings.123": [
     "",
-    " · 불러오기 완료. 닫은 뒤 CODEX에서 확인하세요."
+    " · 불러오기 완료. 닫은 뒤 ITEMX에서 확인하세요."
   ],
   "ui-settings.124": "위 기록을 현재 채팅으로 가져옵니다. 확인 후 불러오기를 누르세요.",
   "ui-settings.125": "이 채팅에 불러오기",
@@ -451,7 +451,7 @@
     "<span class=\"itemx-event-chip\">✦ 도감 기록 복원 중</span>"
   ],
   "presentation.002": [
-    "<span class=\"itemx-event-chip\">📦 ITEMX CODEX · 기록 복원 중</span>"
+    "<span class=\"itemx-event-chip\">📦 ITEMX · 기록 복원 중</span>"
   ],
   "presentation.003": [
     "<section class=\"",
@@ -496,7 +496,7 @@
     ""
   ],
   "presentation.028": "미분류",
-  "presentation.029": "스킬 정보가 CODEX에 기록되었습니다.",
+  "presentation.029": "스킬 정보가 ITEMX에 기록되었습니다.",
   "presentation.030": "미상",
   "presentation.031": "재사용",
   "presentation.032": "미상",
@@ -519,12 +519,12 @@
   "ui-panel.001": "인벤토리 열기 오류",
   "ui-panel.002": "PocketRisu 호환 모드",
   "ui-panel.003": "인벤토리 열기 오류",
-  "ui-panel.004": "ITEMX CODEX를 열려면 메인 화면 권한이 필요합니다.",
+  "ui-panel.004": "ITEMX를 열려면 메인 화면 권한이 필요합니다.",
   "ui-panel.005": "메인 화면 권한 필요",
   "ui-panel.006": "아이템 생성 실패",
   "ui-panel.007": "신규 생성",
   "ui-panel.008": "신규 아이템 생성 중",
-  "ui-panel.009": "ITEMX CODEX: 생성할 아이템 설명을 입력하세요.",
+  "ui-panel.009": "ITEMX: 생성할 아이템 설명을 입력하세요.",
   "ui-panel.010": "수동 제거 실패",
   "ui-panel.011": "수동 제거",
   "ui-panel.012": [
@@ -647,7 +647,7 @@
   "ui-panel.052": "전체",
   "ui-panel.053": [
     "",
-    "<div class=\"itemx2-root-layer\"><section class=\"itemx-panel itemx2-root-panel\" aria-label=\"ITEMX CODEX\"><div class=\"itemx2-tab-loading itemx2-open-loading\" role=\"status\" aria-live=\"polite\"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>"
+    "<div class=\"itemx2-root-layer\"><section class=\"itemx-panel itemx2-root-panel\" aria-label=\"ITEMX\"><div class=\"itemx2-tab-loading itemx2-open-loading\" role=\"status\" aria-live=\"polite\"><i></i><strong>인벤토리 여는 중</strong><small>저장된 화면을 준비하고 있답니다.</small></div></section></div>"
   ],
   "ui-panel.054": [
     "<!--ITEMX2-SEARCH-START--><div class=\"itemx2-search-controls\"><div class=\"itemx2-search-query\" contenteditable=\"true\" role=\"textbox\" aria-label=\"검색어\" data-placeholder=\"이름·종류 검색\">",
@@ -703,7 +703,7 @@
   ],
   "ui-panel.081": [
     "<span class=\"itemx2-update-indicator\" x-itemx2-update=\"",
-    "\" aria-label=\"ITEMX CODEX 업데이트 가능\">↑</span>"
+    "\" aria-label=\"ITEMX 업데이트 가능\">↑</span>"
   ],
   "ui-panel.082": "<label class=\"itemx-codex-back\" for=\"itemx2-monster-none\">‹ 조우 목록</label>",
   "ui-panel.083": "<label class=\"itemx-codex-back\" for=\"itemx2-skill-none\">‹ 스킬 목록</label>",
@@ -840,7 +840,7 @@
   ],
   "ui-panel.125": "Lv.미상",
   "ui-panel.126": "채팅 진입 대기",
-  "ui-panel.127": "ITEMX CODEX · 권한 및 설정",
+  "ui-panel.127": "ITEMX · 권한 및 설정",
   "ui-panel.128": [
     "조우 로어북 스캔 실패: ",
     ""
@@ -872,7 +872,7 @@
     "<div class=\"itemx2-boot-card\" role=\"status\" aria-live=\"polite\"><i></i><span><strong>",
     "</strong><small>화면과 모델 연결을 준비하고 있습니다.</small></span></div>"
   ],
-  "ui-panel.138": "ITEMX CODEX 초기화 중…",
+  "ui-panel.138": "ITEMX 초기화 중…",
   "ui-panel.139": [
     "<button class=\"itemx2-repair-one\" data-action=\"repair-one\" data-item-id=\"",
     "\">이 항목의 누락 정보만 보완</button>"
@@ -885,5 +885,12 @@
   "ui-settings.fx-status": [
     "이펙트 강도 · ",
     ""
-  ]
+  ],
+  "ui-settings.power-on": "ITEMX 켜짐",
+  "ui-settings.power-off": "ITEMX 꺼짐",
+  "ui-settings.power-toast-on": "ITEMX를 이 봇에서 켰습니다",
+  "ui-settings.power-toast-off": "ITEMX를 이 봇에서 껐습니다",
+  "ui-panel.badge-gain": "획득",
+  "ui-panel.badge-loss": "소실",
+  "ui-panel.badge-owned": "보유"
 }

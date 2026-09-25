@@ -13,6 +13,11 @@ const ITEMXCodex = (() => {
   const ITEMX_SKILL_RANKS = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
   const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
   const OPS = new Set(['merge', 'remove', 'restore']);
+  // Diagnostics ride along in checkpoints and cloned state; keep the same cap as the item core.
+  const pushDiagnostic = (reg, entry) => {
+    reg.diagnostics.push(entry);
+    if (reg.diagnostics.length > 50) reg.diagnostics.shift();
+  };
   // One registry owns every per-domain fact. Routing by `startsWith('skill')`
   // sent any future tag silently into the encounter store; an unknown tag must
   // be an error, never a default domain.
@@ -312,18 +317,18 @@ const ITEMXCodex = (() => {
     const reg = storeFor(state, event.domain);
     if (event.kind === 'exam') {
       if (!event.entity?.id || !ID_RE.test(event.entity.id)) {
-        reg.diagnostics.push({ code: 'exam_invalid' });
+        pushDiagnostic(reg, { code: 'exam_invalid' });
         return null;
       }
       if (event.domain === 'skill' && (!SKILL_TYPES.has(event.entity.type) || !SKILL_STATUS.has(event.entity.status))) {
-        reg.diagnostics.push({ code: 'exam_bad_enum', id: event.entity.id });
+        pushDiagnostic(reg, { code: 'exam_bad_enum', id: event.entity.id });
         return null;
       }
       if (
         event.domain === 'monster' &&
         (!RELATIONS.has(event.entity.relation) || !ENCOUNTER_STATUS.has(event.entity.status))
       ) {
-        reg.diagnostics.push({ code: 'exam_bad_enum', id: event.entity.id });
+        pushDiagnostic(reg, { code: 'exam_bad_enum', id: event.entity.id });
         return null;
       }
       const prior = reg.entries[event.entity.id],
@@ -394,20 +399,20 @@ const ITEMXCodex = (() => {
     }
     const entity = reg.entries[event.patch?.id];
     if (!entity) {
-      reg.diagnostics.push({ code: 'patch_missing', id: event.patch?.id });
+      pushDiagnostic(reg, { code: 'patch_missing', id: event.patch?.id });
       return null;
     }
     const { action = null, op = null, fields = {} } = event.patch || {};
     const allowedActions = DOMAINS[event.domain]?.actions || new Set();
     if ((action && !allowedActions.has(action)) || (op && !OPS.has(op)) || (action && op) || (!action && !op)) {
-      reg.diagnostics.push({ code: 'patch_bad_operation', id: entity.id });
+      pushDiagnostic(reg, { code: 'patch_bad_operation', id: entity.id });
       return null;
     }
     if (
       event.domain === 'skill' &&
       (('type' in fields && !SKILL_TYPES.has(fields.type)) || ('status' in fields && !SKILL_STATUS.has(fields.status)))
     ) {
-      reg.diagnostics.push({ code: 'patch_bad_enum', id: entity.id });
+      pushDiagnostic(reg, { code: 'patch_bad_enum', id: entity.id });
       return null;
     }
     if (
@@ -415,7 +420,7 @@ const ITEMXCodex = (() => {
       (('relation' in fields && !RELATIONS.has(fields.relation)) ||
         ('status' in fields && !ENCOUNTER_STATUS.has(fields.status)))
     ) {
-      reg.diagnostics.push({ code: 'patch_bad_enum', id: entity.id });
+      pushDiagnostic(reg, { code: 'patch_bad_enum', id: entity.id });
       return null;
     }
     if (op === 'remove') {

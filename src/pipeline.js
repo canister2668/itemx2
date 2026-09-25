@@ -273,7 +273,16 @@
     if (index < 0) return;
     let source = messageData(ctx.chat.message[index]);
     if (!automaticAuxReady(ctx.chat, index, source)) return;
-    if (!automaticAuxSettled(ctx, index, source)) return;
+    if (!automaticAuxSettled(ctx, index, source)) {
+      // The first sighting never counts as settled. Without this re-check the listener path
+      // waits for the 45 s watchdog before the auxiliary pass runs.
+      workQueue.schedule(
+        'auxSettleTimer',
+        () => catchUpLatestOutput({ syncUi }).catch((error) => fail('aux settle re-check', error)),
+        ITEMX_AUX_SETTLE_MS + 150
+      );
+      return;
+    }
     const repaired = await repairCommittedTransport(ctx, index, source);
     if (!repaired) return;
     source = repaired.source;
@@ -362,6 +371,9 @@
   async function processOutput(content, type) {
     if (!mainRequestType(type)) return content;
     content = ITEMXCore.stripInventoryEcho(content);
+    // Streaming calls this per flush. Without any owned marker or tag there is nothing to
+    // extract, so skip the full chat read and ledger rebuild.
+    if (!OWNED_TRANSPORT_HINT_RE.test(content)) return content;
     try {
       const ctx = await context();
       if (!ctx) return content;
@@ -397,6 +409,7 @@
         codexResult.content !== content
       ) {
         pipelineState.latestMarkers = markerCodes(positioned);
+        void syncBadgeDelta();
         workQueue.remember('uncommitted-markers', new Set(pipelineState.latestMarkers));
         const errors = result.errors.length + codexResult.errors.length,
           events = result.events.length + codexResult.events.length;
@@ -536,7 +549,6 @@
       'remountTimer',
       () => {
         if (!presentationState.bodyFxScrollActive) {
-          const now = Date.now();
           if (!pipelineState.activeContextKey) {
             return ensureRootInventory();
           } else if (!hostState.hostObserver || workQueue.age('remount') >= 10000) {

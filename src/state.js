@@ -82,6 +82,8 @@ const ITEMXState = (() => {
         storageCleanupArmedUntil: 0,
         historyView: { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 },
         historyRows: [],
+        powerButtonState: null,
+        badgeDeltaSeen: '',
         view: { query: '' }
       }),
     });

@@ -12,14 +12,14 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /^\/\/@api 3\.0/m);
   const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(source.match(/^\/\/@version (.+)$/m)?.[1], version);
-  assert.equal(source.match(/^\/\/@display-name (.+)$/m)?.[1], `ITEMX CODEX · v${version}`);
+  assert.equal(source.match(/^\/\/@display-name (.+)$/m)?.[1], `ITEMX · v${version}`);
   assert.match(source, /^\/\/@description World Inventory & Encounter Archive$/m);
   assert.match(
     source,
     /^\/\/@update-url https:\/\/raw\.githubusercontent\.com\/canister2668\/itemx2\/refs\/heads\/main\/dist\/itemx2\.plugin\.js$/m
   );
   assert.ok(source.includes(`const ITEMX_VERSION_LABEL = ${JSON.stringify(version)}`));
-  assert.match(source, /ITEMX CODEX · \$\{ITEMX_VERSION_LABEL\}/);
+  assert.match(source, /ITEMX · \$\{ITEMX_VERSION_LABEL\}/);
   assert.equal(source.includes('preview.45'), false);
   assert.match(source, /addRisuReplacer\('beforeRequest'/);
   assert.match(source, /addRisuReplacer\('afterRequest'/);
@@ -40,14 +40,14 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /hostState\.hooks\.listener = 'unsupported'/);
   assert.match(source, /scheduleLegacyCommitRecovery/);
   assert.match(source, /연결 및 권한/);
-  assert.match(source, /ITEMX CODEX 연결 및 권한 확인 완료/);
+  assert.match(source, /ITEMX 연결 및 권한 확인 완료/);
   assert.match(source, /async function callOptionalRisuApi\(name, \.\.\.args\)/);
   assert.equal(
     /Risuai\.(?:alertNormal|alertError|alertConfirm|alert)\b/.test(source),
     false,
     'undocumented host alert APIs must never be called directly'
   );
-  assert.match(source, /ITEMX CODEX 초기화 중…/);
+  assert.match(source, /ITEMX 초기화 중…/);
   assert.match(source, /itemx2-boot-card/);
   assert.match(source, /itemx2-feedback-success/);
   assert.match(source, /activeRootTab: 'inventory'/);
@@ -124,7 +124,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     /p:\s*view\.power,\s*q:\s*view\.required,\s*u:\s*view\.durability,\s*c:\s*view\.cost,\s*o:\s*view\.possession,\s*l:\s*view\.location/
   );
   assert.match(source, /pipelineState\.eventPayloads\.get\(`item:\$\{ref\}`\) \|\| inlineViewPayload\(inline, 'item'\)/);
-  assert.match(source, /if \(!open\)\s*return `\$\{rootBadgeHtml\(\)\}[\s\S]*?itemx2-open-loading/);
+  assert.match(source, /if \(!open\)\s*return `\$\{rootBadgeHtml\((?:loaded)?\)\}[\s\S]*?itemx2-open-loading/);
   assert.match(source, /const ITEMX_UPDATE_CHECK_MS = 30 \* 60 \* 1000/);
   assert.match(source, /headers: \{ Range: 'bytes=0-2047' \}/);
   assert.match(source, /itemx2-update-indicator/);
@@ -138,7 +138,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(rootRouter, /rootClickBindings = \[\{ owner, type: 'click', id, capture: true \}\]/);
   assert.match(rootRouter, /if \(!uiState\.rootOpen\) return;/);
   assert.match(rootRouter, /itemx2-root-detail-body-/);
-  assert.match(source, /ITEMX CODEX · 권한 및 설정/);
+  assert.match(source, /ITEMX · 권한 및 설정/);
   assert.match(source, /itemx2-host-settings/);
   assert.match(source, /hostPluginSettingsVisible/);
   assert.match(source, /보조 모델 상태/);
@@ -409,8 +409,11 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /latest completed combat result only/);
   assert.match(source, /Preserve the previous outcome when a new encounter begins/);
   assert.match(source, /touch-action:pan-y;-webkit-overflow-scrolling:touch/);
-  assert.equal(source.includes('registerButton('), false);
-  assert.match(source, /registerSetting\(\s*'ITEMX CODEX · 권한 및 설정',\s*entry\('settings', openSettingsFromRisuMenu\)/);
+  // Only the chat-menu power switch; no floating action button beside the side badge.
+  assert.equal((source.match(/registerButton\(/g) || []).length, 1);
+  assert.match(source, /location: 'chat',\s*id: POWER_BUTTON_ID/);
+  assert.equal(/location: ['"](?:action|hamburger)['"]/.test(source), false);
+  assert.match(source, /registerSetting\(\s*'ITEMX · 권한 및 설정',\s*entry\('settings', openSettingsFromRisuMenu\)/);
   assert.equal(source.includes('requestPermission: false'), false);
   assert.match(source, /requestPluginPermission\('replacer'\)/);
   assert.match(source, /hostState\.permissions\.replacer = permission === true/);
@@ -423,7 +426,8 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /uiState\.compactContainer \? 'floating' : 'fullscreen'/);
   assert.match(source, /itemx-plugin-stage-fallback/);
   assert.match(source, /x-itemx2-badge="launcher"/);
-  assert.match(source, /width="48" height="176"/);
+  assert.match(source, /itemx2-badge-emoji" aria-hidden="true">📦</);
+  assert.equal(source.includes('ITEMX_BADGE_ICON'), false);
   assert.equal(source.includes('<b>INVENTORY</b>'), false);
   assert.match(source, /overflow:\s*hidden/);
   assert.match(source, /@keyframes itemx-plugin-panel-in/);
@@ -461,7 +465,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /compactRefMarker\(prefix, ref, payload, domain\)/);
   assert.match(source, /embeddedViewCode/);
   assert.match(source, /inlineViewPayload\(inline, 'item'\)/);
-  assert.match(source, /ITEMX CODEX · 기록 복원 중/);
+  assert.match(source, /ITEMX · 기록 복원 중/);
   assert.match(source, /previous\?\.key === key/);
   assert.match(source, /retryAt: failures \? Date\.now\(\) \+ Math\.min\(120000/);
   assert.equal(source.includes("settings.auxOutput === 'missing' && sourceEvents.length"), false);
@@ -688,7 +692,7 @@ test('guide settings preview is generated from the real root settings renderer',
   assert.match(source, /itemx2-setting-font-large[^>]*><em>가나다<\/em>/);
   assert.doesNotMatch(source, /도감 컨텍스트 제한|이름 없는 잡졸|확장 UI 시안/);
   // The artifact is regenerated from the current build, so pin the shape, not the number.
-  assert.match(source, /ITEMX CODEX · \d+\.\d+\.\d+/);
+  assert.match(source, /ITEMX · \d+\.\d+\.\d+/);
 });
 
 test('preview uses the same renderer source as the plugin', async () => {

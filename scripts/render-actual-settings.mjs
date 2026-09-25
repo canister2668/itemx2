@@ -102,7 +102,7 @@ const prefixMarkupClasses = (html) =>
         .join(' ')}"`
   );
 const body = prefixMarkupClasses(guide.rootInventoryHtml(loaded, true, 'settings'));
-const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ITEMX CODEX 실제 설정 화면</title><style>html,body{margin:0;min-height:100%;background:#080b11}.chattext{min-height:100vh}${guide.mainStyleText()}</style></head><body><main class="chattext"><div class="x-risu-itemx2-root-drawer x-risu-itemx2-pos-rm x-risu-itemx2-font-small x-risu-itemx2-is-open" x-itemx2-drawer="owner">${body}</div></main></body></html>`;
+const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ITEMX 실제 설정 화면</title><style>html,body{margin:0;min-height:100%;background:#080b11}.chattext{min-height:100vh}${guide.mainStyleText()}</style></head><body><main class="chattext"><div class="x-risu-itemx2-root-drawer x-risu-itemx2-pos-rm x-risu-itemx2-font-small x-risu-itemx2-is-open" x-itemx2-drawer="owner">${body}</div></main></body></html>`;
 await writeFile(resolve(root, 'design/itemx-settings-actual.html'), html);
 const inlineCards = [
   guide.codexInlineEventHtml(
@@ -149,6 +149,6 @@ const inlineCards = [
 ]
   .map(prefixMarkupClasses)
   .join('');
-const inlineHtml = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ITEMX CODEX 실제 본문 배너</title><style>html,body{margin:0;background:#1c1c1c}.chattext{display:grid;align-content:start;gap:10px;min-height:100vh;padding:18px}${guide.mainStyleText()}</style></head><body><main class="chattext">${inlineCards}</main></body></html>`;
+const inlineHtml = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ITEMX 실제 본문 배너</title><style>html,body{margin:0;background:#1c1c1c}.chattext{display:grid;align-content:start;gap:10px;min-height:100vh;padding:18px}${guide.mainStyleText()}</style></head><body><main class="chattext">${inlineCards}</main></body></html>`;
 await writeFile(resolve(root, 'design/itemx-inline-actual.html'), inlineHtml);
 console.log('rendered actual settings and inline previews from plugin runtime');

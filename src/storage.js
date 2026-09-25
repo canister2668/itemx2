@@ -183,5 +183,9 @@ const ITEMXStorage = (() => {
     state[LOG] = JSON.stringify(document); state[PREFS] = JSON.stringify(prefs); state[CACHE] = JSON.stringify(derived);
     return next;
   }
-  return { LOG, PREFS, CACHE, DTO, log, cache, capture, replay, hydrate, persist };
+  // One output rebuilds items and codex from the same chat several times. Share the memoized
+  // replay, but hand out copies: some callers apply events to the returned registry.
+  const replayedItem = chat => clone(projectReplay(chat).item);
+  const replayedCodex = chat => clone(projectReplay(chat).codex);
+  return { LOG, PREFS, CACHE, DTO, log, cache, capture, replay, replayedItem, replayedCodex, hydrate, persist };
 })();

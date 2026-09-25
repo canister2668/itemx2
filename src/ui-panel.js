@@ -90,9 +90,15 @@
     for (let index = 0; index < detailItems.length; index += 1) {
       const selected = await panelDocument().querySelector(`#itemx2-detail-${index}:checked`);
       if (!selected) continue;
+      const html = itemDetailHtml(detailItems[index]);
+      const detailKey = `item:${index}:${ITEMXCore.fnv1a(html)}`;
+      // Every tap inside the drawer re-enters here; re-injecting restarts the card effects and scroll.
+      if (workQueue.revision('detail') === detailKey) return true;
       const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
-      if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
-      return Boolean(detail);
+      if (!detail) return false;
+      await detail.setInnerHTML(html);
+      workQueue.remember('detail', detailKey);
+      return true;
     }
     return false;
   }
@@ -136,6 +142,7 @@
 
   async function queryMainClass(className) {
     if (!panelDocument()) return null;
+    // Host DOM is prefixed; the plugin's own iframe fallback (itemx2-frame) is not.
     return (
       (await panelDocument().querySelector(`.x-risu-${className}`)) ||
       (await panelDocument().querySelector(`.${className}`))
@@ -479,7 +486,10 @@
         uiState.rootOpen = false;
         return false;
       }
-      if (open) await uiState.rootDrawer.addClass('x-risu-itemx2-is-open');
+      if (open) {
+        await uiState.rootDrawer.addClass('x-risu-itemx2-is-open');
+        await syncBadgeDelta({ seen: true });
+      }
       else {
         await uiState.rootDrawer.removeClass('x-risu-itemx2-is-open');
         uiState.rootOpen = false;
@@ -790,11 +800,61 @@
     return html;
   }
 
-  function rootBadgeHtml() {
+  // Owned-item gains and losses in the latest response, shown on the side badge
+  // until the drawer is opened.
+  function latestItemDelta() {
+    const items = new Map();
+    for (const key of pipelineState.latestMarkers || []) {
+      const payload = key.startsWith('ITEMX2:')
+        ? ITEMXCore.decodePayload(key.slice(7))
+        : key.startsWith('ITEMX2@')
+          ? pipelineState.eventPayloads.get(`item:${key.slice(7)}`)
+          : null;
+      const view = payload?.view;
+      if (!view?.id || payload.error) continue;
+      const seen = items.get(view.id);
+      const previous = payload.previous;
+      // Older records carry no possession in `previous`; an existing entry then counts as already held.
+      const was = !previous ? false : previous.possession != null ? previous.possession === 'owned' : true;
+      items.set(view.id, { was: seen ? seen.was : was, now: view.possession === 'owned' });
+    }
+    let gained = 0,
+      lost = 0;
+    for (const { was, now } of items.values()) {
+      if (now && !was) gained += 1;
+      else if (was && !now) lost += 1;
+    }
+    return { gained, lost, signature: [...(pipelineState.latestMarkers || [])].sort().join('|') };
+  }
+
+  let badgeDeltaDrawn = null;
+
+  function badgeDeltaHtml() {
+    const { gained, lost, signature } = latestItemDelta();
+    if ((!gained && !lost) || uiState.badgeDeltaSeen === signature) return '<b class="itemx2-badge-word">ITEMX</b>';
+    return `${gained ? `<b class="itemx2-badge-gain"><small>${ITEMXText("ui-panel.badge-gain")}</small>+${gained}</b>` : ''}${lost ? `<b class="itemx2-badge-loss"><small>${ITEMXText("ui-panel.badge-loss")}</small>−${lost}</b>` : ''}`;
+  }
+
+  async function syncBadgeDelta({ seen = false } = {}) {
+    if (seen) uiState.badgeDeltaSeen = latestItemDelta().signature;
+    if (!hostState.mainDoc || !uiState.rootDrawer) return;
+    const html = badgeDeltaHtml();
+    if (html === badgeDeltaDrawn) return;
+    try {
+      const mid = await hostState.mainDoc.querySelector('.x-risu-itemx2-badge-mid');
+      if (mid) await mid.setInnerHTML(html);
+      badgeDeltaDrawn = html;
+    } catch (error) {
+      debugRecord('badge delta', error?.message || String(error));
+    }
+  }
+
+  function rootBadgeHtml(loaded = null) {
+    const owned = loaded?.snapshot ? itemsOf(loaded.snapshot).filter((item) => item.possession === 'owned').length : null;
     const update = hostState.update.available
       ? ITEMXText("ui-panel.081", ITEMXCore.esc(hostState.update.latest))
       : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX CODEX"><img src="${ITEMX_BADGE_ICON}" alt="ITEMX CODEX">${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${(badgeDeltaDrawn = badgeDeltaHtml())}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${ITEMXText("ui-panel.badge-owned")}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
   const updateLabelHtml = () =>
@@ -957,7 +1017,11 @@
     else await drawIframeHistory(loaded);
   }
 
+  // Every drawer render calls this; skip the host round trips while no pane was ever mounted.
+  let historyPaneMounted = false;
   async function drawRootHistory(loaded) {
+    const wanted = uiState.historyView.open && uiState.historyView.key === loaded?.key;
+    if (!wanted && !historyPaneMounted) return;
     await prepareHistoryPortraits(loaded);
     const body = await queryMainClass('itemx2-root-tab-body');
     if (!body) return;
@@ -965,6 +1029,7 @@
     if (!uiState.historyView.open || uiState.historyView.key !== loaded.key) {
       await pane?.remove();
       await body.removeClass('x-risu-itemx2-history-opened');
+      historyPaneMounted = false;
       return;
     }
     if (!pane) {
@@ -972,6 +1037,7 @@
       await pane.addClass('x-risu-itemx2-history-pane');
       await body.appendChild(pane);
     }
+    historyPaneMounted = true;
     await pane.setInnerHTML(historyHtml(loaded));
     await body.addClass('x-risu-itemx2-history-opened');
   }
@@ -1035,7 +1101,7 @@
 
   function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     if (!open)
-      return ITEMXText("ui-panel.053", rootBadgeHtml());
+      return ITEMXText("ui-panel.053", rootBadgeHtml(loaded));
     const all = itemsOf(loaded.snapshot)
       .filter((item) => tab === 'settings' || (!ITEMXHistory.terminal('item', item) && matches(item)))
       .slice(0, 60);
@@ -1086,7 +1152,7 @@
       tab === 'bestiary'
         ? monsters
             .map((monster, index) => {
-              const portrait = loaded.portraits?.[monster.id] || '';
+              const portrait = loaded.portraitThumbs?.[monster.id] || loaded.portraits?.[monster.id] || '';
               return ITEMXText("ui-panel.046", index, monster.active ? 'active' : '', index, monsterSummaryHtml(monster, portrait), index, index);
             })
             .join('') || ITEMXText("ui-panel.045")
@@ -1115,46 +1181,49 @@
     const skin = SETTINGS_SKINS.native;
     const positionChoices = tab === 'settings' ? settingsPositionChoices(skin) : '';
     const fontChoices = tab === 'settings' ? settingsFontChoices(loaded, skin) : '';
-    const domainControls = settingsDomainControls(loaded, skin);
-    // Phase timings go above the log: they are what a stutter report needs. Only
-    // with debug on, so the panel a reader normally sees is unchanged.
-    const debugLog = loaded.debugEnabled
-      ? `-- phase cost --\n${phaseReport()}\n\n${settingsDebugLog()}`
-      : settingsDebugLog();
-    const storageParts = settingsStorageParts(loaded);
-    // A map of the screen beats six abbreviations: the slot sits where the badge will.
-    const managerRows =
-      tab === 'settings'
-        ? all
-            .map(
-              (item, index) =>
-                ITEMXText("ui-panel.042", index, ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item)), ITEMXCore.esc(item.name), ITEMXCore.esc(item.displayRarity || item.rarity), ITEMXCore.esc(item.possession), ITEMXCore.esc(item.location), index, index, item.possession === 'removed' ? 'disabled' : '')
-            )
-            .join('') || ITEMXText("ui-panel.041")
-        : '';
-    const manager = ITEMXText("ui-panel.040", managerRows);
-    const connection = connectionSummary();
-    const chips = [
-      ['hook', connection.hook],
-      ['dom', connection.dom],
-      ['listener', connection.listener]
-    ]
-      .map(
-        ([key, [label, tone]]) =>
-          `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
-      )
-      .join('');
-    const debugPanel = ITEMXText("ui-panel.037", loaded.debugEnabled ? ITEMXText("ui-panel.038") : 'OFF', loaded.debugEnabled ? 'itemx2-setting-on' : '', loaded.debugEnabled ? 'ON' : 'OFF', ITEMXCore.esc(loaded.key), pipelineState.generation, ITEMXCore.esc(loaded.snapshot.fingerprint || '-'), ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-'), counts.all, skills.length, monsters.length, ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || ITEMXText("ui-panel.039")), ITEMXCore.esc(debugLog));
-    const settings = settingsPanelHtml(loaded, skin, {
-      connection,
-      chips,
-      domainControls,
-      fontChoices,
-      positionChoices,
-      manager,
-      debugPanel,
-      ...storageParts
-    });
+    // Only the settings tab shows this; building it on every tab scanned the whole chat for storage size.
+    const settings = tab !== 'settings' ? '' : (() => {
+      const domainControls = settingsDomainControls(loaded, skin);
+      // Phase timings go above the log: they are what a stutter report needs. Only
+      // with debug on, so the panel a reader normally sees is unchanged.
+      const debugLog = loaded.debugEnabled
+        ? `-- phase cost --\n${phaseReport()}\n\n${settingsDebugLog()}`
+        : settingsDebugLog();
+      const storageParts = settingsStorageParts(loaded);
+      // A map of the screen beats six abbreviations: the slot sits where the badge will.
+      const managerRows =
+        tab === 'settings'
+          ? all
+              .map(
+                (item, index) =>
+                  ITEMXText("ui-panel.042", index, ITEMXCore.esc(ITEMXCore.resolveItemEmoji(item)), ITEMXCore.esc(item.name), ITEMXCore.esc(item.displayRarity || item.rarity), ITEMXCore.esc(item.possession), ITEMXCore.esc(item.location), index, index, item.possession === 'removed' ? 'disabled' : '')
+              )
+              .join('') || ITEMXText("ui-panel.041")
+          : '';
+      const manager = ITEMXText("ui-panel.040", managerRows);
+      const connection = connectionSummary();
+      const chips = [
+        ['hook', connection.hook],
+        ['dom', connection.dom],
+        ['listener', connection.listener]
+      ]
+        .map(
+          ([key, [label, tone]]) =>
+            `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
+        )
+        .join('');
+      const debugPanel = ITEMXText("ui-panel.037", loaded.debugEnabled ? ITEMXText("ui-panel.038") : 'OFF', loaded.debugEnabled ? 'itemx2-setting-on' : '', loaded.debugEnabled ? 'ON' : 'OFF', ITEMXCore.esc(loaded.key), pipelineState.generation, ITEMXCore.esc(loaded.snapshot.fingerprint || '-'), ITEMXCore.esc(loaded.codexSnapshot.fingerprint || '-'), counts.all, skills.length, monsters.length, ITEMXCore.esc(hostState.lastHookError || hostState.lastDomError || ITEMXText("ui-panel.039")), ITEMXCore.esc(debugLog));
+      return settingsPanelHtml(loaded, skin, {
+        connection,
+        chips,
+        domainControls,
+        fontChoices,
+        positionChoices,
+        manager,
+        debugPanel,
+        ...storageParts
+      });
+    })();
     const pager =
       pageCount > 1
         ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
@@ -1183,7 +1252,7 @@
       )
       .join('');
     const headerStatus = `${enabled ? ITEMXText("ui-panel.026", counts.owned, counts.equipped, counts.observed) : ITEMXText("ui-panel.025")} · ${ITEMXCore.esc(uiState.status)}`;
-    return `${controls}${searchToggle}${rootBadgeHtml()}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX CODEX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX CODEX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || ITEMXText("ui-panel.024"))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+    return `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || ITEMXText("ui-panel.024"))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
   }
 
   function rootInventoryRegions(html) {
@@ -1503,7 +1572,7 @@
                     await commitManualEvents(loaded, [itemEvent], note ? ITEMXText("ui-panel.015") : ITEMXText("ui-panel.014"));
                   } catch (error) {
                     uiState.status = ITEMXText("ui-panel.013");
-                    await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+                    await notifyUser(`ITEMX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
                   return;
@@ -1532,7 +1601,7 @@
                     await commitManualEvents(loaded, [itemEvent], ITEMXText("ui-panel.011"));
                   } catch (error) {
                     uiState.status = ITEMXText("ui-panel.010");
-                    await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+                    await notifyUser(`ITEMX: ${error.message || error}`, 'error');
                   }
                   await openRootInventory({ open: true, tab: 'settings' });
                   return;
@@ -1551,7 +1620,7 @@
                   await commitManualEvents(loaded, [itemEvent], ITEMXText("ui-panel.007"));
                 } catch (error) {
                   uiState.status = ITEMXText("ui-panel.006");
-                  await notifyUser(`ITEMX CODEX: ${error.message || error}`, 'error');
+                  await notifyUser(`ITEMX: ${error.message || error}`, 'error');
                 }
                 await openRootInventory({ open: true, tab: 'settings' });
                 return;
@@ -1610,9 +1679,11 @@
       loaded.enabled = await isEnabled(loaded.character);
       Object.assign(loaded, await outputSettings(loaded.character));
       settingsState.debugEnabled = loaded.debugEnabled;
-      loaded.portraits =
+      // The list only needs 96px thumbnails; the detail view loads the full portrait on open.
+      loaded.portraits = {};
+      loaded.portraitThumbs =
         tab === 'bestiary' && loaded.encountersEnabled
-          ? await loadCodexPortraits(loaded.character, loaded.chat, loaded.codexSnapshot, loaded)
+          ? await loadCodexPortraits(loaded.character, loaded.chat, loaded.codexSnapshot, loaded, true)
           : {};
       const styled = await installMainStyle({ prompt: true });
       if (!styled || !hostState.mainDoc) {
@@ -1635,8 +1706,10 @@
       }
       await root.setAttribute('x-itemx2-drawer', 'owner');
       await root.setClassName(
-        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsLevel !== 'off' ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}`
+        `x-risu-itemx2-root-drawer x-risu-itemx2-pos-${uiState.badgePosition} x-risu-itemx2-font-${loaded.fontScale || 'small'}${open ? ' x-risu-itemx2-is-open' : ''}${loaded.effectsLevel !== 'off' ? '' : ' x-risu-itemx2-effects-off'}${SKIN_NAMES.includes(loaded.skin) ? ` x-risu-itemx2-skin-${loaded.skin}` : ''}${loaded.enabled ? '' : ' x-risu-itemx2-bot-off'}`
       );
+      void syncPowerUi(loaded.enabled);
+      if (open) uiState.badgeDeltaSeen = latestItemDelta().signature;
       const html = rootInventoryHtml(loaded, open, tab);
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
       if (!regionUpdated) {
