@@ -10,6 +10,7 @@
       querySelector: async selector => nativeElement(node.querySelector(local(selector))),
       createElement: async tag => nativeElement(document.createElement(tag)),
       getParent: async () => nativeElement(node.parentElement),
+      matches: async (selector) => Boolean(node.matches?.(selector)),
       getBoundingClientRect: async () => node.getBoundingClientRect(),
       textContent: async () => node.textContent,
       setTextContent: async value => { node.textContent = value; },

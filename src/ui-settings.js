@@ -468,6 +468,10 @@
   const setButton = (skin, action, label, extra = '') =>
     `<button class="itemx2-root-setting-button${skin.hook(action)}${extra}" type="button"${skin.data(action)}>${label}</button>`;
 
+  // Destructive actions ask with explicit yes / no buttons instead of a timed second tap.
+  const confirmRow = (skin, question, yesAction, yesLabel, noAction) =>
+    `<span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions">${setButton(skin, yesAction, yesLabel, ' itemx2-setting-danger')}${setButton(skin, noAction, ITEMXText("ui-settings.confirm-no"))}</span></span>`;
+
   const setSwitch = (skin, action, on) =>
     `<button class="itemx2-root-setting-button itemx2-sw${skin.hook(action)}${on ? ' itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"${skin.data(action)}><i></i></button>`;
 
@@ -552,16 +556,15 @@
     ), parts.positionChoices, parts.manager, backupSettingsHtml(skin.native), setCard(
       ITEMXText("ui-settings.106"),
       ITEMXText("ui-settings.105", parts.footprintLabel),
-      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', ITEMXText("ui-settings.104"))}${setButton(skin, 'storage-cleanup', parts.storageCleanupArmed ? ITEMXText("ui-settings.103") : ITEMXText("ui-settings.102"), parts.storageCleanupArmed ? ' itemx2-setting-cleanup-armed' : '')}</span>`
+      parts.storageCleanupArmed
+        ? confirmRow(skin, ITEMXText("ui-settings.confirm-storage"), 'storage-cleanup', ITEMXText("ui-settings.confirm-yes-storage"), 'storage-cleanup-cancel')
+        : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', ITEMXText("ui-settings.104"))}${setButton(skin, 'storage-cleanup', ITEMXText("ui-settings.102"))}</span>`
     ), setCard(
       ITEMXText("ui-settings.110"),
       ITEMXText("ui-settings.109"),
-      setButton(
-        skin,
-        'cleanup-chat',
-        parts.cleanupArmed ? ITEMXText("ui-settings.108") : ITEMXText("ui-settings.107"),
-        parts.cleanupArmed ? ' itemx2-setting-cleanup-armed' : ''
-      )
+      parts.cleanupArmed
+        ? confirmRow(skin, ITEMXText("ui-settings.confirm-cleanup"), 'cleanup-chat', ITEMXText("ui-settings.confirm-yes-cleanup"), 'cleanup-cancel')
+        : setButton(skin, 'cleanup-chat', ITEMXText("ui-settings.107"))
     ), parts.debugPanel, setCard(ITEMXText("ui-settings.111"), `ITEMX ${ITEMX_PLUGIN_VERSION}`));
   }
 
@@ -605,8 +608,8 @@
   function settingsStorageParts(loaded) {
     const footprint = itemxStorageFootprint(loaded.chat);
     return {
-      cleanupArmed: uiState.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed: uiState.storageCleanupArmedUntil > Date.now(),
+      cleanupArmed: Boolean(uiState.cleanupArmedUntil),
+      storageCleanupArmed: Boolean(uiState.storageCleanupArmedUntil),
       footprintLabel: ITEMXText("ui-settings.060", Math.max(1, Math.ceil(footprint.totalBytes / 1024)), footprint.markerCount)
     };
   }
@@ -638,14 +641,20 @@
           await updateRootSwitch(`.x-risu-${hook}`, value);
         })
     });
-    const armed = (key, arm, confirmed) => async () => {
-      if (uiState[key] <= Date.now()) {
-        uiState[key] = Date.now() + 7000;
+    // First tap swaps the button for a yes / no row; only "yes" runs the action.
+    const armed = (key, hook, arm, confirmed) => async () => {
+      if (!uiState[key]) {
+        uiState[key] = 1;
         await arm();
-        await openRootInventory({ open: true, tab: 'settings' });
+        await patchSettingsCard(hook);
         return;
       }
+      uiState[key] = 0;
       await confirmed();
+    };
+    const disarm = (key, hook) => async () => {
+      uiState[key] = 0;
+      await patchSettingsCard(hook);
     };
     return [
       {
@@ -750,9 +759,8 @@
             if (!loaded) return;
             const value = !(await outputSettings(loaded.character)).debugEnabled;
             await setDebugEnabled(loaded.character, value);
-            pipelineState.cachedLoaded = null;
             uiState.status = ITEMXText("ui-settings.043", value ? 'ON' : 'OFF');
-            await openRootInventory({ open: true, tab: 'settings' });
+            await patchDebugPanel();
           })
       },
       {
@@ -760,7 +768,7 @@
         run: async () => {
           settingsState.debugEntries = [];
           uiState.status = ITEMXText("ui-settings.042");
-          await openRootInventory({ open: true, tab: 'settings' });
+          await patchDebugPanel();
         }
       },
       {
@@ -843,7 +851,10 @@
         hook: 'itemx2-setting-lorebook-scan',
         run: async () => {
           await scanLorebookEncounters({ refresh: true });
-          await openRootInventory({ open: true, tab: 'settings' });
+          // The scan changes the bestiary, not this tab; only the header status moves.
+          pipelineState.cachedLoaded = null;
+          const loaded = await settingsLoaded();
+          if (loaded) await patchRootHeader(loaded);
         }
       },
       {
@@ -898,13 +909,9 @@
         hook: 'itemx2-setting-storage-cleanup',
         run: armed(
           'storageCleanupArmedUntil',
+          'itemx2-setting-storage-cleanup',
           async () => {
             uiState.status = ITEMXText("ui-settings.027");
-            await showRootFeedback(
-              ITEMXText("ui-settings.026"),
-              'working',
-              6500
-            );
           },
           async () => {
             uiState.status = ITEMXText("ui-settings.025");
@@ -930,13 +937,9 @@
         hook: 'itemx2-setting-cleanup',
         run: armed(
           'cleanupArmedUntil',
+          'itemx2-setting-cleanup',
           async () => {
             uiState.status = ITEMXText("ui-settings.019");
-            await showRootFeedback(
-              ITEMXText("ui-settings.018"),
-              'error',
-              6500
-            );
           },
           async () => {
             uiState.status = ITEMXText("ui-settings.017");
@@ -958,6 +961,8 @@
           }
         )
       },
+      { hook: 'itemx2-setting-storage-cleanup-cancel', run: disarm('storageCleanupArmedUntil', 'itemx2-setting-storage-cleanup') },
+      { hook: 'itemx2-setting-cleanup-cancel', run: disarm('cleanupArmedUntil', 'itemx2-setting-cleanup') },
       {
         hook: 'itemx2-setting-rebuild',
         run: async () => {

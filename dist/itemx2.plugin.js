@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.3.0
+//@version 2.3.1
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX · v2.3.0
+//@display-name ITEMX · v2.3.1
 //@description World Inventory & Encounter Archive
 
 /*
@@ -803,7 +803,7 @@ const ITEMXCore = (() => {
 
   function collectTransports(text) {
     const matches = [];
-    const xml = /<(itemExam|itemPatch|itemx)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
+    const xml = /<(itemExam|itemPatch|itemx)\b([^>]*)>((?:(?!<\1\b)[\s\S])*?)<\/\1\s*>/gi;
     const bracket = /\[(?:itemx|아이템)\s*:\s*([^\]\r\n]*)\]/gi;
     let m;
     while ((m = xml.exec(text)))
@@ -815,9 +815,23 @@ const ITEMXCore = (() => {
       .filter((one, index, all) => !all.slice(0, index).some((prev) => one.start < prev.end));
   }
 
+  function truncatedOpener(text, openerRe, fieldRe) {
+    openerRe.lastIndex = 0;
+    let m;
+    while ((m = openerRe.exec(text))) {
+      const rest = text.slice(m.index + m[0].length).trimStart();
+      if (!m[0].endsWith('>') || !rest || fieldRe.test(rest)) return m;
+    }
+    return null;
+  }
+
   function stripResidualTransport(text) {
     let out = String(text);
-    const opener = /<(?:itemExam|itemPatch|itemx)\b/i.exec(out);
+    const opener = truncatedOpener(
+      out,
+      /<(?:itemExam|itemPatch|itemx)\b[^>\n]*>?/gi,
+      new RegExp(`^</?(?:${TRANSPORT_TAG_ALT}|itemExam|itemPatch|itemx)\\b`, 'i')
+    );
     if (opener) {
       let boundary = out.indexOf('\n\n', opener.index);
       while (boundary >= 0) {
@@ -942,25 +956,28 @@ const ITEMXCore = (() => {
     return out.join('');
   }
 
+  const QUOTED_TRANSPORT_RE = /`[^`\n]*<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^`\n]*`/gi;
   function protectPlanning(content, extract) {
     const original = String(content || '');
-    if (/<(?:Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>/i.test(original)) {
-      const blocks = [];
-      let prefix = '__ITEMX_PROTECTED__';
-      while (original.includes(prefix)) prefix += '_';
-      const masked = original.replace(
-        /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
-        (block) => {
-          const key = prefix + blocks.length + '__';
-          blocks.push([key, block]);
-          return key;
-        }
-      );
-      const result = extract(masked);
-      for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
-      return result;
-    }
-    return null;
+    const planning = /<(?:Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>/i.test(original);
+    QUOTED_TRANSPORT_RE.lastIndex = 0;
+    const quoted = QUOTED_TRANSPORT_RE.test(original);
+    if (!planning && !quoted) return null;
+    const blocks = [];
+    let prefix = '__ITEMX_PROTECTED__';
+    while (original.includes(prefix)) prefix += '_';
+    const keep = (block) => {
+      const key = prefix + blocks.length + '__';
+      blocks.push([key, block]);
+      return key;
+    };
+    let masked = planning
+      ? original.replace(/<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, keep)
+      : original;
+    masked = masked.replace(QUOTED_TRANSPORT_RE, keep);
+    const result = extract(masked);
+    for (const [key, block] of blocks.reverse()) result.content = result.content.replace(key, () => block);
+    return result;
   }
 
   function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
@@ -1136,6 +1153,7 @@ const ITEMXCore = (() => {
     applyEvent,
     extractResponse,
     protectPlanning,
+    truncatedOpener,
     stripInventoryEcho,
     comparisonView,
     eventsFromText,
@@ -1875,15 +1893,17 @@ const ITEMXCodex = (() => {
   }
   function collect(text) {
     const out = [],
-      re = new RegExp(`<(${TRANSPORT_ALT})\\b([^>]*)>([\\s\\S]*?)</\\1\\s*>`, 'gi');
+      re = new RegExp(`<(${TRANSPORT_ALT})\\b([^>]*)>((?:(?!<\\1\\b)[\\s\\S])*?)</\\1\\s*>`, 'gi');
     let m;
     while ((m = re.exec(String(text))))
       out.push({ start: m.index, end: re.lastIndex, raw: m[0], tag: m[1], attrs: m[2], body: m[3] });
     return out;
   }
+  const RESIDUAL_FIELD_RE =
+    /^<\/?(?:id|name|glyph|rank|school|type|status|level|mastery|cost|cooldown|target|affinity|description|effects|growth|aliases|threat|relation|portrait|weaknesses|resistances|moves|outcome|action|op|skillExam|skillPatch|monsterExam|monsterPatch)\b/i;
   function stripResidual(text) {
     let out = String(text),
-      hit = new RegExp(`<(?:${TRANSPORT_ALT})\\b`, 'i').exec(out);
+      hit = ITEMXCore.truncatedOpener(out, new RegExp(`<(?:${TRANSPORT_ALT})\\b[^>\\n]*>?`, 'gi'), RESIDUAL_FIELD_RE);
     if (hit) {
       let boundary = out.indexOf('\n\n', hit.index);
       while (boundary >= 0) {
@@ -4268,9 +4288,9 @@ const ITEMXSettings = (() => {
 
   const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
 
-  const ITEMX_PLUGIN_VERSION = "2.3.0";
+  const ITEMX_PLUGIN_VERSION = "2.3.1";
 
-  const ITEMX_VERSION_LABEL = "2.3.0";
+  const ITEMX_VERSION_LABEL = "2.3.1";
 
   const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 
@@ -4329,6 +4349,7 @@ const ITEMXSettings = (() => {
       querySelector: async selector => nativeElement(node.querySelector(local(selector))),
       createElement: async tag => nativeElement(document.createElement(tag)),
       getParent: async () => nativeElement(node.parentElement),
+      matches: async (selector) => Boolean(node.matches?.(selector)),
       getBoundingClientRect: async () => node.getBoundingClientRect(),
       textContent: async () => node.textContent,
       setTextContent: async value => { node.textContent = value; },
@@ -4572,7 +4593,7 @@ const ITEMXSettings = (() => {
 .itemx2-root-inventory>.itemx-pf{display:flex;align-items:center;justify-content:space-between;gap:8px}.itemx2-root-pager{display:inline-flex;align-items:center;gap:7px}.itemx2-root-pager button{width:30px;height:28px;border:1px solid #2d394c;border-radius:7px;background:#151d2a;color:#d9e4f3;font:inherit;font-weight:900}.itemx2-root-pager button:disabled{opacity:.3}.itemx2-root-pager b{min-width:42px;color:#9eabc0;font-size:.65rem;text-align:center}
 .itemx2-root-item{display:block}.itemx2-root-tile-label{display:block;cursor:pointer}.itemx2-root-tile-label .itemx-tile{width:100%;pointer-events:none}
 .itemx2-root-detail{display:none}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-filters,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-tools,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-pf{display:none}.itemx2-root-settings{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-bestiary{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-settings{display:grid;gap:10px}
-.itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-row button{min-height:44px}.itemx2-manager-row button{position:relative}.itemx2-manager-row button::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:100%;transform:translate(-50%,-50%)}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#7d8ba4;font-size:.67rem}
+.itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-root-setting-card:has(>.itemx2-confirm-row){flex-wrap:wrap}.itemx2-root-setting-card:has(>.itemx2-confirm-row)>span:first-child{flex:1 1 100%;min-width:0}.itemx2-root-setting-card>.itemx2-confirm-row{display:grid;flex:0 0 100%;gap:8px;min-width:0;padding:10px;border:1px solid #6b3a42;border-radius:9px;background:#1d1216}.itemx2-confirm-row>small{color:#f3c3c9;font-weight:700;line-height:1.55;overflow-wrap:anywhere}.itemx2-confirm-row>.itemx2-manager-actions{display:flex;flex-wrap:wrap;gap:8px}.itemx2-confirm-row .itemx2-root-setting-button{flex:1 1 120px;min-height:44px}.itemx2-root-setting-button.itemx2-setting-danger{border-color:#b85b67!important;background:#4a1c24!important;color:#ffe1e5!important;font-weight:800}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-row button{min-height:44px}.itemx2-manager-row button{position:relative}.itemx2-manager-row button::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:100%;transform:translate(-50%,-50%)}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#7d8ba4;font-size:.67rem}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item{display:none}.itemx2-root-panel .itemx2-root-item:has(.itemx2-root-detail-choice:checked){display:block}.itemx2-root-detail-choice:checked~.itemx2-root-tile-label{display:none}.itemx2-root-detail-choice:checked~.itemx2-root-detail{display:block}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-grid{grid-template-columns:minmax(0,1fr)}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item:has(.itemx2-root-detail-choice:checked){grid-column:1/-1;width:100%;min-width:0}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-detail{width:100%}
 .itemx2-root-filter-owned:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-owned),.itemx2-root-filter-equipped:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-equipped),.itemx2-root-filter-observed:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-observed),.itemx2-root-filter-removed:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-removed){display:none}
@@ -4837,6 +4858,9 @@ ${codexPageStyle()}
       `${S} .itemx2-root-setting-button-busy{color:${c.dim2}}`,
       `${S} .itemx-manager-danger{border-color:#b5646f!important;color:#8f2436!important}`,
       `${S} .itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b5646f inset!important}`,
+      `${S} .itemx2-root-setting-card>.itemx2-confirm-row{border-color:rgba(178,52,74,.4);background:${c.dangerA}}`,
+      `${S} .itemx2-confirm-row>small{color:${c.dangerInk}}`,
+      `${S} .itemx2-root-setting-button.itemx2-setting-danger{border-color:#b5646f!important;background:#fbe9ea!important;color:#8f2436!important}`,
       `${S} .itemx2-tab-loading{color:${c.dim}}`,
       `${S} .itemx-codex-list-button{color:inherit}`,
       `${S} .itemx-empty{color:${c.dim2}}`,
@@ -5453,6 +5477,9 @@ ${codexPageStyle()}
   const setButton = (skin, action, label, extra = '') =>
     `<button class="itemx2-root-setting-button${skin.hook(action)}${extra}" type="button"${skin.data(action)}>${label}</button>`;
 
+  const confirmRow = (skin, question, yesAction, yesLabel, noAction) =>
+    `<span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions">${setButton(skin, yesAction, yesLabel, ' itemx2-setting-danger')}${setButton(skin, noAction, '아니오')}</span></span>`;
+
   const setSwitch = (skin, action, on) =>
     `<button class="itemx2-root-setting-button itemx2-sw${skin.hook(action)}${on ? ' itemx2-setting-on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}"${skin.data(action)}><i></i></button>`;
 
@@ -5536,16 +5563,15 @@ ${codexPageStyle()}
     )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">데이터</h4>${backupSettingsHtml(skin.native)}${setCard(
       '저장 공간',
       `${parts.footprintLabel} · 최근 원장은 자동 순환됩니다.`,
-      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', '재구축')}${setButton(skin, 'storage-cleanup', parts.storageCleanupArmed ? '다시 눌러 최적화' : '저장소 최적화', parts.storageCleanupArmed ? ' itemx2-setting-cleanup-armed' : '')}</span>`
+      parts.storageCleanupArmed
+        ? confirmRow(skin, '오래된 표시 마커와 기록을 접어 저장 공간을 줄일까요? 현재 상태는 그대로 남습니다.', 'storage-cleanup', '예, 최적화', 'storage-cleanup-cancel')
+        : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', '재구축')}${setButton(skin, 'storage-cleanup', '저장소 최적화')}</span>`
     )}<div class="itemx2-danger-zone"><h4>되돌릴 수 없는 작업</h4>${setCard(
       '이 채팅의 ITEMX 기록 지우기',
       '본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.',
-      setButton(
-        skin,
-        'cleanup-chat',
-        parts.cleanupArmed ? '다시 눌러 완전 제거' : '현재 채팅 정리',
-        parts.cleanupArmed ? ' itemx2-setting-cleanup-armed' : ''
-      )
+      parts.cleanupArmed
+        ? confirmRow(skin, '되돌릴 수 없습니다. 이 채팅의 ITEMX 카드와 기록을 모두 지우고 이 봇을 끌까요?', 'cleanup-chat', '예, 지웁니다', 'cleanup-cancel')
+        : setButton(skin, 'cleanup-chat', '현재 채팅 정리')
     )}</div>${parts.debugPanel}${setCard('플러그인', `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
   }
 
@@ -5588,8 +5614,8 @@ ${codexPageStyle()}
   function settingsStorageParts(loaded) {
     const footprint = itemxStorageFootprint(loaded.chat);
     return {
-      cleanupArmed: uiState.cleanupArmedUntil > Date.now(),
-      storageCleanupArmed: uiState.storageCleanupArmedUntil > Date.now(),
+      cleanupArmed: Boolean(uiState.cleanupArmedUntil),
+      storageCleanupArmed: Boolean(uiState.storageCleanupArmedUntil),
       footprintLabel: `${Math.max(1, Math.ceil(footprint.totalBytes / 1024))} KiB · 마커 ${footprint.markerCount}개`
     };
   }
@@ -5621,14 +5647,19 @@ ${codexPageStyle()}
           await updateRootSwitch(`.x-risu-${hook}`, value);
         })
     });
-    const armed = (key, arm, confirmed) => async () => {
-      if (uiState[key] <= Date.now()) {
-        uiState[key] = Date.now() + 7000;
+    const armed = (key, hook, arm, confirmed) => async () => {
+      if (!uiState[key]) {
+        uiState[key] = 1;
         await arm();
-        await openRootInventory({ open: true, tab: 'settings' });
+        await patchSettingsCard(hook);
         return;
       }
+      uiState[key] = 0;
       await confirmed();
+    };
+    const disarm = (key, hook) => async () => {
+      uiState[key] = 0;
+      await patchSettingsCard(hook);
     };
     return [
       {
@@ -5733,9 +5764,8 @@ ${codexPageStyle()}
             if (!loaded) return;
             const value = !(await outputSettings(loaded.character)).debugEnabled;
             await setDebugEnabled(loaded.character, value);
-            pipelineState.cachedLoaded = null;
             uiState.status = `디버그 로그 · ${value ? 'ON' : 'OFF'}`;
-            await openRootInventory({ open: true, tab: 'settings' });
+            await patchDebugPanel();
           })
       },
       {
@@ -5743,7 +5773,7 @@ ${codexPageStyle()}
         run: async () => {
           settingsState.debugEntries = [];
           uiState.status = '디버그 로그 비움';
-          await openRootInventory({ open: true, tab: 'settings' });
+          await patchDebugPanel();
         }
       },
       {
@@ -5825,7 +5855,9 @@ ${codexPageStyle()}
         hook: 'itemx2-setting-lorebook-scan',
         run: async () => {
           await scanLorebookEncounters({ refresh: true });
-          await openRootInventory({ open: true, tab: 'settings' });
+          pipelineState.cachedLoaded = null;
+          const loaded = await settingsLoaded();
+          if (loaded) await patchRootHeader(loaded);
         }
       },
       {
@@ -5878,13 +5910,9 @@ ${codexPageStyle()}
         hook: 'itemx2-setting-storage-cleanup',
         run: armed(
           'storageCleanupArmedUntil',
+          'itemx2-setting-storage-cleanup',
           async () => {
-            uiState.status = '최적화 확인 대기 · 7초 안에 다시 누르세요';
-            await showRootFeedback(
-              '현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.',
-              'working',
-              6500
-            );
+            uiState.status = '최적화 확인 대기';
           },
           async () => {
             uiState.status = '현재 채팅 저장소 최적화 중';
@@ -5910,13 +5938,9 @@ ${codexPageStyle()}
         hook: 'itemx2-setting-cleanup',
         run: armed(
           'cleanupArmedUntil',
+          'itemx2-setting-cleanup',
           async () => {
-            uiState.status = '정리 확인 대기 · 7초 안에 다시 누르세요';
-            await showRootFeedback(
-              '되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.',
-              'error',
-              6500
-            );
+            uiState.status = '정리 확인 대기';
           },
           async () => {
             uiState.status = '현재 채팅 ITEMX 기록 정리 중';
@@ -5938,6 +5962,8 @@ ${codexPageStyle()}
           }
         )
       },
+      { hook: 'itemx2-setting-storage-cleanup-cancel', run: disarm('storageCleanupArmedUntil', 'itemx2-setting-storage-cleanup') },
+      { hook: 'itemx2-setting-cleanup-cancel', run: disarm('cleanupArmedUntil', 'itemx2-setting-cleanup') },
       {
         hook: 'itemx2-setting-rebuild',
         run: async () => {
@@ -9831,6 +9857,8 @@ ${codexPageStyle()}
       else {
         await uiState.rootDrawer.removeClass('x-risu-itemx2-is-open');
         uiState.rootOpen = false;
+        uiState.cleanupArmedUntil = 0;
+        uiState.storageCleanupArmedUntil = 0;
         uiState.allowDrawerOverSettings = false;
         invalidateHostSettingsVisibility();
         await syncHostSettingsVisibility();
@@ -9862,6 +9890,7 @@ ${codexPageStyle()}
     workQueue.forget('aux-settle');
     workQueue.remember('lorebook', '');
     uiState.cleanupArmedUntil = 0;
+    uiState.storageCleanupArmedUntil = 0;
 
     workQueue.clearTimer('legacyCommitTimer');
     clearScrollTimers();
@@ -10189,7 +10218,7 @@ ${codexPageStyle()}
     const update = hostState.update.available
       ? `<span class="itemx2-update-indicator" x-itemx2-update="${ITEMXCore.esc(hostState.update.latest)}" aria-label="ITEMX 업데이트 가능">↑</span>`
       : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${(badgeDeltaDrawn = badgeDeltaHtml())}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${'보유'}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${'보유'}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
   const updateLabelHtml = () =>
@@ -10587,6 +10616,73 @@ ${codexPageStyle()}
       nav: between('<!--ITEMX2-NAV-START-->', '<!--ITEMX2-NAV-END-->'),
       body: between('<!--ITEMX2-BODY-START-->', '<!--ITEMX2-BODY-END-->')
     };
+  }
+
+  function htmlElementRange(html, start) {
+    const tag = /^<([a-z0-9]+)/i.exec(html.slice(start))?.[1];
+    if (!tag) return null;
+    const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+    re.lastIndex = start;
+    let depth = 0,
+      m;
+    while ((m = re.exec(html))) {
+      if (m[1]) {
+        depth -= 1;
+        if (!depth) return { open: html.indexOf('>', start) + 1, close: m.index };
+      } else if (!m[0].endsWith('/>')) depth += 1;
+    }
+    return null;
+  }
+  const classAt = (html, className) => html.search(new RegExp(`class="(?:[^"]*\\s)?${className}(?=[\\s"])`));
+  function classInnerHtml(html, className) {
+    const at = classAt(html, className);
+    const range = at < 0 ? null : htmlElementRange(html, html.lastIndexOf('<', at));
+    return range ? html.slice(range.open, range.close) : null;
+  }
+  function settingsCardInnerHtml(html, hook) {
+    const at = classAt(html, hook);
+    if (at < 0) return null;
+    const start = html.lastIndexOf('<section class="itemx2-root-setting-card"', at);
+    const range = start < 0 ? null : htmlElementRange(html, start);
+    return range && range.close > at ? html.slice(range.open, range.close) : null;
+  }
+  async function hostSettingsCard(hook) {
+    let element = await queryMainClass(hook);
+    for (let depth = 0; element && depth < 6; depth += 1) {
+      if (await element.matches('.x-risu-itemx2-root-setting-card,.itemx2-root-setting-card')) return element;
+      element = await element.getParent();
+    }
+    return null;
+  }
+  async function settingsLoaded() {
+    const loaded = pipelineState.cachedLoaded || (await cachedOrRebuildCurrent());
+    if (loaded) Object.assign(loaded, await outputSettings(loaded.character));
+    return loaded;
+  }
+  async function patchRootHeader(loaded) {
+    const header = rootInventoryRegions(rootInventoryHtml(loaded, true, uiState.activeRootTab || 'settings')).header;
+    const element = header == null ? null : await queryMainClass('itemx-ph-sub');
+    if (element) await element.setInnerHTML(header);
+  }
+  async function patchSettingsCard(hook) {
+    const loaded = await settingsLoaded();
+    if (!loaded) return false;
+    const inner = settingsCardInnerHtml(rootInventoryHtml(loaded, true, 'settings'), hook);
+    const card = inner == null ? null : await hostSettingsCard(hook);
+    if (!card) return openRootInventory({ open: true, tab: 'settings', loaded });
+    await card.setInnerHTML(inner);
+    await patchRootHeader(loaded);
+    return true;
+  }
+  async function patchDebugPanel() {
+    const loaded = await settingsLoaded();
+    if (!loaded) return false;
+    const inner = classInnerHtml(rootInventoryHtml(loaded, true, 'settings'), 'itemx2-debug-fold');
+    const fold = inner == null ? null : await queryMainClass('itemx2-debug-fold');
+    if (!fold) return openRootInventory({ open: true, tab: 'settings', loaded });
+    await fold.setInnerHTML(inner);
+    await patchRootHeader(loaded);
+    return true;
   }
 
   async function updateRootRegions(html) {
@@ -11027,6 +11123,7 @@ ${codexPageStyle()}
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
       if (!regionUpdated) {
         await root.setInnerHTML(html);
+        badgeDeltaDrawn = badgeDeltaHtml();
         workQueue.remember('detail', '');
       }
       if (!attached) {

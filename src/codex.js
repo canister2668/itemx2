@@ -479,15 +479,19 @@ const ITEMXCodex = (() => {
   }
   function collect(text) {
     const out = [],
-      re = new RegExp(`<(${TRANSPORT_ALT})\\b([^>]*)>([\\s\\S]*?)</\\1\\s*>`, 'gi');
+      // Same guard as the item core: no nested opener of the same tag inside a body.
+      re = new RegExp(`<(${TRANSPORT_ALT})\\b([^>]*)>((?:(?!<\\1\\b)[\\s\\S])*?)</\\1\\s*>`, 'gi');
     let m;
     while ((m = re.exec(String(text))))
       out.push({ start: m.index, end: re.lastIndex, raw: m[0], tag: m[1], attrs: m[2], body: m[3] });
     return out;
   }
+  const RESIDUAL_FIELD_RE =
+    /^<\/?(?:id|name|glyph|rank|school|type|status|level|mastery|cost|cooldown|target|affinity|description|effects|growth|aliases|threat|relation|portrait|weaknesses|resistances|moves|outcome|action|op|skillExam|skillPatch|monsterExam|monsterPatch)\b/i;
   function stripResidual(text) {
+    // Only a truncated transport takes its paragraph with it; a tag named in prose does not.
     let out = String(text),
-      hit = new RegExp(`<(?:${TRANSPORT_ALT})\\b`, 'i').exec(out);
+      hit = ITEMXCore.truncatedOpener(out, new RegExp(`<(?:${TRANSPORT_ALT})\\b[^>\\n]*>?`, 'gi'), RESIDUAL_FIELD_RE);
     if (hit) {
       let boundary = out.indexOf('\n\n', hit.index);
       while (boundary >= 0) {

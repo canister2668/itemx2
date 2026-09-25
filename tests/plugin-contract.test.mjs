@@ -653,7 +653,9 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /async function cleanCurrentChatItemx\(\)/);
   assert.match(source, /const CHAT_DATA_KEYS = \[/);
   assert.match(source, /await setEnabled\(ctx\.character, false\)/);
-  assert.match(source, /uiState\[key\] = Date\.now\(\) \+ 7000/);
+  // Destructive settings ask yes / no; there is no timed second tap any more.
+  assert.match(source, /uiState\[key\] = 1;[\s\S]*?uiState\[key\] = 0;\s*await confirmed\(\)/);
+  assert.equal(source.includes('Date.now() + 7000'), false);
   assert.match(source, /function reconcileStoredRefViews\(chat, preferredLatestIndex = null\)/);
   assert.match(source, /const keepInline = index === latestIndex/);
   assert.match(source, /\.chattext \.x-risu-itemx-card/);

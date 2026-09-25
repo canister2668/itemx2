@@ -493,6 +493,9 @@
       else {
         await uiState.rootDrawer.removeClass('x-risu-itemx2-is-open');
         uiState.rootOpen = false;
+        // A pending yes / no question does not survive closing the drawer.
+        uiState.cleanupArmedUntil = 0;
+        uiState.storageCleanupArmedUntil = 0;
         uiState.allowDrawerOverSettings = false;
         invalidateHostSettingsVisibility();
         await syncHostSettingsVisibility();
@@ -524,6 +527,7 @@
     workQueue.forget('aux-settle');
     workQueue.remember('lorebook', '');
     uiState.cleanupArmedUntil = 0;
+    uiState.storageCleanupArmedUntil = 0;
 
     workQueue.clearTimer('legacyCommitTimer');
     clearScrollTimers();
@@ -854,7 +858,7 @@
     const update = hostState.update.available
       ? ITEMXText("ui-panel.081", ITEMXCore.esc(hostState.update.latest))
       : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${(badgeDeltaDrawn = badgeDeltaHtml())}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${ITEMXText("ui-panel.badge-owned")}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${ITEMXText("ui-panel.badge-owned")}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
   }
 
   const updateLabelHtml = () =>
@@ -1267,6 +1271,76 @@
       nav: between('<!--ITEMX2-NAV-START-->', '<!--ITEMX2-NAV-END-->'),
       body: between('<!--ITEMX2-BODY-START-->', '<!--ITEMX2-BODY-END-->')
     };
+  }
+
+  // In-place settings patches. Replacing the tab body resets its scroll, so a control that
+  // only changes its own card re-renders the settings HTML as a string and swaps that card.
+  function htmlElementRange(html, start) {
+    const tag = /^<([a-z0-9]+)/i.exec(html.slice(start))?.[1];
+    if (!tag) return null;
+    const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+    re.lastIndex = start;
+    let depth = 0,
+      m;
+    while ((m = re.exec(html))) {
+      if (m[1]) {
+        depth -= 1;
+        if (!depth) return { open: html.indexOf('>', start) + 1, close: m.index };
+      } else if (!m[0].endsWith('/>')) depth += 1;
+    }
+    return null;
+  }
+  const classAt = (html, className) => html.search(new RegExp(`class="(?:[^"]*\\s)?${className}(?=[\\s"])`));
+  function classInnerHtml(html, className) {
+    const at = classAt(html, className);
+    const range = at < 0 ? null : htmlElementRange(html, html.lastIndexOf('<', at));
+    return range ? html.slice(range.open, range.close) : null;
+  }
+  function settingsCardInnerHtml(html, hook) {
+    const at = classAt(html, hook);
+    if (at < 0) return null;
+    const start = html.lastIndexOf('<section class="itemx2-root-setting-card"', at);
+    const range = start < 0 ? null : htmlElementRange(html, start);
+    return range && range.close > at ? html.slice(range.open, range.close) : null;
+  }
+  async function hostSettingsCard(hook) {
+    let element = await queryMainClass(hook);
+    for (let depth = 0; element && depth < 6; depth += 1) {
+      if (await element.matches('.x-risu-itemx2-root-setting-card,.itemx2-root-setting-card')) return element;
+      element = await element.getParent();
+    }
+    return null;
+  }
+  async function settingsLoaded() {
+    const loaded = pipelineState.cachedLoaded || (await cachedOrRebuildCurrent());
+    if (loaded) Object.assign(loaded, await outputSettings(loaded.character));
+    return loaded;
+  }
+  async function patchRootHeader(loaded) {
+    const header = rootInventoryRegions(rootInventoryHtml(loaded, true, uiState.activeRootTab || 'settings')).header;
+    const element = header == null ? null : await queryMainClass('itemx-ph-sub');
+    if (element) await element.setInnerHTML(header);
+  }
+  async function patchSettingsCard(hook) {
+    const loaded = await settingsLoaded();
+    if (!loaded) return false;
+    const inner = settingsCardInnerHtml(rootInventoryHtml(loaded, true, 'settings'), hook);
+    const card = inner == null ? null : await hostSettingsCard(hook);
+    if (!card) return openRootInventory({ open: true, tab: 'settings', loaded });
+    await card.setInnerHTML(inner);
+    await patchRootHeader(loaded);
+    return true;
+  }
+  async function patchDebugPanel() {
+    const loaded = await settingsLoaded();
+    if (!loaded) return false;
+    const inner = classInnerHtml(rootInventoryHtml(loaded, true, 'settings'), 'itemx2-debug-fold');
+    const fold = inner == null ? null : await queryMainClass('itemx2-debug-fold');
+    if (!fold) return openRootInventory({ open: true, tab: 'settings', loaded });
+    // The <details> element stays, so an open fold stays open.
+    await fold.setInnerHTML(inner);
+    await patchRootHeader(loaded);
+    return true;
   }
 
   async function updateRootRegions(html) {
@@ -1714,6 +1788,8 @@
       const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
       if (!regionUpdated) {
         await root.setInnerHTML(html);
+        // Only a full drawer write repaints the badge; string-only renders must not claim it.
+        badgeDeltaDrawn = badgeDeltaHtml();
         workQueue.remember('detail', '');
       }
       if (!attached) {

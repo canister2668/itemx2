@@ -49,8 +49,7 @@
   ],
   "ui-settings.016": "현재 채팅의 ITEMX 마커와 저장 원장을 정리하는 중입니다…",
   "ui-settings.017": "현재 채팅 ITEMX 기록 정리 중",
-  "ui-settings.018": "되돌릴 수 없습니다. 7초 안에 정리 버튼을 다시 누르면 현재 봇을 끄고 이 채팅 기록만 지웁니다.",
-  "ui-settings.019": "정리 확인 대기 · 7초 안에 다시 누르세요",
+  "ui-settings.019": "정리 확인 대기",
   "ui-settings.020": [
     "ITEMX 저장소 최적화 실패: ",
     ""
@@ -67,8 +66,7 @@
   ],
   "ui-settings.024": "현재 상태를 보존하며 과거 이벤트 기록을 정리하는 중입니다…",
   "ui-settings.025": "현재 채팅 저장소 최적화 중",
-  "ui-settings.026": "현재 상태는 보존하고 오래된 ITEMX 표시 마커와 원장만 순환 저장소로 접습니다.",
-  "ui-settings.027": "최적화 확인 대기 · 7초 안에 다시 누르세요",
+  "ui-settings.027": "최적화 확인 대기",
   "ui-settings.028": [
     "글자 크기 · ",
     ""
@@ -211,7 +209,6 @@
   "ui-settings.100": "화면에서 ITEMX 배지가 붙을 자리입니다.",
   "ui-settings.101": "배지 위치",
   "ui-settings.102": "저장소 최적화",
-  "ui-settings.103": "다시 눌러 최적화",
   "ui-settings.104": "재구축",
   "ui-settings.105": [
     "",
@@ -219,7 +216,6 @@
   ],
   "ui-settings.106": "저장 공간",
   "ui-settings.107": "현재 채팅 정리",
-  "ui-settings.108": "다시 눌러 완전 제거",
   "ui-settings.109": "본문의 카드와 원장을 모두 삭제하고 이 봇을 OFF로 바꿉니다. 대화 글은 남습니다. 복구할 수 없으니 필요하면 먼저 백업하세요.",
   "ui-settings.110": "이 채팅의 ITEMX 기록 지우기",
   "ui-settings.111": "플러그인",
@@ -892,5 +888,10 @@
   "ui-settings.power-toast-off": "ITEMX를 이 봇에서 껐습니다",
   "ui-panel.badge-gain": "획득",
   "ui-panel.badge-loss": "소실",
-  "ui-panel.badge-owned": "보유"
+  "ui-panel.badge-owned": "보유",
+  "ui-settings.confirm-cleanup": "되돌릴 수 없습니다. 이 채팅의 ITEMX 카드와 기록을 모두 지우고 이 봇을 끌까요?",
+  "ui-settings.confirm-storage": "오래된 표시 마커와 기록을 접어 저장 공간을 줄일까요? 현재 상태는 그대로 남습니다.",
+  "ui-settings.confirm-yes-cleanup": "예, 지웁니다",
+  "ui-settings.confirm-yes-storage": "예, 최적화",
+  "ui-settings.confirm-no": "아니오"
 }

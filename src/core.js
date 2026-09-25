@@ -806,7 +806,9 @@ const ITEMXCore = (() => {
 
   function collectTransports(text) {
     const matches = [];
-    const xml = /<(itemExam|itemPatch|itemx)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
+    // The body may not contain another opener of the same tag. Otherwise a tag named in leaked
+    // reasoning pairs with the real closer at the end and swallows the whole response.
+    const xml = /<(itemExam|itemPatch|itemx)\b([^>]*)>((?:(?!<\1\b)[\s\S])*?)<\/\1\s*>/gi;
     const bracket = /\[(?:itemx|아이템)\s*:\s*([^\]\r\n]*)\]/gi;
     let m;
     while ((m = xml.exec(text)))
@@ -818,9 +820,25 @@ const ITEMXCore = (() => {
       .filter((one, index, all) => !all.slice(0, index).some((prev) => one.start < prev.end));
   }
 
+  // An unclosed opener is a truncated transport only when fields follow it or the text ends
+  // there. A tag merely named in prose is dropped as a token; its paragraph stays.
+  function truncatedOpener(text, openerRe, fieldRe) {
+    openerRe.lastIndex = 0;
+    let m;
+    while ((m = openerRe.exec(text))) {
+      const rest = text.slice(m.index + m[0].length).trimStart();
+      if (!m[0].endsWith('>') || !rest || fieldRe.test(rest)) return m;
+    }
+    return null;
+  }
+
   function stripResidualTransport(text) {
     let out = String(text);
-    const opener = /<(?:itemExam|itemPatch|itemx)\b/i.exec(out);
+    const opener = truncatedOpener(
+      out,
+      /<(?:itemExam|itemPatch|itemx)\b[^>\n]*>?/gi,
+      new RegExp(`^</?(?:${TRANSPORT_TAG_ALT}|itemExam|itemPatch|itemx)\\b`, 'i')
+    );
     if (opener) {
       let boundary = out.indexOf('\n\n', opener.index);
       while (boundary >= 0) {
@@ -948,26 +966,32 @@ const ITEMXCore = (() => {
     return out.join('');
   }
 
+  // A transport tag written inside `inline code` is a mention (reasoning that leaked into the
+  // body, a model quoting its own protocol), never a transport.
+  const QUOTED_TRANSPORT_RE = /`[^`\n]*<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^`\n]*`/gi;
   function protectPlanning(content, extract) {
     // Planning text is not an instruction source. Fail closed on an unclosed block.
     const original = String(content || '');
-    if (/<(?:Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>/i.test(original)) {
-      const blocks = [];
-      let prefix = '__ITEMX_PROTECTED__';
-      while (original.includes(prefix)) prefix += '_';
-      const masked = original.replace(
-        /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
-        (block) => {
-          const key = prefix + blocks.length + '__';
-          blocks.push([key, block]);
-          return key;
-        }
-      );
-      const result = extract(masked);
-      for (const [key, block] of blocks) result.content = result.content.replace(key, () => block);
-      return result;
-    }
-    return null;
+    const planning = /<(?:Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>/i.test(original);
+    QUOTED_TRANSPORT_RE.lastIndex = 0;
+    const quoted = QUOTED_TRANSPORT_RE.test(original);
+    if (!planning && !quoted) return null;
+    const blocks = [];
+    let prefix = '__ITEMX_PROTECTED__';
+    while (original.includes(prefix)) prefix += '_';
+    const keep = (block) => {
+      const key = prefix + blocks.length + '__';
+      blocks.push([key, block]);
+      return key;
+    };
+    let masked = planning
+      ? original.replace(/<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, keep)
+      : original;
+    masked = masked.replace(QUOTED_TRANSPORT_RE, keep);
+    const result = extract(masked);
+    // Restore in reverse so a quoted span inside a planning block comes back inside it.
+    for (const [key, block] of blocks.reverse()) result.content = result.content.replace(key, () => block);
+    return result;
   }
 
   function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
@@ -1143,6 +1167,7 @@ const ITEMXCore = (() => {
     applyEvent,
     extractResponse,
     protectPlanning,
+    truncatedOpener,
     stripInventoryEcho,
     comparisonView,
     eventsFromText,

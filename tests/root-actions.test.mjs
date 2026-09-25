@@ -37,7 +37,7 @@ function settingsBodyOnly(rt) {
 test('the drawer dispatches settings from one ordered table', async () => {
   const rt = await presentationRuntime();
   const hooks = rt.rootSettingActions().map((a) => a.hook);
-  assert.equal(hooks.length, 35);
+  assert.equal(hooks.length, 37);
   assert.equal(new Set(hooks).size, hooks.length, 'duplicate hook would shadow a later control');
   for (const action of rt.rootSettingActions()) assert.equal(typeof action.run, 'function');
 });
@@ -60,7 +60,8 @@ test('the table keeps the dispatch order the chain had', async () => {
     'itemx2-setting-lorebook', 'itemx2-setting-lorebook-scan',
     'itemx2-setting-module-assets',
     'itemx2-setting-font-small', 'itemx2-setting-font-medium', 'itemx2-setting-font-large',
-    'itemx2-setting-storage-cleanup', 'itemx2-setting-cleanup', 'itemx2-setting-rebuild'
+    'itemx2-setting-storage-cleanup', 'itemx2-setting-cleanup',
+    'itemx2-setting-storage-cleanup-cancel', 'itemx2-setting-cleanup-cancel', 'itemx2-setting-rebuild'
   ];
   assert.deepEqual([...hooks], expected);
 });
@@ -78,7 +79,7 @@ test('every rendered drawer control has a table row', async () => {
   );
   // State classes and controls routed before the settings table are not rows.
   const NOT_ROWS = new Set([
-    'itemx2-setting-on', 'itemx2-setting-cleanup-armed', 'itemx2-setting-font-small',
+    'itemx2-setting-on', 'itemx2-setting-cleanup-armed', 'itemx2-setting-danger', 'itemx2-setting-font-small',
     'itemx2-setting-font-medium', 'itemx2-setting-font-large', 'itemx2-setting-backup',
     'itemx2-position-choice', 'itemx2-position-on', 'itemx2-position-screen', 'itemx2-position-hint',
     'itemx2-position-map', 'itemx2-position-grid', 'itemx2-seg-btn', 'itemx2-seg-on'
@@ -90,7 +91,13 @@ test('every rendered drawer control has a table row', async () => {
 
 test('no table row points at a class the drawer never renders', async () => {
   const rt = await presentationRuntime();
-  const html = drawerSettings(rt);
+  // The "no" buttons exist only while a destructive action waits for its yes / no answer.
+  rt.runtime.cleanupArmedUntil = 1;
+  rt.runtime.storageCleanupArmedUntil = 1;
+  const confirming = drawerSettings(rt);
+  rt.runtime.cleanupArmedUntil = 0;
+  rt.runtime.storageCleanupArmedUntil = 0;
+  const html = drawerSettings(rt) + confirming;
   // Font and position choices come from helpers the fixture renders separately.
   const missing = [...rt.rootSettingActions().map((a) => a.hook)].filter(
     (hook) => !html.includes(hook) && !/itemx2-setting-debug(-clear)?$/.test(hook)
