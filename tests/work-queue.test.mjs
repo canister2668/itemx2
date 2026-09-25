@@ -172,6 +172,17 @@ test('failed returns and thrown errors back off through 10, 20, 40, 80 and 120 s
   assert.equal((await queue.attempt('aux','new-message',()=>[])).skipped,false);
 });
 
+test('automatic recovery stops after its attempt budget instead of retrying forever', async () => {
+  let now=0,calls=0; const queue=create({Date:{now:()=>now}});
+  for (let n=0;n<3;n++) {
+    await assert.rejects(queue.attempt('catch-up','slow',()=>{calls++;throw Error('timed out')},Array.isArray,Infinity,3),/timed out/);
+    now+=200000;
+  }
+  const exhausted=await queue.attempt('catch-up','slow',()=>assert.fail('fourth provider call'),Array.isArray,Infinity,3);
+  assert.equal(exhausted.skipped,true); assert.equal(exhausted.exhausted,true); assert.equal(calls,3);
+  assert.equal((await queue.attempt('catch-up','next-message',()=>[],Array.isArray,Infinity,3)).skipped,false);
+});
+
 test('scroll end runs while a model RPC is suspended, without admitting blocked heavy work', async () => {
   const queue=create(),hold=gate(),seen=[];
   const aux=queue.enqueue({kind:'aux',work:()=>queue.external(()=>hold.promise)});

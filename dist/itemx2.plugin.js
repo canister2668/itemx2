@@ -1,8 +1,8 @@
 //@name itemx2
 //@api 3.0
-//@version 2.3.1
+//@version 2.3.2
 //@update-url https://raw.githubusercontent.com/canister2668/itemx2/refs/heads/main/dist/itemx2.plugin.js
-//@display-name ITEMX · v2.3.1
+//@display-name ITEMX · v2.3.2
 //@description World Inventory & Encounter Archive
 
 /*
@@ -1816,6 +1816,12 @@ const ITEMXCodex = (() => {
       pushDiagnostic(reg, { code: 'patch_missing', id: event.patch?.id });
       return null;
     }
+    if (event.manual === true && event.patch?.op === 'purge') {
+      const removed = clone(entity);
+      delete reg.entries[entity.id];
+      reg.order = reg.order.filter((id) => id !== entity.id);
+      return removed;
+    }
     const { action = null, op = null, fields = {} } = event.patch || {};
     const allowedActions = DOMAINS[event.domain]?.actions || new Set();
     if ((action && !allowedActions.has(action)) || (op && !OPS.has(op)) || (action && op) || (!action && !op)) {
@@ -2510,6 +2516,7 @@ const ITEMXCodex = (() => {
       for (const one of skills.order
         .map((id) => skills.entries[id])
         .filter(Boolean)
+        .filter((x) => x.status !== 'lost')
         .filter((x) => ['equipped', 'sealed'].includes(x.status) || text.includes(x.name.toLowerCase()))
         .slice(0, 8))
         lines.push(
@@ -3814,8 +3821,9 @@ const ITEMXWorkQueue = (() => {
       }
       return Date.now() - previous.since >= ms;
     }
-    async function attempt(kind, key, work, accept = () => true, ttl = Infinity) {
+    async function attempt(kind, key, work, accept = () => true, ttl = Infinity, giveUpAfter = Infinity) {
       const previous = records.get(kind);
+      if (previous?.key === key && previous.failures >= giveUpAfter) return { skipped: true, exhausted: true };
       if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt)) return { skipped: true };
       let value, error;
       try { value = await work(); } catch (caught) { error = caught; }
@@ -3998,7 +4006,8 @@ const ITEMXStorage = (() => {
     manuals.forEach((row, index) => {
       if (!row.event?.kind) return;
       const identity = row.id || `manual:${index}:${ITEMXCore.fnv1a(JSON.stringify([row.afterIndex, row.at, row.event]))}`;
-      append(rows, identities, { id: identity, domain: 'item', afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, ...(row.presentation?.review ? { review: row.presentation.review } : {}) });
+      const manualDomain = ['skill', 'monster'].includes(row.event?.domain) ? 'codex' : 'item';
+      append(rows, identities, { id: identity, domain: manualDomain, afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, ...(row.presentation?.review ? { review: row.presentation.review } : {}) });
     });
     (chat.message || []).forEach((message, index) => {
       const text = ITEMXCore.messageText(message);
@@ -4288,9 +4297,9 @@ const ITEMXSettings = (() => {
 
   const ITEMX_PROTOCOL_TEXT = "## ITEMX Compact Item Event Protocol\n\nITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.\n\nEmit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.\n\nUse the one-line form by default:\n[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]\n\nFor a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.\n\nExisting ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:\n[itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]\n[itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]\n[itemx: id=sword | action=equip | slot=main_hand]\n[itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]\n[itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]\n[itemx: id=sword | op=merge | durability=61/100]\n\nActions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.\nBefore equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.\n\nEnums:\n- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean\n- possession: observed, owned, removed\n- location: inventory, equipped, storage, unknown\n- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic\n- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void\n- condition: blessed, cursed, corrupted, glitched, sealed\n\nExplicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.\n\nDo not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.\n";
 
-  const ITEMX_PLUGIN_VERSION = "2.3.1";
+  const ITEMX_PLUGIN_VERSION = "2.3.2";
 
-  const ITEMX_VERSION_LABEL = "2.3.1";
+  const ITEMX_VERSION_LABEL = "2.3.2";
 
   const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 
@@ -4317,6 +4326,8 @@ const ITEMXSettings = (() => {
   const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
 
   const ITEMX_AUX_SETTLE_MS = 1500;
+  const ITEMX_AUX_TIMEOUT_MS = 240000;
+  const ITEMX_AUX_AUTO_ATTEMPTS = 3;
 
   const ITEMX_AUX_PROMPT_REVISION = 2;
 
@@ -4593,7 +4604,7 @@ const ITEMXSettings = (() => {
 .itemx2-root-inventory>.itemx-pf{display:flex;align-items:center;justify-content:space-between;gap:8px}.itemx2-root-pager{display:inline-flex;align-items:center;gap:7px}.itemx2-root-pager button{width:30px;height:28px;border:1px solid #2d394c;border-radius:7px;background:#151d2a;color:#d9e4f3;font:inherit;font-weight:900}.itemx2-root-pager button:disabled{opacity:.3}.itemx2-root-pager b{min-width:42px;color:#9eabc0;font-size:.65rem;text-align:center}
 .itemx2-root-item{display:block}.itemx2-root-tile-label{display:block;cursor:pointer}.itemx2-root-tile-label .itemx-tile{width:100%;pointer-events:none}
 .itemx2-root-detail{display:none}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-filters,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-tools,.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-pf{display:none}.itemx2-root-settings{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-inventory,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-skills,.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-bestiary{display:none}.itemx2-tab-settings:checked~.itemx2-root-layer .itemx2-root-settings{display:grid;gap:10px}
-.itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-root-setting-card:has(>.itemx2-confirm-row){flex-wrap:wrap}.itemx2-root-setting-card:has(>.itemx2-confirm-row)>span:first-child{flex:1 1 100%;min-width:0}.itemx2-root-setting-card>.itemx2-confirm-row{display:grid;flex:0 0 100%;gap:8px;min-width:0;padding:10px;border:1px solid #6b3a42;border-radius:9px;background:#1d1216}.itemx2-confirm-row>small{color:#f3c3c9;font-weight:700;line-height:1.55;overflow-wrap:anywhere}.itemx2-confirm-row>.itemx2-manager-actions{display:flex;flex-wrap:wrap;gap:8px}.itemx2-confirm-row .itemx2-root-setting-button{flex:1 1 120px;min-height:44px}.itemx2-root-setting-button.itemx2-setting-danger{border-color:#b85b67!important;background:#4a1c24!important;color:#ffe1e5!important;font-weight:800}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-row button{min-height:44px}.itemx2-manager-row button{position:relative}.itemx2-manager-row button::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:100%;transform:translate(-50%,-50%)}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#7d8ba4;font-size:.67rem}
+.itemx2-root-tab-body{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden}.itemx2-root-tab-body>.itemx2-root-skills,.itemx2-root-tab-body>.itemx2-root-bestiary{display:grid;align-content:start;gap:9px}.itemx2-root-tab-body>.itemx2-root-settings{display:grid;gap:10px}.itemx-main-tab-on{border-bottom-color:#d4af6e!important;color:#f3dcaa!important;background:#121925!important}.itemx2-tab-loading{display:grid;flex:1;min-height:0;place-content:center;justify-items:center;gap:10px;padding:24px;color:#b7c3d6;text-align:center}.itemx2-tab-loading i{width:28px;height:28px;border:2px solid rgba(212,175,110,.2);border-top-color:#d4af6e;border-radius:50%;animation:itemx2-tab-spin .7s linear infinite}.itemx2-tab-loading strong{color:#f0dfb8;font-size:.78rem}.itemx2-tab-loading small{color:#718097;font-size:.66rem}@keyframes itemx2-tab-spin{to{transform:rotate(360deg)}}.itemx2-pos-lb:checked~.itemx2-root-layer label[for="itemx2-pos-lb"],.itemx2-pos-lm:checked~.itemx2-root-layer label[for="itemx2-pos-lm"],.itemx2-pos-lt:checked~.itemx2-root-layer label[for="itemx2-pos-lt"],.itemx2-pos-rb:checked~.itemx2-root-layer label[for="itemx2-pos-rb"],.itemx2-pos-rm:checked~.itemx2-root-layer label[for="itemx2-pos-rm"],.itemx2-pos-rt:checked~.itemx2-root-layer label[for="itemx2-pos-rt"]{border-color:#d4af6e;background:#292316;color:#f3dcaa}.itemx2-status-chip-on{border-color:#37634d;color:#9cddb7;background:#102019}.itemx2-status-chip-off{border-color:#61343a;color:#efa8af;background:#251216}.itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b85b67 inset!important}.itemx2-root-setting-card:has(>.itemx2-confirm-row){flex-wrap:wrap}.itemx2-root-setting-card:has(>.itemx2-confirm-row)>span:first-child{flex:1 1 100%;min-width:0}.itemx2-root-setting-card>.itemx2-confirm-row{display:grid;flex:0 0 100%;gap:8px;min-width:0;padding:10px;border:1px solid #6b3a42;border-radius:9px;background:#1d1216}.itemx2-confirm-row>small{color:#f3c3c9;font-weight:700;line-height:1.55;overflow-wrap:anywhere}.itemx2-confirm-row>.itemx2-manager-actions{display:flex;flex-wrap:wrap;gap:8px}.itemx2-confirm-row .itemx2-root-setting-button{flex:1 1 120px;min-height:44px}.itemx2-codex-delete{margin:14px 12px 16px}.itemx2-codex-delete>.itemx2-entity-delete{width:100%;min-height:44px;border-color:#5a3339!important;color:#f3c3c9!important}.itemx2-codex-delete>.itemx2-confirm-row{display:grid;gap:8px;padding:10px;border:1px solid #6b3a42;border-radius:9px;background:#1d1216}.itemx2-root-setting-button.itemx2-setting-danger{border-color:#b85b67!important;background:#4a1c24!important;color:#ffe1e5!important;font-weight:800}.itemx2-aux-status-done i,.itemx2-aux-status-failed i{border:0!important;animation:none!important}.itemx2-aux-status-done i::before{content:'✓';color:#9cddb7;font-style:normal;font-weight:900}.itemx2-aux-status-failed i::before{content:'!';color:#ffadb5;font-style:normal;font-weight:900}.itemx2-manager-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #1d2737;border-radius:9px;background:#101722}.itemx2-manager-row button{min-height:44px}.itemx2-manager-row button{position:relative}.itemx2-manager-row button::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:100%;transform:translate(-50%,-50%)}.itemx2-manager-name{display:grid;gap:2px;min-width:0}.itemx2-manager-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9eef7;font-size:.78rem}.itemx2-manager-name small{color:#7d8ba4;font-size:.67rem}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item{display:none}.itemx2-root-panel .itemx2-root-item:has(.itemx2-root-detail-choice:checked){display:block}.itemx2-root-detail-choice:checked~.itemx2-root-tile-label{display:none}.itemx2-root-detail-choice:checked~.itemx2-root-detail{display:block}
 .itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-grid{grid-template-columns:minmax(0,1fr)}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx2-root-item:has(.itemx2-root-detail-choice:checked){grid-column:1/-1;width:100%;min-width:0}.itemx2-root-panel:has(.itemx2-root-detail-choice:checked) .itemx-detail{width:100%}
 .itemx2-root-filter-owned:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-owned),.itemx2-root-filter-equipped:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-equipped),.itemx2-root-filter-observed:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-observed),.itemx2-root-filter-removed:checked~.itemx2-root-layer .itemx2-root-item:not(.itemx2-match-removed){display:none}
@@ -4858,7 +4869,8 @@ ${codexPageStyle()}
       `${S} .itemx2-root-setting-button-busy{color:${c.dim2}}`,
       `${S} .itemx-manager-danger{border-color:#b5646f!important;color:#8f2436!important}`,
       `${S} .itemx2-setting-cleanup-armed{box-shadow:0 0 0 1px #b5646f inset!important}`,
-      `${S} .itemx2-root-setting-card>.itemx2-confirm-row{border-color:rgba(178,52,74,.4);background:${c.dangerA}}`,
+      `${S} .itemx2-root-setting-card>.itemx2-confirm-row,${S} .itemx2-codex-delete>.itemx2-confirm-row{border-color:rgba(178,52,74,.4);background:${c.dangerA}}`,
+      `${S} .itemx2-codex-delete>.itemx2-entity-delete{border-color:rgba(178,52,74,.4)!important;color:${c.dangerInk}!important}`,
       `${S} .itemx2-confirm-row>small{color:${c.dangerInk}}`,
       `${S} .itemx2-root-setting-button.itemx2-setting-danger{border-color:#b5646f!important;background:#fbe9ea!important;color:#8f2436!important}`,
       `${S} .itemx2-tab-loading{color:${c.dim}}`,
@@ -7343,8 +7355,20 @@ ${codexPageStyle()}
       throw new Error('저장 직전 대화가 변경되어 보완을 취소했습니다.');
     const ledger = manualLedger(latest);
     const afterIndex = Math.max(-1, (latest.message || []).length - 1);
-    const scratch = rebuildWithManual(latest).registry;
+    let scratch = null,
+      codexScratch = null;
     for (const event of events) {
+      if (['skill', 'monster'].includes(event?.domain)) {
+        codexScratch ||= rebuildCodexWithLedger(latest);
+        const id = event.entity?.id || event.patch?.id;
+        const prior = ITEMXCodex.storeFor(codexScratch, event.domain).entries[id];
+        const previous = prior ? ITEMXCodex.clone(prior) : null;
+        const view = ITEMXCodex.clone(ITEMXCodex.applyEvent(codexScratch, event));
+        if (!view) throw new Error('수동 변경을 적용할 수 없습니다.');
+        ledger.push({ at: Date.now(), afterIndex, label, event: ITEMXCodex.clone(event), presentation: { previous, view, review } });
+        continue;
+      }
+      scratch ||= rebuildWithManual(latest).registry;
       const previous = ITEMXCore.comparisonView(scratch.items[event.item?.id || event.patch?.id]);
       const view = ITEMXCore.clone(ITEMXCore.applyEvent(scratch, event));
       if (!view) throw new Error('수동 변경을 적용할 수 없습니다.');
@@ -7588,7 +7612,7 @@ ${codexPageStyle()}
       const result = await workQueue.external(() =>
         withTimeout(
           Risuai.runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: true }),
-          90000,
+          ITEMX_AUX_TIMEOUT_MS,
           '보조 모델이 90초 안에 응답하지 않았습니다.'
         )
       );
@@ -8520,7 +8544,7 @@ ${codexPageStyle()}
     const messageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
     const fingerprint = `${ctx.key}:${index}:msg-${messageId}`;
     const attempt = await workQueue.attempt('catch-up', fingerprint,
-      () => recoverAuxiliaryOutput({ messageIndex: index }), Array.isArray);
+      () => recoverAuxiliaryOutput({ messageIndex: index }), Array.isArray, Infinity, ITEMX_AUX_AUTO_ATTEMPTS);
     if (attempt.skipped) return;
     if (syncUi) {
       const loaded = await rebuildCurrent();
@@ -9462,7 +9486,7 @@ ${codexPageStyle()}
     for (let index = 0; index < detailItems.length; index += 1) {
       const selected = await panelDocument().querySelector(`#itemx2-detail-${index}:checked`);
       if (!selected) continue;
-      const html = itemDetailHtml(detailItems[index]);
+      const html = itemDetailBodyHtml(detailItems[index]);
       const detailKey = `item:${index}:${ITEMXCore.fnv1a(html)}`;
       if (workQueue.revision('detail') === detailKey) return true;
       const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
@@ -9476,6 +9500,66 @@ ${codexPageStyle()}
 
   function codexEntries(loaded, domain) {
     return ITEMXHistory.currentEntities(loaded, domain).filter(matches).slice(0, 60);
+  }
+
+  let deleteArmed = '';
+  const DELETE_TEXT = {
+    item: ['이 아이템 지우기', '이 아이템을 인벤토리에서 지울까요? 기록 보기에는 소실로 남습니다. 모델이 같은 아이템을 다시 기록하면 다시 나타날 수 있습니다.'],
+    skill: ['이 스킬 지우기', '이 스킬을 목록에서 지울까요? 같은 스킬이 여러 개 생겼을 때 정리용입니다. 모델이 같은 스킬을 다시 기록하면 다시 나타날 수 있습니다.'],
+    monster: ['이 조우 기록 지우기', '이 조우를 도감에서 완전히 지울까요? 같은 상대가 여러 개 생겼을 때 정리용입니다. 모델이 같은 상대를 다시 기록하면 다시 나타날 수 있습니다.']
+  };
+  function entityDeleteHtml(domain, armed) {
+    const [label, question] = DELETE_TEXT[domain];
+    return armed
+      ? `<div class="itemx2-codex-delete"><span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-danger itemx2-entity-delete-yes" type="button">${'예, 지웁니다'}</button><button class="itemx2-root-setting-button itemx2-entity-delete-no" type="button">${'아니오'}</button></span></span></div>`
+      : `<div class="itemx2-codex-delete"><button class="itemx2-root-setting-button itemx2-entity-delete" type="button">${label}</button></div>`;
+  }
+  function itemDetailBodyHtml(item) {
+    return `${itemDetailHtml(item)}${entityDeleteHtml('item', deleteArmed === `item:${item.id}`)}`;
+  }
+  async function selectedCodexEntity(domain, loaded) {
+    const marker = await panelDocument()?.querySelector(
+      `.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`
+    );
+    if (!marker) return null;
+    return codexEntries(loaded, domain)[Number(await marker.textContent())] || null;
+  }
+  async function selectedItem(loaded) {
+    const items = rootPageItems(loaded);
+    for (let index = 0; index < items.length; index += 1)
+      if (await panelDocument()?.querySelector(`#itemx2-detail-${index}:checked`)) return items[index];
+    return null;
+  }
+  function deleteEvent(domain, id) {
+    if (domain === 'skill') return { domain, kind: 'patch', patch: { id, action: null, op: 'remove', fields: {} } };
+    if (domain === 'monster') return { domain, kind: 'patch', manual: true, patch: { id, action: null, op: 'purge', fields: {} } };
+    return {
+      kind: 'patch',
+      patch: { id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null }
+    };
+  }
+  async function routeEntityDelete(event, loaded, domain) {
+    const yes = await eventHitsMainClass(event, 'itemx2-entity-delete-yes');
+    const no = !yes && (await eventHitsMainClass(event, 'itemx2-entity-delete-no'));
+    const ask = !yes && !no && (await eventHitsMainClass(event, 'itemx2-entity-delete'));
+    if (!yes && !no && !ask) return false;
+    const entity = domain === 'item' ? await selectedItem(loaded) : await selectedCodexEntity(domain, loaded);
+    if (!entity) return true;
+    if (ask || no) {
+      deleteArmed = ask ? `${domain}:${entity.id}` : '';
+      if (domain === 'item') await hydrateCheckedItemDetail(loaded);
+      else await hydrateCheckedCodexDetail(domain, loaded);
+      return true;
+    }
+    deleteArmed = '';
+    try {
+      await commitManualEvents(loaded, [deleteEvent(domain, entity.id)], '수동 삭제');
+      await showRootFeedback(`${entity.name || entity.id}을(를) 지웠습니다`, 'success', 3200);
+    } catch (error) {
+      await notifyUser(`삭제 실패: ${error.message || error}`, 'error');
+    }
+    await openRootInventory({ open: true, tab: uiState.activeRootTab });
+    return true;
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
@@ -9498,12 +9582,13 @@ ${codexPageStyle()}
       portrait = portraits[entity.id] || '';
     }
     if (loaded.key !== pipelineState.activeContextKey) return false;
-    const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
+    const deleting = deleteArmed === `${domain}:${entity.id}`;
+    const detailKey = `${codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode)}:${deleting ? 'confirm' : ''}`;
     if (workQueue.revision('detail') === detailKey) return true;
     const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
     if (!detail) return false;
     await detail.setInnerHTML(
-      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}`
+      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}${entityDeleteHtml(domain, deleting)}`
     );
     workQueue.remember('detail', detailKey);
     return true;
@@ -10915,7 +11000,7 @@ ${codexPageStyle()}
                 const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
                 const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
                 if (pipelineState.activeContextKey === loaded.key && detail && item)
-                  await detail.setInnerHTML(itemDetailHtml(item));
+                  await detail.setInnerHTML(itemDetailBodyHtml(item));
               } catch (error) {
                 await notifyUser(error.message || String(error), 'error');
               }
@@ -10924,6 +11009,7 @@ ${codexPageStyle()}
           }
           if (loaded && loaded.key === pipelineState.activeContextKey) {
             await delay(0);
+            if (await routeEntityDelete(event, loaded, 'item')) return;
             if (await hydrateCheckedItemDetail(loaded)) return;
             const detailItems = rootPageItems(loaded);
             for (let index = 0; index < detailItems.length; index += 1) {
@@ -10940,7 +11026,7 @@ ${codexPageStyle()}
               )
                 continue;
               const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
-              if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
+              if (detail) await detail.setInnerHTML(itemDetailBodyHtml(detailItems[index]));
               return;
             }
           }
@@ -10953,6 +11039,7 @@ ${codexPageStyle()}
           if (loaded && loaded.key === pipelineState.activeContextKey) {
             await delay(0);
             const domain = uiState.activeRootTab === 'skills' ? 'skill' : 'monster';
+            if (await routeEntityDelete(event, loaded, domain)) return;
             if (await hydrateCheckedCodexDetail(domain, loaded)) return;
           }
           return;

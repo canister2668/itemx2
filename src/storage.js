@@ -43,7 +43,9 @@ const ITEMXStorage = (() => {
     manuals.forEach((row, index) => {
       if (!row.event?.kind) return;
       const identity = row.id || `manual:${index}:${ITEMXCore.fnv1a(JSON.stringify([row.afterIndex, row.at, row.event]))}`;
-      append(rows, identities, { id: identity, domain: 'item', afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, ...(row.presentation?.review ? { review: row.presentation.review } : {}) });
+      // Manual skill / encounter corrections replay through the codex engine.
+      const manualDomain = ['skill', 'monster'].includes(row.event?.domain) ? 'codex' : 'item';
+      append(rows, identities, { id: identity, domain: manualDomain, afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, ...(row.presentation?.review ? { review: row.presentation.review } : {}) });
     });
     // Full transport markers can still be present until the next output commit.
     // Capture their facts too, without changing the user's message text.

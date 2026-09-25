@@ -402,6 +402,13 @@ const ITEMXCodex = (() => {
       pushDiagnostic(reg, { code: 'patch_missing', id: event.patch?.id });
       return null;
     }
+    // Reader-initiated deletion only; a model transport never carries `manual`.
+    if (event.manual === true && event.patch?.op === 'purge') {
+      const removed = clone(entity);
+      delete reg.entries[entity.id];
+      reg.order = reg.order.filter((id) => id !== entity.id);
+      return removed;
+    }
     const { action = null, op = null, fields = {} } = event.patch || {};
     const allowedActions = DOMAINS[event.domain]?.actions || new Set();
     if ((action && !allowedActions.has(action)) || (op && !OPS.has(op)) || (action && op) || (!action && !op)) {
@@ -1103,6 +1110,9 @@ const ITEMXCodex = (() => {
       for (const one of skills.order
         .map((id) => skills.entries[id])
         .filter(Boolean)
+        // A lost skill (forgotten, or a duplicate the reader deleted) is not current context;
+        // listing it by id invites the model to revive it.
+        .filter((x) => x.status !== 'lost')
         .filter((x) => ['equipped', 'sealed'].includes(x.status) || text.includes(x.name.toLowerCase()))
         .slice(0, 8))
         lines.push(

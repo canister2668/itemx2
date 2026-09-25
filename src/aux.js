@@ -223,7 +223,7 @@
       const result = await workQueue.external(() =>
         withTimeout(
           Risuai.runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: true }),
-          90000,
+          ITEMX_AUX_TIMEOUT_MS,
           ITEMXText("aux.039")
         )
       );

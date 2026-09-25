@@ -1050,8 +1050,20 @@
       throw new Error(ITEMXText("ledger.003"));
     const ledger = manualLedger(latest);
     const afterIndex = Math.max(-1, (latest.message || []).length - 1);
-    const scratch = rebuildWithManual(latest).registry;
+    let scratch = null,
+      codexScratch = null;
     for (const event of events) {
+      if (['skill', 'monster'].includes(event?.domain)) {
+        codexScratch ||= rebuildCodexWithLedger(latest);
+        const id = event.entity?.id || event.patch?.id;
+        const prior = ITEMXCodex.storeFor(codexScratch, event.domain).entries[id];
+        const previous = prior ? ITEMXCodex.clone(prior) : null;
+        const view = ITEMXCodex.clone(ITEMXCodex.applyEvent(codexScratch, event));
+        if (!view) throw new Error(ITEMXText("ledger.002"));
+        ledger.push({ at: Date.now(), afterIndex, label, event: ITEMXCodex.clone(event), presentation: { previous, view, review } });
+        continue;
+      }
+      scratch ||= rebuildWithManual(latest).registry;
       const previous = ITEMXCore.comparisonView(scratch.items[event.item?.id || event.patch?.id]);
       const view = ITEMXCore.clone(ITEMXCore.applyEvent(scratch, event));
       if (!view) throw new Error(ITEMXText("ledger.002"));

@@ -90,7 +90,7 @@
     for (let index = 0; index < detailItems.length; index += 1) {
       const selected = await panelDocument().querySelector(`#itemx2-detail-${index}:checked`);
       if (!selected) continue;
-      const html = itemDetailHtml(detailItems[index]);
+      const html = itemDetailBodyHtml(detailItems[index]);
       const detailKey = `item:${index}:${ITEMXCore.fnv1a(html)}`;
       // Every tap inside the drawer re-enters here; re-injecting restarts the card effects and scroll.
       if (workQueue.revision('detail') === detailKey) return true;
@@ -105,6 +105,72 @@
 
   function codexEntries(loaded, domain) {
     return ITEMXHistory.currentEntities(loaded, domain).filter(matches).slice(0, 60);
+  }
+
+  // Manual deletion for items, skills and encounters. Models sometimes record one thing under
+  // several ids; merging guesses wrong, so the reader removes the extra entries. The removal is
+  // a manual ledger row replayed after the markers that keep re-reading those entries.
+  // `${domain}:${id}` of the entry awaiting its yes / no answer.
+  let deleteArmed = '';
+  // Literal keys: the build resolves ITEMXText calls statically.
+  const DELETE_TEXT = {
+    item: [ITEMXText("ui-panel.item-delete"), ITEMXText("ui-panel.item-delete-confirm")],
+    skill: [ITEMXText("ui-panel.skill-delete"), ITEMXText("ui-panel.skill-delete-confirm")],
+    monster: [ITEMXText("ui-panel.monster-delete"), ITEMXText("ui-panel.monster-delete-confirm")]
+  };
+  function entityDeleteHtml(domain, armed) {
+    const [label, question] = DELETE_TEXT[domain];
+    return armed
+      ? `<div class="itemx2-codex-delete"><span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-danger itemx2-entity-delete-yes" type="button">${ITEMXText("ui-panel.delete-yes")}</button><button class="itemx2-root-setting-button itemx2-entity-delete-no" type="button">${ITEMXText("ui-panel.delete-no")}</button></span></span></div>`
+      : `<div class="itemx2-codex-delete"><button class="itemx2-root-setting-button itemx2-entity-delete" type="button">${label}</button></div>`;
+  }
+  function itemDetailBodyHtml(item) {
+    return `${itemDetailHtml(item)}${entityDeleteHtml('item', deleteArmed === `item:${item.id}`)}`;
+  }
+  async function selectedCodexEntity(domain, loaded) {
+    const marker = await panelDocument()?.querySelector(
+      `.x-risu-itemx2-${domain}-entry-choice:checked ~ .x-risu-itemx2-${domain}-detail .x-risu-itemx2-codex-detail-index`
+    );
+    if (!marker) return null;
+    return codexEntries(loaded, domain)[Number(await marker.textContent())] || null;
+  }
+  async function selectedItem(loaded) {
+    const items = rootPageItems(loaded);
+    for (let index = 0; index < items.length; index += 1)
+      if (await panelDocument()?.querySelector(`#itemx2-detail-${index}:checked`)) return items[index];
+    return null;
+  }
+  function deleteEvent(domain, id) {
+    if (domain === 'skill') return { domain, kind: 'patch', patch: { id, action: null, op: 'remove', fields: {} } };
+    // An ended encounter still lists in the bestiary, so encounters are purged outright.
+    if (domain === 'monster') return { domain, kind: 'patch', manual: true, patch: { id, action: null, op: 'purge', fields: {} } };
+    return {
+      kind: 'patch',
+      patch: { id, action: null, op: 'remove', fields: {}, quantity: null, destination: '', reason: 'manual_remove', slot: null, inputs: null, outputs: null, equip: null, unequip: null }
+    };
+  }
+  async function routeEntityDelete(event, loaded, domain) {
+    const yes = await eventHitsMainClass(event, 'itemx2-entity-delete-yes');
+    const no = !yes && (await eventHitsMainClass(event, 'itemx2-entity-delete-no'));
+    const ask = !yes && !no && (await eventHitsMainClass(event, 'itemx2-entity-delete'));
+    if (!yes && !no && !ask) return false;
+    const entity = domain === 'item' ? await selectedItem(loaded) : await selectedCodexEntity(domain, loaded);
+    if (!entity) return true;
+    if (ask || no) {
+      deleteArmed = ask ? `${domain}:${entity.id}` : '';
+      if (domain === 'item') await hydrateCheckedItemDetail(loaded);
+      else await hydrateCheckedCodexDetail(domain, loaded);
+      return true;
+    }
+    deleteArmed = '';
+    try {
+      await commitManualEvents(loaded, [deleteEvent(domain, entity.id)], ITEMXText("ui-panel.delete-label"));
+      await showRootFeedback(ITEMXText("ui-panel.delete-done", entity.name || entity.id), 'success', 3200);
+    } catch (error) {
+      await notifyUser(ITEMXText("ui-panel.delete-failed", error.message || error), 'error');
+    }
+    await openRootInventory({ open: true, tab: uiState.activeRootTab });
+    return true;
   }
 
   async function hydrateCheckedCodexDetail(domain, loaded) {
@@ -129,12 +195,13 @@
       portrait = portraits[entity.id] || '';
     }
     if (loaded.key !== pipelineState.activeContextKey) return false;
-    const detailKey = codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode);
+    const deleting = deleteArmed === `${domain}:${entity.id}`;
+    const detailKey = `${codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode)}:${deleting ? 'confirm' : ''}`;
     if (workQueue.revision('detail') === detailKey) return true;
     const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
     if (!detail) return false;
     await detail.setInnerHTML(
-      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}`
+      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}${entityDeleteHtml(domain, deleting)}`
     );
     workQueue.remember('detail', detailKey);
     return true;
@@ -1574,7 +1641,7 @@
                 const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
                 const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
                 if (pipelineState.activeContextKey === loaded.key && detail && item)
-                  await detail.setInnerHTML(itemDetailHtml(item));
+                  await detail.setInnerHTML(itemDetailBodyHtml(item));
               } catch (error) {
                 await notifyUser(error.message || String(error), 'error');
               }
@@ -1588,6 +1655,7 @@
             // once, then use the settled :checked state as the authoritative
             // target before retaining coordinate hit-testing as a fallback.
             await delay(0);
+            if (await routeEntityDelete(event, loaded, 'item')) return;
             if (await hydrateCheckedItemDetail(loaded)) return;
             const detailItems = rootPageItems(loaded);
             for (let index = 0; index < detailItems.length; index += 1) {
@@ -1604,7 +1672,7 @@
               )
                 continue;
               const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
-              if (detail) await detail.setInnerHTML(itemDetailHtml(detailItems[index]));
+              if (detail) await detail.setInnerHTML(itemDetailBodyHtml(detailItems[index]));
               return;
             }
           }
@@ -1617,6 +1685,7 @@
           if (loaded && loaded.key === pipelineState.activeContextKey) {
             await delay(0);
             const domain = uiState.activeRootTab === 'skills' ? 'skill' : 'monster';
+            if (await routeEntityDelete(event, loaded, domain)) return;
             if (await hydrateCheckedCodexDetail(domain, loaded)) return;
           }
           return;

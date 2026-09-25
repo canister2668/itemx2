@@ -30,6 +30,10 @@
   const ITEMX_CODEX_REF_RE = /<!--CODEX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->/g;
 
   const ITEMX_AUX_SETTLE_MS = 1500;
+  // Slow providers regularly pass 90 s; a timeout discards a reply the provider still bills.
+  const ITEMX_AUX_TIMEOUT_MS = 240000;
+  // Automatic recovery gives up on a message after this many failures; the manual run still works.
+  const ITEMX_AUX_AUTO_ATTEMPTS = 3;
 
   const ITEMX_AUX_PROMPT_REVISION = 2;
 

@@ -299,10 +299,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /\.itemx2-root-inventory>\.itemx-body\{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto/);
   assert.match(source, /itemx2-root-detail-body-\$\{index\}/);
   assert.equal(source.includes('installRootItemDetailClicks'), false);
-  assert.match(source, /detail\.setInnerHTML\(itemDetailHtml\(detailItems\[index\]\)\)/);
+  assert.match(source, /detail\.setInnerHTML\(itemDetailBodyHtml\(detailItems\[index\]\)\)/);
   assert.match(source, /async function hydrateCheckedItemDetail\(loaded\)/);
   assert.match(source, /querySelector\(`#itemx2-detail-\$\{index\}:checked`\)/);
-  assert.match(source, /await delay\(0\);\s*if \(await hydrateCheckedItemDetail\(loaded\)\) return/);
+  assert.match(source, /await delay\(0\);\s*(?:if \(await routeEntityDelete\(event, loaded, 'item'\)\) return;\s*)?if \(await hydrateCheckedItemDetail\(loaded\)\) return/);
   assert.match(source, /async function hydrateCheckedCodexDetail\(domain, loaded\)/);
   assert.match(source, /itemx2-\$\{domain\}-entry-choice:checked ~ \.x-risu-itemx2-\$\{domain\}-detail/);
   assert.match(source, /itemx2-monster-entry-choice/);

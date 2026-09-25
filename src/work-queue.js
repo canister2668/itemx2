@@ -122,8 +122,9 @@ const ITEMXWorkQueue = (() => {
       }
       return Date.now() - previous.since >= ms;
     }
-    async function attempt(kind, key, work, accept = () => true, ttl = Infinity) {
+    async function attempt(kind, key, work, accept = () => true, ttl = Infinity, giveUpAfter = Infinity) {
       const previous = records.get(kind);
+      if (previous?.key === key && previous.failures >= giveUpAfter) return { skipped: true, exhausted: true };
       if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt)) return { skipped: true };
       let value, error;
       try { value = await work(); } catch (caught) { error = caught; }

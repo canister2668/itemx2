@@ -294,7 +294,7 @@
     const messageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
     const fingerprint = `${ctx.key}:${index}:msg-${messageId}`;
     const attempt = await workQueue.attempt('catch-up', fingerprint,
-      () => recoverAuxiliaryOutput({ messageIndex: index }), Array.isArray);
+      () => recoverAuxiliaryOutput({ messageIndex: index }), Array.isArray, Infinity, ITEMX_AUX_AUTO_ATTEMPTS);
     if (attempt.skipped) return;
     if (syncUi) {
       const loaded = await rebuildCurrent();
