@@ -125,7 +125,9 @@
       : `<div class="itemx2-codex-delete"><button class="itemx2-root-setting-button itemx2-entity-delete" type="button">${label}</button></div>`;
   }
   function itemDetailBodyHtml(item) {
-    return `${itemDetailHtml(item)}${entityDeleteHtml('item', deleteArmed === `item:${item.id}`)}`;
+    // Inside the stack, under the card: as a sibling it became a second flex column.
+    const block = entityDeleteHtml('item', deleteArmed === `item:${item.id}`);
+    return itemDetailHtml(item).replace(/<\/div>$/, () => `${block}</div>`);
   }
   async function selectedCodexEntity(domain, loaded) {
     const marker = await panelDocument()?.querySelector(
@@ -283,9 +285,11 @@
   }
 
   async function showRootFeedback(message, tone = 'success', timeoutMs = 2600) {
-    if (!hostState.mainDoc || !uiState.rootDrawer) return false;
+    // Toasts belong to the open panel; with the drawer closed there is nowhere to show one.
+    const doc = panelDocument();
+    if (!doc || !(uiState.panelOpen || (uiState.rootDrawer && uiState.rootOpen))) return false;
     try {
-      const toast = await hostState.mainDoc.querySelector('.x-risu-itemx2-feedback');
+      const toast = (await doc.querySelector('.x-risu-itemx2-feedback')) || (await doc.querySelector('.itemx2-feedback'));
       if (!toast) return false;
       workQueue.clearTimer('feedbackTimer');
       await toast.setTextContent(message);
@@ -925,7 +929,7 @@
     const update = hostState.update.available
       ? ITEMXText("ui-panel.081", ITEMXCore.esc(hostState.update.latest))
       : '';
-    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${ITEMXText("ui-panel.badge-owned")}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div><div class="itemx2-feedback" role="status" aria-live="polite"></div>`;
+    return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${ITEMXText("ui-panel.badge-owned")}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxState.auxActive > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${ITEMXCore.esc(auxWorkingLabel())}</span></div>`;
   }
 
   const updateLabelHtml = () =>
@@ -1323,7 +1327,7 @@
       )
       .join('');
     const headerStatus = `${enabled ? ITEMXText("ui-panel.026", counts.owned, counts.equipped, counts.observed) : ITEMXText("ui-panel.025")} · ${ITEMXCore.esc(uiState.status)}`;
-    return `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || ITEMXText("ui-panel.024"))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div></section></div>`;
+    return `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${ITEMXCore.esc(loaded.character.name || ITEMXText("ui-panel.024"))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`;
   }
 
   function rootInventoryRegions(html) {

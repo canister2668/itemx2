@@ -45,7 +45,7 @@ test('structural changes preserve the 2.2.0 drawer HTML', async () => {
         ''
       );
     // The side badge was redrawn from a tall SVG tab to an edge-docked emoji tab.
-    const withoutBadge = (html) => html.replace(/ITEMX CODEX/g,'ITEMX').replace(/CODEX(?= 배지|에서 확인|에 기록)/g,'ITEMX').replace(/CODEX · APPRAISAL/g,'ITEMX · APPRAISAL').replace(/<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX">(?:<img [^>]*>|<span class="itemx2-badge-seal">[\s\S]*?<span class="itemx2-badge-foot">[\s\S]*?<\/span>)/g, 'BADGE');
+    const withoutBadge = (html) => html.replace(/<div class="itemx2-feedback" role="status" aria-live="polite"><\/div>/g,'').replace(/ITEMX CODEX/g,'ITEMX').replace(/CODEX(?= 배지|에서 확인|에 기록)/g,'ITEMX').replace(/CODEX · APPRAISAL/g,'ITEMX · APPRAISAL').replace(/<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX">(?:<img [^>]*>|<span class="itemx2-badge-seal">[\s\S]*?<span class="itemx2-badge-foot">[\s\S]*?<\/span>)/g, 'BADGE');
     const withoutEffectCard = (html) =>
       html.replace(
         /<section class="itemx2-root-setting-card"><span><strong>이펙트[\s\S]*?<\/section>/g,
