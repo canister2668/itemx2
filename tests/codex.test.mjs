@@ -1,16 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
-import { TextEncoder, TextDecoder } from 'node:util';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const context = vm.createContext({ console, Buffer, TextEncoder, TextDecoder });
-vm.runInContext(await readFile(resolve(root, 'src/core.js'), 'utf8'), context);
-vm.runInContext(await readFile(resolve(root, 'src/codex.js'), 'utf8'), context);
-const codex = context.ITEMXCodex;
+import * as codex from '../src/engine/codex.js';
+import * as core from '../src/engine/core.js';
 
 const auxSkillOptions = { reconcileExistingSkills: true, skillEvidenceText: '' };
 const skillExam = (id, name = '월영참', extra = '') =>
@@ -394,8 +385,8 @@ test('incomplete codex transport never leaks raw tags', () => {
 });
 
 test('incomplete codex transport preserves later status trailers and item markers', () => {
-  const itemMarker = context.ITEMXCore.marker({
-    v: context.ITEMXCore.VERSION,
+  const itemMarker = core.marker({
+    v: core.VERSION,
     event: { kind: 'exam', item: { id: 'blade', name: '검' } }
   });
   const result = codex.extractResponse(
@@ -686,7 +677,7 @@ test('planning tag mentions cannot swallow the response or execute codex events'
   for (const tag of ['Thoughts', 'Thought', 'think', 'thinking', 'DSThink', 'reasoning', 'analysis']) {
     const planning = `<${tag}>아~ itemx 써야겠다~ 형태는 <monsterExam>이지? 고고혓~ ${skillExam('planned')}</${tag}>`;
     const raw = `${planning}\n# Response\n본문 진행 ${monster} 뒤 서술`;
-    const result = codex.extractResponse(context.ITEMXCore.extractResponse(raw).content);
+    const result = codex.extractResponse(core.extractResponse(raw).content);
     assert.equal(result.events.length, 1);
     assert.equal(result.errors.length, 0);
     assert.ok(result.content.startsWith(planning + '\n# Response\n본문 진행 '));

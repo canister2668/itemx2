@@ -1,17 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
-import { TextEncoder, TextDecoder } from 'node:util';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const context = vm.createContext({ console, Buffer, TextEncoder, TextDecoder, setTimeout, clearTimeout });
-vm.runInContext(await readFile(resolve(root, 'src/core.js'), 'utf8'), context);
-vm.runInContext(await readFile(resolve(root, 'src/renderer.js'), 'utf8'), context);
-const core = context.ITEMXCore;
-const renderer = context.ITEMXRenderer;
+import * as core from '../src/engine/core.js';
+import * as renderer from '../src/render/renderer.js';
 
 const exam = (id, name, extra = '') =>
   `<itemExam><id>${id}</id><name>${name}</name><type>장검</type><emoji>⚔️</emoji><internalrarity>legendary</internalrarity><displayrarity>전설</displayrarity><power>7600-9400</power><required>레벨 42</required><durability>77/100</durability><cost>48000 G</cost><possession>owned</possession><location>inventory</location>${extra}<trivia>검증용 아이템.</trivia></itemExam>`;

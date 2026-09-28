@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt } from './helpers/modules.mjs';
 test('a confirmed search remains visible after rebuilding the panel', async () => {
-  const p = await presentationRuntime();
-  p.ui.query = '검';
+  const p = rt;
+  p.uiState.query = '검';
   const loaded = {
     character: { name: 'Test' },
     chat: { message: [], scriptstate: {} },

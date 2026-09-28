@@ -1,9 +1,7 @@
-import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import vm from 'node:vm';
 import { parsers } from 'prettier/plugins/babel';
 
 const fixture = await readFile(new URL('fixtures/risuai.d.ts', import.meta.url), 'utf8');
@@ -13,7 +11,7 @@ const provenance = JSON.parse(await readFile(new URL('fixtures/risuai-source.jso
 function members(name) {
   const body = fixture.split(`interface ${name} {`)[1]?.split('\n}')[0];
   assert.ok(body, `missing upstream interface ${name}`);
-  return new Set([...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/^    (\w+)\??\s*[:(<]/gm)].map((m) => m[1]));
+  return new Set([...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/^ {4}(\w+)\??\s*[:(<]/gm)].map((m) => m[1]));
 }
 const api = members('RisuaiPluginAPI');
 const storage = members('PluginStorage');
@@ -26,6 +24,11 @@ function walk(node, visit, parents = []) {
     else if (value && typeof value === 'object') walk(value, visit, [...parents, node]);
   }
 }
+// Every host call goes through host() (src/host.js). Members read off host(),
+// off host().pluginStorage, and names given to callOptionalRisuApi must all be
+// declared by the pinned upstream contract.
+const isHostCall = (node) =>
+  node?.type === 'CallExpression' && node.callee?.type === 'Identifier' && node.callee.name === 'host';
 async function audit(source) {
   const ast = await parsers.babel.parse(source);
   const used = new Set();
@@ -35,33 +38,30 @@ async function audit(source) {
       assert.ok(api.has(node.arguments[0].value), `undocumented optional API: ${node.arguments[0].value}`);
     }
     if (!['MemberExpression', 'OptionalMemberExpression'].includes(node.type)) return;
-    if (node.object?.name === 'Risuai') {
+    const host = isHostCall(node.object) || node.object?.name === 'Risuai';
+    if (host) {
       if (node.computed && node.property.type !== 'StringLiteral') {
         assert.ok(
           node.property.name === 'name' &&
             parents.some((p) => p.type === 'FunctionDeclaration' && p.id.name === 'callOptionalRisuApi'),
-          'unverifiable dynamic Risuai API'
+          'unverifiable dynamic RisuAI API'
         );
         return;
       }
       const name = node.computed ? node.property.value : node.property.name;
       used.add(name);
-      if (name === 'resizeContainer') {
-        // The only fork extension: rejection must be handled by the actual try.
-        assert.ok(
-          parents.some(
-            (p) => p.type === 'TryStatement' && p.handler && node.start >= p.block.start && node.end <= p.block.end
-          ),
-          'resizeContainer must have a fallback'
-        );
-      } else assert.ok(api.has(name), `undocumented Risuai.${name}`);
+      assert.ok(api.has(name), `undocumented RisuAI API: ${name}`);
     }
-    if (node.object?.object?.name === 'Risuai' && node.object.property?.name === 'pluginStorage') {
+    const inner = node.object;
+    if (
+      ['MemberExpression', 'OptionalMemberExpression'].includes(inner?.type) &&
+      (isHostCall(inner.object) || inner.object?.name === 'Risuai') &&
+      inner.property?.name === 'pluginStorage'
+    )
       assert.ok(
         storage.has(node.computed ? node.property.value : node.property.name),
         'undocumented pluginStorage method'
       );
-    }
   });
   return used;
 }
@@ -71,10 +71,13 @@ test('the stock API fixture is pinned and unchanged', () => {
 });
 test('every source and shipped Risuai API exists in the stock contract', async () => {
   const dir = new URL('../src/', import.meta.url);
-  for (const name of await readdir(dir))
-    if (name.endsWith('.js')) await audit(await readFile(new URL(name, dir), 'utf8'));
-  const used = await audit(await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8'));
+  const used = new Set();
+  for (const name of await readdir(dir, { recursive: true }))
+    if (name.endsWith('.js')) for (const one of await audit(await readFile(new URL(name, dir), 'utf8'))) used.add(one);
   assert.ok(used.size >= 25, 'API scanner missed the runtime');
+  // The bundle names the global exactly once: the host adapter's lookup.
+  const bundle = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
+  assert.equal((bundle.match(/\bRisuai\b/g) || []).length, 1, 'only src/host.js may read the Risuai global');
 });
 test('API audit rejects fork APIs including computed and optional calls', async () => {
   for (const source of [
@@ -83,25 +86,10 @@ test('API audit rejects fork APIs including computed and optional calls', async 
     'Risuai[name]()',
     'callOptionalRisuApi("alertConfirm")',
     'Risuai.pluginStorage.forkOnly()',
-    'Risuai.resizeContainer(1, 2)'
+    'Risuai.resizeContainer(1, 2)',
+    'host().forkOnly()',
+    'host().pluginStorage.forkOnly()',
+    'host().resizeContainer(1, 2)'
   ])
     await assert.rejects(audit(source));
-});
-test('resizeContainer rejection executes the bounded fullscreen fallback', async () => {
-  const source = await runtimeSource();
-  const start = source.indexOf('      try {\n        await Risuai.resizeContainer');
-  const end = source.indexOf('      document.head.innerHTML', start);
-  const runtime = { compactContainer: true };
-  await vm.runInNewContext(`(async () => {${source.slice(start, end)}})()`, {
-    uiState: runtime,
-    panelHeight: 600,
-    panelWidth: 400,
-    log() {},
-    Risuai: {
-      resizeContainer: async () => {
-        throw new Error('API method resizeContainer not found');
-      }
-    }
-  });
-  assert.equal(runtime.compactContainer, false);
 });

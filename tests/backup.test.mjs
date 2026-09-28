@@ -1,54 +1,47 @@
 import { hydrate } from './helpers/storage.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt, setHost, Session } from './helpers/modules.mjs';
+import { createFakeHost } from './helpers/fake-host.mjs';
 
+let harnessId = 0;
 async function harness() {
-  let api,
-    writes = 0,
-    mutateBeforeWrite = false;
-  let ctx = {
-    key: 'bot:chat',
-    characterIndex: 0,
-    chatIndex: 0,
-    character: { name: '검증', chaId: 'bot' },
-    chat: { id: 'chat', name: '새 채팅', message: [], scriptstate: { $other: 'keep' } }
-  };
-  const p = await presentationRuntime(
-    {
-      capture: (v) => {
-        api = v;
-      },
-      current: () => ({ ...ctx, chat: hydrate(ctx.chat) }),
-      Risuai: {
-        getChatFromIndex: async () => {
-          if (mutateBeforeWrite) ctx.chat = { ...ctx.chat, note: 'concurrent' };
-          return ctx.chat;
-        },
-        setChatToIndex: async (c, h, chat) => {
-          assert.equal(c, 0);
-          assert.equal(h, 0);
-          writes++;
-          ctx.chat = chat;
-        }
-      }
-    },
-    'context = async () => current(); isEnabled = async () => true; outputSettings = async () => ({itemsEnabled:true,skillsEnabled:true,encountersEnabled:true,auxOutput: "always"}); capture({recoverAuxiliaryOutputNow, backup:ITEMXBackup, history:ITEMXHistory, backupState, exportCurrentBackup, prepareBackupImport, commitBackupImport, refreshReplayCache, cleanChatPluginData, backupSettingsHtml});'
-  );
+  const id = `bot${++harnessId}`;
+  const fake = createFakeHost({
+    chat: { id: 'chat', name: '새 채팅', message: [], scriptstate: { $other: 'keep' } },
+    character: { name: '검증', chaId: id },
+    llm: false,
+    settings: {
+      v: 1,
+      global: { badgePosition: 'rm' },
+      characters: { [id]: { itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, auxOutput: 'always' } }
+    }
+  });
+  setHost(fake.api);
+  Session.resetSession(`${id}:chat`);
   return {
-    p,
-    api,
+    p: rt,
+    api: rt,
     get ctx() {
-      return ctx;
+      return {
+        key: `${id}:${fake.state.chat.id}`,
+        characterIndex: 0,
+        chatIndex: 0,
+        character: fake.state.character,
+        chat: fake.state.chat
+      };
     },
     set ctx(value) {
-      ctx = value;
+      if (value.chat) fake.state.chat = value.chat;
+      if (value.key && value.key !== `${id}:chat`) fake.state.chat.id = value.key;
     },
     get writes() {
-      return writes;
+      return fake.state.writes;
     },
     race() {
-      mutateBeforeWrite = true;
+      fake.state.onRead = (state) => {
+        state.chat = { ...state.chat, note: 'concurrent' };
+      };
     }
   };
 }

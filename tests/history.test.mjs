@@ -1,16 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt, setHost } from './helpers/modules.mjs';
+import { createFakeHost } from './helpers/fake-host.mjs';
 
-let h;
-const p = await presentationRuntime(
-  {
-    capture: (value) => {
-      h = value;
-    }
-  },
-  'capture({ policy: ITEMXHistory, rebuildWithManual, rebuildCodexWithLedger, buildMessageEventLookup, refreshReplayCache, checkpointStatus, rootInventoryHtml, rootPageItems, codexEntries, historyHtml, cleanChatPluginData, beforeRequest });'
-);
+const p = rt;
+const h = { ...rt, policy: rt.history };
 const { core, codex } = p;
 const exam = (id, type = 'elixir', more = {}) => ({
   kind: 'exam',
@@ -217,43 +211,29 @@ test('failed consume cannot create a history entry and OFF never expires a spent
 });
 
 test('record preferences write only their own field once and refuse streaming or another chat', async () => {
-  let api,
-    writes = 0;
   let chat = chatOf([[exam('pill')], [patch('pill', 'consume', { quantity: 1 })]]);
+  chat.id = 'one';
   chat.scriptstate.unrelated = 'keep me';
   const before = JSON.stringify(chat);
-  let active = { key: 'one', characterIndex: 0, chatIndex: 0, chat };
-  await presentationRuntime(
-    {
-      capture: (value) => {
-        api = value;
-      },
-      active: () => active,
-      Risuai: {
-        getChatFromIndex: async () => chat,
-        setChatToIndex: async (_c, _h, next) => {
-          writes++;
-          chat = next;
-        }
-      }
-    },
-    'context = async () => active(); capture({saveHistoryPreference});'
-  );
-  const value = { ...loaded(chat), key: 'one' };
+  const fake = createFakeHost({ chat, character: { chaId: 'history' } });
+  setHost(fake.api);
+  const api = rt;
+  const value = { ...loaded(chat), key: 'history:one' };
   await api.saveHistoryPreference(value, (prefs) => {
     prefs.keep['item:pill'] = true;
   });
-  assert.equal(writes, 1);
+  assert.equal(fake.state.writes, 1);
+  chat = fake.state.chat;
   const without = structuredClone(chat);
   for (const key of [h.policy.KEY, 'itemx:log', 'itemx:prefs', 'itemx:cache']) delete without.scriptstate[key];
   assert.equal(JSON.parse(chat.scriptstate['itemx:prefs']).keep['item:pill'], true);
   assert.equal(JSON.stringify(without), before);
-  chat.isStreaming = true;
+  fake.state.chat.isStreaming = true;
   await assert.rejects(() => api.saveHistoryPreference(value, () => {}), /응답이 끝난/);
-  chat.isStreaming = false;
-  active = { ...active, key: 'two' };
+  fake.state.chat.isStreaming = false;
+  fake.state.chat.id = 'two';
   await assert.rejects(() => api.saveHistoryPreference(value, () => {}), /채팅이 변경/);
-  assert.equal(writes, 1);
+  assert.equal(fake.state.writes, 1);
 });
 
 test('recovered skills and new encounters return to the normal list without changing old facts', () => {

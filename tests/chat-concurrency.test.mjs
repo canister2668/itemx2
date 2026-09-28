@@ -1,49 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
-import { readFile } from 'node:fs/promises';
+import { createFakeHost } from './helpers/fake-host.mjs';
+import { setHost } from '../src/host.js';
+import { readChat, saveChat } from '../src/chat-io.js';
+import { workQueue } from '../src/kernel.js';
 
-async function harness() {
-  const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
-  const queue = await readFile(new URL('../src/work-queue.js', import.meta.url), 'utf8');
-  let host = { message: [{ chatId: 'a', data: 'original' }], scriptstate: {} };
-  let writes = 0;
-  const sandbox = {
-    setTimeout,
-    clearTimeout,
-    structuredClone,
-    Risuai: {
-      getChatFromIndex: async () => structuredClone(host),
-      setChatToIndex: async (_, __, value) => {
-        writes++;
-        host = structuredClone(value);
-      }
-    }
-  };
-  const begin = source.indexOf('  // Reading a chat');
-  const end = source.indexOf('  const stateOwners =');
-  vm.runInNewContext(
-    `${queue}\nconst workQueue = ITEMXWorkQueue.create();
-    const timed = async (_, work) => work(), timedSync = (_, work) => work(), phaseCount = () => {};
-    const ITEMXStorage = { hydrate: c => c, persist: c => c };
-    ${source.slice(begin, end)}
-    globalThis.api = { readChat, saveChat, workQueue };`,
-    sandbox
-  );
+function harness() {
+  const fake = createFakeHost({ chat: { message: [{ chatId: 'a', data: 'original' }], scriptstate: {} } });
+  setHost(fake.api);
   return {
-    ...sandbox.api,
-    host: () => host,
-    writes: () => writes,
+    readChat,
+    saveChat,
+    workQueue,
+    host: () => fake.state.chat,
+    writes: () => fake.state.writes,
     change: () => {
-      host.message.push({ chatId: 'b', data: 'host appended' });
-      host.scriptstate.other = 'kept';
+      fake.state.chat.message.push({ chatId: 'b', data: 'host appended' });
+      fake.state.chat.scriptstate.other = 'kept';
     }
   };
 }
 
 for (const external of [false, true])
   test(`fresh host changes survive ${external ? 'external model yield' : 'same job'}`, async () => {
-    const h = await harness();
+    const h = harness();
     await h.workQueue.enqueue({
       kind: 'aux',
       work: async () => {
@@ -60,7 +40,7 @@ for (const external of [false, true])
   });
 
 test('host change after read refuses a stale write', async () => {
-  const h = await harness();
+  const h = harness();
   await assert.rejects(
     h.workQueue.enqueue({
       kind: 'aux',
@@ -79,7 +59,7 @@ test('host change after read refuses a stale write', async () => {
 });
 
 test('mutating caller after save begins cannot change submitted messages', async () => {
-  const h = await harness();
+  const h = harness();
   await h.workQueue.enqueue({
     kind: 'aux',
     work: async () => {

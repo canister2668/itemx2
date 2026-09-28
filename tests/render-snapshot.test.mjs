@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt as modules } from './helpers/modules.mjs';
 
 // Committed render oracle. It replaced the tests that ran `git show <old commit>`
 // (a shallow CI checkout cannot see them). Regenerate only for an intended visual
@@ -13,7 +13,7 @@ const norm = (html) =>
     .replace(/(ITEMX(?: CODEX)?(?: ·)? v?)\d+\.\d+\.\d+(?:-[\w.]+)?/g, '$1VERSION');
 
 async function renderCases() {
-  const rt = await presentationRuntime();
+  const rt = modules;
   const empty = {
     key: 'c:chat',
     enabled: true,

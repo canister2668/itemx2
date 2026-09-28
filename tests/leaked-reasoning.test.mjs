@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt } from './helpers/modules.mjs';
 
 // Some providers leak reasoning into the body without a <Thoughts> wrapper. That reasoning
 // names the protocol tags, and a name must never swallow the response that follows it.
@@ -18,7 +18,7 @@ const body = [
 ].join('\n');
 
 async function extract(text) {
-  const { core, codex } = await presentationRuntime();
+  const { core, codex } = rt;
   const item = core.extractResponse(text, core.newRegistry());
   const result = codex.extractResponse(item.content, codex.snapshot(), { enabledDomains: ['skill', 'monster'] });
   return { content: result.content, items: item.events.length, codex: result.events.length };

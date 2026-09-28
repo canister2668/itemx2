@@ -1,17 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
-import { TextEncoder, TextDecoder } from 'node:util';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const context = vm.createContext({ console, Buffer, TextEncoder, TextDecoder });
-vm.runInContext(await readFile(resolve(root, 'src/core.js'), 'utf8'), context);
-vm.runInContext(await readFile(resolve(root, 'src/quality.js'), 'utf8'), context);
-const core = context.ITEMXCore;
-const quality = context.ITEMXQuality;
+import * as core from '../src/engine/core.js';
+import * as quality from '../src/engine/quality.js';
 
 test('auxiliary item identity absent from committed narrative is rejected', () => {
   const parsed = core.normalizeItem({

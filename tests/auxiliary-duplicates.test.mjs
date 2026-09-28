@@ -1,61 +1,56 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt, setHost, Session } from './helpers/modules.mjs';
+import { createFakeHost } from './helpers/fake-host.mjs';
+import { hydrate } from './helpers/storage.mjs';
 
-const p = await presentationRuntime();
+const p = rt;
 const item = (id, extra = '') =>
   `[itemx: id=${id} | name=철광석 | type=재료 | rarity=normal | possession=owned | location=inventory | count=3 ${extra}]`;
 const monster = (id, extra = '') =>
   `<monsterExam><id>${id}</id><name>늑대왕</name><type>야수</type><relation>hostile</relation><status>active</status>${extra}</monsterExam>`;
 const extract = (domain, text) => (domain === 'item' ? p.core.extractResponse(text) : p.codex.extractResponse(text));
 
+let harnessId = 0;
 async function harness(domain, source, response, mode = 'missing') {
-  let chat = { message: [{ role: 'char', data: source }], scriptstate: {} };
-  let calls = 0,
-    writes = 0,
-    state;
-  const env = await presentationRuntime(
-    {
-      Risuai: {
-        runLLMModel: async () => {},
-        getChatFromIndex: async () => chat,
-        setChatToIndex: async (_ci, _chi, next) => {
-          chat = next;
-          writes++;
+  let calls = 0;
+  const id = `dup-${++harnessId}`;
+  const fake = createFakeHost({
+    chat: { id: 'duplicate-probe', message: [{ role: 'char', data: source, chatId: 'm0' }], scriptstate: {} },
+    character: { chaId: id, name: 'Probe' },
+    settings: {
+      v: 1,
+      global: { badgePosition: 'rm' },
+      characters: {
+        [id]: {
+          auxOutput: mode,
+          itemsEnabled: domain === 'item',
+          skillsEnabled: false,
+          encountersEnabled: domain === 'monster'
         }
-      },
-      testContext: () => ({ key: 'duplicate-probe', character: {}, characterIndex: 0, chatIndex: 0, chat }),
-      testModel: async () => {
-        calls++;
-        return typeof response === 'function' ? response(calls) : response;
-      },
-      testSettings: {
-        auxOutput: mode,
-        itemsEnabled: domain === 'item',
-        skillsEnabled: false,
-        encountersEnabled: domain === 'monster'
-      },
-      probe: (fn) => {
-        state = fn;
       }
     },
-    `context=async()=>testContext();isEnabled=async()=>true;outputSettings=async()=>testSettings;
-    automaticAuxReady=()=>true;auxiliaryZeroHistory=async()=>({});rememberAuxiliaryZero=async()=>{};
-    runAuxModel=testModel;modulePortraitAssets=async()=>[];
-    probe((chat)=>({items:rebuildWithManual(chat).registry,monsters:rebuildCodexWithLedger(chat).monsters}));
-    globalThis.testRecovery=recoverAuxiliaryOutput;`
-  );
+    llm: async () => {
+      calls++;
+      return typeof response === 'function' ? response(calls) : response;
+    }
+  });
+  setHost(fake.api);
+  Session.resetSession(`${id}:duplicate-probe`);
+  const chat = () => hydrate(structuredClone(fake.state.chat));
+  const text = () => fake.state.chat.message.map((m) => m.data).join('\n');
   return {
-    env,
-    chat: () => chat,
-    state: () => state(chat),
-    counts: () => ({ calls, writes }),
-    append: (source) => {
-      chat.message.push({ role: 'char', data: source });
+    env: p,
+    chat,
+    text,
+    state: () => ({ items: p.rebuildWithManual(chat()).registry, monsters: p.rebuildCodexWithLedger(chat()).monsters }),
+    counts: () => ({ calls, writes: fake.state.writes }),
+    append: (data) => {
+      fake.state.chat.message.push({ role: 'char', data, chatId: `m${fake.state.chat.message.length}` });
     },
     html: () => {
-      env.refreshLatest(chat);
-      return env.displayHandler(chat.message.at(-1).data);
+      p.refreshLatest(chat());
+      return p.displayHandler(chat().message.at(-1).data);
     }
   };
 }
@@ -71,9 +66,10 @@ for (const domain of ['item', 'monster'])
         `${exam('aux1')}\n${exam('aux2')}`,
         mode
       );
+      const before = h.text();
       for (let i = 0; i < 2; i++) assert.equal((await h.env.recoverAuxiliaryOutput({ force: true })).length, 0);
       assert.equal(h.state()[domain === 'item' ? 'items' : 'monsters'].order.length, 1);
-      assert.equal(h.counts().writes, 0);
+      assert.equal(h.text(), before, 'nothing new may be appended to the message');
       assert.equal(
         (h.html().match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || []).length,
         1
@@ -176,7 +172,7 @@ test('display suppresses identical states across paragraphs and both marker form
     const prefix = domain === 'item' ? 'ITEMX2' : 'CODEX2';
     const inline = p.embeddedViewCode(payload, domain === 'item' ? 'item' : 'codex');
     // Identical logical view, same key ordering, full and compact ref mixed.
-    p.runtime.eventPayloads.set(`${domain === 'item' ? 'item' : 'codex'}:testref`, payload);
+    p.session.setEventPayloads([[`${domain === 'item' ? 'item' : 'codex'}:testref`, payload]]);
     const source = `${first.content}\n첫 문단.\n<!--${prefix}@testref:${inline}-->\n둘째 문단.\n${first.content}`;
     const html = p.displayHandler(source);
     assert.equal(
@@ -189,7 +185,10 @@ test('display suppresses identical states across paragraphs and both marker form
       ...payload,
       view: { ...payload.view, ...(domain === 'item' ? { durability: '50/100' } : { status: 'defeated' }) }
     };
-    p.runtime.eventPayloads.set(`${domain === 'item' ? 'item' : 'codex'}:changedref`, changed);
+    p.session.setEventPayloads([
+      [`${domain === 'item' ? 'item' : 'codex'}:testref`, payload],
+      [`${domain === 'item' ? 'item' : 'codex'}:changedref`, changed]
+    ]);
     const changedInline = p.embeddedViewCode(changed, domain === 'item' ? 'item' : 'codex');
     const cycle = `<!--${prefix}@testref:${inline}-->\n\n상태 변화.\n\n<!--${prefix}@changedref:${changedInline}-->\n\n원상 복귀.\n\n<!--${prefix}@testref:${inline}-->`;
     assert.equal(

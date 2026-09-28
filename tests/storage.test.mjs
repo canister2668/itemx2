@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { storageModel as store, settingsModel as settings } from './helpers/storage.mjs';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { storageModel as store } from './helpers/storage.mjs';
+import { rt } from './helpers/modules.mjs';
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
 test('event-only canonical log regenerates both payload sides after cache loss and never truncates', async () => {
-  const { core } = await presentationRuntime();
+  const { core } = rt;
   const reg = core.newRegistry();
   const item = core.normalizeItem({ id: 'sword', name: '검', count: 2 }).item;
   const events = [
@@ -59,30 +59,8 @@ test('legacy orphan refs remain historical facts without resurrecting removed en
   assert.equal(store.replay(chat).item.registry.order.length, 0);
 });
 
-test('settings use one document, preserve other characters and centralize every default', async () => {
-  const values = new Map();
-  let reads = 0;
-  const api = {
-    getItem: async (key) => {
-      assert.equal(key, 'itemx:settings');
-      reads++;
-      return values.get(key);
-    },
-    setItem: async (key, value) => values.set(key, value)
-  };
-  await settings.update(api, 'one', { enabled: false, skin: 'hanji' });
-  await settings.update(api, 'two', { auxOutput: 'always' });
-  const document = await settings.read(api);
-  assert.equal(values.size, 1);
-  assert.equal(document.characters.one.enabled, false);
-  assert.equal(document.characters.one.skin, 'hanji');
-  assert.equal(document.characters.two.auxOutput, 'always');
-  assert.equal(document.characters.two.skillsEnabled, true);
-  assert.equal(reads, 3);
-});
-
 test('reimporting an identical backup appends a fresh reset without discarding earlier facts', async () => {
-  const { core, codex } = await presentationRuntime();
+  const { core, codex } = rt;
   const registry = core.newRegistry();
   core.applyEvent(registry, { kind: 'exam', item: core.normalizeItem({ id: 'pill', name: '약', count: 1 }).item });
   const checkpoint = {

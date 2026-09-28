@@ -17,9 +17,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm run build
       - run: npm test
       - run: node --check dist/itemx2.plugin.js
       - name: Verify generated bundle is committed
-        run: git diff --exit-code -- dist/itemx2.plugin.js dist/itemx2-preview.html dist/itemx2-ui.css dist/itemx2-main-scoped.css
+        run: git diff --exit-code -- dist/
       - run: npm run format:check

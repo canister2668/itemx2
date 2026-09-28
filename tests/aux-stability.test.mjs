@@ -1,4 +1,4 @@
-import { hydrate, migrate, settingsModel } from './helpers/storage.mjs';
+import { hydrate } from './helpers/storage.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -23,7 +23,11 @@ async function bootWithOutput(data, options = {}) {
   const storage = new Map([
       [
         'itemx:settings',
-        JSON.stringify(settingsModel.migrate(options.freshDefaults ? {} : { 'auxOutput:char-guard': 'missing' }))
+        JSON.stringify({
+          v: 1,
+          global: { badgePosition: 'rm' },
+          characters: options.freshDefaults ? {} : { 'char-guard': { auxOutput: 'missing' } }
+        })
       ]
     ]),
     handlers = {},
@@ -87,6 +91,8 @@ async function bootWithOutput(data, options = {}) {
     TextEncoder,
     TextDecoder,
     structuredClone,
+    btoa,
+    atob,
     Date: FakeDate,
     setTimeout: sandboxSetTimeout,
     clearTimeout,

@@ -1,16 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
-import { readFile } from 'node:fs/promises';
-const source = await readFile(new URL('../src/work-queue.js', import.meta.url), 'utf8');
-const create = (overrides = {}) =>
-  vm.runInNewContext(source + '\nITEMXWorkQueue.create;', {
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-    ...overrides
-  })();
+import * as WorkQueue from '../src/work-queue.js';
+const create = (overrides = {}) => WorkQueue.create(overrides.Date ? { clock: overrides.Date.now } : {});
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 const gate = () => {
   let resolve;
@@ -277,17 +268,4 @@ test('scroll end runs while a model RPC is suspended, without admitting blocked 
   hold.resolve();
   await Promise.all([aux, render]);
   assert.deepEqual(seen, ['scroll end', 'render']);
-});
-
-test('domain state keeps at most 60 fields without runtime coordination flags', async () => {
-  const source = await readFile(new URL('../src/state.js', import.meta.url), 'utf8');
-  const owners = vm.runInNewContext(source + '\nITEMXState.create();');
-  const fields = Object.values(owners)
-    .flatMap((owner) => Object.keys(owner))
-    .filter((key) => key !== 'view');
-  assert.ok(fields.length <= 60, `${fields.length} runtime fields`);
-  assert.ok(
-    !fields.some((name) => /Busy$|Promise$|Pending$|Fingerprint$/.test(name)),
-    'coordination belongs to the queue'
-  );
 });

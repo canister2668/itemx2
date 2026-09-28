@@ -4,7 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 
 const srcDir = new URL('../src/', import.meta.url);
 const sources = async () => {
-  const names = (await readdir(srcDir)).filter((n) => /\.(js|css)$/.test(n));
+  const names = (await readdir(srcDir, { recursive: true })).filter((n) => /\.(js|css)$/.test(n));
   return Object.fromEntries(await Promise.all(names.map(async (n) => [n, await readFile(new URL(n, srcDir), 'utf8')])));
 };
 
@@ -28,7 +28,11 @@ test('no backdrop-filter anywhere in the plugin', async () => {
 // backdrop snapshot, but a blurred sticky or fixed layer recomposites on every
 // scrolled frame, which is the same bill charged continuously.
 test('nothing blurred is also pinned to the viewport', async () => {
-  const css = (await sources())['style.css'];
+  const files = await sources();
+  const css = Object.entries(files)
+    .filter(([name]) => name.endsWith('.css'))
+    .map(([, text]) => text)
+    .join('\n');
   const bad = [];
   for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^}]*)\}/g))
     if (/blur\(/.test(body) && /position:\s*(fixed|sticky)/.test(body)) bad.push(selector.trim().slice(0, 60));

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt } from './helpers/modules.mjs';
 
 // Duplicate skills (one weapon mastery recorded under several ids) are removed by hand.
 // The removal is a manual ledger row and must replay through the codex engine.
 test('a manual skill removal survives persist and replay and hides only that skill', async () => {
-  const { core, codex, storage } = await presentationRuntime();
+  const { codex, storage } = rt;
   const exam = (id, name, cost) =>
     codex.marker({
       v: 1,
@@ -50,7 +50,7 @@ test('a manual skill removal survives persist and replay and hides only that ski
 });
 
 test('a manual encounter purge removes the entry everywhere; a model purge is refused', async () => {
-  const { codex, storage } = await presentationRuntime();
+  const { codex, storage } = rt;
   const exam = (id, name) =>
     codex.marker({
       v: 1,

@@ -1,8 +1,7 @@
-import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt, uiState, setHost, Style } from './helpers/modules.mjs';
+import { createFakeHost } from './helpers/fake-host.mjs';
 
 const LOADED = {
   key: 'c0:ch0',
@@ -36,24 +35,7 @@ function drawerSettings(rt) {
   return rt.rootInventoryHtml(LOADED, true, 'settings');
 }
 
-function settingsBodyOnly(rt) {
-  const skin = rt.SETTINGS_SKINS.native;
-  return rt.settingsPanelHtml(LOADED, skin, {
-    connection: { ready: false },
-    chips: '',
-    permissionLabel: '',
-    styleLabel: '',
-    domainControls: rt.settingsDomainControls(LOADED, skin),
-    fontChoices: rt.settingsFontChoices(LOADED, skin),
-    positionChoices: rt.settingsPositionChoices(skin),
-    manager: '',
-    debugPanel: '',
-    ...rt.settingsStorageParts(LOADED)
-  });
-}
-
 test('the drawer dispatches settings from one ordered table', async () => {
-  const rt = await presentationRuntime();
   const hooks = rt.rootSettingActions().map((a) => a.hook);
   assert.equal(hooks.length, 37);
   assert.equal(new Set(hooks).size, hooks.length, 'duplicate hook would shadow a later control');
@@ -62,7 +44,6 @@ test('the drawer dispatches settings from one ordered table', async () => {
 
 // Dispatch is first-match-wins, so the order is behaviour, not decoration.
 test('the table keeps the dispatch order the chain had', async () => {
-  const rt = await presentationRuntime();
   const hooks = rt.rootSettingActions().map((a) => a.hook);
   const expected = [
     'itemx2-setting-connect',
@@ -110,7 +91,6 @@ test('the table keeps the dispatch order the chain had', async () => {
 // control could be rendered with no branch to catch it, or a branch could point
 // at a class nothing rendered any more, and only a user would find out.
 test('every rendered drawer control has a table row', async () => {
-  const rt = await presentationRuntime();
   const html = drawerSettings(rt);
   const rendered = new Set(
     [...html.matchAll(/class="([^"]*)"/g)]
@@ -141,13 +121,12 @@ test('every rendered drawer control has a table row', async () => {
 });
 
 test('no table row points at a class the drawer never renders', async () => {
-  const rt = await presentationRuntime();
   // The "no" buttons exist only while a destructive action waits for its yes / no answer.
-  rt.runtime.cleanupArmedUntil = 1;
-  rt.runtime.storageCleanupArmedUntil = 1;
+  uiState.cleanupArmed = true;
+  uiState.storageCleanupArmed = true;
   const confirming = drawerSettings(rt);
-  rt.runtime.cleanupArmedUntil = 0;
-  rt.runtime.storageCleanupArmedUntil = 0;
+  uiState.cleanupArmed = false;
+  uiState.storageCleanupArmed = false;
   const html = drawerSettings(rt) + confirming;
   // Font and position choices come from helpers the fixture renders separately.
   const missing = [...rt.rootSettingActions().map((a) => a.hook)].filter(
@@ -156,48 +135,23 @@ test('no table row points at a class the drawer never renders', async () => {
   assert.deepEqual(missing, [], 'action row with nothing to click');
 });
 
-test('the router dispatches through the table, not a coordinate chain', async () => {
-  const source = await runtimeSource();
-  assert.match(
-    source,
-    /for \(const action of rootSettingActions\(\)\) \{\s*if \(!\(await eventHitsMainClass\(event, action\.hook\)\)\) continue;/
-  );
-  // The chain was 24 copies of the same four-way comparison.
-  const router = source.slice(
-    source.indexOf('const routeControls = async'),
-    source.indexOf("fail('native setting click'")
-  );
-  const comparisons = (router.match(/event\.clientX [<>]=? rect\.left/g) || []).length;
-  assert.ok(comparisons <= 8, `router still hand-compares ${comparisons} rects`);
-});
-
-test('a hidden control cannot be hit at the origin', async () => {
-  const source = await runtimeSource();
-  // A collapsed <details> reports a zero rect; without this guard a click at
-  // (0,0) would match every hidden control at once.
-  const helper = source.slice(source.indexOf('async function eventHitsMainClass'));
-  assert.match(helper.slice(0, 400), /rect\.width > 0 &&\s*rect\.height > 0/);
-});
-
 // Dispatch itself: lay the controls out as a column of 30px rows in a fake main
 // document and check a click lands on exactly the intended row.
-function fakeMainDoc(hooks, offset = 0) {
-  const rects = new Map(
-    hooks.map((hook, i) => [
-      hook,
-      { left: 0, right: 100, top: offset + i * 30, bottom: offset + i * 30 + 28, width: 100, height: 28 }
-    ])
-  );
-  return {
-    rects,
-    doc: {
-      async querySelector(selector) {
-        const hook = selector.replace(/^\.(x-risu-)?/, '');
-        const rect = rects.get(hook);
-        return rect ? { getBoundingClientRect: async () => rect } : null;
-      }
-    }
-  };
+// Installs a fake main document whose controls are rows of the given hooks.
+async function fakeMainDoc(hooks, offset = 0) {
+  const fake = createFakeHost({ document: true });
+  await Style.removeMainStyle();
+  setHost(fake.api);
+  await Style.installMainStyle();
+  const body = fake.dom.body();
+  const rects = new Map();
+  for (const [i, hook] of hooks.entries()) {
+    const rect = { left: 0, right: 100, top: offset + i * 30, bottom: offset + i * 30 + 28, width: 100, height: 28 };
+    rects.set(hook, rect);
+  }
+  body.setHtml(hooks.map((hook) => `<button class="x-risu-${hook}"></button>`).join(''));
+  fake.dom.doc.layout = (node) => rects.get(node.classes[0]?.replace(/^x-risu-/, ''));
+  return { rects };
 }
 
 async function dispatch(rt, event) {
@@ -209,10 +163,8 @@ async function dispatch(rt, event) {
 }
 
 test('a click resolves to exactly one action row', async () => {
-  const rt = await presentationRuntime();
   const hooks = [...rt.rootSettingActions().map((a) => a.hook)];
-  const { doc } = fakeMainDoc(hooks);
-  rt.runtime.mainDoc = doc;
+  await fakeMainDoc(hooks);
   for (const [index, hook] of hooks.entries()) {
     const hit = await dispatch(rt, { clientX: 50, clientY: index * 30 + 14 });
     assert.equal(hit, hook, `click on row ${index} resolved to ${hit}`);
@@ -220,21 +172,18 @@ test('a click resolves to exactly one action row', async () => {
 });
 
 test('a click in the gutter between controls resolves to nothing', async () => {
-  const rt = await presentationRuntime();
   const hooks = [...rt.rootSettingActions().map((a) => a.hook)];
-  rt.runtime.mainDoc = fakeMainDoc(hooks).doc;
+  await fakeMainDoc(hooks);
   assert.equal(await dispatch(rt, { clientX: 50, clientY: 29 }), null);
   assert.equal(await dispatch(rt, { clientX: 400, clientY: 14 }), null);
 });
 
 test('a collapsed control is not hit at the origin', async () => {
-  const rt = await presentationRuntime();
   const hooks = [...rt.rootSettingActions().map((a) => a.hook)];
   // Lay the panel out below the origin so nothing legitimately covers (0,0).
-  const { doc, rects } = fakeMainDoc(hooks, 100);
+  const { rects } = await fakeMainDoc(hooks, 100);
   // A closed <details> reports an all-zero rect for the controls inside it.
   rects.set('itemx2-setting-debug', { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 });
-  rt.runtime.mainDoc = doc;
   assert.equal(await dispatch(rt, { clientX: 0, clientY: 0 }), null);
   // and the rest of the panel still dispatches normally
   assert.equal(await dispatch(rt, { clientX: 50, clientY: 114 }), hooks[0]);
