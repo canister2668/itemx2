@@ -7,18 +7,58 @@ import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 // existed. They are pinned here so the derivation can never drift from the
 // behaviour that shipped.
 const ALIASES_AT_2_1_1 = {
-  id: 'id', name: 'name', 이름: 'name', type: 'type', 분류: 'type', 종류: 'type', emoji: 'emoji',
-  rarity: 'internalrarity', internalrarity: 'internalrarity', grade: 'internalrarity', 등급: 'internalrarity',
-  display: 'displayrarity', displayrarity: 'displayrarity', 표기: 'displayrarity',
-  power: 'power', 위력: 'power', required: 'required', 요구: 'required',
-  durability: 'durability', 내구: 'durability', 내구도: 'durability',
-  cost: 'cost', price: 'cost', value: 'cost', 가치: 'cost',
-  possession: 'possession', location: 'location', count: 'count', slot: 'slot', pin: 'pin',
-  theme: 'theme', craft: 'theme', affinity: 'affinity', affinity2: 'affinity2', condition: 'condition',
-  effects: 'effects', effect: 'effects', augments: 'augments', augment: 'augments',
-  trivia: 'trivia', desc: 'trivia', description: 'trivia',
-  action: 'action', op: 'op', quantity: 'quantity', destination: 'destination',
-  reason: 'reason', 사유: 'reason', inputs: 'inputs', outputs: 'outputs', equip: 'equip', unequip: 'unequip'
+  id: 'id',
+  name: 'name',
+  이름: 'name',
+  type: 'type',
+  분류: 'type',
+  종류: 'type',
+  emoji: 'emoji',
+  rarity: 'internalrarity',
+  internalrarity: 'internalrarity',
+  grade: 'internalrarity',
+  등급: 'internalrarity',
+  display: 'displayrarity',
+  displayrarity: 'displayrarity',
+  표기: 'displayrarity',
+  power: 'power',
+  위력: 'power',
+  required: 'required',
+  요구: 'required',
+  durability: 'durability',
+  내구: 'durability',
+  내구도: 'durability',
+  cost: 'cost',
+  price: 'cost',
+  value: 'cost',
+  가치: 'cost',
+  possession: 'possession',
+  location: 'location',
+  count: 'count',
+  slot: 'slot',
+  pin: 'pin',
+  theme: 'theme',
+  craft: 'theme',
+  affinity: 'affinity',
+  affinity2: 'affinity2',
+  condition: 'condition',
+  effects: 'effects',
+  effect: 'effects',
+  augments: 'augments',
+  augment: 'augments',
+  trivia: 'trivia',
+  desc: 'trivia',
+  description: 'trivia',
+  action: 'action',
+  op: 'op',
+  quantity: 'quantity',
+  destination: 'destination',
+  reason: 'reason',
+  사유: 'reason',
+  inputs: 'inputs',
+  outputs: 'outputs',
+  equip: 'equip',
+  unequip: 'unequip'
 };
 const TAGS_AT_2_1_1 =
   'id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip';
@@ -79,11 +119,28 @@ test('a backup still round-trips every schema field', async () => {
 test('a backup captures and restores every schema-carried field', async () => {
   const { core, backup } = await presentationRuntime();
   const item = {
-    id: 'flame_sword', name: '화염검', itemType: '한손검', emoji: '🗡️', rarity: 'legendary',
-    displayRarity: '전설', power: '4200', required: '레벨 40', durability: '80/100', cost: '1200 Gold',
-    possession: 'owned', location: 'equipped', count: 1, slot: 'main_hand', pin: true, trivia: '오래된 검',
-    theme: 'forged', affinity: 'fire', affinity2: null, condition: 'blessed',
-    effects: [{ name: '화염', desc: '불태운다' }], augments: [{ name: '예리함', desc: '+10' }]
+    id: 'flame_sword',
+    name: '화염검',
+    itemType: '한손검',
+    emoji: '🗡️',
+    rarity: 'legendary',
+    displayRarity: '전설',
+    power: '4200',
+    required: '레벨 40',
+    durability: '80/100',
+    cost: '1200 Gold',
+    possession: 'owned',
+    location: 'equipped',
+    count: 1,
+    slot: 'main_hand',
+    pin: true,
+    trivia: '오래된 검',
+    theme: 'forged',
+    affinity: 'fire',
+    affinity2: null,
+    condition: 'blessed',
+    effects: [{ name: '화염', desc: '불태운다' }],
+    augments: [{ name: '예리함', desc: '+10' }]
   };
   const loaded = {
     character: { name: '테스트' },
@@ -108,8 +165,5 @@ test('a backup captures and restores every schema-carried field', async () => {
   // Nullable fields are preserved as null rather than dropped, and the exported
   // key order is the one every existing backup file already uses.
   assert.equal(restored.affinity2, null);
-  assert.equal(
-    Object.keys(restored).join(' '),
-    core.BACKUP_FIELDS.filter((k) => item[k] !== undefined).join(' ')
-  );
+  assert.equal(Object.keys(restored).join(' '), core.BACKUP_FIELDS.filter((k) => item[k] !== undefined).join(' '));
 });

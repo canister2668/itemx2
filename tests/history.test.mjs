@@ -170,10 +170,17 @@ test('sealed skills stay in the active list while lost skills and resolved encou
 });
 
 test('cache maintenance retains lifecycle metadata and the complete authoritative log', () => {
-  const chat = chatOf([[exam('pill')], [patch('pill', 'consume', { quantity: 1 })], ...Array.from({ length: 70 }, () => [])]);
+  const chat = chatOf([
+    [exam('pill')],
+    [patch('pill', 'consume', { quantity: 1 })],
+    ...Array.from({ length: 70 }, () => [])
+  ]);
   const compact = h.refreshReplayCache(chat);
   const snapshot = loaded(compact).snapshot;
-  assert.deepEqual(JSON.parse(JSON.stringify(snapshot.history)), JSON.parse(JSON.stringify(loaded(chat).snapshot.history)));
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(snapshot.history)),
+    JSON.parse(JSON.stringify(loaded(chat).snapshot.history))
+  );
   assert.match(compact.message[1].data, /ITEMX2/);
   const before = compact.scriptstate['itemx:log'];
   compact.message[3].data = '소모하지 않았다';

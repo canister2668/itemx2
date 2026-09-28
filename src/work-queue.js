@@ -14,7 +14,9 @@ const ITEMXWorkQueue = (() => {
       if (active || closed) return;
       const suspended = [...jobs].some((job) => job.phase === 'external' && !job.cancelled);
       const first = [...pending.entries()]
-        .filter(([, job]) => (!job.intent.ready || job.intent.ready()) && (!suspended || job.resume || job.intent.reentrant))
+        .filter(
+          ([, job]) => (!job.intent.ready || job.intent.ready()) && (!suspended || job.resume || job.intent.reentrant)
+        )
         .values()
         .next();
       if (first.done) return;
@@ -103,7 +105,12 @@ const ITEMXWorkQueue = (() => {
       clearTimer(key);
       const callback = () => {
         if (!repeat) timers.delete(key);
-        return enqueue({ kind: key, work, ready, reentrant: ['bodyFxStartTimer', 'bodyFxScrollTimer'].includes(key) }).catch(() => {});
+        return enqueue({
+          kind: key,
+          work,
+          ready,
+          reentrant: ['bodyFxStartTimer', 'bodyFxScrollTimer'].includes(key)
+        }).catch(() => {});
       };
       const id = (repeat ? setInterval : setTimeout)(callback, ms);
       timers.set(key, { id, ms, repeat });
@@ -111,9 +118,16 @@ const ITEMXWorkQueue = (() => {
     }
     // Completed work is keyed by semantic identity, independently of in-flight
     // coalescing. A failed attempt never becomes a successful deduplication key.
-    function revision(kind) { return records.get(kind)?.key ?? ''; }
-    function remember(kind, key) { records.set(kind, { key, at: Date.now() }); return key; }
-    function forget(kind) { records.delete(kind); }
+    function revision(kind) {
+      return records.get(kind)?.key ?? '';
+    }
+    function remember(kind, key) {
+      records.set(kind, { key, at: Date.now() });
+      return key;
+    }
+    function forget(kind) {
+      records.delete(kind);
+    }
     function settled(kind, key, ms) {
       const previous = records.get(kind);
       if (previous?.key !== key) {
@@ -125,16 +139,28 @@ const ITEMXWorkQueue = (() => {
     async function attempt(kind, key, work, accept = () => true, ttl = Infinity, giveUpAfter = Infinity) {
       const previous = records.get(kind);
       if (previous?.key === key && previous.failures >= giveUpAfter) return { skipped: true, exhausted: true };
-      if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt)) return { skipped: true };
+      if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt))
+        return { skipped: true };
       let value, error;
-      try { value = await work(); } catch (caught) { error = caught; }
-      const failures = !error && accept(value) ? 0 : Math.min((previous?.key === key ? previous.failures || 0 : 0) + 1, 6);
-      records.set(kind, { key, at: Date.now(), done: failures === 0, failures, retryAt: failures ? Date.now() + Math.min(120000, 5000 * 2 ** failures) : 0 });
+      try {
+        value = await work();
+      } catch (caught) {
+        error = caught;
+      }
+      const failures =
+        !error && accept(value) ? 0 : Math.min((previous?.key === key ? previous.failures || 0 : 0) + 1, 6);
+      records.set(kind, {
+        key,
+        at: Date.now(),
+        done: failures === 0,
+        failures,
+        retryAt: failures ? Date.now() + Math.min(120000, 5000 * 2 ** failures) : 0
+      });
       if (error) throw error;
       return { skipped: false, value };
     }
     function close() {
-      const completion = Promise.allSettled([...jobs].map(job => job.promise));
+      const completion = Promise.allSettled([...jobs].map((job) => job.promise));
       closed = true;
       for (const key of timers.keys()) clearTimer(key);
       cancel();
@@ -143,8 +169,12 @@ const ITEMXWorkQueue = (() => {
     }
     return {
       enqueue,
-      revision, remember, forget, settled, attempt,
-      recent: (kind, age) => Date.now() - (records.get(kind)?.at ?? -Infinity) < age ? records.get(kind)?.key : null,
+      revision,
+      remember,
+      forget,
+      settled,
+      attempt,
+      recent: (kind, age) => (Date.now() - (records.get(kind)?.at ?? -Infinity) < age ? records.get(kind)?.key : null),
       wake: pump,
       external,
       cancel,
@@ -152,14 +182,21 @@ const ITEMXWorkQueue = (() => {
       schedule,
       clearTimer,
       hasTimer: (key) => timers.has(key),
-      age: kind => Date.now() - (records.get(kind)?.at ?? -Infinity),
-      later(group, work, ms) { return schedule(`${group}:${++sequence}`, work, ms); },
-      clearGroup(group) { for (const key of timers.keys()) if (key.startsWith(`${group}:`)) clearTimer(key); },
-      isActive: kind => [...jobs].some(job => !job.cancelled && (job.intent.kind === kind || job.stage === kind)),
+      age: (kind) => Date.now() - (records.get(kind)?.at ?? -Infinity),
+      later(group, work, ms) {
+        return schedule(`${group}:${++sequence}`, work, ms);
+      },
+      clearGroup(group) {
+        for (const key of timers.keys()) if (key.startsWith(`${group}:`)) clearTimer(key);
+      },
+      isActive: (kind) => [...jobs].some((job) => !job.cancelled && (job.intent.kind === kind || job.stage === kind)),
       stage(kind) {
-        const owner = active, previous = owner?.stage;
+        const owner = active,
+          previous = owner?.stage;
         if (owner) owner.stage = kind;
-        return () => { if (owner) owner.stage = previous; };
+        return () => {
+          if (owner) owner.stage = previous;
+        };
       },
       assertCurrent() {
         if (closed || active?.cancelled) throw aborted();

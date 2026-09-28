@@ -16,7 +16,10 @@ test('header actions route before the settings tab gate', () => {
 });
 
 test('the bot power toggle declares itself a header control', () => {
-  const row = source.slice(source.indexOf("hook: 'itemx2-setting-toggle'"), source.indexOf("hook: 'itemx2-setting-toggle'") + 120);
+  const row = source.slice(
+    source.indexOf("hook: 'itemx2-setting-toggle'"),
+    source.indexOf("hook: 'itemx2-setting-toggle'") + 120
+  );
   assert.match(row, /header: true/);
 });
 

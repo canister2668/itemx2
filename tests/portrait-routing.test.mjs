@@ -106,13 +106,16 @@ test('cold concurrent display returns immediately without host reads or writes',
 });
 
 test('portrait preparation coalesces concurrent recovery work without waiting for a stalled image read', async () => {
-  let reads = 0, release;
+  let reads = 0,
+    release;
   const p = await presentationRuntime(
     {
       Risuai: {
         readImage: () => {
           reads++;
-          return new Promise(resolve => { release = resolve; });
+          return new Promise((resolve) => {
+            release = resolve;
+          });
         }
       }
     },

@@ -123,7 +123,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
     source,
     /p:\s*view\.power,\s*q:\s*view\.required,\s*u:\s*view\.durability,\s*c:\s*view\.cost,\s*o:\s*view\.possession,\s*l:\s*view\.location/
   );
-  assert.match(source, /pipelineState\.eventPayloads\.get\(`item:\$\{ref\}`\) \|\| inlineViewPayload\(inline, 'item'\)/);
+  assert.match(
+    source,
+    /pipelineState\.eventPayloads\.get\(`item:\$\{ref\}`\) \|\| inlineViewPayload\(inline, 'item'\)/
+  );
   assert.match(source, /if \(!open\)\s*return `\$\{rootBadgeHtml\((?:loaded)?\)\}[\s\S]*?itemx2-open-loading/);
   assert.match(source, /const ITEMX_UPDATE_CHECK_MS = 30 \* 60 \* 1000/);
   assert.match(source, /headers: \{ Range: 'bytes=0-2047' \}/);
@@ -265,9 +268,15 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.ok(rootToggleHandler.length > 100, 'toggle action row not found');
   // A switch keeps its knob in a child <i>, so the state patch must not write
   // text into it; setTextContent would delete the knob and leave a bare pill.
-  assert.match(rootToggleHandler, /updateRootSwitch\('\.x-risu-itemx2-setting-toggle', next, 'x-risu-itemx2-power-on'\)/);
+  assert.match(
+    rootToggleHandler,
+    /updateRootSwitch\('\.x-risu-itemx2-setting-toggle', next, 'x-risu-itemx2-power-on'\)/
+  );
   assert.equal(rootToggleHandler.includes('updateRootSettingButton'), false, 'a switch is not a text button');
-  assert.match(source, /async function updateRootSwitch\(selector, on, onClass[\s\S]{0,400}?setAttribute\('aria-checked'/);
+  assert.match(
+    source,
+    /async function updateRootSwitch\(selector, on, onClass[\s\S]{0,400}?setAttribute\('aria-checked'/
+  );
   assert.equal(
     /async function updateRootSwitch\(selector, on, onClass[\s\S]{0,400}?setTextContent/.test(source),
     false,
@@ -302,7 +311,10 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.match(source, /detail\.setInnerHTML\(itemDetailBodyHtml\(detailItems\[index\]\)\)/);
   assert.match(source, /async function hydrateCheckedItemDetail\(loaded\)/);
   assert.match(source, /querySelector\(`#itemx2-detail-\$\{index\}:checked`\)/);
-  assert.match(source, /await delay\(0\);\s*(?:if \(await routeEntityDelete\(event, loaded, 'item'\)\) return;\s*)?if \(await hydrateCheckedItemDetail\(loaded\)\) return/);
+  assert.match(
+    source,
+    /await delay\(0\);\s*(?:if \(await routeEntityDelete\(event, loaded, 'item'\)\) return;\s*)?if \(await hydrateCheckedItemDetail\(loaded\)\) return/
+  );
   assert.match(source, /async function hydrateCheckedCodexDetail\(domain, loaded\)/);
   assert.match(source, /itemx2-\$\{domain\}-entry-choice:checked ~ \.x-risu-itemx2-\$\{domain\}-detail/);
   assert.match(source, /itemx2-monster-entry-choice/);
@@ -396,10 +408,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   // chat-body cards do not, so they never re-render at the viewport edge.
   assert.match(source, /\.itemx-tile,\.itemx2-codex-card\{content-visibility:auto/);
   assert.match(source, /ready: \(\) => !presentationState\.bodyFxScrollActive/);
-  assert.match(
-    source,
-    /workQueue\.schedule\(light \? 'hostLightSyncTimer' : 'hostSyncTimer'/
-  );
+  assert.match(source, /workQueue\.schedule\(light \? 'hostLightSyncTimer' : 'hostSyncTimer'/);
   assert.match(source, /itemx2-effects-off/);
   assert.match(source, /itemx-codex-scan\{0%,100%\{opacity:\.2;transform:translate3d/);
   assert.equal(/itemx-codex-scan\{0%,100%\{top:/.test(source), false);
@@ -533,7 +542,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   // 690854 chars at 2.0.21, 726325 now. The ceiling keeps roughly 7% headroom so the
   // next unplanned growth still trips it.
   assert.ok(
-    source.length < 780000,
+    source.length < 800000, // 2.4 phase 0: prettier whitespace; esbuild minifyWhitespace in phase 1 shrinks this
     'presentation, lifecycle history and bounded event FX must stay below the release size budget'
   );
   assert.equal(source.includes('itemx-batch'), false);
@@ -636,7 +645,7 @@ test('built ITEMX CODEX plugin is API v3 and owns both UI and pipeline hooks', a
   assert.equal(positionHandler.includes('installMainStyle'), true);
   assert.equal(positionHandler.includes('openRootInventory'), false);
   assert.match(source, /itemx2-root-tab-\$\{key\}/);
-  assert.match(source, /const schema = Object.freeze\(\{ enabled: true/);
+  assert.match(source, /const schema = Object.freeze\(\{\s*enabled: true/);
   const bootstrap = source.slice(
     source.lastIndexOf('await loadBadgePosition()'),
     source.indexOf('await Risuai.onUnload')

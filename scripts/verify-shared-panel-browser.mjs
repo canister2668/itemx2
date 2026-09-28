@@ -2,7 +2,9 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 const bundle = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
 const anchor = '  try {\n    await loadBadgePosition();';
-const fixture = bundle.replace(anchor, `
+const fixture = bundle.replace(
+  anchor,
+  `
   globalThis.itemxTest = { core: ITEMXCore, codex: ITEMXCodex, armed: () => uiState.storageCleanupArmedUntil, async setup(mode) {
     const root = document.querySelector('#itemx2-root');
     const items = ['검', '목걸이'].map((name,index) => ITEMXCore.normalizeItem({id:'item'+index,name,itemType:index?'장신구':'검',possession:'owned',location:index?'inventory':'equipped',count:1}).item);
@@ -21,7 +23,8 @@ const fixture = bundle.replace(anchor, `
     return loaded;
   }};
   return;
-${anchor}`);
+${anchor}`
+);
 if (fixture === bundle) throw new Error('bootstrap anchor missing');
 const script = `const {chromium}=require('playwright-core');
 (async()=>{ const browser=await chromium.launch({headless:true,args:['--no-sandbox']}); const results=[];
@@ -88,8 +91,24 @@ try { for(const mode of ['frame','drawer']) for(const width of [390,900]) {
  results.push({mode,width,radioWithoutRewrite:true,detail:true,confirmedSearch:true,skillDetail:true,settingsToggle:true,cleanupConfirmation:true,timings,screenshot});
  await page.close();
  } console.log(JSON.stringify(results)); } finally {await browser.close();} })().catch(e=>{console.error(e);process.exit(1)});`;
-const result = JSON.parse(execFileSync('docker', ['exec','-i','claudex-workhouse-browser-runtime','node'], { input: script, encoding:'utf8',timeout:180000,maxBuffer:12e6 }));
-await mkdir(new URL('../artifacts/shared-panel/',import.meta.url),{recursive:true});
-for(const row of result){await writeFile(new URL(`../artifacts/shared-panel/${row.mode}-${row.width}.png`,import.meta.url),Buffer.from(row.screenshot,'base64'));delete row.screenshot;}
-await writeFile(new URL('../artifacts/shared-panel/results.json',import.meta.url),JSON.stringify(result,null,2)+'\n');
+const result = JSON.parse(
+  execFileSync('docker', ['exec', '-i', 'claudex-workhouse-browser-runtime', 'node'], {
+    input: script,
+    encoding: 'utf8',
+    timeout: 180000,
+    maxBuffer: 12e6
+  })
+);
+await mkdir(new URL('../artifacts/shared-panel/', import.meta.url), { recursive: true });
+for (const row of result) {
+  await writeFile(
+    new URL(`../artifacts/shared-panel/${row.mode}-${row.width}.png`, import.meta.url),
+    Buffer.from(row.screenshot, 'base64')
+  );
+  delete row.screenshot;
+}
+await writeFile(
+  new URL('../artifacts/shared-panel/results.json', import.meta.url),
+  JSON.stringify(result, null, 2) + '\n'
+);
 console.log(JSON.stringify(result));

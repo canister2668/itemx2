@@ -1,9 +1,11 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-const bundle=await readFile(new URL('../dist/itemx2.plugin.js',import.meta.url),'utf8');
-const anchor='  try {\n    await loadBadgePosition();';
-if(!bundle.includes(anchor))throw Error('bootstrap anchor missing');
-const fixture=bundle.replace(anchor,`
+const bundle = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
+const anchor = '  try {\n    await loadBadgePosition();';
+if (!bundle.includes(anchor)) throw Error('bootstrap anchor missing');
+const fixture = bundle.replace(
+  anchor,
+  `
   globalThis.probe={heavy:0,violations:0,commits:0, async setup(){
     const style=document.createElement('style');style.textContent=mainStyleText();document.head.append(style);
     const affinities=Object.keys(ITEMXRenderer.affinities);
@@ -25,8 +27,9 @@ const fixture=bundle.replace(anchor,`
   },active:()=>presentationState.bodyFxScrollActive,queue:()=>{void scheduleCommittedOutputSync();void scheduleCommittedOutputSync();void scheduleCommittedOutputSync()},
   startModel:()=>{void dispatch('aux',()=>workQueue.external(()=>new Promise(resolve=>{probe.releaseModel=resolve})))},
   done:()=>workQueue.close()};return;
-${anchor}`);
-const script=`const {chromium}=require('playwright-core');
+${anchor}`
+);
+const script = `const {chromium}=require('playwright-core');
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const results=[];try{
 for(const width of [390,900]){
 const page=await browser.newPage({viewport:{width,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -65,8 +68,32 @@ if(errors.length)throw Error(errors.join(';'));
 results.push({width,...setup,activeAnimationsBefore:before,scroll: during,scrollEndWhileModelPending:endWhileModelPending,scenarioWallMs:Date.now()-start,after});
 await page.evaluate(()=>probe.done());await page.close();
 }console.log(JSON.stringify(results));}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});`;
-const results=JSON.parse(execFileSync('docker',['exec','-i','claudex-workhouse-browser-runtime','node'],{input:script,encoding:'utf8',timeout:90000,maxBuffer:4e6}));
-await mkdir(new URL('../artifacts/performance/',import.meta.url),{recursive:true});
-await writeFile(new URL('../artifacts/performance/scroll.json',import.meta.url),JSON.stringify(results,null,2)+'\n');
-console.log(JSON.stringify(results.map(row=>({...row,scroll:{...row.scroll,running:row.scroll.running.length,runningNames:[...new Set(row.scroll.running.map(x=>x.name))]}})),null,2));
-if(results.some(row=>row.scroll.running.length))throw Error('Some FX still animate during scrolling; see scroll.json');
+const results = JSON.parse(
+  execFileSync('docker', ['exec', '-i', 'claudex-workhouse-browser-runtime', 'node'], {
+    input: script,
+    encoding: 'utf8',
+    timeout: 90000,
+    maxBuffer: 4e6
+  })
+);
+await mkdir(new URL('../artifacts/performance/', import.meta.url), { recursive: true });
+await writeFile(
+  new URL('../artifacts/performance/scroll.json', import.meta.url),
+  JSON.stringify(results, null, 2) + '\n'
+);
+console.log(
+  JSON.stringify(
+    results.map((row) => ({
+      ...row,
+      scroll: {
+        ...row.scroll,
+        running: row.scroll.running.length,
+        runningNames: [...new Set(row.scroll.running.map((x) => x.name))]
+      }
+    })),
+    null,
+    2
+  )
+);
+if (results.some((row) => row.scroll.running.length))
+  throw Error('Some FX still animate during scrolling; see scroll.json');

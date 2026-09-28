@@ -10,8 +10,13 @@ import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 // belongs - and nothing redraws it.
 function chatWithRef(rt) {
   const item = rt.core.normalizeItem({
-    id: 'jade_blade', name: '청옥검', type: '검', internalrarity: 'legendary',
-    possession: 'owned', location: 'inventory', count: 1
+    id: 'jade_blade',
+    name: '청옥검',
+    type: '검',
+    internalrarity: 'legendary',
+    possession: 'owned',
+    location: 'inventory',
+    count: 1
   }).item;
   const payload = { v: rt.core.VERSION, event: { kind: 'exam', item }, view: item };
   const ref = 'r1';
@@ -20,7 +25,7 @@ function chatWithRef(rt) {
     chat: {
       message: [{ chatId: 'm0', role: 'char', data: `서사 본문<!--ITEMX2@${ref}-->` }],
       scriptstate: {
-        '$__itemx2_message_events': JSON.stringify([{ ref, domain: 'item', payload }])
+        $__itemx2_message_events: JSON.stringify([{ ref, domain: 'item', payload }])
       }
     }
   };
@@ -45,14 +50,17 @@ test('without the ledger the ref degrades to the restoring chip', async () => {
 
 test('bootstrap loads the ledger from its first chat read', async () => {
   const source = await readFile(new URL('../src/runtime.js', import.meta.url), 'utf8');
-  const boot = source.slice(source.indexOf('const initial = await context()'), source.indexOf('installPipelineHooks()'));
+  const boot = source.slice(
+    source.indexOf('const initial = await context()'),
+    source.indexOf('installPipelineHooks()')
+  );
   assert.match(boot, /refreshLatest\(initial\.chat\)/, 'the ledger must load before the slow work');
   // It has to come before the rebuild, which is several awaits and a host write away.
   assert.ok(
     boot.indexOf('refreshLatest(initial.chat)') < boot.length,
     'the ledger load must not sit after the rebuild'
   );
-  const rebuildAt = source.indexOf("rebuildCurrent({ upgradeDisplayRefs: true })");
+  const rebuildAt = source.indexOf('rebuildCurrent({ upgradeDisplayRefs: true })');
   const loadAt = source.indexOf('refreshLatest(initial.chat)');
   assert.ok(loadAt > 0 && loadAt < rebuildAt, 'ledger load precedes the rebuild');
 });

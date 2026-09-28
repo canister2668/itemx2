@@ -25,13 +25,17 @@ async function extract(text) {
 }
 
 for (const [label, reasoning] of [
-  ['quoted in backticks', 'Plan:\n  - Encounter bestiary for Rika (`<monsterExam>`).\n  - Items via `<itemExam>` at the end.\n'],
+  [
+    'quoted in backticks',
+    'Plan:\n  - Encounter bestiary for Rika (`<monsterExam>`).\n  - Items via `<itemExam>` at the end.\n'
+  ],
   ['named bare in prose', 'Plan: bestiary for Rika (<monsterExam>) and items via <itemExam>.\n'],
   ['glued to the header', 'Review length and immersion, then emit <itemExam> and <monsterExam>.']
 ]) {
   test(`leaked reasoning ${label} keeps the whole body and still records events`, async () => {
     const out = await extract(reasoning + body);
-    for (const line of ['# 응답', '포신 끝에서', '살려줘요', '마지막 문장.']) assert.ok(out.content.includes(line), `${line} lost`);
+    for (const line of ['# 응답', '포신 끝에서', '살려줘요', '마지막 문장.'])
+      assert.ok(out.content.includes(line), `${line} lost`);
     assert.equal(out.items, 1);
     assert.equal(out.codex, 1);
   });

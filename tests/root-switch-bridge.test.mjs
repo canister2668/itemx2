@@ -4,17 +4,30 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/aux.js', import.meta.url), 'utf8');
-const helpers = source.slice(source.indexOf('  async function updateRootSwitch('), source.indexOf('  async function applyRootSetting('));
+const helpers = source.slice(
+  source.indexOf('  async function updateRootSwitch('),
+  source.indexOf('  async function applyRootSetting(')
+);
 const selector = '.x-risu-itemx2-setting-main';
 
 // Deliberately enforce the stock bridge boundary. The browser probe separately
 // checks actual DOM replacement, computed styles, focus and stored settings.
 function hostControl(onClass = 'x-risu-itemx2-setting-on') {
-  const state = { classes: new Set(['x-risu-itemx2-setting-main', onClass]), checked: 'true',
-    contents: '<i></i>', focused: true, replacements: 0, forbiddenWrites: 0 };
+  const state = {
+    classes: new Set(['x-risu-itemx2-setting-main', onClass]),
+    checked: 'true',
+    contents: '<i></i>',
+    focused: true,
+    replacements: 0,
+    forbiddenWrites: 0
+  };
   const port = {
-    async addClass(name) { state.classes.add(name); },
-    async removeClass(name) { state.classes.delete(name); },
+    async addClass(name) {
+      state.classes.add(name);
+    },
+    async removeClass(name) {
+      state.classes.delete(name);
+    },
     async setAttribute(name) {
       state.forbiddenWrites++;
       throw new Error(`SafeElement rejects ${name}`);
@@ -29,12 +42,20 @@ function hostControl(onClass = 'x-risu-itemx2-setting-on') {
       assert.ok(html.includes('aria-label="Keep label"'));
       assert.ok(html.endsWith(`${state.contents}</button>`), 'keep the knob markup');
     },
-    async focus() { state.focused = true; }
+    async focus() {
+      state.focused = true;
+    }
   };
-  return { state, port, doc: { async querySelector(query) {
-    if (query === selector || (query === `${selector}:focus` && state.focused)) return port;
-    return null;
-  } } };
+  return {
+    state,
+    port,
+    doc: {
+      async querySelector(query) {
+        if (query === selector || (query === `${selector}:focus` && state.focused)) return port;
+        return null;
+      }
+    }
+  };
 }
 
 function runtime(doc, { panelOpen = false, hostDoc = doc } = {}) {
@@ -43,9 +64,14 @@ function runtime(doc, { panelOpen = false, hostDoc = doc } = {}) {
     panelDocument: () => doc,
     hostState: { mainDoc: hostDoc },
     uiState: { panelOpen, rootOpen: true, activeRootTab: 'settings' },
-    openRootInventory: async () => { calls.repaint++; }
+    openRootInventory: async () => {
+      calls.repaint++;
+    }
   });
-  vm.runInContext(`${helpers}\nglobalThis.api = { updateRootSwitch, updateRootDomainCard, updateRootSettingButton };`, sandbox);
+  vm.runInContext(
+    `${helpers}\nglobalThis.api = { updateRootSwitch, updateRootDomainCard, updateRootSettingButton };`,
+    sandbox
+  );
   return { ...sandbox.api, calls };
 }
 
@@ -67,11 +93,23 @@ for (const onClass of ['x-risu-itemx2-setting-on', 'x-risu-itemx2-power-on']) {
 
 test('the active iframe owns switch, domain and text-button patches despite a hidden host copy', async () => {
   const { state, port, doc } = hostControl();
-  port.setAttribute = async (name, value) => { assert.equal(name, 'aria-checked'); state.checked = value; };
+  port.setAttribute = async (name, value) => {
+    assert.equal(name, 'aria-checked');
+    state.checked = value;
+  };
   port.setOuterHTML = async () => assert.fail('native switches must keep their DOM node');
   let label = '';
-  port.setTextContent = async value => { label = value; };
-  port.querySelector = async query => { assert.equal(query, 'i'); return { setTextContent: async value => { label = value; } }; };
+  port.setTextContent = async (value) => {
+    label = value;
+  };
+  port.querySelector = async (query) => {
+    assert.equal(query, 'i');
+    return {
+      setTextContent: async (value) => {
+        label = value;
+      }
+    };
+  };
   const hostDoc = { querySelector: async () => assert.fail('must not search the hidden host document') };
   const rt = runtime(doc, { panelOpen: true, hostDoc });
   await rt.updateRootSwitch(selector, false);
@@ -87,8 +125,10 @@ test('the active iframe owns switch, domain and text-button patches despite a hi
 });
 
 test('a missing active control repaints once instead of patching a hidden copy', async () => {
-  const rt = runtime({ querySelector: async () => null }, { panelOpen: true,
-    hostDoc: { querySelector: async () => assert.fail('hidden copy is not a fallback target') } });
+  const rt = runtime(
+    { querySelector: async () => null },
+    { panelOpen: true, hostDoc: { querySelector: async () => assert.fail('hidden copy is not a fallback target') } }
+  );
   assert.equal(await rt.updateRootSwitch(selector, false), true);
   assert.equal(rt.calls.repaint, 1);
 });
@@ -103,6 +143,8 @@ test('a host switch that was not focused does not steal focus', async () => {
 
 test('unexpected bridge write failures remain visible to the action error handler', async () => {
   const { port, doc } = hostControl();
-  port.setOuterHTML = async () => { throw new Error('bridge disconnected'); };
+  port.setOuterHTML = async () => {
+    throw new Error('bridge disconnected');
+  };
   await assert.rejects(runtime(doc).updateRootSwitch(selector, false), /bridge disconnected/);
 });

@@ -8,8 +8,14 @@ import vm from 'node:vm';
 
 test('localization preserves interpolation order, escaping and nested messages', () => {
   const source = "ITEMXText('sentence', ITEMXText('name'), '<script>')";
-  assert.equal(vm.runInNewContext(localizeSource(source, { name: '이름', sentence: ['안녕 ', ': ', ' 끝'] })), '안녕 이름: <script> 끝');
-  assert.equal(vm.runInNewContext(localizeSource(source, { name: 'Name', sentence: ['Hello ', ': ', ' end'] })), 'Hello Name: <script> end');
+  assert.equal(
+    vm.runInNewContext(localizeSource(source, { name: '이름', sentence: ['안녕 ', ': ', ' 끝'] })),
+    '안녕 이름: <script> 끝'
+  );
+  assert.equal(
+    vm.runInNewContext(localizeSource(source, { name: 'Name', sentence: ['Hello ', ': ', ' end'] })),
+    'Hello Name: <script> end'
+  );
   assert.throws(() => localizeSource(source, { name: 'Name', sentence: ['short'] }), /Interpolation count/);
   assert.throws(() => localizeSource(source, {}), /Missing localized/);
 });
@@ -24,7 +30,9 @@ test('runtime modules keep Korean literal messages in the catalog', async () => 
       if (!node || typeof node !== 'object') return;
       if (node.type === 'StringLiteral') assert.doesNotMatch(node.value, /[가-힣]/, name);
       if (node.type === 'TemplateElement') assert.doesNotMatch(node.value.cooked || '', /[가-힣]/, name);
-      for (const [key, value] of Object.entries(node)) if (!['comments','tokens','loc','extra'].includes(key)) Array.isArray(value) ? value.forEach(walk) : walk(value);
+      for (const [key, value] of Object.entries(node))
+        if (!['comments', 'tokens', 'loc', 'extra'].includes(key))
+          Array.isArray(value) ? value.forEach(walk) : walk(value);
     }
     walk(ast);
   }

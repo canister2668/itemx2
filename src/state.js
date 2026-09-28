@@ -3,9 +3,14 @@
 const ITEMXState = (() => {
   function owner(initial) {
     const ports = {};
-    for (const key of Object.keys(initial)) Object.defineProperty(ports, key, {
-      enumerable: true, get: () => initial[key], set: value => { initial[key] = value; }
-    });
+    for (const key of Object.keys(initial))
+      Object.defineProperty(ports, key, {
+        enumerable: true,
+        get: () => initial[key],
+        set: (value) => {
+          initial[key] = value;
+        }
+      });
     return Object.freeze(ports);
   }
   function create() {
@@ -85,7 +90,7 @@ const ITEMXState = (() => {
         powerButtonState: null,
         badgeDeltaSeen: '',
         view: { query: '' }
-      }),
+      })
     });
   }
   return { create };

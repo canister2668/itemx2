@@ -7,8 +7,16 @@ async function storage() {
   const src = await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8');
   const anchor = '  try {\n    await loadBadgePosition();';
   const sb = vm.createContext({
-    console: { log() {}, error() {}, warn() {} }, TextEncoder, TextDecoder, Buffer, structuredClone,
-    setTimeout, clearTimeout, setInterval, clearInterval, Risuai: {}
+    console: { log() {}, error() {}, warn() {} },
+    TextEncoder,
+    TextDecoder,
+    Buffer,
+    structuredClone,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
+    Risuai: {}
   });
   await vm.runInContext(src.replace(anchor, `globalThis.p = { storage: ITEMXStorage };\n  return;\n${anchor}`), sb);
   return sb.p.storage;
@@ -24,8 +32,26 @@ const messages = [
 ];
 const rows = [
   {
-    id: 'item:a', domain: 'item', ref: 'a', messageIndex: 1, messageId: 'm1', ordinal: 0, code: 'a',
-    event: { kind: 'exam', item: { id: 'sword', name: '검', itemType: '검', count: 1, possession: 'owned', location: 'inventory', effects: [], augments: [] } }
+    id: 'item:a',
+    domain: 'item',
+    ref: 'a',
+    messageIndex: 1,
+    messageId: 'm1',
+    ordinal: 0,
+    code: 'a',
+    event: {
+      kind: 'exam',
+      item: {
+        id: 'sword',
+        name: '검',
+        itemType: '검',
+        count: 1,
+        possession: 'owned',
+        location: 'inventory',
+        effects: [],
+        augments: []
+      }
+    }
   }
 ];
 
@@ -47,8 +73,26 @@ test('a new log entry is folded again', async () => {
   const more = [
     ...rows,
     {
-      id: 'item:b', domain: 'item', ref: 'b', messageIndex: 1, messageId: 'm1', ordinal: 1, code: 'b',
-      event: { kind: 'exam', item: { id: 'shield', name: '방패', itemType: '방어구', count: 1, possession: 'owned', location: 'inventory', effects: [], augments: [] } }
+      id: 'item:b',
+      domain: 'item',
+      ref: 'b',
+      messageIndex: 1,
+      messageId: 'm1',
+      ordinal: 1,
+      code: 'b',
+      event: {
+        kind: 'exam',
+        item: {
+          id: 'shield',
+          name: '방패',
+          itemType: '방어구',
+          count: 1,
+          possession: 'owned',
+          location: 'inventory',
+          effects: [],
+          augments: []
+        }
+      }
     }
   ];
   const second = s.hydrate(chatWith(more, messages));

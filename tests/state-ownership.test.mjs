@@ -10,16 +10,22 @@ test('every state field has exactly one domain owner and domains cannot grow hid
   const owners = create();
   for (const [field, port] of Object.entries(schema)) {
     const expected = port.replace(/State$/, '');
-    assert.deepEqual(Object.keys(owners).filter(name => Object.hasOwn(owners[name], field)), [expected]);
+    assert.deepEqual(
+      Object.keys(owners).filter((name) => Object.hasOwn(owners[name], field)),
+      [expected]
+    );
   }
   for (const owner of Object.values(owners)) {
     assert.equal(Object.isFrozen(owner), true);
-    assert.throws(() => { owner.newBusyFlag = true; }, TypeError);
+    assert.throws(() => {
+      owner.newBusyFlag = true;
+    }, TypeError);
   }
 });
 
 test('state instances and their mutable collections are isolated', () => {
-  const a = create(), b = create();
+  const a = create(),
+    b = create();
   a.pipeline.generation++;
   a.portraits.portraitCache.set('asset', 'image');
   a.ui.rootOpen = true;
@@ -37,7 +43,9 @@ test('production code has no implicit access to the retired flat runtime object'
   function visit(node) {
     if (!node || typeof node !== 'object') return;
     if (node.type === 'Identifier') assert.notEqual(node.name, 'runtime', 'dynamic state access escaped its owner');
-    for (const [key, value] of Object.entries(node)) if (!['comments', 'tokens', 'loc', 'extra'].includes(key)) Array.isArray(value) ? value.forEach(visit) : visit(value);
+    for (const [key, value] of Object.entries(node))
+      if (!['comments', 'tokens', 'loc', 'extra'].includes(key))
+        Array.isArray(value) ? value.forEach(visit) : visit(value);
   }
   visit(ast);
 });

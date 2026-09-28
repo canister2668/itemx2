@@ -5,9 +5,7 @@ import { readFile, readdir } from 'node:fs/promises';
 const srcDir = new URL('../src/', import.meta.url);
 const sources = async () => {
   const names = (await readdir(srcDir)).filter((n) => /\.(js|css)$/.test(n));
-  return Object.fromEntries(
-    await Promise.all(names.map(async (n) => [n, await readFile(new URL(n, srcDir), 'utf8')]))
-  );
+  return Object.fromEntries(await Promise.all(names.map(async (n) => [n, await readFile(new URL(n, srcDir), 'utf8')])));
 };
 
 // A v3 plugin is an iframe laid over the host page. backdrop-filter has to blur
@@ -41,9 +39,6 @@ test('nothing blurred is also pinned to the viewport', async () => {
 // A handful is deliberate; a sweep of them is a generator being decorative.
 test('layer promotion stays deliberate', async () => {
   const files = await sources();
-  const total = Object.values(files).reduce(
-    (sum, text) => sum + (text.match(/will-change/g) || []).length,
-    0
-  );
+  const total = Object.values(files).reduce((sum, text) => sum + (text.match(/will-change/g) || []).length, 0);
   assert.ok(total <= 4, `will-change used ${total} times; each one pins a layer in memory`);
 });

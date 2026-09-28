@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 export async function presentationRuntime(overrides = {}, extra = '', sourceOverride = null) {
-  const source = sourceOverride ?? await readFile(new URL('../../dist/itemx2.plugin.js', import.meta.url), 'utf8');
+  const source = sourceOverride ?? (await readFile(new URL('../../dist/itemx2.plugin.js', import.meta.url), 'utf8'));
   const anchor = '  try {\n    await loadBadgePosition();';
   if (!source.includes(anchor)) throw new Error('runtime bootstrap anchor missing');
   const sandbox = vm.createContext({

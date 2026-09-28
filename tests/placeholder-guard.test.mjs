@@ -4,7 +4,8 @@ import { presentationRuntime } from './helpers/presentation-runtime.mjs';
 
 // A model that echoes the transport template instead of filling it in used to
 // register a real item whose every field was an ellipsis. Seen live in 무림속으로.
-const ECHOED = '<itemExam><id>...</id><name>...</name><type>...</type><displayrarity>...</displayrarity><power>...</power><trivia>...</trivia><effects>...</effects></itemExam>';
+const ECHOED =
+  '<itemExam><id>...</id><name>...</name><type>...</type><displayrarity>...</displayrarity><power>...</power><trivia>...</trivia><effects>...</effects></itemExam>';
 
 test('an echoed template does not become an item', async () => {
   const { core } = await presentationRuntime();
@@ -14,10 +15,25 @@ test('an echoed template does not become an item', async () => {
 
 test('placeholder names paired with template IDs are rejected', async () => {
   const { core } = await presentationRuntime();
-  for (const name of ['...', '…', '....', '-', '_', '?', 'none', 'N/A', 'unknown', 'TBD', 'placeholder', '없음', '미상', '미정'])
+  for (const name of [
+    '...',
+    '…',
+    '....',
+    '-',
+    '_',
+    '?',
+    'none',
+    'N/A',
+    'unknown',
+    'TBD',
+    'placeholder',
+    '없음',
+    '미상',
+    '미정'
+  ])
     assert.equal(
-      core.extractResponse(`<itemExam><id>...</id><name>${name}</name></itemExam>`, core.newRegistry()).registry
-        .order.length,
+      core.extractResponse(`<itemExam><id>...</id><name>${name}</name></itemExam>`, core.newRegistry()).registry.order
+        .length,
       0,
       `${name} must not register`
     );

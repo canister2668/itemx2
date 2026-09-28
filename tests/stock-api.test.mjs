@@ -13,7 +13,7 @@ const provenance = JSON.parse(await readFile(new URL('fixtures/risuai-source.jso
 function members(name) {
   const body = fixture.split(`interface ${name} {`)[1]?.split('\n}')[0];
   assert.ok(body, `missing upstream interface ${name}`);
-  return new Set([...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/^    (\w+)\??\s*[:(<]/gm)].map(m => m[1]));
+  return new Set([...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/^    (\w+)\??\s*[:(<]/gm)].map((m) => m[1]));
 }
 const api = members('RisuaiPluginAPI');
 const storage = members('PluginStorage');
@@ -22,7 +22,7 @@ function walk(node, visit, parents = []) {
   if (node.type) visit(node, parents);
   for (const [key, value] of Object.entries(node)) {
     if (['loc', 'comments', 'tokens'].includes(key)) continue;
-    if (Array.isArray(value)) value.forEach(x => walk(x, visit, [...parents, node]));
+    if (Array.isArray(value)) value.forEach((x) => walk(x, visit, [...parents, node]));
     else if (value && typeof value === 'object') walk(value, visit, [...parents, node]);
   }
 }
@@ -37,18 +37,30 @@ async function audit(source) {
     if (!['MemberExpression', 'OptionalMemberExpression'].includes(node.type)) return;
     if (node.object?.name === 'Risuai') {
       if (node.computed && node.property.type !== 'StringLiteral') {
-        assert.ok(node.property.name === 'name' && parents.some(p => p.type === 'FunctionDeclaration' && p.id.name === 'callOptionalRisuApi'), 'unverifiable dynamic Risuai API');
+        assert.ok(
+          node.property.name === 'name' &&
+            parents.some((p) => p.type === 'FunctionDeclaration' && p.id.name === 'callOptionalRisuApi'),
+          'unverifiable dynamic Risuai API'
+        );
         return;
       }
       const name = node.computed ? node.property.value : node.property.name;
       used.add(name);
       if (name === 'resizeContainer') {
         // The only fork extension: rejection must be handled by the actual try.
-        assert.ok(parents.some(p => p.type === 'TryStatement' && p.handler && node.start >= p.block.start && node.end <= p.block.end), 'resizeContainer must have a fallback');
+        assert.ok(
+          parents.some(
+            (p) => p.type === 'TryStatement' && p.handler && node.start >= p.block.start && node.end <= p.block.end
+          ),
+          'resizeContainer must have a fallback'
+        );
       } else assert.ok(api.has(name), `undocumented Risuai.${name}`);
     }
     if (node.object?.object?.name === 'Risuai' && node.object.property?.name === 'pluginStorage') {
-      assert.ok(storage.has(node.computed ? node.property.value : node.property.name), 'undocumented pluginStorage method');
+      assert.ok(
+        storage.has(node.computed ? node.property.value : node.property.name),
+        'undocumented pluginStorage method'
+      );
     }
   });
   return used;
@@ -59,12 +71,20 @@ test('the stock API fixture is pinned and unchanged', () => {
 });
 test('every source and shipped Risuai API exists in the stock contract', async () => {
   const dir = new URL('../src/', import.meta.url);
-  for (const name of await readdir(dir)) if (name.endsWith('.js')) await audit(await readFile(new URL(name, dir), 'utf8'));
+  for (const name of await readdir(dir))
+    if (name.endsWith('.js')) await audit(await readFile(new URL(name, dir), 'utf8'));
   const used = await audit(await readFile(new URL('../dist/itemx2.plugin.js', import.meta.url), 'utf8'));
   assert.ok(used.size >= 25, 'API scanner missed the runtime');
 });
 test('API audit rejects fork APIs including computed and optional calls', async () => {
-  for (const source of ['Risuai.forkOnly()', 'Risuai["forkOnly"]()', 'Risuai[name]()', 'callOptionalRisuApi("alertConfirm")', 'Risuai.pluginStorage.forkOnly()', 'Risuai.resizeContainer(1, 2)'])
+  for (const source of [
+    'Risuai.forkOnly()',
+    'Risuai["forkOnly"]()',
+    'Risuai[name]()',
+    'callOptionalRisuApi("alertConfirm")',
+    'Risuai.pluginStorage.forkOnly()',
+    'Risuai.resizeContainer(1, 2)'
+  ])
     await assert.rejects(audit(source));
 });
 test('resizeContainer rejection executes the bounded fullscreen fallback', async () => {
@@ -73,8 +93,15 @@ test('resizeContainer rejection executes the bounded fullscreen fallback', async
   const end = source.indexOf('      document.head.innerHTML', start);
   const runtime = { compactContainer: true };
   await vm.runInNewContext(`(async () => {${source.slice(start, end)}})()`, {
-    uiState: runtime, panelHeight: 600, panelWidth: 400, log() {},
-    Risuai: { resizeContainer: async () => { throw new Error('API method resizeContainer not found'); } }
+    uiState: runtime,
+    panelHeight: 600,
+    panelWidth: 400,
+    log() {},
+    Risuai: {
+      resizeContainer: async () => {
+        throw new Error('API method resizeContainer not found');
+      }
+    }
   });
   assert.equal(runtime.compactContainer, false);
 });

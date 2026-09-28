@@ -84,7 +84,15 @@ const ITEMXCore = (() => {
       tags: ['displayrarity'],
       backup: true
     },
-    { key: 'power', transport: 'power', aliases: ['위력'], tags: ['power'], anchor: 'optional', backup: true, detail: true },
+    {
+      key: 'power',
+      transport: 'power',
+      aliases: ['위력'],
+      tags: ['power'],
+      anchor: 'optional',
+      backup: true,
+      detail: true
+    },
     { key: 'required', transport: 'required', aliases: ['요구'], tags: ['required'], backup: true, detail: true },
     {
       key: 'durability',
@@ -101,7 +109,14 @@ const ITEMXCore = (() => {
     { key: 'count', transport: 'count', tags: ['count'], anchor: 'required', backup: true },
     { key: 'slot', transport: 'slot', tags: ['slot'], anchor: 'optional', backup: true },
     { key: 'pin', transport: 'pin', tags: ['pin'], backup: true },
-    { key: 'theme', transport: 'theme', aliases: ['craft'], tags: ['theme', 'craft'], anchor: 'optional', backup: true },
+    {
+      key: 'theme',
+      transport: 'theme',
+      aliases: ['craft'],
+      tags: ['theme', 'craft'],
+      anchor: 'optional',
+      backup: true
+    },
     { key: 'affinity', transport: 'affinity', tags: ['affinity2?'], anchor: 'optional', backup: true },
     { key: 'affinity2', transport: 'affinity2', anchor: 'optional', backup: true },
     { key: 'condition', transport: 'condition', tags: ['condition'], anchor: 'optional', backup: true },
@@ -353,7 +368,8 @@ const ITEMXCore = (() => {
     return [...new Set(out)];
   }
 
-  const PLACEHOLDER_RE = /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
+  const PLACEHOLDER_RE =
+    /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
   const placeholderValue = (value) => PLACEHOLDER_RE.test(clean(value, 160));
 
   function normalizeItem(raw, seed = '') {
@@ -788,7 +804,8 @@ const ITEMXCore = (() => {
       applyFields(item, patch.fields);
       if (!POSSESSIONS.has(item.possession) || item.possession === 'removed') item.possession = 'owned';
       if (!LOCATIONS.has(item.location) || item.location === 'unknown') item.location = 'inventory';
-      if (item.location === 'equipped' && (!item.slot || slotConflict(reg, item.id, item.slot))) item.location = 'inventory';
+      if (item.location === 'equipped' && (!item.slot || slotConflict(reg, item.id, item.slot)))
+        item.location = 'inventory';
       if (item.location !== 'equipped') item.slot = null;
       item.count = Math.max(1, Number(item.count) || 1);
       item.removedReason = null;
@@ -836,12 +853,7 @@ const ITEMXCore = (() => {
       let boundary = out.indexOf('\n\n', opener.index);
       while (boundary >= 0) {
         const suffix = out.slice(boundary + 2).trimStart();
-        if (
-          !new RegExp(`^</?(?:${TRANSPORT_TAG_ALT})\\b`, 'i').test(
-            suffix
-          )
-        )
-          break;
+        if (!new RegExp(`^</?(?:${TRANSPORT_TAG_ALT})\\b`, 'i').test(suffix)) break;
         boundary = out.indexOf('\n\n', boundary + 2);
       }
       out = boundary < 0 ? out.slice(0, opener.index) : out.slice(0, opener.index) + out.slice(boundary + 2);
@@ -956,7 +968,8 @@ const ITEMXCore = (() => {
     return out.join('');
   }
 
-  const QUOTED_TRANSPORT_RE = /`[^`\n]*<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^`\n]*`/gi;
+  const QUOTED_TRANSPORT_RE =
+    /`[^`\n]*<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^`\n]*`/gi;
   function protectPlanning(content, extract) {
     const original = String(content || '');
     const planning = /<(?:Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>/i.test(original);
@@ -972,7 +985,10 @@ const ITEMXCore = (() => {
       return key;
     };
     let masked = planning
-      ? original.replace(/<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, keep)
+      ? original.replace(
+          /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+          keep
+        )
       : original;
     masked = masked.replace(QUOTED_TRANSPORT_RE, keep);
     const result = extract(masked);
@@ -1115,8 +1131,7 @@ const ITEMXCore = (() => {
         `location=${item.location}`,
         `count=${item.count || 0}`
       ];
-      for (const key of ANCHOR_OPTIONAL)
-        if (item[key]) bits.push(`${key}=${item[key]}`);
+      for (const key of ANCHOR_OPTIONAL) if (item[key]) bits.push(`${key}=${item[key]}`);
       if (item.effects?.length)
         bits.push(
           `effects=${item.effects
@@ -1475,8 +1490,10 @@ const ITEMXCodex = (() => {
       .trim()
       .slice(0, max);
   const emptySkillValue = (value) =>
-    /^(?:|[.\u2026\-_?]+|none|null|unknown|n\/a|tbd|example|placeholder|없음|해당\s*없음|미상|미정)$/i.test(clean(value, 120));
-  const explicitNoSkillValue = value => /^(?:none|없음|해당\s*없음|n\/a|[-_])$/i.test(clean(value, 120));
+    /^(?:|[.\u2026\-_?]+|none|null|unknown|n\/a|tbd|example|placeholder|없음|해당\s*없음|미상|미정)$/i.test(
+      clean(value, 120)
+    );
+  const explicitNoSkillValue = (value) => /^(?:none|없음|해당\s*없음|n\/a|[-_])$/i.test(clean(value, 120));
   const costValue = (value, type = 'active', status = '') => {
     const result = clean(value, 120);
     if (!emptySkillValue(result)) return result;
@@ -1489,7 +1506,11 @@ const ITEMXCodex = (() => {
     if (emptySkillValue(result)) {
       if (type === 'passive') return '상시 적용';
       if (type === 'sealed' || status === 'sealed') return '봉인 해제 후 사용 가능';
-      return explicitNoSkillValue(result) ? '재사용 제한 없음' : result ? '재사용 조건 · 서사 기준' : '사용 후 회복 필요';
+      return explicitNoSkillValue(result)
+        ? '재사용 제한 없음'
+        : result
+          ? '재사용 조건 · 서사 기준'
+          : '사용 후 회복 필요';
     }
     return /(?:\d+\s*)?(?:턴|라운드|turns?|rounds?|actions?|initiative)/i.test(result) ? '상황 조건 충족 후' : result;
   };
@@ -3716,7 +3737,9 @@ const ITEMXWorkQueue = (() => {
       if (active || closed) return;
       const suspended = [...jobs].some((job) => job.phase === 'external' && !job.cancelled);
       const first = [...pending.entries()]
-        .filter(([, job]) => (!job.intent.ready || job.intent.ready()) && (!suspended || job.resume || job.intent.reentrant))
+        .filter(
+          ([, job]) => (!job.intent.ready || job.intent.ready()) && (!suspended || job.resume || job.intent.reentrant)
+        )
         .values()
         .next();
       if (first.done) return;
@@ -3804,15 +3827,27 @@ const ITEMXWorkQueue = (() => {
       clearTimer(key);
       const callback = () => {
         if (!repeat) timers.delete(key);
-        return enqueue({ kind: key, work, ready, reentrant: ['bodyFxStartTimer', 'bodyFxScrollTimer'].includes(key) }).catch(() => {});
+        return enqueue({
+          kind: key,
+          work,
+          ready,
+          reentrant: ['bodyFxStartTimer', 'bodyFxScrollTimer'].includes(key)
+        }).catch(() => {});
       };
       const id = (repeat ? setInterval : setTimeout)(callback, ms);
       timers.set(key, { id, ms, repeat });
       return id;
     }
-    function revision(kind) { return records.get(kind)?.key ?? ''; }
-    function remember(kind, key) { records.set(kind, { key, at: Date.now() }); return key; }
-    function forget(kind) { records.delete(kind); }
+    function revision(kind) {
+      return records.get(kind)?.key ?? '';
+    }
+    function remember(kind, key) {
+      records.set(kind, { key, at: Date.now() });
+      return key;
+    }
+    function forget(kind) {
+      records.delete(kind);
+    }
     function settled(kind, key, ms) {
       const previous = records.get(kind);
       if (previous?.key !== key) {
@@ -3824,16 +3859,28 @@ const ITEMXWorkQueue = (() => {
     async function attempt(kind, key, work, accept = () => true, ttl = Infinity, giveUpAfter = Infinity) {
       const previous = records.get(kind);
       if (previous?.key === key && previous.failures >= giveUpAfter) return { skipped: true, exhausted: true };
-      if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt)) return { skipped: true };
+      if (previous?.key === key && ((previous.done && Date.now() - previous.at < ttl) || Date.now() < previous.retryAt))
+        return { skipped: true };
       let value, error;
-      try { value = await work(); } catch (caught) { error = caught; }
-      const failures = !error && accept(value) ? 0 : Math.min((previous?.key === key ? previous.failures || 0 : 0) + 1, 6);
-      records.set(kind, { key, at: Date.now(), done: failures === 0, failures, retryAt: failures ? Date.now() + Math.min(120000, 5000 * 2 ** failures) : 0 });
+      try {
+        value = await work();
+      } catch (caught) {
+        error = caught;
+      }
+      const failures =
+        !error && accept(value) ? 0 : Math.min((previous?.key === key ? previous.failures || 0 : 0) + 1, 6);
+      records.set(kind, {
+        key,
+        at: Date.now(),
+        done: failures === 0,
+        failures,
+        retryAt: failures ? Date.now() + Math.min(120000, 5000 * 2 ** failures) : 0
+      });
       if (error) throw error;
       return { skipped: false, value };
     }
     function close() {
-      const completion = Promise.allSettled([...jobs].map(job => job.promise));
+      const completion = Promise.allSettled([...jobs].map((job) => job.promise));
       closed = true;
       for (const key of timers.keys()) clearTimer(key);
       cancel();
@@ -3842,8 +3889,12 @@ const ITEMXWorkQueue = (() => {
     }
     return {
       enqueue,
-      revision, remember, forget, settled, attempt,
-      recent: (kind, age) => Date.now() - (records.get(kind)?.at ?? -Infinity) < age ? records.get(kind)?.key : null,
+      revision,
+      remember,
+      forget,
+      settled,
+      attempt,
+      recent: (kind, age) => (Date.now() - (records.get(kind)?.at ?? -Infinity) < age ? records.get(kind)?.key : null),
       wake: pump,
       external,
       cancel,
@@ -3851,14 +3902,21 @@ const ITEMXWorkQueue = (() => {
       schedule,
       clearTimer,
       hasTimer: (key) => timers.has(key),
-      age: kind => Date.now() - (records.get(kind)?.at ?? -Infinity),
-      later(group, work, ms) { return schedule(`${group}:${++sequence}`, work, ms); },
-      clearGroup(group) { for (const key of timers.keys()) if (key.startsWith(`${group}:`)) clearTimer(key); },
-      isActive: kind => [...jobs].some(job => !job.cancelled && (job.intent.kind === kind || job.stage === kind)),
+      age: (kind) => Date.now() - (records.get(kind)?.at ?? -Infinity),
+      later(group, work, ms) {
+        return schedule(`${group}:${++sequence}`, work, ms);
+      },
+      clearGroup(group) {
+        for (const key of timers.keys()) if (key.startsWith(`${group}:`)) clearTimer(key);
+      },
+      isActive: (kind) => [...jobs].some((job) => !job.cancelled && (job.intent.kind === kind || job.stage === kind)),
       stage(kind) {
-        const owner = active, previous = owner?.stage;
+        const owner = active,
+          previous = owner?.stage;
         if (owner) owner.stage = kind;
-        return () => { if (owner) owner.stage = previous; };
+        return () => {
+          if (owner) owner.stage = previous;
+        };
       },
       assertCurrent() {
         if (closed || active?.cancelled) throw aborted();
@@ -3877,9 +3935,14 @@ const ITEMXWorkQueue = (() => {
 const ITEMXState = (() => {
   function owner(initial) {
     const ports = {};
-    for (const key of Object.keys(initial)) Object.defineProperty(ports, key, {
-      enumerable: true, get: () => initial[key], set: value => { initial[key] = value; }
-    });
+    for (const key of Object.keys(initial))
+      Object.defineProperty(ports, key, {
+        enumerable: true,
+        get: () => initial[key],
+        set: (value) => {
+          initial[key] = value;
+        }
+      });
     return Object.freeze(ports);
   }
   function create() {
@@ -3959,138 +4022,311 @@ const ITEMXState = (() => {
         powerButtonState: null,
         badgeDeltaSeen: '',
         view: { query: '' }
-      }),
+      })
     });
   }
   return { create };
 })();
 
 const ITEMXStorage = (() => {
-  const LOG = 'itemx:log', PREFS = 'itemx:prefs', CACHE = 'itemx:cache';
-  const DTO = Object.freeze({ manual: '$__itemx2_manual_events', messages: '$__itemx2_message_events', baseline: '$__itemx2_checkpoint', aux: '$__itemx2_aux_processed', lore: '$__itemx2_lore_enrichment', prefs: '$__itemx2_history_preferences', item: '$__itemx2_state', codex: '$__itemx2_codex_state' });
-  const clone = value => JSON.parse(JSON.stringify(value));
-  const parse = (raw, fallback) => raw == null || raw === '' ? fallback : typeof raw === 'string' ? JSON.parse(raw) : clone(raw);
+  const LOG = 'itemx:log',
+    PREFS = 'itemx:prefs',
+    CACHE = 'itemx:cache';
+  const DTO = Object.freeze({
+    manual: '$__itemx2_manual_events',
+    messages: '$__itemx2_message_events',
+    baseline: '$__itemx2_checkpoint',
+    aux: '$__itemx2_aux_processed',
+    lore: '$__itemx2_lore_enrichment',
+    prefs: '$__itemx2_history_preferences',
+    item: '$__itemx2_state',
+    codex: '$__itemx2_codex_state'
+  });
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+  const parse = (raw, fallback) =>
+    raw == null || raw === '' ? fallback : typeof raw === 'string' ? JSON.parse(raw) : clone(raw);
   function log(chat) {
     const value = parse(chat?.scriptstate?.[LOG], { v: 1, rows: [] });
-    if (value?.v !== 1 || !Array.isArray(value.rows) || value.rows.some(row => !row?.id || !row.event?.kind)) throw new Error('ITEMX authoritative log is invalid');
+    if (value?.v !== 1 || !Array.isArray(value.rows) || value.rows.some((row) => !row?.id || !row.event?.kind))
+      throw new Error('ITEMX authoritative log is invalid');
     return value;
   }
   function cache(chat) {
-    try { const value = parse(chat?.scriptstate?.[CACHE], {}); return value?.v === 1 ? value : {}; } catch { return {}; }
+    try {
+      const value = parse(chat?.scriptstate?.[CACHE], {});
+      return value?.v === 1 ? value : {};
+    } catch {
+      return {};
+    }
   }
   function append(rows, index, entry) {
     const prior = index.get(entry.id);
-    if (prior) { if (JSON.stringify(prior.event) !== JSON.stringify(entry.event)) throw new Error('ITEMX event identity collision'); return; }
+    if (prior) {
+      if (JSON.stringify(prior.event) !== JSON.stringify(entry.event))
+        throw new Error('ITEMX event identity collision');
+      return;
+    }
     rows.push(clone(entry));
     index.set(entry.id, rows.at(-1));
   }
   function capture(chat, { legacy = false } = {}) {
-    const state = chat?.scriptstate || {}, document = log(chat), rows = document.rows;
-    const identities = new Map(rows.map(row => [row.id, row]));
+    const state = chat?.scriptstate || {},
+      document = log(chat),
+      rows = document.rows;
+    const identities = new Map(rows.map((row) => [row.id, row]));
     const checkpoint = parse(state[DTO.baseline], null);
-    if (checkpoint && !rows.some(row => row.id === checkpoint.logId)) {
-      if (![1, 2].includes(checkpoint.v) || !checkpoint.item?.registry || !checkpoint.codex?.skills) throw new Error('Cannot import unreadable authoritative checkpoint');
-      const event = { kind: 'baseline', item: checkpoint.item, codex: checkpoint.codex, boundary: checkpoint.boundary, sealedThroughId: checkpoint.sealedThroughId || '', restored: Boolean(checkpoint.restored), storage: checkpoint.storage || {} };
-      append(rows, identities, { id: `baseline:${rows.length}:${ITEMXCore.fnv1a(JSON.stringify(event))}`, domain: 'baseline', event });
+    if (checkpoint && !rows.some((row) => row.id === checkpoint.logId)) {
+      if (![1, 2].includes(checkpoint.v) || !checkpoint.item?.registry || !checkpoint.codex?.skills)
+        throw new Error('Cannot import unreadable authoritative checkpoint');
+      const event = {
+        kind: 'baseline',
+        item: checkpoint.item,
+        codex: checkpoint.codex,
+        boundary: checkpoint.boundary,
+        sealedThroughId: checkpoint.sealedThroughId || '',
+        restored: Boolean(checkpoint.restored),
+        storage: checkpoint.storage || {}
+      };
+      append(rows, identities, {
+        id: `baseline:${rows.length}:${ITEMXCore.fnv1a(JSON.stringify(event))}`,
+        domain: 'baseline',
+        event
+      });
     }
     const messageRows = [...(legacy ? checkpoint?.rows || [] : []), ...parse(state[DTO.messages], [])];
-    for (const row of messageRows) if (row.payload?.event) {
-      const prior = identities.get(`${row.domain}:${row.ref}`);
-      if (prior) { append(rows, identities, { id: prior.id, event: row.payload.event }); continue; }
-      const located = (chat.message || []).findIndex(message => ITEMXCore.messageText(message).includes(`@${row.ref}`));
-      const parsedIndex = parseInt(row.ref.slice(1).split('_')[0], 36);
-      const index = located >= 0 ? located : Number.isFinite(parsedIndex) ? parsedIndex : 0;
-      append(rows, identities, { id: `${row.domain}:${row.ref}`, domain: row.domain, ref: row.ref, ...(legacy && (located < 0 || (checkpoint && index <= (checkpoint.sealedThroughId ? (chat.message || []).findIndex(message => message.chatId === checkpoint.sealedThroughId) : checkpoint.boundary))) ? { inactive: true } : {}), messageIndex: index, offset: located >= 0 ? ITEMXCore.messageText(chat.message[located]).indexOf(`@${row.ref}`) : 0, messageId: chat.message?.[index]?.chatId || '', ordinal: parseInt(row.ref.split('_')[1], 36) || 0, code: row.ref.split('_').at(-1), event: row.payload.event, ...(row.payload.review ? { review: row.payload.review } : {}) });
-    }
+    for (const row of messageRows)
+      if (row.payload?.event) {
+        const prior = identities.get(`${row.domain}:${row.ref}`);
+        if (prior) {
+          append(rows, identities, { id: prior.id, event: row.payload.event });
+          continue;
+        }
+        const located = (chat.message || []).findIndex((message) =>
+          ITEMXCore.messageText(message).includes(`@${row.ref}`)
+        );
+        const parsedIndex = parseInt(row.ref.slice(1).split('_')[0], 36);
+        const index = located >= 0 ? located : Number.isFinite(parsedIndex) ? parsedIndex : 0;
+        append(rows, identities, {
+          id: `${row.domain}:${row.ref}`,
+          domain: row.domain,
+          ref: row.ref,
+          ...(legacy &&
+          (located < 0 ||
+            (checkpoint &&
+              index <=
+                (checkpoint.sealedThroughId
+                  ? (chat.message || []).findIndex((message) => message.chatId === checkpoint.sealedThroughId)
+                  : checkpoint.boundary)))
+            ? { inactive: true }
+            : {}),
+          messageIndex: index,
+          offset: located >= 0 ? ITEMXCore.messageText(chat.message[located]).indexOf(`@${row.ref}`) : 0,
+          messageId: chat.message?.[index]?.chatId || '',
+          ordinal: parseInt(row.ref.split('_')[1], 36) || 0,
+          code: row.ref.split('_').at(-1),
+          event: row.payload.event,
+          ...(row.payload.review ? { review: row.payload.review } : {})
+        });
+      }
     const manuals = [...(legacy ? checkpoint?.manual || [] : []), ...parse(state[DTO.manual], [])];
     manuals.forEach((row, index) => {
       if (!row.event?.kind) return;
-      const identity = row.id || `manual:${index}:${ITEMXCore.fnv1a(JSON.stringify([row.afterIndex, row.at, row.event]))}`;
+      const identity =
+        row.id || `manual:${index}:${ITEMXCore.fnv1a(JSON.stringify([row.afterIndex, row.at, row.event]))}`;
       const manualDomain = ['skill', 'monster'].includes(row.event?.domain) ? 'codex' : 'item';
-      append(rows, identities, { id: identity, domain: manualDomain, afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, ...(row.presentation?.review ? { review: row.presentation.review } : {}) });
+      append(rows, identities, {
+        id: identity,
+        domain: manualDomain,
+        afterIndex: row.afterIndex,
+        at: row.at,
+        label: row.label,
+        event: row.event,
+        ...(row.presentation?.review ? { review: row.presentation.review } : {})
+      });
     });
     (chat.message || []).forEach((message, index) => {
       const text = ITEMXCore.messageText(message);
-      for (const [domain, engine] of [['item', ITEMXCore], ['codex', ITEMXCodex]]) {
+      for (const [domain, engine] of [
+        ['item', ITEMXCore],
+        ['codex', ITEMXCodex]
+      ]) {
         let ordinal = 0;
         for (const match of text.matchAll(new RegExp(engine.MARKER_RE.source, 'g'))) {
           const payload = engine.decodePayload(match[1]);
           if (!payload?.event) continue;
           const at = ordinal++;
           const id = `inline:${domain}:${message.chatId || index}:${at}:${ITEMXCore.fnv1a(match[1])}`;
-          append(rows, identities, { id, domain, messageId: message.chatId || '', messageIndex: index, offset: match.index, ordinal: at, code: ITEMXCore.fnv1a(match[1]), event: payload.event });
+          append(rows, identities, {
+            id,
+            domain,
+            messageId: message.chatId || '',
+            messageIndex: index,
+            offset: match.index,
+            ordinal: at,
+            code: ITEMXCore.fnv1a(match[1]),
+            event: payload.event
+          });
         }
       }
     });
     return document;
   }
   const multiply = Math.imul;
-  const digest = value => {
+  const digest = (value) => {
     const bytes = new TextEncoder().encode(JSON.stringify(value));
     let hash = 0x811c9dc5;
     for (let index = 0; index < bytes.length; index++) hash = multiply(hash ^ bytes[index], 0x01000193) >>> 0;
     return hash.toString(16).padStart(8, '0');
   };
   function replay(chat, document = capture(chat)) {
-    const baselineIndex = document.rows.findLastIndex(row => row.domain === 'baseline');
+    const baselineIndex = document.rows.findLastIndex((row) => row.domain === 'baseline');
     const baseline = document.rows[baselineIndex]?.event;
-    const ordered = document.rows.slice(baselineIndex + 1).map((row, order) => ({ ...row, order,
-      historyId: row.messageId || chat.message?.[row.afterIndex ?? row.messageIndex ?? 0]?.chatId || row.afterIndex || row.messageIndex || 0
-    })).sort((a, b) =>
-      (a.afterIndex ?? a.messageIndex ?? 0) - (b.afterIndex ?? b.messageIndex ?? 0) || Number('afterIndex' in a) - Number('afterIndex' in b) || (a.offset ?? a.ordinal ?? a.order) - (b.offset ?? b.ordinal ?? b.order));
-    const aliasKey = row => JSON.stringify([row.domain, row.code, row.messageId || row.messageIndex]);
-    const aliases = new Set(ordered.filter(row => !row.inactive && row.ref).map(aliasKey));
-    const rows = ordered.filter(row => !row.inactive && !(row.id.startsWith('inline:') && aliases.has(aliasKey(row))));
-    const prefix = count => digest([document.rows[baselineIndex] || null, rows.slice(0, count)]);
+    const ordered = document.rows
+      .slice(baselineIndex + 1)
+      .map((row, order) => ({
+        ...row,
+        order,
+        historyId:
+          row.messageId ||
+          chat.message?.[row.afterIndex ?? row.messageIndex ?? 0]?.chatId ||
+          row.afterIndex ||
+          row.messageIndex ||
+          0
+      }))
+      .sort(
+        (a, b) =>
+          (a.afterIndex ?? a.messageIndex ?? 0) - (b.afterIndex ?? b.messageIndex ?? 0) ||
+          Number('afterIndex' in a) - Number('afterIndex' in b) ||
+          (a.offset ?? a.ordinal ?? a.order) - (b.offset ?? b.ordinal ?? b.order)
+      );
+    const aliasKey = (row) => JSON.stringify([row.domain, row.code, row.messageId || row.messageIndex]);
+    const aliases = new Set(ordered.filter((row) => !row.inactive && row.ref).map(aliasKey));
+    const rows = ordered.filter(
+      (row) => !row.inactive && !(row.id.startsWith('inline:') && aliases.has(aliasKey(row)))
+    );
+    const prefix = (count) => digest([document.rows[baselineIndex] || null, rows.slice(0, count)]);
     let checkpoint = null;
     try {
       const candidate = cache(chat).replay;
       if (candidate) {
         const { checksum, ...body } = candidate;
-        if (body.v === 1 && Number.isInteger(body.count) && body.count >= 0 && body.count <= rows.length &&
-            body.prefix === prefix(body.count) && checksum === digest(body) &&
-            body.item?.registry?.items && body.codex?.skills?.entries && body.codex?.monsters?.entries &&
-            Array.isArray(body.payloads) && body.payloads.length === body.count && Array.isArray(body.occurrences)) checkpoint = body;
+        if (
+          body.v === 1 &&
+          Number.isInteger(body.count) &&
+          body.count >= 0 &&
+          body.count <= rows.length &&
+          body.prefix === prefix(body.count) &&
+          checksum === digest(body) &&
+          body.item?.registry?.items &&
+          body.codex?.skills?.entries &&
+          body.codex?.monsters?.entries &&
+          Array.isArray(body.payloads) &&
+          body.payloads.length === body.count &&
+          Array.isArray(body.occurrences)
+        )
+          checkpoint = body;
       }
-    } catch {  }
-    const item = checkpoint ? checkpoint.item : baseline ? clone(baseline.item) : { registry: ITEMXCore.newRegistry(), history: {} };
+    } catch {
+      
+    }
+    const item = checkpoint
+      ? checkpoint.item
+      : baseline
+        ? clone(baseline.item)
+        : { registry: ITEMXCore.newRegistry(), history: {} };
     const codex = checkpoint ? checkpoint.codex : baseline ? clone(baseline.codex) : ITEMXCodex.snapshot();
-    item.history ||= {}; codex.history ||= { skill: {}, monster: {} };
-    const payloads = new Map(), manuals = [], occurrences = new Map(checkpoint?.occurrences || []);
+    item.history ||= {};
+    codex.history ||= { skill: {}, monster: {} };
+    const payloads = new Map(),
+      manuals = [],
+      occurrences = new Map(checkpoint?.occurrences || []);
     const views = checkpoint?.payloads || [];
     const start = checkpoint?.count || 0;
     for (const [index, row] of rows.entries()) {
       const identity = row.id;
-      const event = row.event, domain = row.domain === 'item' ? 'item' : event.domain;
+      const event = row.event,
+        domain = row.domain === 'item' ? 'item' : event.domain;
       const engine = domain === 'item' ? ITEMXCore : ITEMXCodex;
       let presentation = views[index];
       if (index >= start) {
         const registry = domain === 'item' ? item.registry.items : ITEMXCodex.storeFor(codex, domain).entries;
         const id = event.item?.id || event.entity?.id || event.patch?.id;
-        const ids = [...new Set([id, event.patch?.equip, event.patch?.unequip, ...(event.patch?.inputs || []).map(x => x.id), ...(event.patch?.outputs || []).map(x => x.id)].filter(Boolean))];
-        const prior = new Map(ids.map(key => [key, registry[key] ? clone(registry[key]) : null]));
+        const ids = [
+          ...new Set(
+            [
+              id,
+              event.patch?.equip,
+              event.patch?.unequip,
+              ...(event.patch?.inputs || []).map((x) => x.id),
+              ...(event.patch?.outputs || []).map((x) => x.id)
+            ].filter(Boolean)
+          )
+        ];
+        const prior = new Map(ids.map((key) => [key, registry[key] ? clone(registry[key]) : null]));
         const view = engine.applyEvent(domain === 'item' ? item.registry : codex, event);
-        const at = row.afterIndex ?? row.messageIndex ?? 0, occurrenceKey = `${row.domain}:${at}`, occurrence = occurrences.get(occurrenceKey) || 0;
+        const at = row.afterIndex ?? row.messageIndex ?? 0,
+          occurrenceKey = `${row.domain}:${at}`,
+          occurrence = occurrences.get(occurrenceKey) || 0;
         occurrences.set(occurrenceKey, occurrence + 1);
-        if (view != null) for (const key of ids) ITEMXHistory.observe(domain === 'item' ? item.history : codex.history[domain], domain, prior.get(key), registry[key], event, at, () => `${row.historyId}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`);
-        presentation = { view: view == null ? null : clone(view), previous: domain === 'item' ? ITEMXCore.comparisonView(prior.get(id)) : prior.get(id) || null };
+        if (view != null)
+          for (const key of ids)
+            ITEMXHistory.observe(
+              domain === 'item' ? item.history : codex.history[domain],
+              domain,
+              prior.get(key),
+              registry[key],
+              event,
+              at,
+              () => `${row.historyId}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`
+            );
+        presentation = {
+          view: view == null ? null : clone(view),
+          previous: domain === 'item' ? ITEMXCore.comparisonView(prior.get(id)) : prior.get(id) || null
+        };
         views.push(presentation);
       }
-      const payload = { v: engine.VERSION, event: clone(event), ...presentation, ...(row.review ? { review: row.review } : {}) };
+      const payload = {
+        v: engine.VERSION,
+        event: clone(event),
+        ...presentation,
+        ...(row.review ? { review: row.review } : {})
+      };
       payloads.set(identity, payload);
       if (row.ref) payloads.set(`${row.domain}:${row.ref}`, payload);
-      if ('afterIndex' in row) manuals.push({ id: row.id, afterIndex: row.afterIndex, at: row.at, label: row.label, event: row.event, presentation: { previous: payload.previous, view: ITEMXCore.comparisonView(payload.view), review: row.review } });
+      if ('afterIndex' in row)
+        manuals.push({
+          id: row.id,
+          afterIndex: row.afterIndex,
+          at: row.at,
+          label: row.label,
+          event: row.event,
+          presentation: { previous: payload.previous, view: ITEMXCore.comparisonView(payload.view), review: row.review }
+        });
     }
-    const next = { v: 1, count: rows.length, prefix: prefix(rows.length), item, codex, payloads: views, occurrences: [...occurrences] };
-    return { item: { ...item, schema: ITEMXCore.VERSION, rev: 2, fingerprint: digest(document), updatedAt: 0 }, codex: { ...codex, updatedAt: 0 }, payloads, manuals,
-      checkpoint: { ...next, checksum: digest(next) } };
+    const next = {
+      v: 1,
+      count: rows.length,
+      prefix: prefix(rows.length),
+      item,
+      codex,
+      payloads: views,
+      occurrences: [...occurrences]
+    };
+    return {
+      item: { ...item, schema: ITEMXCore.VERSION, rev: 2, fingerprint: digest(document), updatedAt: 0 },
+      codex: { ...codex, updatedAt: 0 },
+      payloads,
+      manuals,
+      checkpoint: { ...next, checksum: digest(next) }
+    };
   }
 
   let replayMemo = null;
-  const replayKey = chat => JSON.stringify([
-    ...[LOG, CACHE, DTO.baseline, DTO.messages, DTO.manual].map(key => chat.scriptstate?.[key]),
-    (chat.message || []).map(message => [message.chatId, ITEMXCore.messageText(message)])
-  ]);
+  const replayKey = (chat) =>
+    JSON.stringify([
+      ...[LOG, CACHE, DTO.baseline, DTO.messages, DTO.manual].map((key) => chat.scriptstate?.[key]),
+      (chat.message || []).map((message) => [message.chatId, ITEMXCore.messageText(message)])
+    ]);
   const sameReplayKey = (a, b) => a !== undefined && a === b;
   function projectReplay(chat) {
     const key = replayKey(chat);
@@ -4102,58 +4338,132 @@ const ITEMXStorage = (() => {
 
   function hydrate(chat) {
     if (!chat || !chat.scriptstate?.[LOG]) return chat;
-    const next = clone(chat), state = next.scriptstate, document = log(next), derived = cache(next);
-    const baselineIndex = document.rows.findLastIndex(row => row.domain === 'baseline');
+    const next = clone(chat),
+      state = next.scriptstate,
+      document = log(next),
+      derived = cache(next);
+    const baselineIndex = document.rows.findLastIndex((row) => row.domain === 'baseline');
     const baseline = document.rows[baselineIndex]?.event;
     const rows = document.rows.slice(baselineIndex + 1);
-    const boundary = baseline?.sealedThroughId ? (next.message || []).findIndex(message => message.chatId === baseline.sealedThroughId) : baseline?.boundary ?? -1;
+    const boundary = baseline?.sealedThroughId
+      ? (next.message || []).findIndex((message) => message.chatId === baseline.sealedThroughId)
+      : (baseline?.boundary ?? -1);
     const projected = projectReplay(chat);
-    delete derived.item; delete derived.codex;
+    delete derived.item;
+    delete derived.codex;
     if (projected.checkpoint.count) derived.replay = projected.checkpoint;
     else delete derived.replay; // A canonical baseline already needs zero folds.
     state[CACHE] = JSON.stringify({ v: 1, ...derived });
-    state[DTO.messages] = JSON.stringify(rows.filter(row => row.ref).map(row => ({ ref: row.ref, domain: row.domain, payload: projected.payloads.get(`${row.domain}:${row.ref}`) })).filter(row => row.payload));
+    state[DTO.messages] = JSON.stringify(
+      rows
+        .filter((row) => row.ref)
+        .map((row) => ({
+          ref: row.ref,
+          domain: row.domain,
+          payload: projected.payloads.get(`${row.domain}:${row.ref}`)
+        }))
+        .filter((row) => row.payload)
+    );
     state[DTO.manual] = JSON.stringify(projected.manuals);
-    if (baseline) state[DTO.baseline] = JSON.stringify({ v: 2, ...baseline, logId: document.rows[baselineIndex].id, boundary, rows: [], manual: [] });
+    if (baseline)
+      state[DTO.baseline] = JSON.stringify({
+        v: 2,
+        ...baseline,
+        logId: document.rows[baselineIndex].id,
+        boundary,
+        rows: [],
+        manual: []
+      });
     else delete state[DTO.baseline];
     state[DTO.prefs] = JSON.stringify(parse(state[PREFS], { after: 10, keep: {}, archived: {} }));
-    for (const field of ['aux', 'lore']) if (derived[field] !== undefined) state[DTO[field]] = JSON.stringify(derived[field]);
+    for (const field of ['aux', 'lore'])
+      if (derived[field] !== undefined) state[DTO[field]] = JSON.stringify(derived[field]);
     state[DTO.item] = JSON.stringify(projected.item);
     state[DTO.codex] = JSON.stringify(projected.codex);
     return next;
   }
   function persist(chat, options = {}) {
     const next = { ...chat, scriptstate: { ...(chat.scriptstate || {}) } },
-      state = next.scriptstate, document = capture(next, options), prior = cache(next);
+      state = next.scriptstate,
+      document = capture(next, options),
+      prior = cache(next);
     const prefs = parse(state[DTO.prefs], parse(state[PREFS], { after: 10, keep: {}, archived: {} }));
     const derived = { v: 1, ...prior };
     const checkpoint = replay(next, document).checkpoint;
     if (checkpoint.count) derived.replay = checkpoint;
     else delete derived.replay;
-    delete derived.item; delete derived.codex;
-    for (const field of ['aux', 'lore']) if (state[DTO[field]] !== undefined) derived[field] = parse(state[DTO[field]], null);
+    delete derived.item;
+    delete derived.codex;
+    for (const field of ['aux', 'lore'])
+      if (state[DTO[field]] !== undefined) derived[field] = parse(state[DTO[field]], null);
     for (const key of Object.values(DTO)) delete state[key];
-    state[LOG] = JSON.stringify(document); state[PREFS] = JSON.stringify(prefs); state[CACHE] = JSON.stringify(derived);
+    state[LOG] = JSON.stringify(document);
+    state[PREFS] = JSON.stringify(prefs);
+    state[CACHE] = JSON.stringify(derived);
     return next;
   }
-  const replayedItem = chat => clone(projectReplay(chat).item);
-  const replayedCodex = chat => clone(projectReplay(chat).codex);
+  const replayedItem = (chat) => clone(projectReplay(chat).item);
+  const replayedCodex = (chat) => clone(projectReplay(chat).codex);
   return { LOG, PREFS, CACHE, DTO, log, cache, capture, replay, replayedItem, replayedCodex, hydrate, persist };
 })();
 const ITEMXSettings = (() => {
   const KEY = 'itemx:settings';
-  const schema = Object.freeze({ enabled: true, mainOutput: true, auxOutput: ['off', 'missing', 'always'], rarityMode: ['world', 'itemx'], itemsEnabled: true, skillsEnabled: true, encountersEnabled: true, debugEnabled: false, effectsLevel: ['full', 'lite', 'off'], fontScale: ['small', 'medium', 'large'], moduleAssetsEnabled: false, lorebookEncounterEnabled: false, skin: ['dark', 'frost', 'hanji'] });
+  const schema = Object.freeze({
+    enabled: true,
+    mainOutput: true,
+    auxOutput: ['off', 'missing', 'always'],
+    rarityMode: ['world', 'itemx'],
+    itemsEnabled: true,
+    skillsEnabled: true,
+    encountersEnabled: true,
+    debugEnabled: false,
+    effectsLevel: ['full', 'lite', 'off'],
+    fontScale: ['small', 'medium', 'large'],
+    moduleAssetsEnabled: false,
+    lorebookEncounterEnabled: false,
+    skin: ['dark', 'frost', 'hanji']
+  });
   function normalize(value = {}) {
-    const source = value.effectsLevel === undefined && typeof value.effectsEnabled === 'boolean'
-      ? { ...value, effectsLevel: value.effectsEnabled ? 'full' : 'off' }
-      : value;
-    return Object.fromEntries(Object.entries(schema).map(([key, rule]) => [key, Array.isArray(rule) ? rule.includes(source[key]) ? source[key] : rule[0] : typeof source[key] === 'boolean' ? source[key] : rule]));
+    const source =
+      value.effectsLevel === undefined && typeof value.effectsEnabled === 'boolean'
+        ? { ...value, effectsLevel: value.effectsEnabled ? 'full' : 'off' }
+        : value;
+    return Object.fromEntries(
+      Object.entries(schema).map(([key, rule]) => [
+        key,
+        Array.isArray(rule)
+          ? rule.includes(source[key])
+            ? source[key]
+            : rule[0]
+          : typeof source[key] === 'boolean'
+            ? source[key]
+            : rule
+      ])
+    );
   }
-  async function read(api) { const raw = await api.getItem(KEY); const value = typeof raw === 'string' ? JSON.parse(raw) : raw; if (value == null) return { v: 1, global: { badgePosition: 'rm' }, characters: {} }; if (value.v !== 1 || !value.global || !value.characters) throw new Error('Invalid ITEMX settings document'); return value; }
-  async function update(api, id, patch) { const doc = await read(api); if (id == null) Object.assign(doc.global, patch); else doc.characters[id] = normalize({ ...doc.characters[id], ...patch }); await api.setItem(KEY, JSON.stringify(doc)); return doc; }
+  async function read(api) {
+    const raw = await api.getItem(KEY);
+    const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (value == null) return { v: 1, global: { badgePosition: 'rm' }, characters: {} };
+    if (value.v !== 1 || !value.global || !value.characters) throw new Error('Invalid ITEMX settings document');
+    return value;
+  }
+  async function update(api, id, patch) {
+    const doc = await read(api);
+    if (id == null) Object.assign(doc.global, patch);
+    else doc.characters[id] = normalize({ ...doc.characters[id], ...patch });
+    await api.setItem(KEY, JSON.stringify(doc));
+    return doc;
+  }
   function migrate(entries) {
     const doc = { v: 1, global: { badgePosition: entries.badgePosition || 'rm' }, characters: {} };
-    for (const [key, value] of Object.entries(entries)) for (const [field, rule] of Object.entries(schema)) if (key.startsWith(field + ':')) { const id = key.slice(field.length + 1); doc.characters[id] ||= {}; doc.characters[id][field] = Array.isArray(rule) ? value : value === '1'; }
+    for (const [key, value] of Object.entries(entries))
+      for (const [field, rule] of Object.entries(schema))
+        if (key.startsWith(field + ':')) {
+          const id = key.slice(field.length + 1);
+          doc.characters[id] ||= {};
+          doc.characters[id][field] = Array.isArray(rule) ? value : value === '1';
+        }
     for (const id of Object.keys(doc.characters)) doc.characters[id] = normalize(doc.characters[id]);
     return doc;
   }

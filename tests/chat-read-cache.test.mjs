@@ -35,10 +35,19 @@ const saveChatFn = saveChat;
 globalThis.api = { readChat, saveChat: saveChatFn, workQueue, phaseStats };
 `;
   const sandbox = {
-    setTimeout, clearTimeout, setInterval, clearInterval,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
     Risuai: {
-      getChatFromIndex: async (c, i) => { calls.read += 1; return structuredClone(chats.get(`${c}:${i}`) || { id: `${c}:${i}`, message: [], scriptstate: {} }); },
-      setChatToIndex: async (c, i, chat) => { calls.write += 1; chats.set(`${c}:${i}`, structuredClone(chat)); }
+      getChatFromIndex: async (c, i) => {
+        calls.read += 1;
+        return structuredClone(chats.get(`${c}:${i}`) || { id: `${c}:${i}`, message: [], scriptstate: {} });
+      },
+      setChatToIndex: async (c, i, chat) => {
+        calls.write += 1;
+        chats.set(`${c}:${i}`, structuredClone(chat));
+      }
     }
   };
   vm.runInNewContext(code, sandbox);
@@ -74,7 +83,7 @@ test('a different chat in the same job is fetched separately', async () => {
   assert.equal(calls.read, 3, 'switching chats must not serve a stale entry');
 });
 
-test('a later job never reuses an earlier job\'s read', async () => {
+test("a later job never reuses an earlier job's read", async () => {
   const { api, calls } = harness();
   await api.workQueue.enqueue({ kind: 'a', work: () => api.readChat(0, 0) });
   await api.workQueue.enqueue({ kind: 'b', work: () => api.readChat(0, 0) });

@@ -4,3 +4,17 @@ docs/
 node_modules/
 tests/fixtures/
 tools/oneoff/
+# Runtime fragments are text-concatenated into one IIFE until the ES-module
+# conversion (2.4 phase 1); formatting them standalone would break assembly.
+src/runtime.js
+src/runtime-config.js
+src/ui-surface.js
+src/style.js
+src/ui-settings.js
+src/portraits.js
+src/ledger.js
+src/aux.js
+src/pipeline.js
+src/presentation.js
+src/ui-panel.js
+src/style.css

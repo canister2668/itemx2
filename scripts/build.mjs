@@ -32,7 +32,8 @@ const storage = await readFile(resolve(root, 'src/storage.js'), 'utf8');
 const settingsStore = await readFile(resolve(root, 'src/settings-store.js'), 'utf8');
 const history = await readFile(resolve(root, 'src/history.js'), 'utf8');
 const backup = await readFile(resolve(root, 'src/backup.js'), 'utf8');
-if (!cardsCss.startsWith('    .itemx-panel')) throw new Error('src/style.css card section must begin at the .itemx-panel surface');
+if (!cardsCss.trimStart().startsWith('.itemx-panel'))
+  throw new Error('src/style.css card section must begin at the .itemx-panel surface');
 const css = `${shellCss}${cardsCss}\n${presentationCss.trim()}`;
 const chatCss = `${cardsCss}\n${presentationCss.trim()}`
   .replace(/\.stage\b/g, '.itemx2-never-stage')

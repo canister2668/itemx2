@@ -15,7 +15,10 @@ function sealed(runtime, overrides = {}) {
 }
 
 const chatWith = (value) => ({
-  message: [{ chatId: 'msg-0', role: 'user', data: 'a' }, { chatId: 'msg-1', role: 'char', data: 'b' }],
+  message: [
+    { chatId: 'msg-0', role: 'user', data: 'a' },
+    { chatId: 'msg-1', role: 'char', data: 'b' }
+  ],
   scriptstate: { [KEY]: typeof value === 'string' ? value : JSON.stringify(value) }
 });
 
@@ -37,19 +40,23 @@ test('the one-time converter preserves a v1 final state', async () => {
 });
 
 test('a future authoritative checkpoint aborts conversion without data loss', async () => {
-  const rt = await presentationRuntime(), chat = chatWith(sealed(rt, { v: 99 })), before = JSON.stringify(chat);
+  const rt = await presentationRuntime(),
+    chat = chatWith(sealed(rt, { v: 99 })),
+    before = JSON.stringify(chat);
   assert.throws(() => rt.storage.persist(chat, { legacy: true }), /unreadable/);
   assert.equal(JSON.stringify(chat), before);
 });
 
 test('an unparsable authoritative checkpoint cannot silently discard its prefix', async () => {
-  const rt = await presentationRuntime(), chat = chatWith('{ not json');
+  const rt = await presentationRuntime(),
+    chat = chatWith('{ not json');
   assert.throws(() => rt.storage.persist(chat, { legacy: true }));
   assert.equal(chat.scriptstate[KEY], '{ not json');
 });
 
 test('a structurally broken authoritative checkpoint aborts conversion', async () => {
-  const rt = await presentationRuntime(), broken = sealed(rt);
+  const rt = await presentationRuntime(),
+    broken = sealed(rt);
   delete broken.item;
   assert.throws(() => rt.storage.persist(chatWith(broken), { legacy: true }), /unreadable/);
 });
@@ -62,7 +69,8 @@ test('no baseline is absent and an empty cache is harmless', async () => {
 });
 
 test('an invalid canonical log is never overwritten by cache maintenance', async () => {
-  const rt = await presentationRuntime(), chat = { message: [], scriptstate: { 'itemx:log': '{broken' } };
+  const rt = await presentationRuntime(),
+    chat = { message: [], scriptstate: { 'itemx:log': '{broken' } };
   const before = JSON.stringify(chat);
   assert.throws(() => rt.refreshReplayCache(chat));
   assert.equal(JSON.stringify(chat), before);

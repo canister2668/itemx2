@@ -243,7 +243,9 @@ test('closing reflects native class removal even when settings bridge fails', as
     }
   });
   const setOpen = vm.runInContext(
-    queuePrelude + section('  async function setRootOpen(open)', '  async function resetRuntimeForContext') + '\nsetRootOpen;',
+    queuePrelude +
+      section('  async function setRootOpen(open)', '  async function resetRuntimeForContext') +
+      '\nsetRootOpen;',
     sandbox
   );
   await setOpen(false);

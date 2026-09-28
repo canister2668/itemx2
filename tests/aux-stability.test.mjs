@@ -20,7 +20,12 @@ async function bootWithOutput(data, options = {}) {
     chatWrites = 0;
   const prompts = [],
     requests = [];
-  const storage = new Map([['itemx:settings', JSON.stringify(settingsModel.migrate(options.freshDefaults ? {} : {'auxOutput:char-guard': 'missing'}))]]),
+  const storage = new Map([
+      [
+        'itemx:settings',
+        JSON.stringify(settingsModel.migrate(options.freshDefaults ? {} : { 'auxOutput:char-guard': 'missing' }))
+      ]
+    ]),
     handlers = {},
     replacers = {},
     intervals = [];

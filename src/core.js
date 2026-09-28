@@ -70,7 +70,15 @@ const ITEMXCore = (() => {
       tags: ['displayrarity'],
       backup: true
     },
-    { key: 'power', transport: 'power', aliases: ['위력'], tags: ['power'], anchor: 'optional', backup: true, detail: true },
+    {
+      key: 'power',
+      transport: 'power',
+      aliases: ['위력'],
+      tags: ['power'],
+      anchor: 'optional',
+      backup: true,
+      detail: true
+    },
     { key: 'required', transport: 'required', aliases: ['요구'], tags: ['required'], backup: true, detail: true },
     {
       key: 'durability',
@@ -87,7 +95,14 @@ const ITEMXCore = (() => {
     { key: 'count', transport: 'count', tags: ['count'], anchor: 'required', backup: true },
     { key: 'slot', transport: 'slot', tags: ['slot'], anchor: 'optional', backup: true },
     { key: 'pin', transport: 'pin', tags: ['pin'], backup: true },
-    { key: 'theme', transport: 'theme', aliases: ['craft'], tags: ['theme', 'craft'], anchor: 'optional', backup: true },
+    {
+      key: 'theme',
+      transport: 'theme',
+      aliases: ['craft'],
+      tags: ['theme', 'craft'],
+      anchor: 'optional',
+      backup: true
+    },
     { key: 'affinity', transport: 'affinity', tags: ['affinity2?'], anchor: 'optional', backup: true },
     { key: 'affinity2', transport: 'affinity2', anchor: 'optional', backup: true },
     { key: 'condition', transport: 'condition', tags: ['condition'], anchor: 'optional', backup: true },
@@ -351,7 +366,8 @@ const ITEMXCore = (() => {
   // that echoes the template instead of filling it in used to register a real
   // item whose every field was an ellipsis. Names alone are not evidence:
   // literal symbolic names or Unknown are valid when paired with a concrete ID.
-  const PLACEHOLDER_RE = /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
+  const PLACEHOLDER_RE =
+    /^(?:[.\u2026\-_?]+|none|null|nil|n\/a|unknown|tbd|example|placeholder|\uc5c6\uc74c|\ubbf8\uc0c1|\ubbf8\uc815)$/i;
   const placeholderValue = (value) => PLACEHOLDER_RE.test(clean(value, 160));
 
   function normalizeItem(raw, seed = '') {
@@ -791,7 +807,8 @@ const ITEMXCore = (() => {
       applyFields(item, patch.fields);
       if (!POSSESSIONS.has(item.possession) || item.possession === 'removed') item.possession = 'owned';
       if (!LOCATIONS.has(item.location) || item.location === 'unknown') item.location = 'inventory';
-      if (item.location === 'equipped' && (!item.slot || slotConflict(reg, item.id, item.slot))) item.location = 'inventory';
+      if (item.location === 'equipped' && (!item.slot || slotConflict(reg, item.id, item.slot)))
+        item.location = 'inventory';
       if (item.location !== 'equipped') item.slot = null;
       item.count = Math.max(1, Number(item.count) || 1);
       item.removedReason = null;
@@ -843,12 +860,7 @@ const ITEMXCore = (() => {
       let boundary = out.indexOf('\n\n', opener.index);
       while (boundary >= 0) {
         const suffix = out.slice(boundary + 2).trimStart();
-        if (
-          !new RegExp(`^</?(?:${TRANSPORT_TAG_ALT})\\b`, 'i').test(
-            suffix
-          )
-        )
-          break;
+        if (!new RegExp(`^</?(?:${TRANSPORT_TAG_ALT})\\b`, 'i').test(suffix)) break;
         boundary = out.indexOf('\n\n', boundary + 2);
       }
       out = boundary < 0 ? out.slice(0, opener.index) : out.slice(0, opener.index) + out.slice(boundary + 2);
@@ -968,7 +980,8 @@ const ITEMXCore = (() => {
 
   // A transport tag written inside `inline code` is a mention (reasoning that leaked into the
   // body, a model quoting its own protocol), never a transport.
-  const QUOTED_TRANSPORT_RE = /`[^`\n]*<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^`\n]*`/gi;
+  const QUOTED_TRANSPORT_RE =
+    /`[^`\n]*<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^`\n]*`/gi;
   function protectPlanning(content, extract) {
     // Planning text is not an instruction source. Fail closed on an unclosed block.
     const original = String(content || '');
@@ -985,7 +998,10 @@ const ITEMXCore = (() => {
       return key;
     };
     let masked = planning
-      ? original.replace(/<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, keep)
+      ? original.replace(
+          /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+          keep
+        )
       : original;
     masked = masked.replace(QUOTED_TRANSPORT_RE, keep);
     const result = extract(masked);
@@ -1129,8 +1145,7 @@ const ITEMXCore = (() => {
         `location=${item.location}`,
         `count=${item.count || 0}`
       ];
-      for (const key of ANCHOR_OPTIONAL)
-        if (item[key]) bits.push(`${key}=${item[key]}`);
+      for (const key of ANCHOR_OPTIONAL) if (item[key]) bits.push(`${key}=${item[key]}`);
       if (item.effects?.length)
         bits.push(
           `effects=${item.effects
