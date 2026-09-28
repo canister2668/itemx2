@@ -99,3 +99,37 @@ test('a timed-out model request stays in flight until the provider answers', asy
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(Aux.auxActive(), 0);
 });
+
+test('cancelling a running pass settles the message; the automatic pass never calls it again', async () => {
+  let answer;
+  const fake = bot(() => new Promise((resolve) => (answer = resolve)));
+  const running = Aux.recoverAuxiliaryOutputNow();
+  for (let i = 0; i < 20 && !Aux.auxRunning(); i += 1) await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(Aux.auxRunning(), true);
+  assert.equal(await Aux.cancelAux(), true);
+  const result = await running;
+  assert.equal(result.status, 'skip');
+  assert.equal(result.reason, 'cancelled');
+  assert.equal(Aux.auxRunning(), false, 'the user sees nothing running');
+  assert.equal(Aux.auxActive(), 1, 'the abandoned request still blocks a second paid request');
+  assert.equal(documentOf(fake.state.chat).guards.aux.reply.state, 'cancelled');
+  assert.equal(Pipeline.auxVerdict(result), true, 'a cancelled pass is not retried');
+  answer('<itemExam><id>late</id><name>늦은 답</name></itemExam>');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(Aux.auxActive(), 0);
+  const again = await Aux.recoverAuxiliaryOutputNow();
+  assert.equal(again.reason, 'guarded');
+  assert.equal(fake.state.llmCalls.length, 1);
+  assert.equal(documentOf(fake.state.chat).events && Object.keys(documentOf(fake.state.chat).events).length, 0);
+  // A manual run from the settings tab still works.
+  const manual = Aux.recoverAuxiliaryOutputNow({ force: true });
+  for (let i = 0; i < 20 && !Aux.auxRunning(); i += 1) await new Promise((resolve) => setImmediate(resolve));
+  answer('NONE');
+  assert.equal((await manual).status, 'ok');
+  assert.equal(fake.state.llmCalls.length, 2);
+});
+
+test('cancel does nothing when no pass runs', async () => {
+  bot(async () => 'NONE');
+  assert.equal(await Aux.cancelAux(), false);
+});

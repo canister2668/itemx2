@@ -4,7 +4,7 @@ import * as Core from '../engine/core.js';
 import * as EntityHistory from '../engine/history.js';
 import * as Renderer from '../render/renderer.js';
 import { scrollActive } from '../activity.js';
-import { auxActive, repairOneItem, runItemModel } from '../aux.js';
+import { auxActive, auxRunning, cancelAux, repairOneItem, runItemModel } from '../aux.js';
 import { context } from '../chat-io.js';
 import { ITEMX_ROOT_PAGE_SIZE, ITEMX_VERSION_LABEL } from '../config.js';
 import { hookState, isUnloading, lastError, updateState } from '../connection.js';
@@ -772,7 +772,7 @@ export function rootBadgeHtml(loaded = null) {
   const update = updateState().available
     ? `<span class="itemx2-update-indicator" x-itemx2-update="${Core.esc(updateState().latest)}" aria-label="${t('ui-panel.update-available')}">↑</span>`
     : '';
-  return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${t('ui-panel.051')}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxActive() > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${Core.esc(auxWorkingLabel())}</span></div>`;
+  return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${t('ui-panel.051')}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxRunning() ? 'itemx2-aux-status-on itemx2-aux-status-running' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${Core.esc(auxWorkingLabel())}</span><button class="itemx2-aux-cancel" type="button" aria-label="${t('aux.cancel-label')}">${t('aux.cancel')}</button></div>`;
 }
 
 export const updateLabelHtml = () =>
@@ -1315,6 +1315,28 @@ export async function eventHitsMainClass(event, className) {
   return inside(await rectOf(className), event);
 }
 
+const AUX_CANCEL_HOOKS = ['itemx2-aux-cancel', 'itemx2-setting-aux-run'];
+export async function routeAuxCancel(event) {
+  if (!auxRunning() || !panelDocument()) return false;
+  for (const hook of AUX_CANCEL_HOOKS) {
+    const node = await panelDocument().querySelector(`.x-risu-${hook}`);
+    if (!node) continue;
+    const rect = await node.getBoundingClientRect();
+    if (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    ) {
+      await cancelAux();
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function installRootClickRouter(owner) {
   if (!owner || (uiState.rootClickBindings[0]?.owner === owner && uiState.rootClickBindings.length)) return;
   await removeRootClickRouter();
@@ -1603,20 +1625,30 @@ export async function installRootClickRouter(owner) {
       fail('native setting click', error);
     }
   };
+  const queued = entry(
+    'ui-action',
+    async (event) => {
+      try {
+        if (await routeBadge(event)) return;
+        await routeControls(event);
+      } catch (error) {
+        fail('root click router', error);
+      }
+    },
+    true
+  );
+  // Cancelling the auxiliary pass must not queue behind it: the pass holds the
+  // commit lane for the whole model call. It is checked first, outside the queue.
   const id = await owner.addEventListener(
     'click',
-    entry(
-      'ui-action',
-      async (event) => {
-        try {
-          if (await routeBadge(event)) return;
-          await routeControls(event);
-        } catch (error) {
-          fail('root click router', error);
-        }
-      },
-      true
-    ),
+    async (event) => {
+      try {
+        if (await routeAuxCancel(event)) return;
+      } catch (error) {
+        fail('aux cancel click', error);
+      }
+      return queued(event);
+    },
     true
   );
   uiState.rootClickBindings = [{ owner, type: 'click', id, capture: true }];

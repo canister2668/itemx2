@@ -1,7 +1,7 @@
 /* ITEMX ui settings owner. Concatenated inside the runtime closure. */
 import * as Backup from '../engine/backup.js';
 import * as Core from '../engine/core.js';
-import { auxActive, recoverAuxiliaryOutput } from '../aux.js';
+import { auxActive, auxRunning, cancelAux, recoverAuxiliaryOutput } from '../aux.js';
 import { context } from '../chat-io.js';
 import { ITEMX_PLUGIN_VERSION } from '../config.js';
 import { lastError, rememberUiPart, updateState } from '../connection.js';
@@ -420,7 +420,7 @@ export function settingsPanelHtml(loaded, skin, parts) {
   return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">${t('ui-settings.074.1')}</h4>${connectionCards}${setCard(
     t('ui-settings.077'),
     Core.esc(auxStatusText()),
-    `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${auxActive() > 0 ? 'disabled' : ''}>${auxActive() > 0 ? t('ui-settings.076') : t('ui-settings.075')}</button>`,
+    `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')}>${auxRunning() ? t('ui-settings.aux-cancel') : t('ui-settings.075')}</button>`,
     ' class="itemx2-aux-setting-status"'
   )}<h4 class="itemx2-set-group">${t('ui-panel.058.1')}</h4>${setCard(
     t('ui-settings.079'),
@@ -578,7 +578,15 @@ export function rootSettingActions() {
     {
       hook: 'itemx2-setting-aux-run',
       run: async () => {
-        if (auxActive() > 0) return;
+        // While a pass runs, the same button cancels it.
+        if (auxRunning()) {
+          await cancelAux();
+          return;
+        }
+        if (auxActive() > 0) {
+          setStatus(t('ui-settings.aux-cancel-pending'));
+          return;
+        }
         setStatus(t('ui-settings.050'));
         await recoverAuxiliaryOutput({ force: true });
       }

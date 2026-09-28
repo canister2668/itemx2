@@ -1,4 +1,4 @@
-import { auxActive, auxLast } from '../aux.js';
+import { auxLast, auxRunning } from '../aux.js';
 import { hookState, permission } from '../connection.js';
 import { t } from '../i18n.js';
 import { fail, workQueue } from '../kernel.js';
@@ -7,7 +7,7 @@ import { mainDoc } from './style.js';
 import { panelDocument } from './surface.js';
 import { uiState } from './view-state.js';
 export function auxStatusText() {
-  if (auxActive() > 0) return auxWorkingLabel() || t('aux.041');
+  if (auxRunning()) return auxWorkingLabel() || t('aux.041');
   const last = auxLast();
   if (!last?.at) return t('aux.057');
   const time = new Date(last.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -162,21 +162,26 @@ export async function syncAuxIndicator() {
     const indicator = await mainDoc().querySelector('.x-risu-itemx2-aux-status');
     if (!indicator) return;
     const label = await indicator.querySelector('.x-risu-itemx2-aux-status-label');
-    if (label) await label.setTextContent(auxActive() > 0 ? auxWorkingLabel() : auxLast().label);
+    if (label) await label.setTextContent(auxRunning() ? auxWorkingLabel() : auxLast().label);
     const settingLabel = await mainDoc().querySelector('.x-risu-itemx2-aux-setting-status');
     if (settingLabel) await settingLabel.setTextContent(auxStatusText());
     const runButton = await mainDoc().querySelector('.x-risu-itemx2-setting-aux-run');
     if (runButton) {
-      await runButton.setTextContent(auxActive() > 0 ? t('ui-settings.076') : t('ui-settings.075'));
-      if (auxActive() > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
+      await runButton.setTextContent(auxRunning() ? t('ui-settings.aux-cancel') : t('ui-settings.075'));
+      if (auxRunning()) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
       else await runButton.removeClass('x-risu-itemx2-root-setting-button-busy');
     }
     const recent = auxLast().at && Date.now() - auxLast().at < 2600;
-    if (auxActive() > 0 || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
+    const running = auxRunning();
+    if (running || recent) await indicator.addClass('x-risu-itemx2-aux-status-on');
     else await indicator.removeClass('x-risu-itemx2-aux-status-on');
-    if (auxLast().state === 'done' && auxActive() === 0) await indicator.addClass('x-risu-itemx2-aux-status-done');
+    // The cancel button shows only while a request the user can cancel runs.
+    if (running) await indicator.addClass('x-risu-itemx2-aux-status-running');
+    else await indicator.removeClass('x-risu-itemx2-aux-status-running');
+    if (auxLast().state === 'done' && !running) await indicator.addClass('x-risu-itemx2-aux-status-done');
     else await indicator.removeClass('x-risu-itemx2-aux-status-done');
-    if (auxLast().state === 'failed' && auxActive() === 0) await indicator.addClass('x-risu-itemx2-aux-status-failed');
+    if (['failed', 'cancelled'].includes(auxLast().state) && !running)
+      await indicator.addClass('x-risu-itemx2-aux-status-failed');
     else await indicator.removeClass('x-risu-itemx2-aux-status-failed');
   } catch (error) {
     fail('aux indicator', error);

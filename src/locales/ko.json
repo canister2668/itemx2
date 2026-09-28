@@ -135,7 +135,6 @@
   "ui-settings.070": "습득·숙련·봉인",
   "ui-settings.072": "감정·손상·소실",
   "ui-settings.075": "지금 검사",
-  "ui-settings.076": "처리 중…",
   "ui-settings.077": "보조 모델 상태",
   "ui-settings.078": "끄면 새로 모으지 않을 뿐, 이미 쌓인 기록은 그대로 남습니다.",
   "ui-settings.079": "무엇을 기록할까요",
@@ -720,5 +719,10 @@
   "render.073": "내구",
   "backup.001": "ITEMX 백업 형식이 올바르지 않습니다. 원본 백업 파일을 선택해 주세요.",
   "backup.002": "백업은 32 MiB 이하의 JSON 파일이어야 합니다.",
-  "status.ready": "UI 준비"
+  "status.ready": "UI 준비",
+  "aux.cancelled": "보조 복구 취소됨",
+  "aux.cancel": "취소",
+  "aux.cancel-label": "보조 복구 취소",
+  "ui-settings.aux-cancel": "보조 복구 취소",
+  "ui-settings.aux-cancel-pending": "취소한 요청이 끝나길 기다리는 중입니다"
 }

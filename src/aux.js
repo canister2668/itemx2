@@ -66,9 +66,29 @@ export function auxiliaryProviderError(value) {
 // `last` is the latest outcome shown by the side indicator and settings card.
 let active = 0;
 let last = { state: 'idle', label: '', at: 0, events: null };
+// Requests the user cancelled. The stock API cannot abort a model call, so a
+// cancelled request is abandoned: its answer is ignored, and it stays counted
+// in `active` until the provider answers so no automatic pass starts beside it.
+let abandoned = 0;
+const cancellers = new Set();
 
 export const auxActive = () => active;
+// What the user sees as running: requests nobody has cancelled.
+export const auxRunning = () => active - abandoned > 0;
 export const auxLast = () => ({ ...last });
+
+export const isAuxCancelled = (error) => error?.code === 'AUX_CANCELLED';
+
+// Cancels every auxiliary request in flight. The pass that issued it records
+// the message as cancelled, so the automatic pass does not call it again.
+export async function cancelAux() {
+  if (!cancellers.size) return false;
+  for (const cancel of [...cancellers]) cancel();
+  last = { state: 'cancelled', label: t('aux.cancelled'), at: Date.now(), events: null };
+  setStatus(t('aux.cancelled'));
+  await emit('aux', { active, last: { ...last }, outcome: true });
+  return true;
+}
 
 export async function setAuxOutcome(state, label, events = null) {
   last = { state, label, events, at: Date.now() };
@@ -97,29 +117,48 @@ export async function runAuxModel(prompt, label = t('aux.041')) {
     else await emit('aux', { active, last: { ...last }, outcome: false });
   };
   let settled = false,
-    returned = false;
+    returned = false,
+    cancelled = false,
+    cancel = null;
+  const cancellation = new Promise((_, reject) => {
+    cancel = () => {
+      if (cancelled || settled) return;
+      cancelled = true;
+      abandoned += 1;
+      cancellers.delete(cancel);
+      reject(Object.assign(new Error(t('aux.cancelled')), { code: 'AUX_CANCELLED' }));
+    };
+  });
+  cancellation.catch(() => {});
+  cancellers.add(cancel);
   void request
     .catch(() => {})
     .then(async () => {
       settled = true;
+      cancellers.delete(cancel);
+      if (cancelled) abandoned = Math.max(0, abandoned - 1);
       active = Math.max(0, active - 1);
       // After a timeout the caller is long gone; report the late answer here.
       if (returned) await report();
     });
   try {
-    const result = await workQueue.external(() => withTimeout(request, ITEMX_AUX_TIMEOUT_MS, t('aux.039')));
+    const result = await workQueue.external(() =>
+      Promise.race([withTimeout(request, ITEMX_AUX_TIMEOUT_MS, t('aux.039')), cancellation])
+    );
     const providerError = auxiliaryProviderError(result);
     if (providerError) throw providerError;
     workQueue.forget('aux-provider');
     last = { state: 'done', label: t('aux.038'), at: Date.now(), events: null };
     return result;
   } catch (error) {
+    if (isAuxCancelled(error)) throw error;
     const providerError = auxiliaryProviderError(error) || error;
     if (providerError?.code === 'AUX_PROVIDER_UNAVAILABLE') workQueue.remember('aux-provider', 'unavailable');
     last = { state: 'failed', label: t('aux.037'), at: Date.now(), events: null };
     throw providerError;
   } finally {
     returned = true;
+    cancellers.delete(cancel);
     if (settled) await report();
   }
 }
@@ -529,6 +568,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
           repaired.set(accepted.patch.id, fields);
         }
       } catch (error) {
+        if (isAuxCancelled(error)) throw error;
         fail('auxiliary partial repair', error);
       }
       unresolvedPartials = partials
@@ -651,6 +691,17 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     }
     return { status: 'ok', events: valid, called };
   })().catch(async (error) => {
+    // A cancelled message is settled: the automatic pass never calls it again.
+    // A manual run from the settings tab still can.
+    if (isAuxCancelled(error)) {
+      await recordGuard(ctx, index, sourceHash, chatId, {
+        k: guardKey,
+        q: Quality.REVISION,
+        state: 'cancelled',
+        events: 0
+      });
+      return skip('cancelled');
+    }
     fail('auxiliary recovery', error);
     if (activeContextKey() === ctx.key) {
       setStatus(t('aux.024'));
@@ -671,6 +722,22 @@ function guardSettled(guard, key) {
 
 // Failed attempts are counted in the document, so a reload does not reset the
 // retry limit and re-bill the same message.
+async function recordGuard(ctx, index, sourceHash, chatId, record) {
+  try {
+    await writeDocument(ctx, (doc, latest) => {
+      if (
+        latest.message?.[index]?.chatId !== chatId &&
+        narrativeHash(messageData(latest.message?.[index])) !== sourceHash
+      )
+        return false;
+      setGuard(doc, chatId, record);
+      return {};
+    });
+  } catch (error) {
+    debugRecord('aux guard record', error?.message || String(error));
+  }
+}
+
 async function recordFailure(ctx, index, sourceHash, chatId, guardKey) {
   try {
     await writeDocument(ctx, (doc, latest) => {
