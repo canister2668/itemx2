@@ -29,13 +29,11 @@ const LOADED = {
   }
 };
 
-function renderSettings(rt, which) {
-  const skin = rt.SETTINGS_SKINS[which];
+function renderSettings(rt) {
+  const skin = rt.SETTINGS_SKINS.native;
   return rt.settingsPanelHtml(LOADED, skin, {
     connection: { ready: false, hook: ['훅', 'warn'], dom: ['화면', 'warn'], listener: ['커밋', 'warn'] },
     chips: '',
-    permissionLabel: '허용',
-    styleLabel: '고정',
     domainControls: rt.settingsDomainControls(LOADED, skin),
     fontChoices: rt.settingsFontChoices(LOADED, skin),
     positionChoices: rt.settingsPositionChoices(skin),
@@ -48,44 +46,21 @@ function renderSettings(rt, which) {
 const cardTitles = (html) =>
   [...html.matchAll(/<section class="itemx2-root-setting-card"><span><strong>([^<]+)<\/strong>/g)].map((m) => m[1]);
 
-test('both skins render the same controls in the same order', async () => {
-  const drawer = cardTitles(renderSettings(rt, 'native'));
-  const fallback = cardTitles(renderSettings(rt, 'frame'));
-  // The fallback exists because main-document access was refused, so it swaps the
-  // drawer's single connect action for the two repair actions. Nothing else differs.
-  assert.deepEqual(drawer.slice(0, 1), ['Risu 연결']);
-  assert.deepEqual(fallback.slice(0, 2), ['모델 처리 권한', '본문 카드 스타일']);
-  assert.deepEqual(drawer.slice(1), fallback.slice(2), 'the two skins drifted apart');
-});
-
-test('each skin binds every control its own way and never both', async () => {
-  const drawer = renderSettings(rt, 'native');
-  const fallback = renderSettings(rt, 'frame');
-  // The backup card carries both hooks because the backup screen is opened from
-  // the drawer and the fallback alike; everything else is skin-specific.
-  assert.deepEqual(
-    (drawer.match(/data-action="([^"]*)"/g) || []).map((x) => x.slice(13, -1)),
-    ['backup'],
-    'the drawer routes by class, not by attribute'
-  );
-  assert.ok(!/class="[^"]*itemx2-setting-toggle/.test(fallback), 'the fallback routes by attribute, not class');
-  for (const action of ['module-assets', 'lorebook-scan', 'rebuild', 'storage-cleanup'])
-    assert.ok(fallback.includes(`data-action="${action}"`), `fallback lost ${action}`);
-  assert.ok(fallback.includes('data-seg="fx"'), 'fallback lost the effect level segment');
-  // The drawer's router looks these up by class, including its three aliases.
-  for (const hook of ['main', 'lorebook', 'cleanup', 'rebuild', 'storage-cleanup'])
+test('the drawer routes every settings control by class, never by attribute', async () => {
+  const drawer = renderSettings(rt);
+  assert.deepEqual(drawer.match(/data-(?:action|seg)="/g) || [], []);
+  assert.deepEqual(cardTitles(drawer).slice(0, 1), ['Risu 연결']);
+  // The router looks these up by class, including its three aliases.
+  for (const hook of ['main', 'lorebook', 'cleanup', 'rebuild', 'storage-cleanup', 'backup'])
     assert.ok(drawer.includes(`itemx2-setting-${hook}`), `drawer lost itemx2-setting-${hook}`);
   for (const level of ['full', 'lite', 'off'])
     assert.ok(drawer.includes(`itemx2-seg-fx-${level}`), `drawer lost itemx2-seg-fx-${level}`);
 });
 
 test('every control is a real button with an explicit type', async () => {
-  for (const which of ['native', 'frame']) {
-    const html = renderSettings(rt, which);
-    const buttons = html.match(/<button[^>]*>/g) || [];
-    assert.ok(buttons.length > 15, `${which} rendered too few controls`);
-    for (const button of buttons) assert.match(button, /type="button"/, `${which}: ${button.slice(0, 80)}`);
-  }
+  const buttons = renderSettings(rt).match(/<button[^>]*>/g) || [];
+  assert.ok(buttons.length > 15, 'too few controls');
+  for (const button of buttons) assert.match(button, /type="button"/, button.slice(0, 80));
 });
 
 test('the settings surface is styled in both documents', () => {
@@ -102,9 +77,8 @@ test('the settings surface is styled in both documents', () => {
   assert.ok(!/itemx2-root-settings\{[^}]*display:none/.test(Style.ITEMX_SETTINGS_STYLE));
 });
 
-test('both renderers carry one irreversible-actions zone', async () => {
-  for (const which of ['native', 'frame'])
-    assert.equal((renderSettings(rt, which).match(/itemx2-danger-zone/g) || []).length, 1);
+test('the settings carry one irreversible-actions zone', async () => {
+  assert.equal((renderSettings(rt).match(/itemx2-danger-zone/g) || []).length, 1);
 });
 
 test('the iframe shell layer never reaches the shipped chat scope', async () => {
@@ -203,8 +177,8 @@ test('the header renders exactly the three controls, all with one class', async 
     true,
     'power must not sit beside close, where a mistap stops recording'
   );
-  // It carries both hooks because one header serves the drawer and the fallback.
-  assert.match(actions, /data-action="toggle"/);
+  // The drawer and the iframe fallback share one router, which goes by class.
+  assert.doesNotMatch(actions, /data-action=/);
 });
 
 // One narrow-screen block owns the panel box. A second block competing with it

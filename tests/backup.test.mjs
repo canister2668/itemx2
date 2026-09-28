@@ -206,8 +206,7 @@ test('malformed, duplicate, unsupported and prototype-shaped backup entries are 
   invalid.push(JSON.stringify(wrong));
   for (const text of invalid) await assert.rejects(() => h.api.prepareBackupImport(text, h.ctx.key));
   assert.equal(h.writes, 0);
-  assert.match(h.api.backupSettingsHtml(true), /itemx2-setting-backup/);
-  assert.match(h.api.backupSettingsHtml(false), /data-action="backup"/);
+  assert.match(h.api.backupSettingsHtml(), /itemx2-setting-backup/);
 });
 
 test('backup keeps registries larger than old storage limits and preserves unknown skill progression', async () => {

@@ -149,106 +149,137 @@ export const codexInlineBody = (affinity) => {
 };
 
 export const codexInlineStat = (label, value, from) => {
-  const now = Core.esc(value || t('presentation.048'));
+  const now = Core.esc(value || t('presentation.009'));
   const changed = from != null && String(from) !== '' && String(from) !== String(value);
   const body = changed ? `<s>${Core.esc(from)}</s><u>→</u><em>${now}</em>` : `<span>${now}</span>`;
   return `<i class="${changed ? 'itemx2-inline-stat-changed' : ''}"><b>${Core.esc(label)}</b>${body}</i>`;
 };
+
+const SKILL_ACTIONS = {
+  learn: ['SKILL LEARNED', () => t('presentation.047')],
+  equip: ['SKILL EQUIPPED', () => t('presentation.046')],
+  unequip: ['SKILL UPDATED', () => t('presentation.045')],
+  mastery: ['SKILL MASTERY UPDATED', () => t('presentation.044')],
+  seal: ['SKILL SEALED', () => t('presentation.043')],
+  unseal: ['SKILL UNSEALED', () => t('presentation.042')],
+  forget: ['SKILL LOST', () => t('presentation.039')]
+};
+const ENCOUNTER_ACTIONS = {
+  encounter: ['ENCOUNTER RESUMED', () => t('presentation.024')],
+  end: ['ENCOUNTER RESOLVED', () => t('presentation.023')],
+  escape: ['ENCOUNTER RESOLVED', () => t('presentation.022')],
+  defeat: ['ENCOUNTER RESOLVED', () => t('presentation.021')],
+  kill: ['ENCOUNTER RESOLVED', () => t('presentation.020')],
+  ally: ['ENCOUNTER UPDATED', () => t('presentation.019')]
+};
+// Kicker and state label of a skill or encounter event.
+function eventLabels(event, entity, noun) {
+  const action = event.patch?.action || '',
+    op = event.patch?.op || '';
+  if (event.kind === 'exam')
+    return noun === 'SKILL'
+      ? ['NEW SKILL ARCHIVED', t('presentation.017')]
+      : ['ENCOUNTER REGISTERED', entity.status === 'active' ? t('presentation.018') : t('presentation.017')];
+  const known = (noun === 'SKILL' ? SKILL_ACTIONS : ENCOUNTER_ACTIONS)[action];
+  if (known) return [known[0], known[1]()];
+  if (op === 'remove') return [`${noun} LOST`, noun === 'SKILL' ? t('presentation.039') : t('presentation.016')];
+  if (op === 'restore') return [`${noun} RESTORED`, t('presentation.015')];
+  return [noun === 'SKILL' ? 'SKILL RECORD UPDATED' : 'ENCOUNTER UPDATED', t('presentation.014')];
+}
+
+const motionClass = (motion) => (motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '');
+const knownNumber = (value) => (value != null && Number.isFinite(Number(value)) ? Number(value) : null);
+
+// One view-model per domain; both render through the same inline template.
+function skillCardModel(event, entity, previous, motion) {
+  const appraisal = codexInlineAppraisalStyle(entity, 'skill');
+  const [kicker, state] = eventLabels(event, entity, 'SKILL');
+  const mastery = knownNumber(entity.mastery),
+    priorMastery = knownNumber(previous.mastery);
+  return {
+    classes: `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motionClass(motion)}`,
+    style: appraisal.style,
+    lead: codexInlineBody(entity.affinity),
+    icon: `<span>${Core.esc(skillEmoji(entity))}</span>`,
+    kicker,
+    state,
+    meta: [
+      entity.rank,
+      [
+        entity.school || t('presentation.011'),
+        entity.type || 'active',
+        entity.status || 'learned',
+        entity.target ? t('presentation.027', entity.target) : ''
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    quick: [
+      [
+        'LEVEL',
+        entity.level == null ? t('presentation.009') : `Lv.${entity.level}`,
+        previous.level == null || previous.level === entity.level ? null : `Lv.${previous.level}`
+      ],
+      [
+        t('presentation.035'),
+        mastery == null ? t('presentation.009') : `${mastery}%`,
+        priorMastery == null ? null : `${priorMastery}%`
+      ],
+      [t('presentation.033'), entity.cost || t('presentation.009'), previous.cost || null],
+      [t('presentation.031'), entity.cooldown || t('presentation.009'), previous.cooldown || null]
+    ],
+    footLabel: event.patch?.action === 'mastery' ? t('presentation.026') : t('presentation.025'),
+    foot:
+      (entity.effects || []).slice(0, 2).join(' · ') || entity.description || entity.growth || t('presentation.029'),
+    more: 'ITEMX &#8250;'
+  };
+}
+
+function encounterCardModel(event, entity, previous, motion, portrait) {
+  const appraisal = codexInlineAppraisalStyle(entity, 'monster');
+  const [kicker, state] = eventLabels(event, entity, 'ENCOUNTER');
+  const ended = /ended|escaped|defeated|dead/i.test(String(entity.status || ''));
+  const warning =
+    entity.active && ['hostile', 'sparring'].includes(String(entity.relation || ''))
+      ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>'
+      : '';
+  const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
+  return {
+    classes: `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motionClass(motion)}`,
+    style: appraisal.style,
+    lead: `${warning}${ended ? '<span class="itemx2-inline-seal">&#35352;&#37636;</span>' : '<span class="itemx2-inline-scan"></span>'}`,
+    icon: portrait
+      ? `<img src="${Core.esc(portrait)}" alt="" style="width:100%;height:100%;object-fit:cover">`
+      : `<span>${Core.esc(encounterEmoji(entity))}</span>`,
+    kicker,
+    state,
+    meta: [entity.kind, aliases || entity.description].filter(Boolean).join(' · ') || t('presentation.004'),
+    quick: [
+      [t('presentation.012'), entity.kind || t('presentation.011'), null],
+      [t('presentation.010'), entity.threat || t('presentation.009'), previous.threat || null],
+      [t('presentation.008'), entity.relation || 'unknown', previous.relation || null],
+      [t('presentation.007'), entity.status || 'unknown', previous.status || null]
+    ],
+    footLabel: ended ? t('presentation.006') : t('presentation.005'),
+    foot: entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || t('presentation.013'),
+    more: t('presentation.003.1')
+  };
+}
+
+const inlineCardHtml = (card) =>
+  `<section class="${card.classes}" style="${card.style}">${card.lead}<div class="itemx2-inline-main"><span class="itemx2-inline-icon">${card.icon}</span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${card.kicker}</small><strong class="itemx2-inline-name">${Core.esc(card.name)}</strong><span class="itemx2-inline-meta">${Core.esc(card.meta)}</span><span class="itemx2-inline-quick">${card.quick.map(([label, value, from]) => codexInlineStat(label, value, from)).join('')}</span></span><i class="itemx2-inline-state">${card.state}</i></div><footer class="itemx2-inline-foot"><b>${card.footLabel}</b><span>${Core.esc(card.foot)}</span><em class="itemx2-inline-more">${card.more}</em></footer></section>`;
 
 export function codexInlineEventHtml(payload, motion = 'full', portrait = '') {
   if (!codexInlineEventSignificant(payload)) return '';
   const event = payload.event,
     entity = payload.view || event.entity;
   if (!entity) return '';
-  const previous = payload.previous || {},
-    action = event.patch?.action || '',
-    op = event.patch?.op || '';
-  const ended = event.domain === 'monster' && /ended|escaped|defeated|dead/i.test(String(entity.status || ''));
-  if (event.domain === 'skill') {
-    const appraisal = codexInlineAppraisalStyle(entity, 'skill');
-    const labels = {
-      learn: ['SKILL LEARNED', t('presentation.047')],
-      equip: ['SKILL EQUIPPED', t('presentation.046')],
-      unequip: ['SKILL UPDATED', t('presentation.045')],
-      mastery: ['SKILL MASTERY UPDATED', t('presentation.044')],
-      seal: ['SKILL SEALED', t('presentation.043')],
-      unseal: ['SKILL UNSEALED', t('presentation.042')],
-      forget: ['SKILL LOST', t('presentation.041')]
-    };
-    const [kicker, state] =
-      event.kind === 'exam'
-        ? ['NEW SKILL ARCHIVED', t('presentation.040')]
-        : labels[action] ||
-          (op === 'remove'
-            ? ['SKILL LOST', t('presentation.039')]
-            : op === 'restore'
-              ? ['SKILL RESTORED', t('presentation.038')]
-              : ['SKILL RECORD UPDATED', t('presentation.037')]);
-    const mastery = entity.mastery != null && Number.isFinite(Number(entity.mastery)) ? Number(entity.mastery) : null;
-    const priorMastery =
-      previous.mastery != null && Number.isFinite(Number(previous.mastery)) ? Number(previous.mastery) : null;
-    const quick = [
-      [
-        'LEVEL',
-        entity.level == null ? t('presentation.036') : `Lv.${entity.level}`,
-        previous.level == null || previous.level === entity.level ? null : `Lv.${previous.level}`
-      ],
-      [
-        t('presentation.035'),
-        mastery == null ? t('presentation.034') : `${mastery}%`,
-        priorMastery == null ? null : `${priorMastery}%`
-      ],
-      [t('presentation.033'), entity.cost || t('presentation.032'), previous.cost || null],
-      [t('presentation.031'), entity.cooldown || t('presentation.030'), previous.cooldown || null]
-    ]
-      .map(([label, value, from]) => codexInlineStat(label, value, from))
-      .join('');
-    const effect =
-      (entity.effects || []).slice(0, 2).join(' · ') || entity.description || entity.growth || t('presentation.029');
-    const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
-    const meta = [
-      entity.school || t('presentation.028'),
-      entity.type || 'active',
-      entity.status || 'learned',
-      entity.target ? t('presentation.027', entity.target) : ''
-    ]
-      .filter(Boolean)
-      .join(' · ');
-    // The chips already carry every change, so the separate change block is gone.
-    return `<section class="${classes}" style="${appraisal.style}">${codexInlineBody(entity.affinity)}<div class="itemx2-inline-main"><span class="itemx2-inline-icon"><span>${Core.esc(skillEmoji(entity))}</span></span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${Core.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${Core.esc([entity.rank, meta].filter(Boolean).join(' · '))}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${action === 'mastery' ? t('presentation.026') : t('presentation.025')}</b><span>${Core.esc(effect)}</span><em class="itemx2-inline-more">ITEMX &#8250;</em></footer></section>`;
-  }
-  const appraisal = codexInlineAppraisalStyle(entity, 'monster');
-  const labels = {
-    encounter: ['ENCOUNTER RESUMED', t('presentation.024')],
-    end: ['ENCOUNTER RESOLVED', t('presentation.023')],
-    escape: ['ENCOUNTER RESOLVED', t('presentation.022')],
-    defeat: ['ENCOUNTER RESOLVED', t('presentation.021')],
-    kill: ['ENCOUNTER RESOLVED', t('presentation.020')],
-    ally: ['ENCOUNTER UPDATED', t('presentation.019')]
-  };
-  const [kicker, state] =
-    event.kind === 'exam'
-      ? ['ENCOUNTER REGISTERED', entity.status === 'active' ? t('presentation.018') : t('presentation.017')]
-      : labels[action] ||
-        (op === 'remove'
-          ? ['ENCOUNTER LOST', t('presentation.016')]
-          : op === 'restore'
-            ? ['ENCOUNTER RESTORED', t('presentation.015')]
-            : ['ENCOUNTER UPDATED', t('presentation.014')]);
-  const detail = entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || t('presentation.013');
-  const warning =
-    entity.active && ['hostile', 'sparring'].includes(String(entity.relation || ''))
-      ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>'
-      : '';
-  const quick = [
-    [t('presentation.012'), entity.kind || t('presentation.011'), null],
-    [t('presentation.010'), entity.threat || t('presentation.009'), previous.threat || null],
-    [t('presentation.008'), entity.relation || 'unknown', previous.relation || null],
-    [t('presentation.007'), entity.status || 'unknown', previous.status || null]
-  ]
-    .map(([label, value, from]) => codexInlineStat(label, value, from))
-    .join('');
-  const classes = `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : ''}`;
-  const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
-  return `<section class="${classes}" style="${appraisal.style}">${warning}${ended ? '<span class="itemx2-inline-seal">&#35352;&#37636;</span>' : '<span class="itemx2-inline-scan"></span>'}<div class="itemx2-inline-main"><span class="itemx2-inline-icon">${portrait ? `<img src="${Core.esc(portrait)}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span>${Core.esc(encounterEmoji(entity))}</span>`}</span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${kicker}</small><strong class="itemx2-inline-name">${Core.esc(entity.name || entity.id)}</strong><span class="itemx2-inline-meta">${Core.esc([entity.kind, aliases || entity.description].filter(Boolean).join(' · ') || t('presentation.004'))}</span><span class="itemx2-inline-quick">${quick}</span></span><i class="itemx2-inline-state">${state}</i></div><footer class="itemx2-inline-foot"><b>${ended ? t('presentation.006') : t('presentation.005')}</b><span>${Core.esc(detail)}</span><em class="itemx2-inline-more">${t('presentation.003.1')}</em></footer></section>`;
+  const previous = payload.previous || {};
+  const card =
+    event.domain === 'skill'
+      ? skillCardModel(event, entity, previous, motion)
+      : encounterCardModel(event, entity, previous, motion, portrait);
+  return inlineCardHtml({ ...card, name: entity.name || entity.id });
 }

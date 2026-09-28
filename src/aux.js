@@ -79,7 +79,7 @@ export async function setAuxOutcome(state, label, events = null) {
 // (and billing) until it answers. It stays counted in `active` until then, so
 // no automatic pass starts a second paid request beside it.
 export async function runAuxModel(prompt, label = t('aux.041')) {
-  if (typeof host().runLLMModel !== 'function') throw new Error(t('aux.040'));
+  if (typeof host().runLLMModel !== 'function') throw new Error(t('aux.022'));
   active += 1;
   last = { state: 'running', label, at: Date.now(), events: null };
   setStatus(label);

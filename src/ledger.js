@@ -143,7 +143,7 @@ export async function rebuildCurrent(ctx = null) {
   setStatus(
     t(
       'ledger.026',
-      warning ? t('ledger.029') : t('ledger.027'),
+      warning ? t('ledger.029') : t('runtime.003'),
       loaded.snapshot.registry.order.length,
       loaded.codexSnapshot.skills.order.length,
       loaded.codexSnapshot.monsters.order.length
@@ -309,7 +309,7 @@ export async function commitManualEvents(loaded, events, label, review = { sourc
 
 export async function saveHistoryPreference(loaded, update) {
   const active = await context();
-  if (!active || active.key !== loaded.key) throw new Error(t('ui-panel.057'));
+  if (!active || active.key !== loaded.key) throw new Error(t('aux.011'));
   const result = await writeDocument(active, (doc) => {
     update(doc.prefs);
   });
@@ -332,7 +332,7 @@ const chatSignature = (chat) => Core.fnv1a(JSON.stringify(chat));
 
 export async function exportCurrentBackup(key) {
   const ctx = await context();
-  if (!ctx || ctx.key !== key) throw new Error(t('ledger.024'));
+  if (!ctx || ctx.key !== key) throw new Error(t('ledger.022'));
   requireBackupIdle(ctx.chat);
   return Backup.capture(project(ctx, await settingsFor(ctx.character), { full: true }));
 }
@@ -447,8 +447,8 @@ function forgetChatRuntime(ctx) {
 
 export async function cleanCurrentChatItemx() {
   const { ctx, latest } = await requireIdleActive({
-    missing: t('ledger.013'),
-    unreadable: t('ledger.011'),
+    missing: t('ui-settings.139'),
+    unreadable: t('ledger.006'),
     streaming: t('ledger.010')
   });
   const cleaned = cleanChatPluginData(latest);
@@ -467,8 +467,8 @@ export async function cleanCurrentChatItemx() {
 // read by this version; the text keeps everything else.
 export async function removeOldMarkersCurrent() {
   const { ctx, latest } = await requireIdleActive({
-    missing: t('ledger.013'),
-    unreadable: t('ledger.011'),
+    missing: t('ui-settings.139'),
+    unreadable: t('ledger.006'),
     streaming: t('ledger.010')
   });
   let removedMarkers = 0;
@@ -521,7 +521,7 @@ export function itemxStorageFootprint(chat) {
 // checkpoint. The fold of the current chat is unchanged.
 export async function compactCurrentChatStorage() {
   const { ctx, latest } = await requireIdleActive({
-    missing: t('ledger.008'),
+    missing: t('ui-settings.139'),
     unreadable: t('ledger.006'),
     streaming: t('ledger.005')
   });

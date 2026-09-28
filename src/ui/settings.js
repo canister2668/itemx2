@@ -144,17 +144,17 @@ export async function togglePowerFromChatMenu() {
 export const FX_LABELS = {
   full: t('ui-settings.fx-full'),
   lite: t('ui-settings.fx-lite'),
-  off: t('ui-settings.fx-off')
+  off: t('ui-settings.147')
 };
 export const AUX_LABELS = { off: t('ui-settings.147'), missing: t('ui-settings.146'), always: t('ui-settings.145') };
 
 export const RARITY_MODE_LABELS = { world: t('ui-settings.144'), itemx: t('ui-settings.143') };
 
-export function backupSettingsHtml(native) {
+export function backupSettingsHtml() {
   return setCard(
     t('ui-settings.142'),
     t('ui-settings.141'),
-    `<button class="itemx2-root-setting-button itemx2-setting-backup" data-action="backup" type="button">${t('ui-settings.140.1')}</button>`
+    `<button class="itemx2-root-setting-button itemx2-setting-backup" type="button">${t('ui-settings.140.1')}</button>`
   );
 }
 
@@ -166,7 +166,7 @@ export async function openBackupPanel() {
   let preview = null,
     url = '',
     busy = false;
-  document.body.innerHTML = `<main id="itemx-backup"><header><h2>${t('ui-settings.138.1')}</h2><button id="ix-close" type="button">${t('ui-settings.138.2')}</button></header><p id="ix-target"></p><p>${t('ui-settings.138.3')}</p><section><h3>${t('ui-settings.138.4')}</h3><button id="ix-export" type="button">${t('ui-settings.138.5')}</button><a id="ix-download" hidden>${t('ui-settings.138.6')}</a><button id="ix-copy" type="button" disabled>${t('ui-settings.138.7')}</button><textarea id="ix-export-text" aria-label="${t('ui-settings.138.8')}" readonly placeholder="${t('ui-settings.138.9')}"></textarea></section><section><h3>${t('ui-settings.138.10')}</h3><label>${t('ui-settings.138.11')} <select id="ix-mode"><option value="empty">${t('ui-settings.138.12')}</option><option value="replace">${t('ui-settings.138.13')}</option></select></label><p>${t('ui-settings.138.14')}</p><label>${t('ui-settings.138.15')} <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="${t('ui-settings.138.16')}" placeholder="${t('ui-settings.138.17')}"></textarea><button id="ix-preview" type="button">${t('ui-settings.138.18')}</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>${t('ui-settings.138.19')}</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
+  document.body.innerHTML = `<main id="itemx-backup"><header><h2>${t('ui-settings.142')}</h2><button id="ix-close" type="button">${t('ui-settings.138.2')}</button></header><p id="ix-target"></p><p>${t('ui-settings.138.3')}</p><section><h3>${t('ui-settings.138.4')}</h3><button id="ix-export" type="button">${t('ui-settings.138.5')}</button><a id="ix-download" hidden>${t('ui-settings.138.6')}</a><button id="ix-copy" type="button" disabled>${t('ui-settings.138.7')}</button><textarea id="ix-export-text" aria-label="${t('ui-settings.138.8')}" readonly placeholder="${t('ui-settings.138.9')}"></textarea></section><section><h3>${t('ui-settings.138.10')}</h3><label>${t('ui-settings.138.11')} <select id="ix-mode"><option value="empty">${t('ui-settings.138.12')}</option><option value="replace">${t('ui-settings.138.13')}</option></select></label><p>${t('ui-settings.138.14')}</p><label>${t('ui-settings.138.15')} <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="${t('ui-settings.138.16')}" placeholder="${t('ui-settings.138.17')}"></textarea><button id="ix-preview" type="button">${t('ui-settings.138.18')}</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>${t('ui-settings.125')}</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
   // Reopening reuses its sheet instead of stacking another copy in the head.
   const style = document.getElementById('itemx-backup-style') || document.createElement('style');
   style.id = 'itemx-backup-style';
@@ -309,20 +309,11 @@ export const NATIVE_ACTION_ALIASES = {
 
 export const SETTINGS_SKINS = {
   native: {
-    native: true,
     hook: (action) => ` itemx2-setting-${NATIVE_ACTION_ALIASES[action] || action}`,
     data: () => '',
     segHook: (group, value) => ` itemx2-seg-${group}-${value}`,
     segData: () => '',
     choiceData: () => ''
-  },
-  frame: {
-    native: false,
-    hook: () => '',
-    data: (action) => ` data-action="${action}"`,
-    segHook: () => '',
-    segData: (group, value) => ` data-seg="${group}" data-value="${value}"`,
-    choiceData: (name, value) => ` data-${name}="${value}"`
   }
 };
 
@@ -412,39 +403,26 @@ export async function patchSettingsCard(hook) {
 export function settingsPanelHtml(loaded, skin, parts) {
   const cards = confirmCards(skin, parts);
   const connection = parts.connection;
-  const connectionCards = skin.native
-    ? setCard(
-        t('ui-settings.122'),
-        t('ui-settings.121'),
-        setButton(
-          skin,
-          'connect',
-          workQueue.isActive('connect')
-            ? t('ui-settings.120')
-            : connection.ready
-              ? t('ui-settings.119')
-              : t('ui-settings.118'),
-          ` itemx2-root-setting-button-primary${workQueue.isActive('connect') ? ' itemx2-root-setting-button-busy' : ''}`
-        )
-      ).replace('</small>', `</small><span class="itemx2-status-row">${parts.chips}</span>`)
-    : // The fallback exists because main-document access was refused, so it
-      // offers the two repair actions the drawer never has to show.
-      setCard(
-        t('ui-settings.117'),
-        t('ui-settings.116', parts.permissionLabel),
-        setButton(skin, 'permissions', t('ui-settings.115'))
-      ) +
-      setCard(
-        t('ui-settings.114'),
-        t('ui-settings.113', parts.styleLabel),
-        setButton(skin, 'style', t('ui-settings.112'))
-      );
+  const connectionCards = setCard(
+    t('ui-settings.122'),
+    t('ui-settings.121'),
+    setButton(
+      skin,
+      'connect',
+      workQueue.isActive('connect')
+        ? t('ui-settings.120')
+        : connection.ready
+          ? t('ui-settings.119')
+          : t('ui-settings.118'),
+      ` itemx2-root-setting-button-primary${workQueue.isActive('connect') ? ' itemx2-root-setting-button-busy' : ''}`
+    )
+  ).replace('</small>', `</small><span class="itemx2-status-row">${parts.chips}</span>`);
   return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">${t('ui-settings.074.1')}</h4>${connectionCards}${setCard(
     t('ui-settings.077'),
     Core.esc(auxStatusText()),
     `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')} ${auxActive() > 0 ? 'disabled' : ''}>${auxActive() > 0 ? t('ui-settings.076') : t('ui-settings.075')}</button>`,
     ' class="itemx2-aux-setting-status"'
-  )}<h4 class="itemx2-set-group">${t('ui-settings.074.2')}</h4>${setCard(
+  )}<h4 class="itemx2-set-group">${t('ui-panel.058.1')}</h4>${setCard(
     t('ui-settings.079'),
     t('ui-settings.078')
   )}<div class="itemx2-domain-grid">${parts.domainControls}</div>${setCard(
@@ -483,14 +461,14 @@ export function settingsPanelHtml(loaded, skin, parts) {
   )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
     t('ui-settings.101'),
     t('ui-settings.100')
-  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml(skin.native)}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${confirmCard(cards, 'itemx2-setting-old-markers')}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${confirmCard(cards, 'itemx2-setting-old-markers')}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
 }
 
 export function settingsDomainControls(loaded, skin) {
   return [
-    ['items', t('ui-settings.073'), loaded.itemsEnabled, t('ui-settings.072')],
-    ['skills', t('ui-settings.071'), loaded.skillsEnabled, t('ui-settings.070')],
-    ['encounters', t('ui-settings.069'), loaded.encountersEnabled, t('ui-settings.068')]
+    ['items', t('ui-settings.046'), loaded.itemsEnabled, t('ui-settings.072')],
+    ['skills', t('ui-settings.045'), loaded.skillsEnabled, t('ui-settings.070')],
+    ['encounters', t('ui-settings.044'), loaded.encountersEnabled, t('ui-settings.068')]
   ]
     .map(
       ([key, label, value, note]) =>
@@ -575,7 +553,7 @@ export function rootSettingActions() {
           const connected = await installPipelineHooks({ prompt: true });
           const styled = await installMainStyle();
           setStatus(
-            connected && styled ? t('ui-settings.056') : connected ? t('ui-settings.055') : t('ui-settings.054')
+            connected && styled ? t('ui-settings.003') : connected ? t('ui-settings.002') : t('ui-settings.001')
           );
           if (connected && styled) {
             await showRootFeedback(t('ui-settings.053'), 'success');
@@ -631,7 +609,7 @@ export function rootSettingActions() {
         if (!loaded) return;
         const next = !(await isEnabled(loaded.character));
         await changeSettings(loaded.character, { enabled: Boolean(next) });
-        setStatus(next ? t('ui-settings.048') : t('ui-settings.047'));
+        setStatus(next ? t('ui-settings.011') : t('ui-settings.010'));
         await updateRootSwitch('.x-risu-itemx2-setting-toggle', next, 'x-risu-itemx2-power-on');
       }
     },
@@ -904,7 +882,7 @@ export async function openSettingsFromRisuMenu() {
   if (!active) {
     uiState.allowDrawerOverSettings = false;
     invalidateHostSettingsVisibility();
-    setStatus(t('ui-settings.009'));
+    setStatus(t('runtime.004'));
     const message = t('ui-settings.008');
     await notifyUser(message, 'error');
     return;
@@ -914,7 +892,7 @@ export async function openSettingsFromRisuMenu() {
   invalidateHostSettingsVisibility();
   let styled = Boolean(mainDoc()) || (await installMainStyle());
   const loadingStarted = styled ? Date.now() : 0;
-  if (styled) await mountRootLoading(t('ui-settings.007'));
+  if (styled) await mountRootLoading(t('ui-settings.005'));
   await updateRootLoading(t('ui-settings.006'));
   const connected = await installPipelineHooks({ prompt: true });
   if (!styled) {

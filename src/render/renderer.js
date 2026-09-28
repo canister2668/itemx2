@@ -141,11 +141,11 @@ const particleBudget = {
 const ambientLevel = { normal: 1, magic: 2, rare: 3, unique: 3, epic: 4, legendary: 4, mythical: 5, empyrean: 5 };
 const locationLabels = {
   inventory: t('render.041'),
-  equipped: t('render.042'),
+  equipped: t('presentation.046'),
   storage: t('render.043'),
   unknown: t('render.044')
 };
-const possessionLabels = { observed: t('render.045'), owned: t('render.046'), removed: t('render.047') };
+const possessionLabels = { observed: t('ui-panel.049'), owned: t('ui-panel.051'), removed: t('ui-panel.badge-loss') };
 const rarityColors = {
   normal: '#5c6577',
   magic: '#6fa8e8',
@@ -273,7 +273,7 @@ function renderSkillFx(skill, rarity = 'normal', motion = 'full') {
   const affinity = affinities[skill?.affinity] ? skill.affinity : 'arcane';
   const item = {
     id: skill?.id || skill?.name || 'skill',
-    name: skill?.name || t('render.049'),
+    name: skill?.name || t('ui-settings.045'),
     theme: 'arcane',
     rarity: rarityLabels[rarity] ? rarity : 'normal',
     affinity
@@ -306,7 +306,7 @@ const reviewLabels = {
   augments: t('render.055'),
   level: t('render.056'),
   mastery: t('render.057'),
-  cooldown: t('render.058')
+  cooldown: t('presentation.031')
 };
 const known = (value) =>
   value != null && String(value).trim() !== '' && !/^(?:미상|미분류|unknown|none)$/i.test(String(value));
@@ -327,14 +327,14 @@ function changes(previous, current, domain = 'item') {
             ['level', t('render.056')],
             ['mastery', t('render.057')],
             ['rank', t('render.059')],
-            ['cost', t('render.062')],
-            ['cooldown', t('render.058')],
-            ['status', t('render.063')]
+            ['cost', t('presentation.033')],
+            ['cooldown', t('presentation.031')],
+            ['status', t('presentation.007')]
           ]
         : [
             ['status', t('render.064')],
-            ['relation', t('render.065')],
-            ['threat', t('render.066')]
+            ['relation', t('presentation.008')],
+            ['threat', t('presentation.010')]
           ];
   const out = keys
     .filter(([key]) => known(previous[key]) && known(current[key]) && String(previous[key]) !== String(current[key]))
@@ -422,9 +422,9 @@ function effectSection(item) {
     augments = Array.isArray(item.augments) ? item.augments : [];
   let out = '';
   if (effects.length)
-    out += `<div class="itemx-gap"></div><div class="itemx-section-label">${t('render.label.effects')}</div><div class="itemx-effects">${effects.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
+    out += `<div class="itemx-gap"></div><div class="itemx-section-label">${t('render.054')}</div><div class="itemx-effects">${effects.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
   if (augments.length)
-    out += `<div class="itemx-gap"></div><div class="itemx-section-label">${t('render.label.augments')}</div><div class="itemx-effects">${augments.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
+    out += `<div class="itemx-gap"></div><div class="itemx-section-label">${t('render.055')}</div><div class="itemx-effects">${augments.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
   return out;
 }
 
@@ -453,7 +453,7 @@ function renderCard(item, options = {}) {
   ]
     .filter(Boolean)
     .join(' ');
-  const possession = possessionLabels[item.possession] || item.possession || t('render.045'),
+  const possession = possessionLabels[item.possession] || item.possession || t('ui-panel.049'),
     location = locationLabels[item.location] || item.location || t('render.044');
   const fx =
     motion === 'off'

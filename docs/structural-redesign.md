@@ -1,3 +1,5 @@
+> **역사 문서.** ITEMX 2.2–2.3의 저장 구조(`itemx:log`, 본문 base64 마커, 체크포인트)를 설명한다. 2.4.0에서 앵커 + 단일 원장 문서(`itemx:ledger`)로 대체되었으며 현재 동작과 다르다. 현재 구조는 `README.md`와 `docs/release-2.4.0.md`를 본다.
+
 # Structural redesign verification
 
 Six sequential gates on `structural/2.2.0`; no push is part of this work.

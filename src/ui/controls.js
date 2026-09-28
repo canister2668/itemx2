@@ -7,7 +7,7 @@ import { mainDoc } from './style.js';
 import { panelDocument } from './surface.js';
 import { uiState } from './view-state.js';
 export function auxStatusText() {
-  if (auxActive() > 0) return auxWorkingLabel() || t('aux.058');
+  if (auxActive() > 0) return auxWorkingLabel() || t('aux.041');
   const last = auxLast();
   if (!last?.at) return t('aux.057');
   const time = new Date(last.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -61,7 +61,11 @@ export async function updateConnectionUi() {
   const button = await mainDoc().querySelector('.x-risu-itemx2-setting-connect');
   if (!button) return;
   await button.setTextContent(
-    workQueue.isActive('connect') ? t('aux.047') : connection.ready ? t('aux.046') : t('aux.045')
+    workQueue.isActive('connect')
+      ? t('ui-settings.120')
+      : connection.ready
+        ? t('ui-settings.119')
+        : t('ui-settings.118')
   );
   if (workQueue.isActive('connect')) await button.addClass('x-risu-itemx2-root-setting-button-busy');
   else await button.removeClass('x-risu-itemx2-root-setting-button-busy');
@@ -150,7 +154,7 @@ export async function updateRootSettingButton(selector, label, enabled = null) {
   else if (enabled === false) await button.removeClass('x-risu-itemx2-setting-on');
 }
 
-export const auxWorkingLabel = () => (auxLast().state === 'idle' ? t('aux.044') : auxLast().label);
+export const auxWorkingLabel = () => (auxLast().state === 'idle' ? t('aux.041') : auxLast().label);
 
 export async function syncAuxIndicator() {
   try {
@@ -163,7 +167,7 @@ export async function syncAuxIndicator() {
     if (settingLabel) await settingLabel.setTextContent(auxStatusText());
     const runButton = await mainDoc().querySelector('.x-risu-itemx2-setting-aux-run');
     if (runButton) {
-      await runButton.setTextContent(auxActive() > 0 ? t('aux.043') : t('aux.042'));
+      await runButton.setTextContent(auxActive() > 0 ? t('ui-settings.076') : t('ui-settings.075'));
       if (auxActive() > 0) await runButton.addClass('x-risu-itemx2-root-setting-button-busy');
       else await runButton.removeClass('x-risu-itemx2-root-setting-button-busy');
     }

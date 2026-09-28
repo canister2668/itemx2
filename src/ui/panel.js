@@ -114,7 +114,7 @@ export function detailAnnotations(domain, entity) {
   const review = Renderer.reviewHtml(record.review, entity);
   const repair =
     domain === 'item' && record.review?.missing?.length
-      ? `<button class="itemx2-repair-one" data-action="repair-one" data-item-id="${Core.esc(entity.id)}">${t('ui-panel.repair-one')}</button>`
+      ? `<button class="itemx2-repair-one">${t('ui-panel.repair-one')}</button>`
       : '';
   return `${changes}${review}${repair}`;
 }
@@ -160,7 +160,7 @@ export const DELETE_TEXT = {
 export function entityDeleteHtml(domain, armed) {
   const [label, question] = DELETE_TEXT[domain];
   return armed
-    ? `<div class="itemx2-codex-delete"><span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-danger itemx2-entity-delete-yes" type="button">${t('ui-panel.delete-yes')}</button><button class="itemx2-root-setting-button itemx2-entity-delete-no" type="button">${t('ui-panel.delete-no')}</button></span></span></div>`
+    ? `<div class="itemx2-codex-delete"><span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-danger itemx2-entity-delete-yes" type="button">${t('ui-settings.confirm-yes-cleanup')}</button><button class="itemx2-root-setting-button itemx2-entity-delete-no" type="button">${t('ui-settings.confirm-no')}</button></span></span></div>`
     : `<div class="itemx2-codex-delete"><button class="itemx2-root-setting-button itemx2-entity-delete" type="button">${label}</button></div>`;
 }
 export function itemDetailBodyHtml(item) {
@@ -324,7 +324,7 @@ export async function removeRootDrawer() {
   workQueue.remember('render', '');
 }
 
-export async function mountRootLoading(label = t('ui-panel.138')) {
+export async function mountRootLoading(label = t('runtime.007')) {
   if (!mainDoc()) return false;
   await removeRootDrawer();
   const root = await mainDoc().createElement('div');
@@ -469,7 +469,7 @@ export async function hostPluginSettingsVisible() {
       const text = String((await target.textContent()) || '')
         .replace(/\s+/g, ' ')
         .trim();
-      if (!text.includes(t('ui-panel.127'))) continue;
+      if (!text.includes(t('runtime.009'))) continue;
       const rect = await target.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         hostSettingsCache = { at: now, visible: true };
@@ -571,7 +571,7 @@ export async function ensureRootInventoryNow() {
   const active = await context();
   const contextChanged = await resetRuntimeForContext(active);
   if (!active) {
-    setStatus(t('ui-panel.126'));
+    setStatus(t('runtime.004'));
     return;
   }
   const cached = cachedLoaded();
@@ -634,21 +634,21 @@ export function skillSummaryHtml(skill, rarityMode = 'world') {
   const filled = knownMastery ? Math.max(0, Math.min(5, Math.ceil(Number(skill.mastery) / 20))) : 0;
   const levelLabel = skill.level == null ? t('ui-panel.125') : `Lv.${Number(skill.level)}`;
   const masteryLabel = knownMastery ? t('ui-panel.124', Number(skill.mastery)) : t('ui-panel.123');
-  return `${codexListFx('skill', skillFxClasses(skill, rarityMode))}<span class="itemx2-codex-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${Core.esc(skill.name)}</strong><small>${Core.esc(skill.rank)} · ${levelLabel} · ${masteryLabel}</small><span class="itemx2-codex-tags"><i>✨ ${Core.esc(skill.type)}</i><i>${Core.esc(skill.status)}</i>${skill.affinity ? `<i>${Core.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>${t('ui-panel.120.1')}</small><b>${Core.esc(skill.cost || t('ui-panel.121'))}</b><small>${t('ui-panel.120.2')}</small><b>${Core.esc(skill.cooldown || t('ui-panel.122'))}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
+  return `${codexListFx('skill', skillFxClasses(skill, rarityMode))}<span class="itemx2-codex-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${Core.esc(skill.name)}</strong><small>${Core.esc(skill.rank)} · ${levelLabel} · ${masteryLabel}</small><span class="itemx2-codex-tags"><i>✨ ${Core.esc(skill.type)}</i><i>${Core.esc(skill.status)}</i>${skill.affinity ? `<i>${Core.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>${t('presentation.033')}</small><b>${Core.esc(skill.cost || t('ui-settings.150'))}</b><small>${t('presentation.031')}</small><b>${Core.esc(skill.cooldown || t('ui-settings.150'))}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
 }
 
 export function skillPageHtml(skill, back, rarityMode = 'world') {
   const knownMastery = skill.mastery != null && Number.isFinite(Number(skill.mastery));
   const mastery = knownMastery ? Math.max(0, Math.min(10, Math.ceil(Number(skill.mastery) / 10))) : 0;
-  const levelLabel = skill.level == null ? t('ui-panel.119') : `Lv.${Number(skill.level)}`;
-  const masteryLabel = knownMastery ? `${Number(skill.mastery)}%` : t('ui-panel.118');
+  const levelLabel = skill.level == null ? t('presentation.009') : `Lv.${Number(skill.level)}`;
+  const masteryLabel = knownMastery ? `${Number(skill.mastery)}%` : t('presentation.009');
   const effects =
-    (skill.effects || []).map((one) => `<i>${Core.esc(one)}</i>`).join('') || `<i>${t('ui-panel.117.1')}</i>`;
+    (skill.effects || []).map((one) => `<i>${Core.esc(one)}</i>`).join('') || `<i>${t('ui-settings.059')}</i>`;
   const affinity = skillTheme(skill),
     tier = skillRankTier(skill.rank, rarityMode);
   const fx = Renderer.renderSkillFx({ ...skill, affinity }, tier, effectsMotion());
   const vars = Renderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
-  return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${Core.esc(skill.name)}</strong><span>${Core.esc(skill.rank)} · ${Core.esc(skill.school || t('ui-panel.110'))} · ${Core.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${Core.esc(skill.type || t('ui-panel.111'))} · ${Core.esc(skill.target || t('ui-panel.112'))}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${Core.esc(skill.cost || t('ui-panel.113'))}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${Core.esc(skill.cooldown || t('ui-panel.114'))}</strong></span></div><section class="itemx-codex-section"><h4>${t('ui-panel.109.1')} ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>${t('ui-panel.115.1')}</h4><p>${Core.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>${t('ui-panel.109.2')}</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>${t('ui-panel.109.3')}</h4><p>${Core.esc(skill.growth || t('ui-panel.116'))}</p><small>ID · ${Core.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
+  return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${Core.esc(skill.name)}</strong><span>${Core.esc(skill.rank)} · ${Core.esc(skill.school || t('presentation.011'))} · ${Core.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${Core.esc(skill.type || t('presentation.011'))} · ${Core.esc(skill.target || t('presentation.009'))}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${Core.esc(skill.cost || t('ui-settings.150'))}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${Core.esc(skill.cooldown || t('ui-settings.150'))}</strong></span></div><section class="itemx-codex-section"><h4>${t('ui-panel.109.1')} ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>${t('ui-panel.115.1')}</h4><p>${Core.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>${t('ui-panel.109.2')}</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>${t('ui-panel.109.3')}</h4><p>${Core.esc(skill.growth || t('ui-settings.059'))}</p><small>ID · ${Core.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
 }
 
 export function monsterSummaryHtml(monster, portrait = '') {
@@ -671,10 +671,10 @@ export function monsterPageHtml(monster, portrait, back) {
     `<section class="itemx-codex-section"><h4>${label}</h4><span class="itemx-codex-chip-row">${(values || []).map((one) => `<i>${Core.esc(one)}</i>`).join('') || `<i>${fallback}</i>`}</span></section>`;
   const outcomeLabels = {
     ended: t('ui-panel.106'),
-    escaped: t('ui-panel.105'),
+    escaped: t('presentation.022'),
     defeated: t('ui-panel.104'),
-    dead: t('ui-panel.103'),
-    unknown: t('ui-panel.102')
+    dead: t('presentation.020'),
+    unknown: t('ui-panel.100')
   };
   const outcomeStatus = themeText(monster.outcomeStatus || monster.status);
   const outcome = monster.outcome
@@ -683,7 +683,7 @@ export function monsterPageHtml(monster, portrait, back) {
   const lore = monster._lore
     ? `<section class="itemx-codex-section"><small>${t('ui-panel.098.1')}</small></section>`
     : '';
-  return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${Core.esc(monster.threat || t('ui-panel.085'))}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${Core.esc(monster.name)}</strong><span>${Core.esc(monster.kind || t('ui-panel.086'))} · ${Core.esc(monster.relation)} · ${Core.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}${t('ui-panel.084.1')}</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? t('ui-panel.088') : t('ui-panel.087')}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>${t('ui-panel.089.1')}</h4><p>${Core.esc(monster.description)}</p></section>` : ''}${chips(t('ui-panel.091'), monster.aliases, t('ui-panel.090'))}${chips(t('ui-panel.093'), monster.weaknesses, t('ui-panel.092'))}${chips(t('ui-panel.095'), monster.resistances, t('ui-panel.094'))}${chips(t('ui-panel.097'), monster.moves, t('ui-panel.096'))}${lore}<section class="itemx-codex-section"><small>ID · ${Core.esc(monster.id)}</small></section>${detailAnnotations('monster', monster)}</div>`;
+  return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${Core.esc(monster.threat || t('presentation.009'))}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${Core.esc(monster.name)}</strong><span>${Core.esc(monster.kind || t('presentation.011'))} · ${Core.esc(monster.relation)} · ${Core.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}${t('ui-panel.084.1')}</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? t('ui-panel.088') : t('ui-panel.087')}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>${t('ui-panel.089.1')}</h4><p>${Core.esc(monster.description)}</p></section>` : ''}${chips(t('ui-panel.091'), monster.aliases, t('ui-settings.150'))}${chips(t('ui-panel.093'), monster.weaknesses, t('presentation.009'))}${chips(t('ui-panel.095'), monster.resistances, t('presentation.009'))}${chips(t('ui-panel.097'), monster.moves, t('presentation.009'))}${lore}<section class="itemx-codex-section"><small>ID · ${Core.esc(monster.id)}</small></section>${detailAnnotations('monster', monster)}</div>`;
 }
 
 export const unwrapCodexPage = (html) =>
@@ -772,7 +772,7 @@ export function rootBadgeHtml(loaded = null) {
   const update = updateState().available
     ? `<span class="itemx2-update-indicator" x-itemx2-update="${Core.esc(updateState().latest)}" aria-label="${t('ui-panel.update-available')}">↑</span>`
     : '';
-  return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${t('ui-panel.badge-owned')}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxActive() > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${Core.esc(auxWorkingLabel())}</span></div>`;
+  return `<div class="itemx2-native-badge" x-itemx2-badge="launcher" aria-label="ITEMX"><span class="itemx2-badge-seal"><span class="itemx2-badge-emoji" aria-hidden="true">📦</span></span><span class="itemx2-badge-mid">${badgeDeltaHtml()}</span><span class="itemx2-badge-foot">${owned == null ? '' : `<b>${owned}</b><small>${t('ui-panel.051')}</small>`}</span>${update}</div><div class="itemx2-aux-status ${auxActive() > 0 ? 'itemx2-aux-status-on' : ''}" aria-live="polite"><i></i><span class="itemx2-aux-status-label">${Core.esc(auxWorkingLabel())}</span></div>`;
 }
 
 export const updateLabelHtml = () =>
@@ -784,7 +784,7 @@ export const updateLabelHtml = () =>
 // bot that does not want an item codex wants it off from the first message.
 // Leaving it on costs about 2,900 tokens of protocol on every request.
 export function panelMenuHtml(native = true, enabled = true) {
-  return `<div class="itemx2-panel-actions"><button class="itemx-ph-btn itemx2-sw-power itemx2-setting-toggle${enabled ? ' itemx2-power-on' : ''}" data-action="toggle" type="button" role="switch" aria-checked="${enabled ? 'true' : 'false'}" aria-label="${t('ui-panel.power')}" title="${t('ui-panel.power')}"></button><label class="itemx-ph-btn itemx2-search-open" for="itemx2-search-toggle" role="button" aria-label="${t('ui-panel.search')}" title="${t('ui-panel.search')}">🔍</label><button class="itemx-ph-btn itemx2-history-open" data-action="history-open" type="button" aria-label="${t('ui-panel.history-open')}" title="${t('ui-panel.history-open')}">${t('ui-panel.history')}</button><button class="itemx-ph-btn ${native ? 'itemx2-root-close' : ''}" data-action="close" type="button" aria-label="${t('ui-panel.close')}" title="${t('ui-panel.close')}">✕</button></div>`;
+  return `<div class="itemx2-panel-actions"><button class="itemx-ph-btn itemx2-sw-power itemx2-setting-toggle${enabled ? ' itemx2-power-on' : ''}" type="button" role="switch" aria-checked="${enabled ? 'true' : 'false'}" aria-label="${t('ui-panel.power')}" title="${t('ui-panel.power')}"></button><label class="itemx-ph-btn itemx2-search-open" for="itemx2-search-toggle" role="button" aria-label="${t('ui-panel.054.3')}" title="${t('ui-panel.054.3')}">🔍</label><button class="itemx-ph-btn itemx2-history-open" type="button" aria-label="${t('ui-panel.history-open')}" title="${t('ui-panel.history-open')}">${t('ui-panel.058.1')}</button><button class="itemx-ph-btn ${native ? 'itemx2-root-close' : ''}" type="button" aria-label="${t('ui-settings.138.2')}" title="${t('ui-settings.138.2')}">✕</button></div>`;
 }
 
 export function historyDomain(tab) {
@@ -835,11 +835,11 @@ export function historyHtml(loaded) {
     ['recent', t('ui-panel.079')],
     ...(view.domain === 'item'
       ? [
-          ['consume', t('ui-panel.078')],
+          ['consume', t('presentation.033')],
           ['loss', t('ui-panel.077')]
         ]
       : []),
-    ['kept', t('ui-panel.076')],
+    ['kept', t('ui-panel.073')],
     ['archived', t('ui-panel.075')]
   ];
   const buttons = (row, index) =>
@@ -873,10 +873,10 @@ export function historyHtml(loaded) {
             )
       }`
     : '';
-  return `<header class="itemx2-history-heading"><button class="itemx2-history-back" type="button">‹ ${selected ? t('ui-panel.060') : t('ui-panel.059')}</button><strong>${{ item: t('ui-panel.063'), skill: t('ui-panel.062'), monster: t('ui-panel.061') }[view.domain]} ${t('ui-panel.058.1')}</strong></header><nav class="itemx2-history-filters">${filters.map(([key, label]) => `<button class="itemx2-history-filter-${key} ${view.filter === key ? 'itemx2-history-filter-on' : ''}" type="button">${label}</button>`).join('')}</nav><div class="itemx2-history-policy"><span>${t('ui-panel.058.2')}</span><button class="itemx2-history-retention" type="button">${prefs.after ? t('ui-panel.064', prefs.after) : 'OFF'}</button><small>${t('ui-panel.058.3')}</small></div><div class="itemx2-history-list">${selected ? detail : cards || `<p>${t('ui-panel.065.1')}</p>`}</div>${!selected && pages > 1 ? `<footer class="itemx2-history-actions"><button class="itemx2-history-prev" type="button">‹</button><span>${view.page + 1} / ${pages}</span><button class="itemx2-history-next" type="button">›</button></footer>` : ''}`;
+  return `<header class="itemx2-history-heading"><button class="itemx2-history-back" type="button">‹ ${selected ? t('ui-panel.060') : t('ui-panel.059')}</button><strong>${{ item: t('ui-panel.063'), skill: t('ui-settings.045'), monster: t('ui-panel.061') }[view.domain]} ${t('ui-panel.058.1')}</strong></header><nav class="itemx2-history-filters">${filters.map(([key, label]) => `<button class="itemx2-history-filter-${key} ${view.filter === key ? 'itemx2-history-filter-on' : ''}" type="button">${label}</button>`).join('')}</nav><div class="itemx2-history-policy"><span>${t('ui-panel.058.2')}</span><button class="itemx2-history-retention" type="button">${prefs.after ? t('ui-panel.064', prefs.after) : 'OFF'}</button><small>${t('ui-panel.058.3')}</small></div><div class="itemx2-history-list">${selected ? detail : cards || `<p>${t('ui-panel.065.1')}</p>`}</div>${!selected && pages > 1 ? `<footer class="itemx2-history-actions"><button class="itemx2-history-prev" type="button">‹</button><span>${view.page + 1} / ${pages}</span><button class="itemx2-history-next" type="button">›</button></footer>` : ''}`;
 }
 
-export async function historyAction(action, loaded, native) {
+export async function historyAction(action, loaded) {
   const view = uiState.historyView;
   if (view.key !== loaded.key) return;
   if (action === 'back') {
@@ -909,8 +909,7 @@ export async function historyAction(action, loaded, native) {
         if (!prefs.keep[row.key]) prefs.archived[row.key] = row.cycle;
       });
   }
-  if (native) await drawRootHistory(loaded);
-  else await drawIframeHistory(loaded);
+  await drawRootHistory(loaded);
 }
 
 // Every drawer render calls this; skip the host round trips while no pane was ever mounted.
@@ -936,10 +935,6 @@ export async function drawRootHistory(loaded) {
   historyPaneMounted = true;
   await pane.setInnerHTML(historyHtml(loaded));
   await body.addClass('x-risu-itemx2-history-opened');
-}
-
-export async function drawIframeHistory(loaded) {
-  return drawRootHistory(loaded);
 }
 
 export async function routeHistoryControls(event) {
@@ -969,13 +964,13 @@ export async function routeHistoryControls(event) {
   ];
   for (const action of actions)
     if (await eventHitsMainClass(event, `itemx2-history-${action}`)) {
-      await historyAction(action, loaded, true);
+      await historyAction(action, loaded);
       return true;
     }
   if (uiState.historyView.selected) {
     for (const action of ['keep-0', 'archive-0'])
       if (await eventHitsMainClass(event, `itemx2-history-${action}`)) {
-        await historyAction(action, loaded, true);
+        await historyAction(action, loaded);
         return true;
       }
   } else
@@ -983,7 +978,7 @@ export async function routeHistoryControls(event) {
       if (!(await eventHitsMainClass(event, `itemx2-history-row-${index}`))) continue;
       for (const operation of ['keep', 'archive', 'detail'])
         if (await eventHitsMainClass(event, `itemx2-history-${operation}-${index}`)) {
-          await historyAction(`${operation}-${index}`, loaded, true);
+          await historyAction(`${operation}-${index}`, loaded);
           return true;
         }
       break;
@@ -1024,7 +1019,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
   const filters = [
     ['all', t('ui-panel.052')],
     ['owned', t('ui-panel.051')],
-    ['equipped', t('ui-panel.050')],
+    ['equipped', t('presentation.046')],
     ['observed', t('ui-panel.049')]
   ];
   const controls = filters
@@ -1050,7 +1045,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
       ? monsters
           .map((monster, index) => {
             const portrait = loaded.portraitThumbs?.[monster.id] || loaded.portraits?.[monster.id] || '';
-            return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-monster-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-monster-detail itemx2-root-monster-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">${t('ui-panel.046.1')}</span></div></div>`;
+            return `<div class="itemx2-codex-entry"><input class="itemx2-root-control itemx2-codex-entry-choice itemx2-monster-entry-choice" id="itemx2-monster-${index}" name="itemx2-monster-detail" type="radio"><label class="itemx2-codex-card itemx2-codex-summary itemx2-bestiary-card ${monster.active ? 'active' : ''}" for="itemx2-monster-${index}">${monsterSummaryHtml(monster, portrait)}</label><div class="itemx-codex-page itemx2-codex-page itemx2-monster-detail itemx2-root-monster-detail-body-${index}"><span class="itemx2-codex-detail-index">${index}</span><span class="itemx2-detail-loading">${t('ui-panel.048.1')}</span></div></div>`;
           })
           .join('') || `<div class="itemx2-codex-empty">${t('ui-panel.045.1')}</div>`
       : '';
@@ -1070,7 +1065,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
             ]
               .filter(Boolean)
               .join(' ');
-            return `<div class="itemx2-root-item ${classes}"><input class="itemx2-root-control itemx2-root-detail-choice" id="${detailId}" name="itemx2-detail" type="radio"><label class="itemx2-root-tile-label itemx2-root-tile-${index}" for="${detailId}">${tile}</label><div class="itemx2-root-detail itemx-body"><label class="itemx-back itemx2-root-back" for="itemx2-detail-none">${t('ui-panel.044.1')}</label><div class="itemx-detail itemx2-root-detail-body-${index}"><span class="itemx2-detail-loading">${t('ui-panel.044.2')}</span></div></div></div>`;
+            return `<div class="itemx2-root-item ${classes}"><input class="itemx2-root-control itemx2-root-detail-choice" id="${detailId}" name="itemx2-detail" type="radio"><label class="itemx2-root-tile-label itemx2-root-tile-${index}" for="${detailId}">${tile}</label><div class="itemx2-root-detail itemx-body"><label class="itemx-back itemx2-root-back" for="itemx2-detail-none">${t('ui-panel.044.1')}</label><div class="itemx-detail itemx2-root-detail-body-${index}"><span class="itemx2-detail-loading">${t('ui-panel.048.1')}</span></div></div></div>`;
           })
           .join('') || `<div class="itemx2-root-empty">${t('ui-panel.043.1')}</div>`
       : '';
@@ -1093,11 +1088,11 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
               ? all
                   .map(
                     (item, index) =>
-                      `<div class="itemx2-manager-row itemx2-manager-row-${index}"><span class="itemx2-manager-name"><strong>${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name)}</strong><small>${Core.esc(item.displayRarity || item.rarity)} · ${Core.esc(item.possession)} / ${Core.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">${t('ui-panel.reroll')}</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>${t('ui-panel.remove')}</button></span></div>`
+                      `<div class="itemx2-manager-row itemx2-manager-row-${index}"><span class="itemx2-manager-name"><strong>${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name)}</strong><small>${Core.esc(item.displayRarity || item.rarity)} · ${Core.esc(item.possession)} / ${Core.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">${t('ui-panel.014')}</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>${t('ui-panel.remove')}</button></span></div>`
                   )
                   .join('') || `<div class="itemx2-root-empty">${t('ui-panel.041.1')}</div>`
               : '';
-          const manager = `<details class="itemx2-manager-fold"><summary>${t('ui-panel.040.1')} <small>${t('ui-panel.040.2')}</small></summary><div class="itemx2-manager-body"><label class="itemx2-manager-label">${t('ui-panel.040.3')}<div class="itemx2-manager-editor itemx2-manager-note" contenteditable="true" role="textbox" aria-label="${t('ui-panel.040.4')}"></div></label><div class="itemx2-manager-list">${managerRows}</div><div class="itemx2-manager-create"><label class="itemx2-manager-label">${t('ui-panel.040.5')}<div class="itemx2-manager-editor itemx2-manager-create-note" contenteditable="true" role="textbox" aria-label="${t('ui-panel.040.6')}"></div></label><button class="itemx2-root-setting-button itemx2-manager-create-button" type="button">${t('ui-panel.040.7')}</button></div></div></details>`;
+          const manager = `<details class="itemx2-manager-fold"><summary>${t('ui-panel.040.1')} <small>${t('ui-panel.040.2')}</small></summary><div class="itemx2-manager-body"><label class="itemx2-manager-label">${t('ui-panel.040.3')}<div class="itemx2-manager-editor itemx2-manager-note" contenteditable="true" role="textbox" aria-label="${t('ui-panel.040.4')}"></div></label><div class="itemx2-manager-list">${managerRows}</div><div class="itemx2-manager-create"><label class="itemx2-manager-label">${t('ui-panel.040.5')}<div class="itemx2-manager-editor itemx2-manager-create-note" contenteditable="true" role="textbox" aria-label="${t('ui-panel.040.5')}"></div></label><button class="itemx2-root-setting-button itemx2-manager-create-button" type="button">${t('ui-panel.040.7')}</button></div></div></details>`;
           const connection = connectionSummary();
           const chips = [
             ['hook', connection.hook],
@@ -1154,7 +1149,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
     header,
     nav: tabs,
     body,
-    html: `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${Core.esc(loaded.character.name || t('ui-panel.024'))}</span><span class="itemx-ph-sub">${header}</span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${body}</div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`
+    html: `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${Core.esc(loaded.character.name || t('ui-panel.023'))}</span><span class="itemx-ph-sub">${header}</span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${body}</div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`
   };
 }
 
@@ -1190,7 +1185,7 @@ export function debugFoldInner(loaded) {
     .filter((entity) => entity && !EntityHistory.terminal('skill', entity) && matches(entity))
     .slice(0, 60).length;
   const monsters = codexEntries(loaded, 'monster').length;
-  return `<summary>${t('ui-panel.037.1')} <small>${loaded.debugEnabled ? t('ui-panel.038') : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">${t('ui-panel.log')} ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>${t('ui-panel.037.3')}</b><span>${Core.esc(loaded.key)}</span><b>${t('ui-panel.037.4')}</b><span>${currentGeneration()}</span><b>${t('ui-panel.037.5')}</b><span>${Core.esc(loaded.snapshot.fingerprint || '-')} / ${Core.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>${t('ui-panel.037.6')}</b><span>${items} / ${skills} / ${monsters}</span><b>${t('ui-panel.037.7')}</b><span>${Core.esc(lastError('hook') || lastError('dom') || t('ui-panel.039'))}</span></div><pre class="itemx2-debug-log">${Core.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">${t('ui-panel.037.8')}</button></div>`;
+  return `<summary>${t('ui-panel.037.1')} <small>${loaded.debugEnabled ? t('ui-panel.038') : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">${t('ui-panel.log')} ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>${t('ui-panel.037.3')}</b><span>${Core.esc(loaded.key)}</span><b>${t('ui-panel.037.4')}</b><span>${currentGeneration()}</span><b>${t('ui-panel.037.5')}</b><span>${Core.esc(loaded.snapshot.fingerprint || '-')} / ${Core.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>${t('ui-panel.037.6')}</b><span>${items} / ${skills} / ${monsters}</span><b>${t('ui-panel.037.7')}</b><span>${Core.esc(lastError('hook') || lastError('dom') || t('ui-settings.150'))}</span></div><pre class="itemx2-debug-log">${Core.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">${t('ui-panel.037.8')}</button></div>`;
 }
 
 export async function hostSettingsCard(hook) {
@@ -1403,7 +1398,7 @@ export async function installRootClickRouter(owner) {
       }
       for (const [tab, label] of [
         ['inventory', t('ui-panel.023')],
-        ['skills', t('ui-panel.022')],
+        ['skills', t('ui-settings.045')],
         ['bestiary', t('ui-panel.021')],
         ['settings', t('ui-panel.020')]
       ]) {
@@ -1537,7 +1532,7 @@ export async function installRootClickRouter(owner) {
               if (await eventHitsMainClass(event, `itemx2-manager-reroll-${index}`)) {
                 const noteElement = await queryMainClass('itemx2-manager-note');
                 const note = (await noteElement?.textContent())?.trim() || '';
-                setStatus(note ? t('ui-panel.017') : t('ui-panel.016'));
+                setStatus(note ? t('ui-panel.017') : t('aux.019'));
                 try {
                   const itemEvent = await runItemModel('reroll', loaded, target, note);
                   await commitManualEvents(loaded, [itemEvent], note ? t('ui-panel.015') : t('ui-panel.014'));
@@ -1585,7 +1580,7 @@ export async function installRootClickRouter(owner) {
                 await notifyUser(t('ui-panel.009'), 'error');
                 return;
               }
-              setStatus(t('ui-panel.008'));
+              setStatus(t('aux.020'));
               try {
                 const itemEvent = await runItemModel('create', loaded, null, createNote);
                 await commitManualEvents(loaded, [itemEvent], t('ui-panel.007'));
@@ -1708,7 +1703,7 @@ export async function openRootInventoryNow({ open = true, tab = 'inventory', loa
     await drawRootHistory(loaded);
     await installRootClickRouter(root);
   } catch (error) {
-    setStatus(t('ui-panel.003'));
+    setStatus(t('ui-panel.001'));
     await removeRootDrawer();
     fail('openRootInventory', error);
   }

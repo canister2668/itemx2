@@ -67,7 +67,7 @@ export async function enrichLore(ctx, doc, chat) {
 export async function scanLorebookEncounters({ refresh = false, silent = false } = {}) {
   const pending = (async () => {
     const ctx = await context();
-    if (!ctx) throw new Error(t('ui-panel.135'));
+    if (!ctx) throw new Error(t('ui-settings.139'));
     const entries = await lorebookEntries(ctx.key, { refresh });
     const active = await context();
     if (!active || active.key !== ctx.key) throw new Error(t('ui-panel.134'));

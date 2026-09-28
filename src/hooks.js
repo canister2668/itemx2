@@ -85,7 +85,7 @@ export async function installPipelineHooks({ prompt = false } = {}) {
     }
     if (granted === true) {
       setLastError('hook', '');
-      setStatus(prompt ? t('pipeline.004') : t('pipeline.003'));
+      setStatus(prompt ? t('pipeline.004') : t('runtime.003'));
     }
     await emit('hooks');
     return granted === true;
