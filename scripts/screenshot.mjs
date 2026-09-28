@@ -1,3 +1,4 @@
+/* global document -- page.evaluate callbacks run in the browser */
 import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';

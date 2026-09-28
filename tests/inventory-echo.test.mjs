@@ -1,12 +1,10 @@
-import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
+import * as core from '../src/engine/core.js';
+import { processOutput } from '../src/pipeline.js';
+import { requestSafeText } from '../src/transport.js';
+import { displayHandler } from '../src/ui/presentation.js';
 
-const ctx = vm.createContext({ TextEncoder, TextDecoder, Buffer });
-vm.runInContext(await readFile(new URL('../src/core.js', import.meta.url), 'utf8'), ctx);
-const core = ctx.ITEMXCore;
 const echo = `[ITEMX v2]
 
     crude_stone_dagger | 조악한 돌 단검 | 무기 | 🗡️ | normal | 일반 | forged | removed | inventory | 0 | 10-35 | 내구도 18/30
@@ -63,30 +61,8 @@ test('current authoritative anchor echo is stripped too', () => {
 });
 
 test('display and request early returns use cleaned text, including no-context output', async () => {
-  const source = await runtimeSource();
-  vm.runInContext(
-    source.slice(
-      source.indexOf('  const OWNED_TRANSPORT_HINT_RE ='),
-      source.indexOf('  function processTransportStripper(')
-    ),
-    ctx
-  );
-  vm.runInContext(
-    source.slice(
-      source.indexOf('  function processTransportStripper('),
-      source.indexOf('\n  function ', source.indexOf('  function processTransportStripper(') + 12)
-    ),
-    ctx
-  );
-  vm.runInContext(
-    source.slice(source.indexOf('  const displayHandler ='), source.indexOf('\n  function beginBodyScrollEffects')),
-    ctx
-  );
-  ctx.input = echo;
-  assert.equal(vm.runInContext('processTransportStripper(input)', ctx), '');
-  assert.equal(vm.runInContext('displayHandler(input)', ctx), '');
-  assert.match(
-    source,
-    /if \(!mainRequestType\(type\)\) return content;\s*content = ITEMXCore.stripInventoryEcho\(content\);/
-  );
+  assert.equal(requestSafeText(echo), '');
+  assert.equal(await displayHandler(echo), '');
+  // Main output strips the echo before deciding there is nothing to extract.
+  assert.equal(await processOutput(echo, 'main'), '');
 });

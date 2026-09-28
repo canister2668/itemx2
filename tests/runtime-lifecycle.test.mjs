@@ -1,339 +1,155 @@
-import { runtimeSource, styleSources } from '../scripts/runtime-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
-import { readFile } from 'node:fs/promises';
+import { anchored } from './helpers/ledger.mjs';
+import { createFakeHost, settle } from './helpers/fake-host.mjs';
+import { loadBundle } from './helpers/bundle.mjs';
+import { rt, setHost, Session, Style, uiState } from './helpers/modules.mjs';
+import { on } from '../src/events.js';
 
-const source = await runtimeSource();
-const queueSource = await readFile(new URL('../src/work-queue.js', import.meta.url), 'utf8');
-const queuePrelude =
-  queueSource +
-  `
-const workQueue = ITEMXWorkQueue.create();
-const hostState = runtime, pipelineState = runtime, auxState = runtime, presentationState = runtime, portraitsState = runtime, storageState = runtime, settingsState = runtime, uiState = runtime;
-const dispatch = (kind, work) => workQueue.enqueue({kind, work});
-const entry = (kind, work) => (...args) => dispatch(kind, () => work(...args));
-const saveChat = (...args) => Risuai.setChatToIndex(...args); const readChat = (...args) => Risuai.getChatFromIndex(...args);
-const pipelineEntries = {process: globalThis.processHandler, output: globalThis.outputFallback, display: globalThis.displayWithPortraits, before: globalThis.beforeRequest, after: globalThis.afterRequest};
-`;
-function runWithQueue(code, sandbox) {
-  return vm.runInNewContext(queuePrelude + code, { setTimeout, clearTimeout, setInterval, clearInterval, ...sandbox });
+// Intervals and page listeners of one bundle instance, recorded.
+function lifecycleGlobals() {
+  const intervals = new Map(),
+    listeners = [],
+    docListeners = [];
+  let serial = 0;
+  const document = {
+    visibilityState: 'visible',
+    addEventListener: (type, handler) => docListeners.push({ type, handler }),
+    removeEventListener: (type, handler) =>
+      docListeners.splice(
+        docListeners.findIndex((l) => l.handler === handler),
+        1
+      )
+  };
+  return {
+    intervals,
+    listeners,
+    docListeners,
+    fire: (type) => [...listeners, ...docListeners].filter((l) => l.type === type).forEach((l) => l.handler()),
+    globals: {
+      setInterval: (fn, ms) => (intervals.set(++serial, ms), serial),
+      clearInterval: (id) => intervals.delete(id),
+      addEventListener: (type, handler) => listeners.push({ type, handler }),
+      removeEventListener: (type, handler) =>
+        listeners.splice(
+          listeners.findIndex((l) => l.handler === handler),
+          1
+        ),
+      document
+    }
+  };
 }
 
-const loreSource = await readFile(new URL('../src/lorebook.js', import.meta.url), 'utf8');
-function section(start, end) {
-  const from = source.indexOf(start);
-  const to = source.indexOf(end, from);
-  assert.ok(from >= 0 && to > from);
-  return source.slice(from, to);
-}
-
-test('root ensure queues one successor for concurrent changes and stops after unload', async () => {
-  let release,
-    calls = 0;
-  const runtime = {};
-  const ensure = runWithQueue(
-    section('  function ensureRootInventory()', '  async function ensureRootInventoryNow()') +
-      "\nentry('ensure', ensureRootInventory);",
-    {
-      runtime,
-      ensureRootInventoryNow: () => {
-        calls++;
-        return new Promise((resolve) => {
-          release = resolve;
-        });
-      }
-    }
+test('watchdogs arm at their mode interval and nothing rearms after unload', async () => {
+  const life = lifecycleGlobals();
+  const host = createFakeHost({ document: true });
+  await loadBundle(host.api, life.globals);
+  await settle(30);
+  // The mutation observer makes the remount watchdog a slow safety net.
+  assert.deepEqual(
+    [...life.intervals.values()].sort((a, b) => a - b),
+    [10000, 45000, 30 * 60 * 1000]
   );
-  const a = ensure();
-  await new Promise((resolve) => setImmediate(resolve));
-  const b = ensure(),
-    c = ensure();
-  assert.equal(b, c);
-  assert.equal(calls, 1);
-  release();
-  await a;
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(calls, 2);
-  release();
-  await b;
-  runtime.unloading = true;
-  await ensure();
-  assert.equal(calls, 2);
+  await host.state.unload();
+  assert.equal(life.intervals.size, 0);
 });
 
-test('watchdog replaces its timer only when mode changes and cannot rearm after unload', () => {
-  const intervals = new Map();
-  let sequence = 0;
-  const runtime = { activeContextKey: 'chat' };
-  const arm = runWithQueue(
-    section('  function armRemountWatchdog()', '  const pipelineEntries =') + '\narmRemountWatchdog;',
-    {
-      runtime,
-      ensureRootInventory: async () => {},
-      setInterval: (_fn, ms) => {
-        const id = ++sequence;
-        intervals.set(id, ms);
-        return id;
-      },
-      clearInterval: (id) => intervals.delete(id)
-    }
-  );
-  arm();
-  arm();
-  assert.deepEqual([...intervals.values()], [1200]);
-  runtime.hostObserver = {};
-  arm();
-  assert.deepEqual([...intervals.values()], [10000]);
-  runtime.hostObserver = null;
-  arm();
-  assert.deepEqual([...intervals.values()], [1200]);
-  runtime.activeContextKey = '';
-  arm();
-  assert.deepEqual([...intervals.values()], [10000]);
-  intervals.clear();
-  runtime.unloading = true;
-  arm();
-  assert.equal(intervals.size, 0);
+test('a backgrounded tab resumes once, rebinds hooks without model calls, and unload unbinds', async () => {
+  const life = lifecycleGlobals();
+  const host = createFakeHost({ document: true });
+  await loadBundle(host.api, life.globals);
+  await settle(30);
+  const adds = () => host.state.calls.filter((call) => call === 'addRisuScriptHandler:display').length;
+  const before = adds();
+  life.fire('pageshow');
+  await settle(120);
+  assert.equal(adds(), before, 'a visible tab that never went away does not recover');
+  life.fire('pagehide');
+  life.fire('pageshow');
+  life.fire('focus');
+  life.fire('visibilitychange');
+  await settle(150);
+  assert.equal(adds(), before + 1, 'one coalesced recovery rebinds the hooks once');
+  assert.equal(host.state.llmCalls.length, 0, 'resume never regenerates auxiliary output');
+  await host.state.unload();
+  assert.equal(life.listeners.length, 0);
+  assert.equal(life.docListeners.length, 0);
 });
 
-test('mobile background lifecycle coalesces one resume recovery and unregisters cleanly', async () => {
-  class Target {
-    listeners = new Map();
-    addEventListener(type, handler) {
-      const rows = this.listeners.get(type) || new Set();
-      rows.add(handler);
-      this.listeners.set(type, rows);
-    }
-    removeEventListener(type, handler) {
-      this.listeners.get(type)?.delete(handler);
-    }
-    fire(type) {
-      for (const handler of this.listeners.get(type) || []) handler({ type });
-    }
-  }
-  const windowTarget = new Target(),
-    documentTarget = new Target(),
-    timers = [],
-    runtime = { backgrounded: false, resumeTimer: null, resumeBindings: [], unloading: false };
-  documentTarget.visibilityState = 'visible';
-  const sandbox = vm.createContext({
-    runtime,
-    document: documentTarget,
-    setTimeout: (fn, ms) => {
-      timers.push({ fn, ms });
-      return timers.length;
-    },
-    clearTimeout: (id) => {
-      if (timers[id - 1]) timers[id - 1].cancelled = true;
-    },
-    recoverAfterBrowserResume: () => {
-      runtime.recovered = (runtime.recovered || 0) + 1;
-    }
-  });
-  Object.assign(sandbox, windowTarget);
-  sandbox.addEventListener = windowTarget.addEventListener.bind(windowTarget);
-  sandbox.removeEventListener = windowTarget.removeEventListener.bind(windowTarget);
-  const install = vm.runInContext(
-    queuePrelude +
-      section('  function queueBrowserResume()', '  const pipelineEntries =') +
-      '\ninstallBrowserResumeHandlers;',
-    sandbox
-  );
-  install();
-  windowTarget.fire('pagehide');
-  windowTarget.fire('pageshow');
-  windowTarget.fire('focus');
-  assert.equal(timers.length, 2);
-  assert.equal(timers[0].cancelled, true);
-  assert.equal(timers[1].ms, 80);
-  await timers[1].fn();
-  assert.equal(runtime.recovered, 1);
-  for (const { target, type, handler } of runtime.resumeBindings) target.removeEventListener(type, handler);
-  assert.equal(
-    [...windowTarget.listeners.values()].every((rows) => rows.size === 0),
-    true
-  );
-  assert.equal(
-    [...documentTarget.listeners.values()].every((rows) => rows.size === 0),
-    true
-  );
+test('closing reflects native class removal even when the settings bridge fails', async () => {
+  const fake = createFakeHost({ document: true });
+  await Style.removeMainStyle();
+  setHost(fake.api);
+  await Style.installMainStyle();
+  fake.dom
+    .body()
+    .setHtml('<div class="x-risu-itemx2-root-drawer x-risu-itemx2-is-open" x-itemx2-drawer="owner"></div>');
+  const [drawer] = await (await fake.api.getRootDocument()).querySelectorAll('[x-itemx2-drawer="owner"]');
+  uiState.rootDrawer = drawer;
+  uiState.rootOpen = true;
+  fake.api.unwarpSafeArray = async () => {
+    throw new Error('bridge');
+  };
+  await rt.setRootOpen(false);
+  assert.equal(uiState.rootOpen, false);
+  assert.equal(fake.dom.root.find('.x-risu-itemx2-is-open').length, 0);
+  uiState.rootDrawer = null;
 });
 
-test('browser resume rebinds hooks and clears suspended effects without regenerating auxiliary output', async () => {
-  const calls = [],
-    timers = [],
-    runtime = {
-      unloading: false,
-      resumePromise: null,
-      permissions: { replacer: true },
-      hooks: {},
-      generation: 4,
-      backgrounded: true,
-      bodyFxScrollActive: true,
-      bodyFxSawScroll: true,
-      outputSyncDeferred: true,
-      hostSyncDeferred: true,
-      bodyFxClassOwner: { removeClass: async (name) => calls.push(`class:${name}`) }
-    };
-  const fn = () => {};
-  const recover = runWithQueue(
-    section('  async function refreshPipelineBindingsAfterResume()', '  async function installPipelineHooksNow') +
-      section('  async function recoverAfterBrowserResume()', '  function queueBrowserResume()') +
-      '\nrecoverAfterBrowserResume;',
-    {
-      runtime,
-      ITEMX_AUX_SETTLE_MS: 1500,
-      processHandler: fn,
-      outputFallback: fn,
-      displayWithPortraits: fn,
-      beforeRequest: fn,
-      afterRequest: fn,
-      Risuai: {
-        addRisuScriptHandler: async (mode) => calls.push(`script:${mode}`),
-        addRisuReplacer: async (mode) => calls.push(`replacer:${mode}`)
-      },
-      clearScrollTimers: () => {},
-      installMainStyle: async () => calls.push('style'),
-      catchUpLatestOutput: async () => calls.push('catch-up'),
-      rebuildCurrent: async () => {
-        calls.push('rebuild');
-        return { chat: {} };
-      },
-      ensureRootInventory: async () => calls.push('root'),
-      scheduleCommittedOutputSync: () => calls.push('settled-sync'),
-      fail: (_where, error) => {
-        throw error;
-      },
-      setTimeout: (callback, ms) => {
-        timers.push({ callback, ms });
-        return timers.length;
-      },
-      clearTimeout: () => {}
-    }
-  );
-  await recover();
-  assert.deepEqual(calls.slice(0, 6), [
-    'class:x-risu-itemx-body-scrolling',
-    'script:process',
-    'script:output',
-    'script:display',
-    'replacer:beforeRequest',
-    'replacer:afterRequest'
-  ]);
-  // Resume must not regenerate auxiliary output: that path rewrites the stored
-  // message and the catch-up guard hashes that same message, so each foreground
-  // return re-injected planning blocks once. Regeneration belongs to new turns.
-  assert.ok(!calls.includes('catch-up'));
-  assert.ok(!calls.includes('settled-sync'));
-  assert.deepEqual(calls.slice(6), ['style', 'rebuild', 'root']);
-  assert.equal(timers.length, 0);
-  assert.equal(runtime.bodyFxScrollActive, false);
-  assert.equal(runtime.generation, 5);
-  assert.equal(runtime.backgrounded, false);
-});
-
-test('closing reflects native class removal even when settings bridge fails', async () => {
-  const runtime = { rootOpen: true, rootDrawer: { getParent: async () => true, removeClass: async () => {} } };
-  const sandbox = vm.createContext({
-    runtime,
-    invalidateHostSettingsVisibility: () => {},
-    syncHostSettingsVisibility: async () => {
-      throw Error('bridge');
-    }
-  });
-  const setOpen = vm.runInContext(
-    queuePrelude + section('  async function setRootOpen(open)', '  async function resetRuntimeForContext') + '\nsetRootOpen;',
-    sandbox
-  );
-  await setOpen(false);
-  assert.equal(runtime.rootOpen, false);
-});
-
-test('committed sync enriches encounters after auxiliary recovery and syncs UI once', async () => {
-  const calls = [],
-    runtime = {};
-  const sync = runWithQueue(
-    section('  function scheduleCommittedOutputSync()', '  function armCatchUpWatchdog()') +
-      '\nscheduleCommittedOutputSync;',
-    {
-      runtime,
-      catchUpLatestOutput: async () => calls.push('aux'),
-      rebuildCurrent: async () => {
-        calls.push('rebuild');
-        return { encountersEnabled: true, lorebookEncounterEnabled: true };
-      },
-      scanLorebookEncounters: async () => calls.push('lore'),
-      commitEventBursts: () => {},
-      ensureRootInventory: async () => calls.push('ui'),
-      fail: (where, error) => {
-        throw error;
-      }
-    }
-  );
-  await sync();
-  assert.deepEqual(calls, ['aux', 'rebuild', 'lore', 'ui']);
+test('a committed output sync announces one UI sync after the rebuild', async () => {
+  const fake = createFakeHost({ character: { chaId: 'sync' } });
+  setHost(fake.api);
+  Session.resetSession('sync:chat');
+  let synced = 0;
+  const off = on('chat-synced', () => synced++);
+  await rt.scheduleCommittedOutputSync();
+  assert.equal(synced, 1);
+  off();
 });
 
 test('automatic lore scan invalidates on source edits, source removal and encounter removal', async () => {
-  const lore = vm.runInNewContext(loreSource + '\nITEMXLorebook;');
-  let scans = 0,
-    writes = 0;
-  let entries = [{ id: 'lore', key: 'Reimu', content: '[ITEMX-PUBLIC]\n종류: 무녀' }];
-  const base = {
-    monsters: { order: ['reimu'], entries: { reimu: { id: 'reimu', name: 'Reimu', kind: '미분류', aliases: [] } } }
-  };
-  let chat = { message: [], scriptstate: {} };
-  const runtime = { detailHtmlCache: new Map(), generation: 0 };
-  const scan = runWithQueue(
-    section('  async function scanLorebookEncounters(', '  async function notifyUser(') + '\nscanLorebookEncounters;',
-    {
-      runtime,
-      context: async () => ({ key: 'a', characterIndex: 0, chatIndex: 0 }),
-      lorebookEntries: async () => entries,
-      enqueue: async (_key, task) => task(),
-      Risuai: {
-        getChatFromIndex: async () => chat,
-        setChatToIndex: async (_a, _b, value) => {
-          writes++;
-          chat = value;
-        }
-      },
-      buildMessageEventLookup: () => ({}),
-      rebuildCodexWithLedger: () => base,
-      encounterRegistryFingerprint: (value) => JSON.stringify(value),
-      ITEMXCore: { fnv1a: (value) => value, clone: structuredClone },
-      ITEMXLorebook: {
-        ...lore,
-        scan: (...args) => {
-          scans++;
-          return lore.scan(...args);
-        }
-      },
-      ITEMX_LORE_KEY: '$__itemx2_lore_enrichment',
-      rebuildCurrent: async () => {},
-      debugRecord: () => {},
-      notifyUser: async () => {}
-    }
+  const exam = rt.codex.extractResponse(
+    '<monsterExam><id>reimu</id><name>Reimu</name><type>미분류</type><status>active</status></monsterExam>'
   );
-  await scan({ silent: true });
-  assert.equal(writes, 1);
-  await scan({ silent: true });
-  assert.equal(scans, 1);
-  entries[0].content = '[ITEMX-PUBLIC]\n종류: 인간';
-  await scan({ silent: true });
-  assert.equal(writes, 2);
-  entries = [];
-  await scan({ silent: true });
-  assert.equal(writes, 3);
-  entries = [{ id: 'new-module', key: 'Reimu', content: '[ITEMX-PUBLIC]\n종류: 무녀' }];
-  await scan({ silent: true });
-  assert.equal(writes, 4);
-  base.monsters = { order: [], entries: {} };
-  await scan({ silent: true });
-  assert.equal(writes, 5);
-  await scan({ silent: true });
-  assert.equal(scans, 5);
-  await scan({ refresh: true, silent: true });
-  assert.equal(scans, 6);
+  const lorebook = [{ id: 'lore', key: 'Reimu', content: '[ITEMX-PUBLIC]\n종류: 무녀' }];
+  const fake = createFakeHost({
+    character: { chaId: 'lore' },
+    chat: anchored({
+      id: 'chat',
+      message: [{ role: 'char', chatId: 'm0', data: `레이무와 싸웠다.\n${exam.content}` }],
+      scriptstate: {}
+    }),
+    lorebook
+  });
+  setHost(fake.api);
+  Session.resetSession('lore:chat');
+  let scans = 0;
+  const scan = async (options) => {
+    scans++;
+    return rt.scanLorebookEncounters(options);
+  };
+  const writes = () => fake.state.writes;
+  const changed = async (options = { silent: true }) => (await scan(options))?.changed;
+  assert.equal(await changed(), true);
+  assert.equal(writes(), 1);
+  assert.equal(await changed(), false, 'an unchanged source is not scanned again');
+  lorebook[0].content = '[ITEMX-PUBLIC]\n종류: 인간';
+  assert.equal(await changed(), true);
+  lorebook.length = 0;
+  assert.equal(await changed(), true, 'a removed source removes its enrichment');
+  lorebook.push({ id: 'new-module', key: 'Reimu', content: '[ITEMX-PUBLIC]\n종류: 무녀' });
+  assert.equal(await changed(), true);
+  const loaded = await rt.rebuildCurrent();
+  await rt.commitManualEvents(
+    loaded,
+    [{ domain: 'monster', kind: 'patch', manual: true, patch: { id: 'reimu', action: null, op: 'purge', fields: {} } }],
+    'purge',
+    undefined,
+    false
+  );
+  assert.equal(writes(), 5);
+  assert.equal(await changed(), true, 'a removed encounter drops its enrichment');
+  assert.equal(writes(), 6);
+  assert.equal(await changed({ refresh: true, silent: true }), false);
+  assert.equal(scans, 7);
 });

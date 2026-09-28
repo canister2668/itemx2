@@ -1,1095 +1,553 @@
-/* ITEMX ledger owner. Concatenated inside the runtime closure. */
-  function refreshLatest(chat, lookup = buildMessageEventLookup(chat)) {
-    loadMessageEventLedger(chat, lookup);
-    const messages = Array.isArray(chat?.message) ? chat.message : [];
-    let latest = '';
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const text = messageData(messages[i]);
-      if (messageEvents(text, 'item', lookup).length || messageEvents(text, 'codex', lookup).length) {
-        latest = text;
-        break;
-      }
-    }
+/* Ledger: the chat's ITEMX document as the runtime sees it. The projection
+ * folds the document over the current message order; anchors resolve against
+ * that fold; the chat-level operations below are the only writers. */
+import * as Backup from './engine/backup.js';
+import * as Codex from './engine/codex.js';
+import * as Core from './engine/core.js';
+import * as Lorebook from './engine/lorebook.js';
+import { chatIsStreaming, context, readChat, saveChat } from './chat-io.js';
+import { ITEMX_STORAGE_WARNING_BYTES } from './config.js';
+import { emit } from './events.js';
+import { host } from './host.js';
+import { t } from './i18n.js';
+import { timedSync, workQueue } from './kernel.js';
+import { encounterRegistryFingerprint, prepareInlinePortraits } from './portraits.js';
+import {
+  activeContextKey,
+  cachedLoaded,
+  currentGeneration,
+  dropPending,
+  freshLoaded,
+  invalidateLoaded,
+  pendingEntries,
+  pendingRecord,
+  setLatestKeys,
+  storeLoaded,
+  updateCachedChat
+} from './session.js';
+import { changeSettings, settingsFor } from './settings.js';
+import { setStatus } from './status.js';
+import {
+  anchorKeys,
+  countOldMarkers,
+  hasAnchor,
+  removeOldMarkers,
+  stripAnchors,
+  stripTransport
+} from './store/anchors.js';
+import {
+  CACHE_KEY,
+  DOCUMENT_KEY,
+  OLD_KEYS,
+  footprint,
+  readCache,
+  readDocument,
+  withDocument
+} from './store/document.js';
+import { CHECKPOINT_VERSION, fold } from './store/replay.js';
 
-    const persisted = markerCodes(latest);
-    for (const marker of workQueue.recent('uncommitted-markers', 12000) || []) persisted.add(marker);
-    pipelineState.latestMarkers = persisted;
-    void syncBadgeDelta();
+const messageId = (message) => (typeof message?.chatId === 'string' ? message.chatId : '');
+
+// Everything the fold depends on, hashed without serializing the chat: the
+// stored document string and each message's id and anchors.
+export function replayFingerprint(chat) {
+  const raw = chat?.scriptstate?.[DOCUMENT_KEY];
+  let source = typeof raw === 'string' ? raw : raw == null ? '' : JSON.stringify(raw);
+  for (const message of chat?.message || []) {
+    const text = Core.messageText(message);
+    source += `|${messageId(message)}`;
+    if (hasAnchor(text)) source += `:${anchorKeys(text).join(',')}`;
   }
+  return Core.fnv1a(source);
+}
 
-  function manualLedger(chat) {
-    try {
-      const raw = chat?.scriptstate?.[ITEMX_MANUAL_KEY];
-      const rows = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      // Manual events are authoritative source facts. Never truncate them by
-      // count: doing so can discard an old exam while retaining later patches.
-      return Array.isArray(rows)
-        ? rows.filter((row) => row && Number.isInteger(row.afterIndex) && row.event?.kind)
-        : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function messageEventLedger(chat) {
-    try {
-      const raw = chat?.scriptstate?.[ITEMX_MESSAGE_EVENT_KEY];
-      const rows = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      // Every compact ref in a surviving message needs its event payload for
-      // deterministic replay, including edits or rerolls of old messages.
-      return Array.isArray(rows)
-        ? rows.filter(
-            (row) =>
-              row &&
-              /^[A-Za-z0-9_-]{1,80}$/.test(row.ref || '') &&
-              ['item', 'codex'].includes(row.domain) &&
-              row.payload?.event
-          )
-        : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function checkpointShapeValid(value) {
-    return Boolean(
-      value &&
-      Number.isInteger(value.boundary) &&
-      value.item?.registry &&
-      value.codex?.skills &&
-      Array.isArray(value.rows) &&
-      Array.isArray(value.manual)
-    );
-  }
-
-  function readCheckpointRecord(chat) {
-    const raw = chat?.scriptstate?.[ITEMX_CHECKPOINT_KEY];
-    if (!raw) return { status: 'absent', value: null, reason: '' };
-    const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    if (!checkpointShapeValid(value)) throw new Error('Invalid imported baseline event');
-    return { status: 'ok', value, reason: '' };
-  }
-
-  function readReplayBaseline(chat) {
-    return readCheckpointRecord(chat).value;
-  }
-
-  function assertLogReadable(chat) {
-    ITEMXStorage.log(chat); // Malformed authoritative data must be surfaced, never overwritten.
-    return false;
-  }
-
-  const FROZEN_MESSAGE =
-    ITEMXText("ledger.030");
-
-  function prefixMarkerFingerprint(chat, boundary) {
-    let source = `b:${boundary}`;
-    for (let index = 0; index <= boundary; index += 1) {
-      const markers = messageData(chat?.message?.[index]).match(
-        /<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g
-      );
-      if (markers) source += `|${index}:${markers.join('')}`;
-    }
-    return ITEMXCore.fnv1a(source);
-  }
-
-  function checkpointStatus(chat) {
-    const checkpoint = readReplayBaseline(chat);
-    if (checkpoint?.v === ITEMX_CHECKPOINT_VERSION) {
-      const messages = Array.isArray(chat?.message) ? chat.message : [];
-      let boundary = checkpoint.boundary;
-      if (checkpoint.sealedThroughId) {
-        const located = messages.findIndex((message) => message?.chatId === checkpoint.sealedThroughId);
-        // The sealed message is gone: replaying from 0 on top of the sealed registry would double-apply.
-        if (located < 0) return { checkpoint: { ...checkpoint, boundary: -1 }, valid: false };
-        boundary = located;
-      } else boundary = Math.min(boundary, messages.length - 1);
-      return { checkpoint: { ...checkpoint, boundary }, valid: true };
-    }
-    const valid = Boolean(
-      checkpoint &&
-      checkpoint.boundary < (chat?.message || []).length &&
-      checkpoint.prefix === prefixMarkerFingerprint(chat, checkpoint.boundary)
-    );
-    return { checkpoint, valid };
-  }
-
-  function buildMessageEventLookup(chat) {
-    const archived = readReplayBaseline(chat)?.rows || [];
-    const rows = [...archived, ...messageEventLedger(chat)],
-      itemByRef = new Map(),
-      codexByRef = new Map(),
-      payloads = new Map();
-    for (const row of rows) {
-      if (row.domain === 'item') itemByRef.set(row.ref, row.payload);
-      else if (row.domain === 'codex') codexByRef.set(row.ref, row.payload);
-      payloads.set(`${row.domain}:${row.ref}`, row.payload);
-    }
-    return { rows, itemByRef, codexByRef, payloads };
-  }
-
-  function replaySourceFingerprint(chat) {
-    const state = chat?.scriptstate || {};
-    const stable = (value) => (typeof value === 'string' ? value : JSON.stringify(value ?? null));
-    const status = checkpointStatus(chat),
-      start = status.valid ? status.checkpoint.boundary + 1 : 0;
-    let source = `${status.valid ? `${status.checkpoint.boundary}:${status.checkpoint.prefix}` : stable(state[ITEMX_CHECKPOINT_KEY])}|${stable(state[ITEMX_MANUAL_KEY])}|${stable(state[ITEMX_MESSAGE_EVENT_KEY])}`;
-    const markerRe = /<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g;
-    for (let index = start; index < (chat?.message || []).length; index += 1) {
-      const markers = messageData(chat.message[index]).match(markerRe);
-      if (markers) source += `|${index}:${markers.join('')}`;
-    }
-    return ITEMXCore.fnv1a(source);
-  }
-
-  // Risu paints the chat body before the plugin can resolve a compact ref, and
-  // the stock API has no re-render call: writing the chat is the only way to
-  // make it paint again. That is why leaving the chat and coming back shows the
-  // cards while a refresh does not. Only a chat that actually carries a ref pays
-  // for this, and only once per load.
-  function chatCarriesDisplayRefs(chat) {
-    return (chat?.message || []).some((message) => {
-      const text = messageData(message);
-      return text.includes('<!--ITEMX2') || text.includes('<!--CODEX2');
-    });
-  }
-
-  async function repaintChatBody(ctx) {
-    if (!ctx?.chat || !chatCarriesDisplayRefs(ctx.chat)) return false;
-    if (ctx.chat.isStreaming || (ctx.chat.message || []).some((message) => message?.isStreaming)) return false;
-    try {
-      await saveChat(ctx.characterIndex, ctx.chatIndex, ctx.chat);
-      debugRecord('repaint', 'rewrote the chat so resolved refs paint as cards');
-      return true;
-    } catch (error) {
-      // A conflicting write means the host already changed the chat, which
-      // repaints it anyway. Nothing to recover.
-      debugRecord('repaint skipped', error?.message || String(error));
-      return false;
-    }
-  }
-
-  function loadMessageEventLedger(chat, lookup = buildMessageEventLookup(chat)) {
-    pipelineState.eventPayloads = new Map(lookup.payloads);
-    presentationState.presentationRecords = null;
-  }
-
-  const storageBytes = (value) => {
-    const source = String(value ?? '');
-    return typeof TextEncoder === 'function' ? new TextEncoder().encode(source).length : source.length;
+// A read-only projection of `ctx.chat`. `full` folds from the start so every
+// anchor has its view; otherwise the cached checkpoint may skip the prefix.
+export function project(ctx, settings = {}, { full = false } = {}) {
+  const doc = readDocument(ctx.chat);
+  const checkpoint = full ? null : readCache(ctx.chat)?.checkpoint || null;
+  const pending = (key) => (pendingRecord(key)?.chatKey === ctx.key ? pendingRecord(key) : null);
+  const folded = timedSync('replay', () => fold(ctx.chat, doc, { checkpoint, full, pending }));
+  const codexBase = folded.codex;
+  codexBase.fingerprint = folded.chain;
+  const codexSnapshot = Object.keys(doc.lore.rows).length ? Lorebook.apply(codexBase, doc.lore) : codexBase;
+  return {
+    ...ctx,
+    ...settings,
+    doc,
+    prefs: doc.prefs,
+    snapshot: {
+      schema: Core.VERSION,
+      registry: folded.item.registry,
+      history: folded.item.history,
+      fingerprint: folded.chain
+    },
+    codexSnapshot,
+    views: folded.views,
+    complete: folded.complete,
+    checkpoint: folded.checkpoint,
+    lorebookSourceFingerprint: encounterRegistryFingerprint(codexBase),
+    replayFingerprint: replayFingerprint(ctx.chat)
   };
+}
 
-  function boundedObjectTail(value, count, bytes) {
-    const entries = Object.entries(value || {}).slice(-count);
-    while (entries.length && storageBytes(JSON.stringify(Object.fromEntries(entries))) > bytes) entries.shift();
-    return Object.fromEntries(entries);
+// The views of every step. A checkpointed projection lacks the prefix; the
+// first request for an old anchor folds once from the start.
+export function fullViews(loaded) {
+  if (!loaded) return new Map();
+  if (!loaded.complete) {
+    const pending = (key) => (pendingRecord(key)?.chatKey === loaded.key ? pendingRecord(key) : null);
+    const folded = timedSync('replay:full', () => fold(loaded.chat, loaded.doc, { full: true, pending }));
+    loaded.views = folded.views;
+    loaded.complete = true;
   }
+  return loaded.views;
+}
 
-  function itemxStorageFootprint(chat) {
-    // Measure documents already on this chat, not a hypothetical rewrite.
-    const state = chat?.scriptstate || {};
-    const keys = state[ITEMXStorage.LOG]
-      ? [ITEMXStorage.LOG, ITEMXStorage.PREFS, ITEMXStorage.CACHE]
-      : CHAT_DATA_KEYS;
-    let stateBytes = 0,
-      markerBytes = 0,
-      markerCount = 0;
-    for (const key of keys) {
-      if (!Object.prototype.hasOwnProperty.call(state, key)) continue;
-      stateBytes += storageBytes(typeof state[key] === 'string' ? state[key] : JSON.stringify(state[key]));
-    }
-    for (const message of chat?.message || []) {
-      const matches = messageData(message).match(
-        /<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g
-      );
-      for (const marker of matches || []) {
-        markerCount += 1;
-        markerBytes += storageBytes(marker);
-      }
-    }
-    return { stateBytes, markerBytes, markerCount, totalBytes: stateBytes + markerBytes };
+const asPayload = (row) =>
+  row?.view
+    ? { event: row.event, view: row.view, previous: row.previous, review: row.review, domain: row.domain }
+    : null;
+
+// The card behind one anchor: the committed fold's view, else the parsed but
+// not yet committed record of the current response.
+export function anchorPayload(key, loaded = cachedLoaded()) {
+  let row = loaded?.views?.get(`e:${key}`);
+  if (!row && loaded && !loaded.complete && loaded.doc?.events?.[key]) row = fullViews(loaded).get(`e:${key}`);
+  return asPayload(row) || asPayload(pendingRecord(key));
+}
+
+// Anchors of the newest response, the only cards that may animate and the
+// source of the side badge's gain/loss count.
+export function refreshLatest(loaded) {
+  const messages = loaded?.chat?.message || [];
+  let keys = [];
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const text = Core.messageText(messages[index]);
+    if (!hasAnchor(text)) continue;
+    keys = anchorKeys(text);
+    break;
   }
+  for (const [key] of pendingEntries(loaded?.key || activeContextKey())) keys.push(key);
+  setLatestKeys(keys);
+  void emit('markers');
+}
 
-  function createCheckpoint(itemSource, codexSource, boundary, sealedThroughId, previouslyPruned = false) {
-    // A checkpoint replaces the authoritative event prefix. Never discard state
-    // to meet a storage budget: the removed events cannot reconstruct it later.
-    const item = ITEMXCore.clone(itemSource),
-      codex = ITEMXCodex.clone(codexSource);
-    const counts = {
-      item: item.registry.order.length,
-      skill: codex.skills.order.length,
-      monster: codex.monsters.order.length
-    };
-    const checkpoint = {
-      v: ITEMX_CHECKPOINT_VERSION,
-      boundary,
-      sealedThroughId: sealedThroughId || '',
-      item,
-      codex,
-      rows: [],
-      manual: [],
-      storage: { originalCounts: counts, storedCounts: counts, pruned: previouslyPruned }
-    };
-    return { checkpoint, encoded: JSON.stringify(checkpoint) };
-  }
-
-  function embeddedViewCode(payload, domain) {
-    const view = payload?.view;
-    if (!view) return '';
-    const codexEvent = payload?.event || {};
-    const codexView =
-      codexEvent.domain === 'skill'
-        ? {
-            i: view.id,
-            n: view.name,
-            g: view.glyph,
-            r: view.rank,
-            h: view.school,
-            t: view.type,
-            s: view.status,
-            l: view.level,
-            m: view.mastery,
-            c: view.cost,
-            o: view.cooldown,
-            a: view.affinity,
-            x: view.target,
-            w: view.growth,
-            z: view.description,
-            f: (view.effects || []).slice(0, 2),
-            j: view._inferred
-          }
-        : {
-            i: view.id,
-            n: view.name,
-            g: view.glyph,
-            k: view.kind,
-            t: view.threat,
-            r: view.relation,
-            s: view.status,
-            a: view.active,
-            o: view.outcome,
-            c: view.encounterCount,
-            f: (view.moves || []).slice(0, 3)
-          };
-    const previous = payload?.previous
-      ? { m: payload.previous.mastery, s: payload.previous.status, v: ITEMXCore.comparisonView(payload.previous) }
-      : undefined;
-    const envelope =
-      domain === 'codex'
-        ? {
-            v: ITEMXCodex.VERSION,
-            d: codexEvent.domain || '',
-            k: codexEvent.kind,
-            a: codexEvent.patch?.action,
-            o: codexEvent.patch?.op,
-            q: Object.keys(codexEvent.patch?.fields || {}),
-            e: codexView,
-            r: payload.review,
-            p: previous
-          }
-        : {
-            v: ITEMXCore.VERSION,
-            p: ITEMXCore.comparisonView(payload.previous),
-            r: payload.review,
-            i: {
-              i: view.id,
-              n: view.name,
-              t: view.itemType,
-              e: view.emoji,
-              r: view.rarity,
-              d: view.displayRarity,
-              p: view.power,
-              q: view.required,
-              u: view.durability,
-              c: view.cost,
-              o: view.possession,
-              l: view.location,
-              k: view.count,
-              s: view.slot,
-              h: view.theme,
-              a: view.affinity,
-              b: view.affinity2,
-              x: view.condition,
-              f: (view.effects || []).map((row) => [row.name, row.desc]),
-              g: (view.augments || []).map((row) => [row.name, row.desc]),
-              z: view.trivia
-            }
-          };
-    const marker = ITEMXCore.marker(envelope);
-    return marker.startsWith('<!--ITEMX2:') && marker.endsWith('-->') ? marker.slice('<!--ITEMX2:'.length, -3) : '';
-  }
-
-  function compactRefMarker(prefix, ref, payload, domain) {
-    const code = embeddedViewCode(payload, domain);
-    return `<!--${prefix}@${ref}${code ? `:${code}` : ''}-->`;
-  }
-
-  function inlineViewPayload(code, domain) {
-    if (!code) return null;
-    const payload = ITEMXCore.decodePayload(code);
-    if (payload?.view)
-      return domain === 'codex'
-        ? { v: payload.v, event: { domain: payload.domain || '' }, view: payload.view }
-        : { v: payload.v, view: payload.view };
-    if (domain === 'codex' && payload?.e) {
-      const item = payload.e,
-        skill = payload.d === 'skill';
-      const view = skill
-        ? {
-            id: item.i,
-            name: item.n,
-            glyph: item.g,
-            rank: item.r,
-            school: item.h,
-            type: item.t,
-            status: item.s,
-            level: item.l,
-            mastery: item.m,
-            cost: item.c,
-            cooldown: item.o,
-            affinity: item.a,
-            target: item.x,
-            growth: item.w,
-            description: item.z,
-            effects: item.f || [],
-            _inferred: item.j
-          }
-        : {
-            id: item.i,
-            name: item.n,
-            glyph: item.g,
-            kind: item.k,
-            threat: item.t,
-            relation: item.r,
-            status: item.s,
-            active: item.a,
-            outcome: item.o,
-            encounterCount: item.c,
-            moves: item.f || []
-          };
-      const event = { domain: payload.d || '', kind: payload.k || 'exam' };
-      if (event.kind === 'patch')
-        event.patch = {
-          id: item.i,
-          action: payload.a || null,
-          op: payload.o || null,
-          fields: Object.fromEntries((payload.q || []).map((key) => [key, true]))
-        };
-      return {
-        v: payload.v,
-        event,
-        view,
-        review: payload.r,
-        previous: payload.p?.v || (payload.p ? { mastery: payload.p.m, status: payload.p.s } : null)
-      };
-    }
-    if (domain !== 'item' || !payload?.i) return null;
-    const item = payload.i;
-    return {
-      v: payload.v,
-      previous: payload.p,
-      review: payload.r,
-      view: {
-        id: item.i,
-        name: item.n,
-        itemType: item.t,
-        emoji: item.e,
-        rarity: item.r,
-        displayRarity: item.d,
-        power: item.p,
-        required: item.q,
-        durability: item.u,
-        cost: item.c,
-        possession: item.o,
-        location: item.l,
-        count: item.k,
-        slot: item.s,
-        theme: item.h,
-        affinity: item.a,
-        affinity2: item.b,
-        condition: item.x,
-        effects: (item.f || []).map((row) => ({ name: row[0], desc: row[1] })),
-        augments: (item.g || []).map((row) => ({ name: row[0], desc: row[1] })),
-        trivia: item.z
-      }
-    };
-  }
-
-  function itemMarkerPayload(marker) {
-    const full = String(marker || '').match(/^<!--ITEMX2:([A-Za-z0-9_-]+)-->$/);
-    if (full) return ITEMXCore.decodePayload(full[1]);
-    const ref = String(marker || '').match(/^<!--ITEMX2@([A-Za-z0-9_-]{1,80})(?::([A-Za-z0-9_-]+))?-->$/);
-    if (!ref) return null;
-    return pipelineState.eventPayloads.get(`item:${ref[1]}`) || inlineViewPayload(ref[2], 'item') || null;
-  }
-
-  function itemPayloadId(payload) {
-    return payload?.view?.id || payload?.event?.item?.id || payload?.event?.patch?.id || '';
-  }
-
-  function coalesceAdjacentItemMarkers(content) {
-    const source = String(content || '');
-    const re = /<!--ITEMX2:[A-Za-z0-9_-]+-->|<!--ITEMX2@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?-->/g;
-    const rows = [];
-    let match;
-    while ((match = re.exec(source)))
-      rows.push({ start: match.index, end: re.lastIndex, raw: match[0], payload: itemMarkerPayload(match[0]) });
-    if (rows.length < 2) return source;
-    const hidden = new Set();
-    for (let index = 0; index < rows.length - 1; index += 1) {
-      const current = rows[index],
-        next = rows[index + 1];
-      const id = itemPayloadId(current.payload),
-        nextId = itemPayloadId(next.payload);
-      if (id && id === nextId && next.payload?.view && !source.slice(current.end, next.start).trim()) hidden.add(index);
-    }
-    if (!hidden.size) return source;
-    let output = '',
-      cursor = 0;
-    rows.forEach((row, index) => {
-      output += source.slice(cursor, row.start);
-      if (!hidden.has(index)) output += row.raw;
-      cursor = row.end;
-    });
-    return output + source.slice(cursor);
-  }
-
-  function bareRefMarker(prefix, ref) {
-    return `<!--${prefix}@${ref}-->`;
-  }
-
-  function reconcileStoredRefViews(chat, preferredLatestIndex = null) {
-    const rows = messageEventLedger(chat);
-    if (!rows.length) return { chat, changed: false };
-    const byKey = new Map(rows.map((row) => [`${row.domain}:${row.ref}`, row.payload]));
-    const messages = Array.isArray(chat?.message) ? chat.message : [];
-    let latestIndex = Number.isInteger(preferredLatestIndex) ? preferredLatestIndex : -1;
-    if (latestIndex < 0 || latestIndex >= messages.length) {
-      for (let index = messages.length - 1; index >= 0; index -= 1) {
-        const source = messageData(messages[index]);
-        if (source.match(ITEMX_REF_RE) || source.match(ITEMX_CODEX_REF_RE)) {
-          latestIndex = index;
-          break;
-        }
-      }
-    }
-    let next = null,
-      changed = false;
-    for (let index = 0; index < messages.length; index += 1) {
-      const original = messageData(messages[index]);
-      const keepInline = index === latestIndex;
-      let source = original.replace(ITEMX_REF_RE, (raw, ref, inline) =>
-        keepInline
-          ? inline
-            ? raw
-            : compactRefMarker('ITEMX2', ref, byKey.get(`item:${ref}`), 'item')
-          : bareRefMarker('ITEMX2', ref)
-      );
-      source = source.replace(ITEMX_CODEX_REF_RE, (raw, ref, inline) =>
-        keepInline
-          ? inline
-            ? raw
-            : compactRefMarker('CODEX2', ref, byKey.get(`codex:${ref}`), 'codex')
-          : bareRefMarker('CODEX2', ref)
-      );
-      if (source === original) continue;
-      if (!next) next = ITEMXCore.clone(chat);
-      const message = next.message[index];
-      if (typeof message.data === 'string') message.data = source;
-      else if (typeof message.content === 'string') message.content = source;
-      changed = true;
-    }
-    return { chat: next || chat, changed };
-  }
-
-  function messageEvents(text, domain, lookup) {
-    const byRef = domain === 'item' ? lookup.itemByRef : lookup.codexByRef;
-    const found = [];
-    const fullRe = domain === 'item' ? ITEMXCore.MARKER_RE : ITEMXCodex.MARKER_RE;
-    const refRe = domain === 'item' ? ITEMX_REF_RE : ITEMX_CODEX_REF_RE;
-    String(text || '').replace(fullRe, (raw, code, index) => {
-      const payload = domain === 'item' ? ITEMXCore.decodePayload(code) : ITEMXCodex.decodePayload(code);
-      if (payload?.event) found.push({ index, event: payload.event });
-      return raw;
-    });
-    String(text || '').replace(refRe, (raw, ref, inline, index) => {
-      const payload = byRef.get(ref);
-      if (payload?.event) found.push({ index, event: payload.event });
-      return raw;
-    });
-    return found.sort((a, b) => a.index - b.index).map((row) => row.event);
-  }
-
-  function rebuildCodexWithLedger(chat, lookup = buildMessageEventLookup(chat), options = {}) {
-    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replayedCodex(chat);
-    const state = options.base ? ITEMXCodex.clone(options.base) : ITEMXCodex.snapshot();
-    state.history ||= { skill: {}, monster: {} };
-    const messages = chat?.message || [],
-      start = Math.max(0, options.start || 0),
-      end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
-    let transport = options.transport || '';
-    for (let index = start; index <= end; index += 1) {
-      const narrative = messageData(messages[index]);
-      let occurrence = 0;
-      for (const event of messageEvents(narrative, 'codex', lookup)) {
-        // Events are reconciled exactly once when committed. Replay is a pure
-        // fold over stored facts, never a second interpretation of prose.
-        const domain = event.domain,
-          id = event.entity?.id || event.patch?.id;
-        const registry = ITEMXCodex.storeFor(state, domain);
-        const before = registry.entries[id] ? { ...registry.entries[id] } : null;
-        const applied = ITEMXCodex.applyEvent(state, event);
-        if (applied != null)
-          ITEMXHistory.observe(
-            state.history[domain],
-            domain,
-            before,
-            registry.entries[id],
-            event,
-            index,
-            () => `${messages[index]?.chatId || index}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`
-          );
-        occurrence++;
-        transport += JSON.stringify(event);
-      }
-    }
-    state.fingerprint = ITEMXCore.fnv1a(transport);
-    state.updatedAt = Date.now();
-    return state;
-  }
-
-  function compactMessageTransports(chat, index) {
-    const next = ITEMXCore.clone(chat),
-      message = next.message?.[index];
-    if (!message) return { chat: next, changed: false };
-    let source = messageData(message),
-      ordinal = 0,
-      changed = false;
-    const rows = messageEventLedger(next),
-      byKey = new Map(rows.map((row) => [`${row.domain}:${row.ref}`, row]));
-    const replace = (domain, regex, decode, prefix) => {
-      source = source.replace(regex, (raw, code) => {
-        const payload = decode(code);
-        if (!payload?.event) return '';
-        const ref = `${domain[0]}${index.toString(36)}_${(ordinal++).toString(36)}_${ITEMXCore.fnv1a(code)}`;
-        byKey.set(`${domain}:${ref}`, { ref, domain, payload: ITEMXCore.clone(payload) });
-        changed = true;
-        return compactRefMarker(prefix, ref, payload, domain);
-      });
-    };
-    replace('item', ITEMXCore.MARKER_RE, ITEMXCore.decodePayload, 'ITEMX2');
-    replace('codex', ITEMXCodex.MARKER_RE, ITEMXCodex.decodePayload, 'CODEX2');
-    if (!changed) return { chat: next, changed: false };
-    if (typeof message.data === 'string') message.data = source;
-    else if (typeof message.content === 'string') message.content = source;
-    const used = new Set();
-    for (const one of next.message || []) {
-      const text = messageData(one);
-      text.replace(ITEMX_REF_RE, (_, ref) => {
-        used.add(`item:${ref}`);
-        return '';
-      });
-      text.replace(ITEMX_CODEX_REF_RE, (_, ref) => {
-        used.add(`codex:${ref}`);
-        return '';
-      });
-    }
-    // Remove only orphaned rows. Count/byte truncation corrupts replay by
-    // leaving refs in messages whose authoritative events no longer exist.
-    const kept = [...byKey.entries()].filter(([key]) => used.has(key)).map(([, row]) => row);
-    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MESSAGE_EVENT_KEY]: JSON.stringify(kept) };
-    const reconciled = reconcileStoredRefViews(next, index).chat;
-    return { chat: refreshReplayCache(reconciled), changed: true };
-  }
-
-  function refreshReplayCache(chat, options = {}) {
-    // Cache maintenance cannot truncate the log, markers, or manual history.
-    return ITEMXStorage.hydrate(ITEMXStorage.persist(chat));
-  }
-
-  function rebuildWithManual(chat, lookup = buildMessageEventLookup(chat), options = {}) {
-    if (chat?.scriptstate?.[ITEMXStorage.LOG]) return ITEMXStorage.replayedItem(chat);
-    const messages = Array.isArray(chat?.message) ? chat.message : [];
-    const start = Math.max(0, options.start || 0),
-      end = Math.min(messages.length - 1, options.end ?? messages.length - 1);
-    const ledger = options.manual || [
-        ...(start === 0 ? readReplayBaseline(chat)?.manual || [] : []),
-        ...manualLedger(chat)
-      ],
-      manualByIndex = new Map(),
-      manualTail = [],
-      reg = options.registry ? ITEMXCore.clone(options.registry) : ITEMXCore.newRegistry();
-    for (const row of ledger) {
-      if (row.afterIndex < 0 || row.afterIndex >= messages.length) {
-        if (end === messages.length - 1) manualTail.push(row);
-      } else if (row.afterIndex < start || row.afterIndex > end) continue;
-      else {
-        const rows = manualByIndex.get(row.afterIndex) || [];
-        rows.push(row);
-        manualByIndex.set(row.afterIndex, rows);
-      }
-    }
-    const history = ITEMXCore.clone(options.history || {});
-    const occurrences = new Map();
-    let transport = options.transport || '';
-    const apply = (event, at) => {
-      const occurrence = occurrences.get(at) || 0;
-      occurrences.set(at, occurrence + 1);
-      const patch = event.patch || {};
-      const ids = [
-        ...new Set(
-          [
-            event.item?.id,
-            patch.id,
-            patch.equip,
-            patch.unequip,
-            ...(patch.inputs || []).map((x) => x.id),
-            ...(patch.outputs || []).map((x) => x.id)
-          ].filter(Boolean)
-        )
-      ];
-      const prior = new Map(ids.map((id) => [id, reg.items[id] ? { ...reg.items[id] } : null]));
-      const applied = ITEMXCore.applyEvent(reg, event);
-      if (applied != null)
-        for (const id of ids)
-          ITEMXHistory.observe(
-            history,
-            'item',
-            prior.get(id),
-            reg.items[id],
-            event,
-            at,
-            () => `${messages[at]?.chatId || at}:${occurrence}:${ITEMXCore.fnv1a(JSON.stringify(event))}`
-          );
-      transport += ITEMXCore.marker({ v: ITEMXCore.VERSION, event });
-    };
-    for (let index = start; index <= end; index += 1) {
-      for (const event of messageEvents(messageData(messages[index]), 'item', lookup)) apply(event, index);
-      for (const row of manualByIndex.get(index) || []) apply(row.event, index);
-    }
-    for (const row of manualTail) apply(row.event, Math.min(row.afterIndex, messages.length - 1));
-    return {
-      history,
-      schema: ITEMXCore.VERSION,
-      rev: 2,
-      fingerprint: ITEMXCore.fnv1a(transport),
-      updatedAt: Date.now(),
-      registry: reg
-    };
-  }
-
-  async function rebuildCurrent({ upgradeDisplayRefs = false } = {}) {
-    let wroteDisplayRefs = false;
-    const ctx = await context();
-    if (!ctx) return null;
-    return (async () => {
-      // A read-only projection uses the snapshot context just fetched. Any
-      // optional write below still verifies this read against the live host.
-      let latestChat = ctx.chat;
-      if (!latestChat) return null;
-      if (
-        upgradeDisplayRefs &&
-        !assertLogReadable(latestChat) &&
-        !latestChat.isStreaming &&
-        !(latestChat.message || []).some((message) => message?.isStreaming)
-      ) {
-        const reconciled = reconcileStoredRefViews(latestChat);
-        if (reconciled.changed && pipelineState.activeContextKey === ctx.key) {
-          await saveChat(ctx.characterIndex, ctx.chatIndex, reconciled.chat, latestChat);
-          latestChat = reconciled.chat;
-          wroteDisplayRefs = true;
-          debugRecord('display refs', 'kept one self-contained view and compacted older refs');
-        }
-      }
-      assertLogReadable(latestChat);
-      const lookup = buildMessageEventLookup(latestChat);
-      const checkpoint = checkpointStatus(latestChat);
-      const usableCheckpoint =
-        checkpoint.valid && checkpoint.checkpoint.item.history && checkpoint.checkpoint.codex.history;
-      const manual = usableCheckpoint
-        ? manualLedger(latestChat)
-        : [...(checkpoint.checkpoint?.manual || []), ...manualLedger(latestChat)];
-      const replay = usableCheckpoint
-        ? {
-            start: checkpoint.checkpoint.boundary + 1,
-            registry: checkpoint.checkpoint.item.registry,
-            history: checkpoint.checkpoint.item.history,
-            base: checkpoint.checkpoint.codex
-          }
-        : {};
-      const snapshot = rebuildWithManual(latestChat, lookup, { ...replay, manual });
-      const codexBase = rebuildCodexWithLedger(latestChat, lookup, replay);
-      const lorebookSourceFingerprint = encounterRegistryFingerprint(codexBase);
-      const codexSnapshot = ITEMXLorebook.apply(codexBase, ITEMXLorebook.read(latestChat));
-      const settings = await outputSettings(ctx.character);
-      refreshLatest(latestChat, lookup);
-      // Normal rebuilds are deliberately read-only. Writing an entire chat
-      // snapshot here can race another module's output hook and restore an
-      // older assistant message over its freshly appended display markers.
-      const storagePruned = checkpoint.checkpoint?.storage?.pruned === true;
-      const storageWarning = itemxStorageFootprint(latestChat).totalBytes >= ITEMX_STORAGE_WARNING_BYTES;
-      const storageStatus =
-        [
-          storageWarning ? ITEMXText("ledger.029") : '',
-          storagePruned ? ITEMXText("ledger.028") : ''
-        ]
-          .filter(Boolean)
-          .join(' · ') || ITEMXText("ledger.027");
-      uiState.status = ITEMXText("ledger.026", storageStatus, snapshot.registry.order.length, codexSnapshot.skills.order.length, codexSnapshot.monsters.order.length);
-      const loaded = {
-        ...ctx,
-        chat: latestChat,
-        snapshot,
-        codexSnapshot,
-        lorebookSourceFingerprint,
-        replayFingerprint: replaySourceFingerprint(latestChat),
-        // Bootstrap needs to know whether this rebuild already rewrote the chat,
-        // so it does not pay for a second whole-chat write just to repaint.
-        wroteDisplayRefs,
-        ...settings
-      };
-      prepareInlinePortraits(loaded, codexSnapshot, settings);
-      pipelineState.cachedLoaded = loaded;
-      workQueue.remember('loaded-generation', pipelineState.generation);
-      return loaded;
-    })();
-  }
-
-  const CHAT_DATA_KEYS = [
-    ITEMXStorage.LOG, ITEMXStorage.PREFS, ITEMXStorage.CACHE,
-    ITEMXCore.STATE_KEY,
-    ITEMXCore.CHAT_KEY,
-    ITEMXCodex.STATE_KEY,
-    ITEMX_MANUAL_KEY,
-    ITEMX_MESSAGE_EVENT_KEY,
-    ITEMX_CHECKPOINT_KEY,
-    ITEMX_AUX_KEY,
-    ITEMX_LORE_KEY,
-    ITEMXHistory.KEY
-  ];
-
-  function backupState(ctx) {
-    const chat = ITEMXStorage.hydrate(ctx.chat),
-      lookup = buildMessageEventLookup(chat),
-      status = checkpointStatus(chat);
-    const usable = status.valid && status.checkpoint.item.history && status.checkpoint.codex.history;
-    const replay = usable
-      ? {
-          start: status.checkpoint.boundary + 1,
-          registry: status.checkpoint.item.registry,
-          history: status.checkpoint.item.history,
-          base: status.checkpoint.codex
-        }
-      : {};
-    const manual = usable ? manualLedger(chat) : [...(status.checkpoint?.manual || []), ...manualLedger(chat)];
-    return {
-      ...ctx,
-      snapshot: rebuildWithManual(chat, lookup, { ...replay, manual }),
-      codexSnapshot: ITEMXLorebook.apply(rebuildCodexWithLedger(chat, lookup, replay), ITEMXLorebook.read(chat))
-    };
-  }
-
-  function requireBackupIdle(chat) {
-    if (!chat || chat.isStreaming || chat.message?.some((m) => m.isStreaming || m.bgContinue))
-      throw new Error(ITEMXText("ledger.025"));
-  }
-
-  async function exportCurrentBackup(key) {
-    const ctx = await context();
-    if (!ctx || ctx.key !== key) throw new Error(ITEMXText("ledger.024"));
-    requireBackupIdle(ctx.chat);
-    return ITEMXBackup.capture(backupState(ctx));
-  }
-
-  async function prepareBackupImport(text, key, mode = 'empty') {
-    if (!['empty', 'replace'].includes(mode)) throw new Error(ITEMXText("ledger.023"));
-    const value = ITEMXBackup.parse(text),
-      ctx = await context();
-    if (!ctx || ctx.key !== key) throw new Error(ITEMXText("ledger.022"));
-    requireBackupIdle(ctx.chat);
-    const loaded = backupState(ctx);
-    const previousCounts = [
+export async function rebuildCurrent(ctx = null) {
+  const from = currentGeneration();
+  ctx ||= await context();
+  if (!ctx) return null;
+  const settings = await settingsFor(ctx.character);
+  const loaded = project(ctx, settings);
+  const warning = footprint(ctx.chat).stateBytes >= ITEMX_STORAGE_WARNING_BYTES;
+  setStatus(
+    t(
+      'ledger.026',
+      warning ? t('ledger.029') : t('runtime.003'),
       loaded.snapshot.registry.order.length,
       loaded.codexSnapshot.skills.order.length,
       loaded.codexSnapshot.monsters.order.length
-    ];
-    if (mode === 'empty' && previousCounts.some(Boolean))
-      throw new Error(ITEMXText("ledger.021"));
-    if (mode !== 'replace' && !ITEMXBackup.counts(value).some(Boolean))
-      throw new Error(ITEMXText("ledger.020"));
-    return { value, key, mode, previousCounts, expected: JSON.stringify(ctx.chat) };
-  }
-
-  async function commitBackupImport(preview) {
-    return (async () => {
-      const ctx = await context();
-      if (!ctx || ctx.key !== preview.key) throw new Error(ITEMXText("ledger.019"));
-      requireBackupIdle(ctx.chat);
-      if (JSON.stringify(ctx.chat) !== preview.expected)
-        throw new Error(ITEMXText("ledger.018"));
-      const checked = await prepareBackupImport(JSON.stringify(preview.value), preview.key, preview.mode);
-      if (checked.expected !== preview.expected) throw new Error(ITEMXText("ledger.017"));
-      const value = checked.value;
-      const restored = ITEMXBackup.restore(value, ctx.chat);
-      const boundary = (ctx.chat.message || []).length - 1;
-      const checkpoint = createCheckpoint(
-        restored.item,
-        restored.codex,
-        boundary,
-        ctx.chat.message?.[boundary]?.chatId
-      );
-      checkpoint.checkpoint.restored = true;
-      const base = ITEMXCore.clone(ctx.chat);
-      if (preview.mode === 'replace') {
-        for (const message of base.message || []) {
-          for (const field of ['data', 'content']) {
-            if (typeof message[field] !== 'string') continue;
-            message[field] = message[field]
-              .replace(ITEMXCore.MARKER_RE, '')
-              .replace(ITEMXCodex.MARKER_RE, '')
-              .replace(ITEMX_REF_RE, '')
-              .replace(ITEMX_CODEX_REF_RE, '');
-          }
-        }
-        base.scriptstate = { ...base.scriptstate };
-        for (const key of CHAT_DATA_KEYS)
-          if (![ITEMX_AUX_KEY, ITEMXCore.CHAT_KEY, ITEMXStorage.LOG].includes(key)) delete base.scriptstate[key];
-      }
-      const next = {
-        ...base,
-        scriptstate: {
-          ...base.scriptstate,
-          [ITEMX_CHECKPOINT_KEY]: JSON.stringify(checkpoint.checkpoint),
-          [ITEMXHistory.KEY]: JSON.stringify(restored.prefs),
-          [ITEMX_MANUAL_KEY]: '[]'
-        }
-      };
-      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-      const active = await context();
-      if (
-        !active ||
-        active.key !== ctx.key ||
-        JSON.stringify(latest) !== preview.expected ||
-        JSON.stringify(active.chat) !== preview.expected
-      )
-        throw new Error(ITEMXText("ledger.016"));
-      await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
-      pipelineState.cachedLoaded = null;
-      workQueue.remember('loaded-generation', -1);
-
-
-      presentationState.markerHtmlCache.clear();
-      presentationState.detailHtmlCache.clear();
-      pipelineState.generation++;
-      refreshLatest(next);
-      uiState.status =
-        preview.mode === 'replace'
-          ? ITEMXText("ledger.015")
-          : ITEMXText("ledger.014");
-      return value;
-    })();
-  }
-
-  function cleanChatPluginData(chat) {
-    const next = ITEMXCore.clone(chat),
-      messages = Array.isArray(next?.message) ? next.message : [];
-    let cleanedMessages = 0,
-      removedMarkers = 0,
-      removedStateKeys = 0;
-    for (const message of messages) {
-      const original = messageData(message);
-      const markers =
-        original.match(/<!--(?:ITEMX2|CODEX2)(?::[A-Za-z0-9_-]+|@[A-Za-z0-9_-]{1,80}(?::[A-Za-z0-9_-]+)?)-->/g) || [];
-      let source = stripAllTransport(original)
-        .replace(ITEMX_REF_RE, '')
-        .replace(ITEMX_CODEX_REF_RE, '')
-        .replace(/[ \t]+\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n');
-      removedMarkers += markers.length;
-      if (source === original) continue;
-      if (typeof message.data === 'string') message.data = source;
-      else if (typeof message.content === 'string') message.content = source;
-      cleanedMessages += 1;
-    }
-    next.scriptstate = { ...(next.scriptstate || {}) };
-    for (const key of CHAT_DATA_KEYS) {
-      if (!Object.prototype.hasOwnProperty.call(next.scriptstate, key)) continue;
-      delete next.scriptstate[key];
-      removedStateKeys += 1;
-    }
-    return { chat: next, cleanedMessages, removedMarkers, removedStateKeys };
-  }
-
-  async function cleanCurrentChatItemx() {
-    const ctx = await context();
-    if (!ctx) throw new Error(ITEMXText("ledger.013"));
-    const result = await (async () => {
-      const active = await context();
-      if (!active || active.key !== ctx.key) throw new Error(ITEMXText("ledger.012"));
-      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-      if (!latest) throw new Error(ITEMXText("ledger.011"));
-      if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
-        throw new Error(ITEMXText("ledger.010"));
-      }
-      const cleaned = cleanChatPluginData(latest);
-      workQueue.assertCurrent();
-      await saveChat(ctx.characterIndex, ctx.chatIndex, cleaned.chat, latest, { cleanup: true });
-      // Cleanup is intended for leaving ITEMX behind. Disable this bot only
-      // after the chat write succeeds so catch-up cannot immediately recreate
-      // the markers that were just removed.
-      await setEnabled(ctx.character, false);
-      return cleaned;
-    })();
-    uiState.cleanupArmedUntil = 0;
-    pipelineState.latestMarkers.clear();
-
-    workQueue.forget('uncommitted-markers');
-    pipelineState.eventPayloads = new Map();
-    presentationState.markerHtmlCache.clear();
-    presentationState.detailHtmlCache.clear();
-    workQueue.forget('catch-up');
-    workQueue.forget('aux-settle');
-    pipelineState.cachedLoaded = null;
-    workQueue.remember('loaded-generation', -1);
-    pipelineState.generation += 1;
-    uiState.status = ITEMXText("ledger.009", result.removedMarkers);
-    const loaded = await rebuildCurrent();
-    if (loaded) loaded.enabled = false;
-    return { ...result, loaded };
-  }
-
-  async function removeLegacyPluginStorage() {
-    if (typeof Risuai.pluginStorage.keys !== 'function' || typeof Risuai.pluginStorage.removeItem !== 'function')
-      return 0;
-    let keys = [];
-    try {
-      keys = await Risuai.pluginStorage.keys();
-    } catch {
-      return 0;
-    }
-    if (!Array.isArray(keys)) return 0;
-    const legacy = keys.filter((key) => String(key).startsWith('auxZero:'));
-    let removed = 0;
-    for (const key of legacy)
-      try {
-        await Risuai.pluginStorage.removeItem(key);
-        removed += 1;
-      } catch {}
-    return removed;
-  }
-
-  async function compactCurrentChatStorage() {
-    const ctx = await context();
-    if (!ctx) throw new Error(ITEMXText("ledger.008"));
-    const result = await (async () => {
-      const active = await context();
-      if (!active || active.key !== ctx.key) throw new Error(ITEMXText("ledger.007"));
-      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-      if (!latest) throw new Error(ITEMXText("ledger.006"));
-      if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue))
-        throw new Error(ITEMXText("ledger.005"));
-      if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
-      const before = itemxStorageFootprint(latest);
-      const compacted = refreshReplayCache(latest, { force: true, keepMessages: 8 });
-      const aux = auxiliaryHistory(compacted);
-      compacted.scriptstate = {
-        ...(compacted.scriptstate || {}),
-        [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(aux, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
-      };
-      await saveChat(ctx.characterIndex, ctx.chatIndex, compacted, latest);
-      const legacyKeysRemoved = await removeLegacyPluginStorage();
-      return { chat: compacted, before, after: itemxStorageFootprint(compacted), legacyKeysRemoved };
-    })();
-    uiState.storageCleanupArmedUntil = 0;
-    pipelineState.cachedLoaded = null;
-    workQueue.remember('loaded-generation', -1);
-
-
-    pipelineState.eventPayloads = new Map();
-    presentationState.markerHtmlCache.clear();
-    presentationState.detailHtmlCache.clear();
-    pipelineState.generation += 1;
-    const saved = Math.max(0, result.before.totalBytes - result.after.totalBytes);
-    uiState.status = ITEMXText("ledger.004", Math.round(saved / 1024));
-    const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
-    return { ...result, savedBytes: saved, loaded };
-  }
-
-  async function cachedOrRebuildCurrent() {
-    const active = await context();
-    if (!active) return null;
-    const cached = pipelineState.cachedLoaded;
-    if (
-      cached?.key === active.key &&
-      workQueue.revision('loaded-generation') === pipelineState.generation &&
-      cached.replayFingerprint === replaySourceFingerprint(active.chat)
     )
-      return { ...cached, chat: active.chat };
-    return rebuildCurrent();
-  }
+  );
+  prepareInlinePortraits(loaded, loaded.codexSnapshot, settings);
+  storeLoaded(loaded, from);
+  refreshLatest(loaded);
+  return loaded;
+}
 
-  async function cachedRequestState() {
-    const active = await context();
-    if (!active) return null;
-    const cached = pipelineState.cachedLoaded;
-    if (
-      cached?.key === active.key &&
-      workQueue.revision('loaded-generation') === pipelineState.generation &&
-      cached.replayFingerprint === replaySourceFingerprint(active.chat)
-    )
-      return { ...cached, chat: active.chat };
-    return rebuildCurrent();
+// The cached projection while the chat's replay inputs are unchanged,
+// otherwise a fresh one.
+export async function cachedOrRebuildCurrent() {
+  const active = await context();
+  if (!active) return null;
+  const cached = freshLoaded();
+  if (cached?.key === active.key && cached.replayFingerprint === replayFingerprint(active.chat)) {
+    cached.chat = active.chat;
+    return cached;
   }
+  return rebuildCurrent(active);
+}
 
-  async function commitManualEvents(loaded, events, label, review = { source: 'manual' }, refresh = true) {
-    if (!loaded || !Array.isArray(events) || !events.length) throw new Error('No manual events to commit');
-    const latest = await readChat(loaded.characterIndex, loaded.chatIndex);
-    if (!latest) throw new Error('Chat disappeared during manual operation');
-    if (assertLogReadable(latest)) throw new Error(FROZEN_MESSAGE);
-    if (loaded.expectedChat && JSON.stringify(latest) !== JSON.stringify(loaded.expectedChat))
-      throw new Error(ITEMXText("ledger.003"));
-    const ledger = manualLedger(latest);
-    const afterIndex = Math.max(-1, (latest.message || []).length - 1);
-    let scratch = null,
-      codexScratch = null;
-    for (const event of events) {
-      if (['skill', 'monster'].includes(event?.domain)) {
-        codexScratch ||= rebuildCodexWithLedger(latest);
-        const id = event.entity?.id || event.patch?.id;
-        const prior = ITEMXCodex.storeFor(codexScratch, event.domain).entries[id];
-        const previous = prior ? ITEMXCodex.clone(prior) : null;
-        const view = ITEMXCodex.clone(ITEMXCodex.applyEvent(codexScratch, event));
-        if (!view) throw new Error(ITEMXText("ledger.002"));
-        ledger.push({ at: Date.now(), afterIndex, label, event: ITEMXCodex.clone(event), presentation: { previous, view, review } });
-        continue;
+// The display hook's projection. Anchors the loaded document or the pending
+// records know need no host call; an unknown anchor waits for the one load in
+// flight (at most once per projection and key, so a stray anchor cannot cause
+// a reload per render), bounded so a stalled host never blanks a message.
+const DISPLAY_WAIT_MS = 8000;
+let displayLoad = null;
+const displayMisses = new WeakMap();
+const knows = (loaded, key) => Boolean(loaded?.doc?.events?.[key] || pendingRecord(key));
+export function displayProjection(keys = []) {
+  const loaded = cachedLoaded();
+  if (loaded?.key === activeContextKey()) {
+    const misses = displayMisses.get(loaded) || new Set();
+    const unknown = keys.filter((key) => !knows(loaded, key) && !misses.has(key));
+    if (!unknown.length) return loaded;
+    for (const key of unknown) misses.add(key);
+    displayMisses.set(loaded, misses);
+  } else if (keys.length && keys.every((key) => pendingRecord(key))) return loaded;
+  displayLoad ||= rebuildCurrent()
+    .catch(() => null)
+    .finally(() => {
+      displayLoad = null;
+    });
+  let timer = null;
+  const timeout = new Promise((resolve) => {
+    timer = globalThis.setTimeout(() => resolve(cachedLoaded()), DISPLAY_WAIT_MS);
+  });
+  return Promise.race([displayLoad, timeout]).finally(() => globalThis.clearTimeout(timer));
+}
+
+// Latest view, review and message index of each entity, for the drawer's
+// change and review annotations.
+const records = new WeakMap();
+export function presentationRecord(domain, id, loaded = cachedLoaded()) {
+  if (!loaded) return {};
+  let byEntity = records.get(loaded);
+  if (!byEntity) {
+    byEntity = new Map();
+    for (const row of fullViews(loaded).values()) {
+      if (!row.view) continue;
+      const rowDomain = row.domain === 'item' ? 'item' : row.event?.domain;
+      const entity = row.view.id || row.event?.item?.id || row.event?.patch?.id;
+      if (!entity) continue;
+      const prior = byEntity.get(`${rowDomain}:${entity}`);
+      const review = { ...row.review };
+      if (row.manual) {
+        review.missing = row.review?.source === 'auxiliary' ? row.review.missing || [] : [];
+        review.checked = row.review?.source === 'auxiliary' ? Boolean(row.review.checked) : false;
+      } else if (prior?.review?.missing?.length && !row.review?.checked) {
+        review.missing = prior.review.missing;
+        review.evidenceIndex = prior.review.evidenceIndex ?? prior.messageIndex;
       }
-      scratch ||= rebuildWithManual(latest).registry;
-      const previous = ITEMXCore.comparisonView(scratch.items[event.item?.id || event.patch?.id]);
-      const view = ITEMXCore.clone(ITEMXCore.applyEvent(scratch, event));
-      if (!view) throw new Error(ITEMXText("ledger.002"));
-      ledger.push({
-        at: Date.now(),
-        afterIndex,
-        label,
-        event: ITEMXCore.clone(event),
-        presentation: { previous, view: ITEMXCore.comparisonView(view), review }
+      byEntity.set(`${rowDomain}:${entity}`, {
+        event: row.event,
+        view: row.view,
+        previous: row.previous,
+        review,
+        messageIndex: row.index
       });
     }
-    let next = ITEMXCore.clone(latest);
-    next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_MANUAL_KEY]: JSON.stringify(ledger) };
-    next = refreshReplayCache(next);
-    const snapshot = rebuildWithManual(
-      next,
-      buildMessageEventLookup(next),
-      checkpointStatus(next).valid
-        ? {
-            start: readReplayBaseline(next).boundary + 1,
-            registry: readReplayBaseline(next).item.registry,
-            manual: manualLedger(next)
-          }
-        : {}
-    );
-    await saveChat(loaded.characterIndex, loaded.chatIndex, ITEMXCore.writeSnapshot(next, snapshot), latest);
-    uiState.status = ITEMXText("ledger.001", label, events.length);
-    return refresh ? rebuildCurrent() : null;
+    records.set(loaded, byEntity);
   }
+  return byEntity.get(`${domain}:${id}`) || {};
+}
+
+// Registers parsed records as committed events of message `chatId`.
+export function commitRecords(doc, records, chatId) {
+  for (const record of records) {
+    if (doc.events[record.key]) continue;
+    doc.seq += 1;
+    doc.events[record.key] = {
+      c: chatId,
+      d: record.domain === 'item' ? 'item' : 'codex',
+      e: record.event,
+      ...(record.review ? { r: record.review } : {}),
+      s: doc.seq
+    };
+  }
+}
+
+// The derived cache written alongside a document change: the last projection's
+// checkpoint candidate, validated by its chain hash when it is next read.
+function cacheFor(key) {
+  const loaded = cachedLoaded();
+  return loaded?.key === key && loaded.checkpoint?.v === CHECKPOINT_VERSION
+    ? { v: 1, checkpoint: loaded.checkpoint }
+    : undefined;
+}
+
+// Read-modify-write of the chat's document. `change(doc, latest)` edits `doc`
+// in place and may return `{ chat }` with replacement messages, or false to
+// write nothing. The write lands only if the chat is still the one read.
+export async function writeDocument(ctx, change, { idle = true } = {}) {
+  workQueue.assertCurrent();
+  const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
+  if (!latest) throw new Error(t('ledger.006'));
+  if (idle && chatIsStreaming(latest)) throw new Error(t('ledger.025'));
+  const doc = readDocument(latest);
+  const result = await change(doc, latest);
+  if (result === false) return null;
+  const next = withDocument(
+    result?.chat || latest,
+    doc,
+    result?.cache !== undefined ? result.cache : cacheFor(ctx.key)
+  );
+  const written = await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
+  if (activeContextKey() === ctx.key) invalidateLoaded();
+  return { chat: written, doc };
+}
+
+export async function commitManualEvents(loaded, events, label, review = { source: 'manual' }, refresh = true) {
+  if (!loaded || !Array.isArray(events) || !events.length) throw new Error('No manual events to commit');
+  await writeDocument(loaded, (doc, latest) => {
+    if (loaded.expectedFingerprint && replayFingerprint(latest) !== loaded.expectedFingerprint)
+      throw new Error(t('ledger.003'));
+    // Validate against the state the rows will actually follow.
+    const state = fold(latest, doc, { checkpoint: readCache(latest)?.checkpoint || null });
+    const after = messageId(latest.message?.at(-1));
+    for (const event of events) {
+      const codex = ['skill', 'monster'].includes(event?.domain);
+      const applied = codex ? Codex.applyEvent(state.codex, event) : Core.applyEvent(state.item.registry, event);
+      if (applied == null) throw new Error(t('ledger.002'));
+      doc.seq += 1;
+      doc.manual.push({
+        id: `m${doc.seq.toString(36)}`,
+        a: after,
+        d: codex ? 'codex' : 'item',
+        e: Core.clone(event),
+        l: label,
+        r: review,
+        s: doc.seq,
+        t: Date.now()
+      });
+    }
+  });
+  setStatus(t('ledger.001', label, events.length));
+  void emit('data-reset');
+  return refresh ? rebuildCurrent() : null;
+}
+
+export async function saveHistoryPreference(loaded, update) {
+  const active = await context();
+  if (!active || active.key !== loaded.key) throw new Error(t('aux.011'));
+  const result = await writeDocument(active, (doc) => {
+    update(doc.prefs);
+  });
+  // Preferences are display policy: the fold is unchanged, only the inputs moved.
+  loaded.prefs = result.doc.prefs;
+  loaded.doc = result.doc;
+  loaded.chat = result.chat;
+  loaded.replayFingerprint = replayFingerprint(result.chat);
+  updateCachedChat(loaded.key, result.chat);
+  storeLoaded(loaded);
+}
+
+export function requireBackupIdle(chat) {
+  if (!chat || chatIsStreaming(chat)) throw new Error(t('ledger.025'));
+}
+
+// What a backup preview promises not to have changed before its commit. An
+// import is a rare explicit action, so it can afford to hash the whole chat.
+const chatSignature = (chat) => Core.fnv1a(JSON.stringify(chat));
+
+export async function exportCurrentBackup(key) {
+  const ctx = await context();
+  if (!ctx || ctx.key !== key) throw new Error(t('ledger.022'));
+  requireBackupIdle(ctx.chat);
+  return Backup.capture(project(ctx, await settingsFor(ctx.character), { full: true }));
+}
+
+export async function prepareBackupImport(text, key, mode = 'empty') {
+  if (!['empty', 'replace'].includes(mode)) throw new Error(t('ledger.023'));
+  const value = Backup.parse(text),
+    ctx = await context();
+  if (!ctx || ctx.key !== key) throw new Error(t('ledger.022'));
+  requireBackupIdle(ctx.chat);
+  const loaded = project(ctx);
+  const previousCounts = [
+    loaded.snapshot.registry.order.length,
+    loaded.codexSnapshot.skills.order.length,
+    loaded.codexSnapshot.monsters.order.length
+  ];
+  if (mode === 'empty' && previousCounts.some(Boolean)) throw new Error(t('ledger.021'));
+  if (mode !== 'replace' && !Backup.counts(value).some(Boolean)) throw new Error(t('ledger.020'));
+  return { value, key, mode, previousCounts, expected: chatSignature(ctx.chat) };
+}
+
+// A restore becomes the document's base state, folded before every message.
+// Events of the chat so far are superseded by it, so their anchors go too.
+export async function commitBackupImport(preview) {
+  const ctx = await context();
+  if (!ctx || ctx.key !== preview.key) throw new Error(t('ledger.019'));
+  requireBackupIdle(ctx.chat);
+  if (chatSignature(ctx.chat) !== preview.expected) throw new Error(t('ledger.018'));
+  const checked = await prepareBackupImport(JSON.stringify(preview.value), preview.key, preview.mode);
+  if (checked.expected !== preview.expected) throw new Error(t('ledger.017'));
+  await writeDocument(
+    ctx,
+    (doc, latest) => {
+      if (chatSignature(latest) !== preview.expected) throw new Error(t('ledger.016'));
+      const restored = Backup.restore(checked.value, latest);
+      doc.base = { item: { registry: restored.item.registry, history: restored.item.history }, codex: restored.codex };
+      doc.prefs = restored.prefs;
+      doc.restoredThrough = messageId(latest.message?.at(-1));
+      doc.events = {};
+      doc.manual = [];
+      if (preview.mode === 'replace') doc.lore = Lorebook.emptyLedger();
+      return { chat: mapMessages(latest, stripAnchors).chat, cache: null };
+    },
+    { idle: true }
+  );
+  void emit('data-reset');
+  setStatus(preview.mode === 'replace' ? t('ledger.015') : t('ledger.014'));
+  await rebuildCurrent();
+  return checked.value;
+}
+
+// A copy of `chat` whose message texts went through `map`; messages that did
+// not change are shared.
+function mapMessages(chat, map) {
+  let changed = 0;
+  const message = (chat?.message || []).map((one) => {
+    const field = typeof one?.data === 'string' ? 'data' : typeof one?.content === 'string' ? 'content' : '';
+    if (!field) return one;
+    const next = map(one[field]);
+    if (next === one[field]) return one;
+    changed += 1;
+    return { ...one, [field]: next };
+  });
+  return { chat: changed ? { ...chat, message } : chat, changed };
+}
+
+const tidy = (text) => text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+
+// Removes every ITEMX trace from a chat: anchors, old markers, stray
+// transport tags, and the document, cache and old state keys.
+export function cleanChatPluginData(chat) {
+  let removedMarkers = 0;
+  const mapped = mapMessages(chat, (text) => {
+    const count = anchorKeys(text).length + countOldMarkers(text);
+    const next = removeOldMarkers(tidy(stripTransport(stripAnchors(text))));
+    if (next === text) return text;
+    removedMarkers += count;
+    return next;
+  });
+  const scriptstate = { ...(chat?.scriptstate || {}) };
+  let removedStateKeys = 0;
+  for (const key of [DOCUMENT_KEY, CACHE_KEY, ...OLD_KEYS])
+    if (Object.prototype.hasOwnProperty.call(scriptstate, key)) {
+      delete scriptstate[key];
+      removedStateKeys += 1;
+    }
+  return {
+    chat: { ...mapped.chat, scriptstate },
+    cleanedMessages: mapped.changed,
+    removedMarkers,
+    removedStateKeys
+  };
+}
+
+async function requireIdleActive(errors) {
+  const ctx = await context();
+  if (!ctx) throw new Error(errors.missing);
+  const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
+  if (!latest) throw new Error(errors.unreadable);
+  if (chatIsStreaming(latest)) throw new Error(errors.streaming);
+  return { ctx, latest };
+}
+
+function forgetChatRuntime(ctx) {
+  setLatestKeys([]);
+  dropPending(pendingEntries(ctx.key).map(([key]) => key));
+  workQueue.forget('catch-up');
+  workQueue.forget('aux-settle');
+  invalidateLoaded();
+  void emit('data-reset');
+}
+
+export async function cleanCurrentChatItemx() {
+  const { ctx, latest } = await requireIdleActive({
+    missing: t('ui-settings.139'),
+    unreadable: t('ledger.006'),
+    streaming: t('ledger.010')
+  });
+  const cleaned = cleanChatPluginData(latest);
+  await saveChat(ctx.characterIndex, ctx.chatIndex, cleaned.chat, latest);
+  // Cleanup is for leaving ITEMX behind. Disable the bot only after the write
+  // succeeded so catch-up cannot recreate what was just removed.
+  await changeSettings(ctx.character, { enabled: false });
+  forgetChatRuntime(ctx);
+  setStatus(t('ledger.009', cleaned.removedMarkers));
+  const loaded = await rebuildCurrent();
+  if (loaded) loaded.enabled = false;
+  return { ...cleaned, loaded };
+}
+
+// Removes the markers of ITEMX 2.0 – 2.3 from message text. Their data is not
+// read by this version; the text keeps everything else.
+export async function removeOldMarkersCurrent() {
+  const { ctx, latest } = await requireIdleActive({
+    missing: t('ui-settings.139'),
+    unreadable: t('ledger.006'),
+    streaming: t('ledger.010')
+  });
+  let removedMarkers = 0;
+  const mapped = mapMessages(latest, (text) => {
+    removedMarkers += countOldMarkers(text);
+    return removeOldMarkers(text);
+  });
+  if (mapped.changed) await saveChat(ctx.characterIndex, ctx.chatIndex, mapped.chat, latest);
+  invalidateLoaded();
+  void emit('data-reset');
+  setStatus(t('ledger.old-markers-done', removedMarkers));
+  const loaded = await rebuildCurrent();
+  return { cleanedMessages: mapped.changed, removedMarkers, loaded };
+}
+
+export async function removeLegacyPluginStorage() {
+  const storage = host().pluginStorage;
+  if (typeof storage?.keys !== 'function' || typeof storage?.removeItem !== 'function') return 0;
+  let keys;
+  try {
+    keys = await storage.keys();
+  } catch {
+    return 0;
+  }
+  if (!Array.isArray(keys)) return 0;
+  let removed = 0;
+  for (const key of keys.filter((one) => String(one).startsWith('auxZero')))
+    try {
+      await storage.removeItem(key);
+      removed += 1;
+    } catch {}
+  return removed;
+}
+
+export function itemxStorageFootprint(chat) {
+  const { stateBytes, oldBytes } = footprint(chat);
+  let anchorCount = 0,
+    oldMarkerCount = 0;
+  for (const message of chat?.message || []) {
+    const text = Core.messageText(message);
+    if (!text.includes('<!--')) continue;
+    anchorCount += anchorKeys(text).length;
+    oldMarkerCount += countOldMarkers(text);
+  }
+  return { stateBytes, oldBytes, anchorCount, oldMarkerCount, totalBytes: stateBytes + oldBytes };
+}
+
+// Drops events whose anchors are gone for good (rerolled or deleted), the
+// guards of deleted messages and the old state keys, and stores a fresh
+// checkpoint. The fold of the current chat is unchanged.
+export async function compactCurrentChatStorage() {
+  const { ctx, latest } = await requireIdleActive({
+    missing: t('ui-settings.139'),
+    unreadable: t('ledger.006'),
+    streaming: t('ledger.005')
+  });
+  const before = itemxStorageFootprint(latest);
+  const doc = readDocument(latest);
+  const live = new Map();
+  for (const message of latest.message || [])
+    for (const key of anchorKeys(Core.messageText(message))) live.set(key, messageId(message));
+  for (const [key, row] of Object.entries(doc.events)) if (live.get(key) !== row.c) delete doc.events[key];
+  const ids = new Set((latest.message || []).map(messageId));
+  for (const id of Object.keys(doc.guards.aux)) if (!ids.has(id)) delete doc.guards.aux[id];
+  const folded = fold(latest, doc, { full: true });
+  const scriptstate = { ...(latest.scriptstate || {}) };
+  for (const key of OLD_KEYS) delete scriptstate[key];
+  const next = withDocument(
+    { ...latest, scriptstate },
+    doc,
+    folded.checkpoint ? { v: 1, checkpoint: folded.checkpoint } : null
+  );
+  await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
+  const legacyKeysRemoved = await removeLegacyPluginStorage();
+  const after = itemxStorageFootprint(next);
+  invalidateLoaded();
+  void emit('data-reset');
+  const savedBytes = Math.max(0, before.totalBytes - after.totalBytes);
+  setStatus(t('ledger.004', Math.round(savedBytes / 1024)));
+  const loaded = await rebuildCurrent();
+  return { before, after, savedBytes, legacyKeysRemoved, loaded };
+}

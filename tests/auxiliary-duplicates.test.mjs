@@ -1,61 +1,63 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt, Session } from './helpers/modules.mjs';
+import { createFakeHost } from './helpers/fake-host.mjs';
+import { anchored, pendingAnchor, withMainStyle } from './helpers/ledger.mjs';
 
-const p = await presentationRuntime();
+const p = rt;
 const item = (id, extra = '') =>
   `[itemx: id=${id} | name=철광석 | type=재료 | rarity=normal | possession=owned | location=inventory | count=3 ${extra}]`;
 const monster = (id, extra = '') =>
   `<monsterExam><id>${id}</id><name>늑대왕</name><type>야수</type><relation>hostile</relation><status>active</status>${extra}</monsterExam>`;
 const extract = (domain, text) => (domain === 'item' ? p.core.extractResponse(text) : p.codex.extractResponse(text));
 
+let harnessId = 0;
 async function harness(domain, source, response, mode = 'missing') {
-  let chat = { message: [{ role: 'char', data: source }], scriptstate: {} };
-  let calls = 0,
-    writes = 0,
-    state;
-  const env = await presentationRuntime(
-    {
-      Risuai: {
-        runLLMModel: async () => {},
-        getChatFromIndex: async () => chat,
-        setChatToIndex: async (_ci, _chi, next) => {
-          chat = next;
-          writes++;
+  let calls = 0;
+  const id = `dup-${++harnessId}`;
+  const fake = createFakeHost({
+    chat: anchored({
+      id: 'duplicate-probe',
+      message: [{ role: 'char', data: source, chatId: 'm0' }],
+      scriptstate: {}
+    }),
+    character: { chaId: id, name: 'Probe' },
+    settings: {
+      v: 1,
+      global: { badgePosition: 'rm' },
+      characters: {
+        [id]: {
+          auxOutput: mode,
+          itemsEnabled: domain === 'item',
+          skillsEnabled: false,
+          encountersEnabled: domain === 'monster'
         }
-      },
-      testContext: () => ({ key: 'duplicate-probe', character: {}, characterIndex: 0, chatIndex: 0, chat }),
-      testModel: async () => {
-        calls++;
-        return typeof response === 'function' ? response(calls) : response;
-      },
-      testSettings: {
-        auxOutput: mode,
-        itemsEnabled: domain === 'item',
-        skillsEnabled: false,
-        encountersEnabled: domain === 'monster'
-      },
-      probe: (fn) => {
-        state = fn;
       }
     },
-    `context=async()=>testContext();isEnabled=async()=>true;outputSettings=async()=>testSettings;
-    automaticAuxReady=()=>true;auxiliaryZeroHistory=async()=>({});rememberAuxiliaryZero=async()=>{};
-    runAuxModel=testModel;modulePortraitAssets=async()=>[];
-    probe((chat)=>({items:rebuildWithManual(chat).registry,monsters:rebuildCodexWithLedger(chat).monsters}));
-    globalThis.testRecovery=recoverAuxiliaryOutput;`
-  );
-  return {
-    env,
-    chat: () => chat,
-    state: () => state(chat),
-    counts: () => ({ calls, writes }),
-    append: (source) => {
-      chat.message.push({ role: 'char', data: source });
+    llm: async () => {
+      calls++;
+      return typeof response === 'function' ? response(calls) : response;
     },
-    html: () => {
-      env.refreshLatest(chat);
-      return env.displayHandler(chat.message.at(-1).data);
+    document: true
+  });
+  await withMainStyle(fake);
+  Session.resetSession(`${id}:duplicate-probe`);
+  const chat = () => structuredClone(fake.state.chat);
+  const loaded = () => p.project({ key: 'k', chat: chat() });
+  const text = () => fake.state.chat.message.map((m) => m.data).join('\n');
+  return {
+    env: p,
+    chat,
+    text,
+    state: () => ({ items: loaded().snapshot.registry, monsters: loaded().codexSnapshot.monsters }),
+    counts: () => ({ calls, writes: fake.state.writes }),
+    append: (data) => {
+      fake.state.chat.message.push({ role: 'char', data, chatId: `m${fake.state.chat.message.length}` });
+      fake.state.chat = anchored(fake.state.chat);
+    },
+    html: async () => {
+      const current = await p.rebuildCurrent();
+      return p.displayHandler(current.chat.message.at(-1).data);
     }
   };
 }
@@ -71,11 +73,13 @@ for (const domain of ['item', 'monster'])
         `${exam('aux1')}\n${exam('aux2')}`,
         mode
       );
+      const before = h.text();
       for (let i = 0; i < 2; i++) assert.equal((await h.env.recoverAuxiliaryOutput({ force: true })).length, 0);
       assert.equal(h.state()[domain === 'item' ? 'items' : 'monsters'].order.length, 1);
-      assert.equal(h.counts().writes, 0);
+      assert.equal(h.text(), before, 'nothing new may be appended to the message');
       assert.equal(
-        (h.html().match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || []).length,
+        ((await h.html()).match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || [])
+          .length,
         1
       );
     });
@@ -92,7 +96,7 @@ test('item: duplicate batch aliases route subsequent patches', async () => {
   assert.equal(events[1].patch.id, 'one');
   assert.equal(h.state().items.order.join(','), 'one');
   assert.equal(h.state().items.items.one.trivia, '새 설명');
-  assert.equal((h.html().match(/<article\b/g) || []).length, 1);
+  assert.equal(((await h.html()).match(/<article\b/g) || []).length, 1);
 });
 
 test('item: no-op partial appraisal still gets one evidence-checked repair and one commit', async () => {
@@ -168,34 +172,26 @@ for (const domain of ['item', 'monster'])
     assert.equal(h.state()[domain === 'item' ? 'items' : 'monsters'].order.length, 2);
   });
 
-test('display suppresses identical states across paragraphs and both marker formats, without altering replay', () => {
+test('display suppresses identical states across paragraphs, without altering replay', async () => {
+  await withMainStyle(createFakeHost({ document: true }));
   for (const domain of ['item', 'monster']) {
     const first = extract(domain, (domain === 'item' ? item : monster)('same'));
     const code = first.content.match(/<!--(?:ITEMX2|CODEX2):([A-Za-z0-9_-]+)-->/)[1];
     const payload = p.core.decodePayload(code);
-    const prefix = domain === 'item' ? 'ITEMX2' : 'CODEX2';
-    const inline = p.embeddedViewCode(payload, domain === 'item' ? 'item' : 'codex');
-    // Identical logical view, same key ordering, full and compact ref mixed.
-    p.runtime.eventPayloads.set(`${domain === 'item' ? 'item' : 'codex'}:testref`, payload);
-    const source = `${first.content}\n첫 문단.\n<!--${prefix}@testref:${inline}-->\n둘째 문단.\n${first.content}`;
-    const html = p.displayHandler(source);
-    assert.equal(
-      (html.match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || []).length,
-      1
-    );
+    const count = (html) =>
+      (html.match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || []).length;
+    // Identical logical view in three anchors of one message.
+    const source = `${pendingAnchor(payload)}\n첫 문단.\n${pendingAnchor(payload)}\n둘째 문단.\n${pendingAnchor(payload)}`;
+    const html = await p.displayHandler(source);
+    assert.equal(count(html), 1);
     assert.ok(html.includes('첫 문단.') && html.includes('둘째 문단.'));
     assert.equal((source.match(/<!--/g) || []).length, 3);
     const changed = {
       ...payload,
       view: { ...payload.view, ...(domain === 'item' ? { durability: '50/100' } : { status: 'defeated' }) }
     };
-    p.runtime.eventPayloads.set(`${domain === 'item' ? 'item' : 'codex'}:changedref`, changed);
-    const changedInline = p.embeddedViewCode(changed, domain === 'item' ? 'item' : 'codex');
-    const cycle = `<!--${prefix}@testref:${inline}-->\n\n상태 변화.\n\n<!--${prefix}@changedref:${changedInline}-->\n\n원상 복귀.\n\n<!--${prefix}@testref:${inline}-->`;
-    assert.equal(
-      (p.displayHandler(cycle).match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || [])
-        .length,
-      3
-    );
+    // A -> B -> A remains three states.
+    const cycle = `${pendingAnchor(payload)}\n\n상태 변화.\n\n${pendingAnchor(changed)}\n\n원상 복귀.\n\n${pendingAnchor(payload)}`;
+    assert.equal(count(await p.displayHandler(cycle)), 3);
   }
 });

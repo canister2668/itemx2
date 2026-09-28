@@ -2,14 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { createFakeDocument } from './helpers/fake-dom.mjs';
 import { TextEncoder, TextDecoder } from 'node:util';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rt } from './helpers/modules.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('API v3 runtime processes, commits, injects and renders one real turn', async () => {
   let chat = { id: 'chat-a', message: [], scriptstate: {} };
+  // A host document to hold our stylesheet, so chat cards render in full.
+  const dom = createFakeDocument();
   let updateRequest = null;
   const handlers = {},
     replacers = {},
@@ -61,7 +65,8 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
       return { id: 'setting' };
     },
     unregisterUIPart: async () => {},
-    getRootDocument: async () => null,
+    getRootDocument: async () => dom.document,
+    unwarpSafeArray: async (value) => value,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
       return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.28\n' };
@@ -76,6 +81,8 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     TextEncoder,
     TextDecoder,
     structuredClone,
+    btoa,
+    atob,
     setTimeout,
     clearTimeout,
     setInterval: () => 1,
@@ -85,7 +92,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   });
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
   await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
+  assert.deepEqual(bootOrder, ['setting', 'permission:replacer', 'button:chat']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
   assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.28');
   assert.equal(typeof replacers.afterRequest, 'function');
@@ -128,21 +135,17 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(translationRequest[0].content, positionedReport);
   assert.equal(await replacers.afterRequest(positionedReport, 'translate'), positionedReport);
   const visibleReport = positionedReport.split('<output target=input>')[1].split('</output>')[0];
-  assert.equal((visibleReport.match(/<!--ITEMX2:/g) || []).length, 1);
-  assert.equal((visibleReport.match(/<!--CODEX2:/g) || []).length, 1);
+  assert.equal((visibleReport.match(/<!--ix:[0-9a-z]+-->/g) || []).length, 2);
+  assert.doesNotMatch(visibleReport, /ITEMX2|CODEX2/);
 
   const raw =
     '런타임 검을 얻었다.\n\n전투가 끝난 뒤 일행은 다음 장소로 떠났다.\n\n<itemExam><id>runtime_blade</id><name>런타임 검</name><type>장검</type><emoji>⚔️</emoji><internalrarity>epic</internalrarity><displayrarity>에픽</displayrarity><power>2200-3100</power><durability>100/100</durability><possession>owned</possession><location>inventory</location><visual><theme>oriental</theme><affinity>lightning</affinity></visual><trivia>실제 훅 검증.</trivia></itemExam>';
   const cleaned = await replacers.afterRequest(raw, 'main');
   assert.equal(cleaned.includes('<itemExam>'), false);
-  assert.match(cleaned, /<!--ITEMX2:/);
+  assert.match(cleaned, /<!--ix:[0-9a-z]+-->/);
   const tokenizedStoredMessage = await handlers.process(cleaned);
   assert.match(tokenizedStoredMessage, /런타임 검을 얻었다/);
-  assert.equal(
-    tokenizedStoredMessage.includes('<!--ITEMX2:'),
-    false,
-    'stored display marker is removed before Hypa tokenization'
-  );
+  assert.equal(tokenizedStoredMessage.includes('<!--ix:'), false, 'stored anchor is removed before Hypa tokenization');
   // The inventory poll can still see the pre-commit chat between the final
   // response hook and the host's first display pass. That stale rebuild must
   // not clear the just-produced marker or the card appears only after editing.
@@ -152,7 +155,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.match(immediateDisplay, /motion-lite/);
   chat.message.push({ role: 'char', data: cleaned });
   await new Promise((resolve) => setTimeout(resolve, 130));
-  assert.equal(chat.scriptstate.$__itemx2_state, undefined);
+  assert.equal(chat.scriptstate['itemx:ledger'], undefined, 'no write before the commit');
 
   const request = await replacers.beforeRequest(
     [
@@ -163,7 +166,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   );
   assert.equal(request[0].role, 'system');
   assert.match(request[0].content, /runtime_blade/);
-  assert.equal(request[1].content.includes('<!--ITEMX2:'), false);
+  assert.equal(request[1].content.includes('<!--ix:'), false);
   const readsBeforeCachedRequest = chatReads;
   const continuationRequest = await replacers.beforeRequest(
     [
@@ -224,8 +227,8 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     '새로운 검결을 깨우쳤다.\n<skillExam><id>hidden_form</id><name>월영참</name><rank>절정</rank><school>음월검법</school><type>active</type><status>equipped</status><level>7</level><mastery>30</mastery><cost>진기 24</cost><cooldown>18초</cooldown><target>단일</target><effects>달빛 검기 ;; 빙결 대상 추가 피해</effects></skillExam>\n\n[Status: 정상]';
   const mixedCleaned = await replacers.afterRequest(mixed, 'main');
   assert.equal(mixedCleaned.includes('<skillExam>'), false);
-  assert.match(mixedCleaned, /<!--CODEX2:/);
-  assert.ok(mixedCleaned.indexOf('<!--CODEX2:') < mixedCleaned.indexOf('[Status: 정상]'));
+  assert.match(mixedCleaned, /<!--ix:/);
+  assert.ok(mixedCleaned.indexOf('<!--ix:') < mixedCleaned.indexOf('[Status: 정상]'));
   const mixedDisplay = await handlers.display(mixedCleaned);
   assert.match(mixedDisplay, /itemx2-inline-skill/);
   assert.match(mixedDisplay, /motion-lite/);
@@ -246,7 +249,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     '새 기술을 익혔다.\n<skillExam><id>trailer_form</id><name>월영참</name><type>active</type><status>learned</status></skillExam>\n\n[Status: 월영참 CD 18초]',
     'main'
   );
-  assert.ok(trailerNameHit.indexOf('<!--CODEX2:') < trailerNameHit.indexOf('[Status: 월영참'));
+  assert.ok(trailerNameHit.indexOf('<!--ix:') < trailerNameHit.indexOf('[Status: 월영참'));
 
   await replacers.beforeRequest([{ role: 'user', content: '설정 캐시를 확인한다.' }], 'main');
   await replacers.afterRequest('설정 캐시 확인 완료.', 'main');
@@ -260,7 +263,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     '적이 나타났다.\n<monsterExam><id>broken\n\n검을 얻었다.\n<itemExam><id>second_blade</id><name>두 번째 검</name><type>장검</type><possession>owned</possession><location>inventory</location></itemExam>\n\n[Status: HP 12]\n<state>keep</state>';
   const brokenCleaned = await replacers.afterRequest(brokenMixed, 'main');
   assert.equal(brokenCleaned.includes('monsterExam'), false);
-  assert.match(brokenCleaned, /<!--ITEMX2:/);
+  assert.match(brokenCleaned, /<!--ix:/);
   assert.match(brokenCleaned, /\[Status: HP 12\]/);
   assert.match(brokenCleaned, /<state>keep<\/state>/);
 });
@@ -316,6 +319,8 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
     TextEncoder,
     TextDecoder,
     structuredClone,
+    btoa,
+    atob,
     setTimeout,
     clearTimeout,
     setInterval: (fn, ms) => {
@@ -327,6 +332,7 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
     document: { head: {}, body: {} }
   });
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
+  await new Promise((resolve) => setTimeout(resolve, 20));
   assert.deepEqual(bootOrder, ['setting', 'script-handler', 'script-handler', 'script-handler']);
   assert.deepEqual(
     intervals.map((row) => row.ms),
@@ -338,394 +344,11 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
   );
 });
 
-test('self-contained compact refs render on first display without hydrated chat state', async () => {
-  const handlers = {};
-  const Risuai = {
-    pluginStorage: { getItem: async () => null, setItem: async () => {} },
-    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
-    getCurrentCharacterIndex: async () => {
-      throw new TypeError("Cannot read properties of undefined (reading 'chatPage')");
-    },
-    getCurrentChatIndex: async () => {
-      throw new TypeError("Cannot read properties of undefined (reading 'chatPage')");
-    },
-    getCharacter: async () => null,
-    registerSetting: async () => ({ id: 'setting' }),
-    addRisuScriptHandler: async (mode, fn) => {
-      handlers[mode] = fn;
-    },
-    removeRisuScriptHandler: async () => {},
-    unregisterUIPart: async () => {},
-    onUnload: async () => {},
-    hideContainer: async () => {}
-  };
-  const sandbox = vm.createContext({
-    console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    structuredClone,
-    setTimeout,
-    clearTimeout,
-    setInterval: () => 1,
-    clearInterval: () => {},
-    Risuai,
-    document: { head: {}, body: {} }
-  });
-  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
-  const view = {
-    id: 'first_entry_blade',
-    name: '첫 진입 검',
-    itemType: '장검',
-    emoji: '⚔️',
-    rarity: 'epic',
-    displayRarity: '에픽',
-    possession: 'owned',
-    location: 'inventory',
-    count: 1,
-    theme: 'oriental',
-    affinity: 'lightning',
-    effects: [],
-    augments: []
-  };
-  const code = Buffer.from(JSON.stringify({ v: 2, view })).toString('base64url');
-  const rendered = await handlers.display(`검을 확인했다.\n<!--ITEMX2@i0_0_deadbeef:${code}-->`);
-  assert.match(rendered, /itemx-card/);
-  assert.match(rendered, /첫 진입 검/);
-  assert.doesNotMatch(rendered, /기록 복원 중/);
-  const legacyFallback = await handlers.display('<!--ITEMX2@i0_0_deadbeef-->');
-  assert.match(legacyFallback, /기록 복원 중/);
-
-  const repairedView = { ...view, name: '최종 +12 검', augments: [{ name: '+12강화', desc: '보띿빛 오라' }] };
-  const repairedCode = Buffer.from(JSON.stringify({ v: 2, view: repairedView })).toString('base64url');
-  const coalesced = await handlers.display(
-    `감정과 보완이 이어졌다.\n<!--ITEMX2@i0_0_exam:${code}-->\n<!--ITEMX2@i0_1_patch:${repairedCode}-->`
-  );
-  assert.equal((coalesced.match(/data-itemx-id="first_entry_blade"/g) || []).length, 1);
-  assert.match(coalesced, /최종 \+12 검/);
-  assert.match(coalesced, /\+12강화/);
-
-  const otherView = { ...view, id: 'other_blade', name: '다른 검' };
-  const otherCode = Buffer.from(JSON.stringify({ v: 2, view: otherView })).toString('base64url');
-  const separate = await handlers.display(
-    `두 검을 감정했다.\n<!--ITEMX2@i0_0_first:${code}-->\n<!--ITEMX2@i0_1_other:${otherCode}-->`
-  );
-  assert.equal((separate.match(/data-itemx-id=/g) || []).length, 2);
-
-  const laterChange = await handlers.display(
-    `첫 감정.\n<!--ITEMX2@i0_0_exam:${code}-->\n\n이후 전투에서 별도로 강화됐다.\n<!--ITEMX2@i0_1_later:${repairedCode}-->`
-  );
-  assert.equal((laterChange.match(/data-itemx-id="first_entry_blade"/g) || []).length, 2);
-});
-
-test('legacy bare refs are upgraded once from the per-chat event ledger', async () => {
-  const handlers = {},
-    replacers = {};
-  const view = {
-    id: 'legacy_blade',
-    name: '복원된 옛 검',
-    itemType: '장검',
-    emoji: '⚔️',
-    rarity: 'rare',
-    displayRarity: '레어',
-    possession: 'owned',
-    location: 'inventory',
-    count: 1,
-    theme: 'oriental',
-    affinity: 'lightning',
-    effects: [],
-    augments: []
-  };
-  const item = {
-    ...view,
-    required: '',
-    power: '',
-    durability: '',
-    cost: '',
-    slot: '',
-    affinity2: '',
-    condition: '',
-    trivia: ''
-  };
-  const ref = 'i0_0_deadbeef';
-  const ledger = [{ ref, domain: 'item', payload: { v: 2, event: { kind: 'exam', item }, view } }];
-  let chat = {
-    id: 'legacy-chat',
-    message: [{ role: 'char', data: `옛 검을 확인했다.\n<!--ITEMX2@${ref}-->` }],
-    scriptstate: { $__itemx2_message_events: JSON.stringify(ledger) }
-  };
-  let writes = 0;
-  const Risuai = {
-    pluginStorage: { getItem: async () => null, setItem: async () => {} },
-    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
-    getCurrentCharacterIndex: async () => 0,
-    getCurrentChatIndex: async () => 0,
-    getCharacter: async () => ({ chaId: 'legacy-char', name: '옛 봇' }),
-    getChatFromIndex: async () => structuredClone(chat),
-    setChatToIndex: async (_ci, _hi, value) => {
-      writes += 1;
-      chat = structuredClone(value);
-    },
-    registerSetting: async () => ({ id: 'setting' }),
-    addRisuScriptHandler: async (mode, fn) => {
-      handlers[mode] = fn;
-    },
-    removeRisuScriptHandler: async () => {},
-    requestPluginPermission: async () => true,
-    addRisuReplacer: async (mode, fn) => {
-      replacers[mode] = fn;
-    },
-    removeRisuReplacer: async () => {},
-    getRootDocument: async () => null,
-    unregisterUIPart: async () => {},
-    onUnload: async () => {},
-    hideContainer: async () => {}
-  };
-  const sandbox = vm.createContext({
-    console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    structuredClone,
-    setTimeout,
-    clearTimeout,
-    setInterval: () => 1,
-    clearInterval: () => {},
-    Risuai,
-    document: { head: {}, body: {} }
-  });
-  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
-  assert.equal(writes, 1);
-  assert.match(chat.message[0].data, /<!--ITEMX2@i0_0_deadbeef:[A-Za-z0-9_-]+-->/);
-  const rendered = await handlers.display(chat.message[0].data);
-  assert.match(rendered, /itemx-card/);
-  assert.match(rendered, /복원된 옛 검/);
-});
-
-test('a persisted command authority remains in the skill registry after later untagged outputs', async () => {
-  const handlers = {},
-    replacers = {};
-  const ref = 'c1_0_command';
-  const entity = {
-    id: 'command_spells',
-    name: '령주',
-    glyph: '⚜️',
-    rank: '3획',
-    school: '마술',
-    type: 'active',
-    status: 'learned',
-    level: 5,
-    mastery: 55,
-    cost: '령주 1획 소모',
-    cooldown: '별도 충전 필요',
-    target: '계약 서번트',
-    affinity: 'void',
-    description: '서번트에 대한 절대 명령권',
-    effects: ['절대 명령'],
-    growth: ''
-  };
-  const payload = { v: 1, event: { domain: 'skill', kind: 'exam', entity }, view: entity };
-  let chat = {
-    id: 'command-chat',
-    message: [
-      { role: 'char', data: `령주의 권능을 확인했다.\n<!--CODEX2@${ref}-->` },
-      { role: 'char', data: '이후 주변을 계속 지켜보았다.' }
-    ],
-    scriptstate: { $__itemx2_message_events: JSON.stringify([{ ref, domain: 'codex', payload }]) }
-  };
-  const Risuai = {
-    pluginStorage: { getItem: async () => null, setItem: async () => {} },
-    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
-    getCurrentCharacterIndex: async () => 0,
-    getCurrentChatIndex: async () => 0,
-    getCharacter: async () => ({ chaId: 'fgo-char', name: 'Fate grand order-No Asset' }),
-    getChatFromIndex: async () => structuredClone(chat),
-    setChatToIndex: async (_ci, _hi, value) => {
-      chat = structuredClone(value);
-    },
-    registerSetting: async () => ({ id: 'setting' }),
-    addRisuScriptHandler: async (mode, fn) => {
-      handlers[mode] = fn;
-    },
-    removeRisuScriptHandler: async () => {},
-    requestPluginPermission: async () => true,
-    addRisuReplacer: async (mode, fn) => {
-      replacers[mode] = fn;
-    },
-    removeRisuReplacer: async () => {},
-    getRootDocument: async () => null,
-    unregisterUIPart: async () => {},
-    onUnload: async () => {},
-    hideContainer: async () => {}
-  };
-  const sandbox = vm.createContext({
-    console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    structuredClone,
-    setTimeout,
-    clearTimeout,
-    setInterval: () => 1,
-    clearInterval: () => {},
-    Risuai,
-    document: { head: {}, body: {} }
-  });
-  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
-  const request = await replacers.beforeRequest(
-    chat.message.map((message) => ({ role: 'assistant', content: message.data })),
-    'main'
-  );
-  const requestText = request.map((message) => message.content || '').join('\n');
-  assert.match(requestText, /command_spells/);
-  assert.match(requestText, /령주/);
-});
-
-test('only the newest event message keeps an inline display view', async () => {
-  const handlers = {},
-    replacers = {};
-  const makePayload = (id, name) => {
-    const view = {
-      id,
-      name,
-      itemType: '장검',
-      emoji: '⚔️',
-      rarity: 'rare',
-      displayRarity: '레어',
-      possession: 'owned',
-      location: 'inventory',
-      count: 1,
-      theme: 'oriental',
-      affinity: '',
-      effects: [],
-      augments: []
-    };
-    const item = {
-      ...view,
-      required: '',
-      power: '',
-      durability: '',
-      cost: '',
-      slot: '',
-      affinity2: '',
-      condition: '',
-      trivia: ''
-    };
-    return { v: 2, event: { kind: 'exam', item }, view };
-  };
-  const oldRef = 'i0_0_oldbeef',
-    newRef = 'i1_0_newbeef';
-  const oldPayload = makePayload('old_blade', '오래된 검'),
-    newPayload = makePayload('new_blade', '새 검');
-  const inline = (payload) => Buffer.from(JSON.stringify({ v: 2, view: payload.view })).toString('base64url');
-  const ledger = [
-    { ref: oldRef, domain: 'item', payload: oldPayload },
-    { ref: newRef, domain: 'item', payload: newPayload }
-  ];
-  let chat = {
-    id: 'hybrid-ref-chat',
-    message: [
-      { role: 'char', data: `첫 기록\n<!--ITEMX2@${oldRef}:${inline(oldPayload)}-->` },
-      { role: 'char', data: `최신 기록\n<!--ITEMX2@${newRef}-->` }
-    ],
-    scriptstate: { $__itemx2_message_events: JSON.stringify(ledger) }
-  };
-  let writes = 0;
-  const Risuai = {
-    pluginStorage: { getItem: async () => null, setItem: async () => {} },
-    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
-    getCurrentCharacterIndex: async () => 0,
-    getCurrentChatIndex: async () => 0,
-    getCharacter: async () => ({ chaId: 'hybrid-char', name: '혼합 봇' }),
-    getChatFromIndex: async () => structuredClone(chat),
-    setChatToIndex: async (_ci, _hi, value) => {
-      writes += 1;
-      chat = structuredClone(value);
-    },
-    registerSetting: async () => ({ id: 'setting' }),
-    addRisuScriptHandler: async (mode, fn) => {
-      handlers[mode] = fn;
-    },
-    removeRisuScriptHandler: async () => {},
-    requestPluginPermission: async () => true,
-    addRisuReplacer: async (mode, fn) => {
-      replacers[mode] = fn;
-    },
-    removeRisuReplacer: async () => {},
-    getRootDocument: async () => null,
-    unregisterUIPart: async () => {},
-    onUnload: async () => {},
-    hideContainer: async () => {}
-  };
-  const sandbox = vm.createContext({
-    console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    structuredClone,
-    setTimeout,
-    clearTimeout,
-    setInterval: () => 1,
-    clearInterval: () => {},
-    Risuai,
-    document: { head: {}, body: {} }
-  });
-  await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
-  assert.equal(writes, 1);
-  assert.equal(chat.message[0].data, `첫 기록\n<!--ITEMX2@${oldRef}-->`);
-  assert.match(chat.message[1].data, new RegExp(`<!--ITEMX2@${newRef}:[A-Za-z0-9_-]+-->`));
-  const request = await replacers.beforeRequest(
-    chat.message.map((message) => ({ role: 'assistant', content: message.data })),
-    'main'
-  );
-  assert.equal(
-    request.some((message) => String(message.content || '').includes('ITEMX2@')),
-    false
-  );
-});
-
-test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated chat state', async () => {
-  const Risuai = {
-    pluginStorage: { getItem: async () => null, setItem: async () => {} },
-    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
-    getCurrentCharacterIndex: async () => {
-      throw new TypeError("Cannot read properties of undefined (reading 'chatPage')");
-    },
-    getCurrentChatIndex: async () => {
-      throw new TypeError("Cannot read properties of undefined (reading 'chatPage')");
-    },
-    getCharacter: async () => null,
-    registerSetting: async () => ({ id: 'setting' }),
-    addRisuScriptHandler: async () => {},
-    removeRisuScriptHandler: async () => {},
-    unregisterUIPart: async () => {},
-    onUnload: async () => {},
-    hideContainer: async () => {}
-  };
-  const sandbox = vm.createContext({
-    console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    structuredClone,
-    setTimeout,
-    clearTimeout,
-    setInterval: () => 1,
-    clearInterval: () => {},
-    Risuai,
-    document: { head: {}, body: {} }
-  });
-  const built = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
-  const instrumented = built.replace(
-    '  async function cachedOrRebuildCurrent() {',
-    '  globalThis.__itemxCleanChatForTest = cleanChatPluginData;\n  async function cachedOrRebuildCurrent() {'
-  );
-  assert.notEqual(instrumented, built);
-  await vm.runInContext(instrumented, sandbox);
+test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated chat state', () => {
   const payload = Buffer.from(
     JSON.stringify({ v: 2, event: { kind: 'exam', item: { id: 'x', name: '검' } } })
   ).toString('base64url');
-  const cleaned = sandbox.__itemxCleanChatForTest({
+  const cleaned = rt.cleanChatPluginData({
     message: [
       {
         role: 'char',
@@ -748,228 +371,4 @@ test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated
   assert.doesNotMatch(cleaned.chat.message[0].data, /ITEMX2|CODEX2/);
   assert.match(cleaned.chat.message[0].data, /<state>보존<\/state>/);
   assert.equal(JSON.stringify(cleaned.chat.scriptstate), JSON.stringify({ unrelated: 'keep' }));
-});
-
-test('cache maintenance preserves all canonical events and current state', async () => {
-  const handlers = {};
-  const Risuai = {
-    pluginStorage: { getItem: async () => null, setItem: async () => {} },
-    safeLocalStorage: { getItem: async () => null, setItem: async () => {} },
-    getCurrentCharacterIndex: async () => {
-      throw new TypeError('outside chat');
-    },
-    getCurrentChatIndex: async () => {
-      throw new TypeError('outside chat');
-    },
-    getCharacter: async () => null,
-    registerSetting: async () => ({ id: 'setting' }),
-    addRisuScriptHandler: async (mode, fn) => {
-      handlers[mode] = fn;
-    },
-    removeRisuScriptHandler: async () => {},
-    unregisterUIPart: async () => {},
-    onUnload: async () => {},
-    hideContainer: async () => {}
-  };
-  const sandbox = vm.createContext({
-    console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    structuredClone,
-    setTimeout,
-    clearTimeout,
-    setInterval: () => 1,
-    clearInterval: () => {},
-    Risuai,
-    document: { head: {}, body: {} }
-  });
-  const built = await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8');
-  const instrumented = built.replace(
-    '  async function cachedOrRebuildCurrent() {',
-    `  globalThis.__itemxCreateCheckpoint = createCheckpoint;
-    globalThis.__itemxCheckpointForTest = (chat, options) => {
-      const next = refreshReplayCache(chat, options), status = checkpointStatus(next), lookup = buildMessageEventLookup(next);
-      const manual = status.valid ? manualLedger(next) : [...(status.checkpoint?.manual || []), ...manualLedger(next)];
-      const replay = status.valid ? { start: status.checkpoint.boundary + 1, registry: status.checkpoint.item.registry } : {};
-      const snapshot = rebuildWithManual(next, lookup, { ...replay, manual });
-      const codexReplay = status.valid ? { start: status.checkpoint.boundary + 1, base: status.checkpoint.codex } : {};
-      const codex = rebuildCodexWithLedger(next, lookup, codexReplay);
-      loadMessageEventLedger(next, lookup);
-      return { chat: next, valid: status.valid, version: status.checkpoint?.v, boundary: status.checkpoint?.boundary, checkpointBytes: new TextEncoder().encode(next.scriptstate?.$__itemx2_checkpoint || '').length, tailRows: messageEventLedger(next).length, tailManual: manualLedger(next).length, itemIds: snapshot.registry.order, skillIds: codex.skills.order };
-    };
-  async function cachedOrRebuildCurrent() {`
-  );
-  await vm.runInContext(instrumented, sandbox);
-  const rows = [],
-    message = [];
-  for (let index = 0; index < 140; index += 1) {
-    const id = `checkpoint_item_${index}`,
-      ref = `i${index.toString(36)}_0_ref`;
-    const item = {
-      id,
-      name: `기록 ${index}`,
-      itemType: '기록물',
-      emoji: '📜',
-      rarity: 'normal',
-      displayRarity: '일반',
-      possession: 'owned',
-      location: 'inventory',
-      count: 1,
-      effects: [],
-      augments: []
-    };
-    rows.push({ ref, domain: 'item', payload: { v: 2, event: { kind: 'exam', item }, view: item } });
-    message.push({ role: 'char', data: `기록 ${index}\n<!--ITEMX2@${ref}-->` });
-  }
-  const skill = {
-    id: 'checkpoint_skill',
-    name: '보존 기술',
-    glyph: '✨',
-    rank: '숙련',
-    school: '',
-    type: 'active',
-    status: 'learned',
-    level: 5,
-    mastery: 55,
-    cost: '기력 소모',
-    cooldown: '짧은 회복',
-    target: '',
-    affinity: 'arcane',
-    description: '',
-    effects: [],
-    growth: ''
-  };
-  rows.push({
-    ref: 'c1e_0_skill',
-    domain: 'codex',
-    payload: { v: 1, event: { domain: 'skill', kind: 'exam', entity: skill }, view: skill }
-  });
-  message[50].data += '\n<!--CODEX2@c1e_0_skill-->';
-  const manualItem = (id) => ({
-    kind: 'exam',
-    item: {
-      id,
-      name: id,
-      itemType: '기록물',
-      emoji: '📜',
-      rarity: 'normal',
-      displayRarity: '일반',
-      possession: 'owned',
-      location: 'inventory',
-      count: 1,
-      effects: [],
-      augments: []
-    }
-  });
-  const manual = [
-    { at: 1, afterIndex: 10, label: 'prefix', event: manualItem('manual_prefix') },
-    { at: 2, afterIndex: 130, label: 'tail', event: manualItem('manual_tail') }
-  ];
-  const source = {
-    id: 'checkpoint-chat',
-    message,
-    scriptstate: { $__itemx2_message_events: JSON.stringify(rows), $__itemx2_manual_events: JSON.stringify(manual) }
-  };
-  const folded = sandbox.__itemxCheckpointForTest(source);
-  assert.equal(folded.valid, false);
-  assert.equal(JSON.parse(folded.chat.scriptstate['itemx:log']).v, 1);
-  assert.ok(folded.checkpointBytes <= 524288);
-  assert.equal(folded.boundary, undefined);
-  assert.equal(folded.tailRows, 141);
-  assert.equal(folded.tailManual, 2);
-  assert.equal(folded.itemIds.length, 142);
-  assert.deepEqual(Array.from(folded.skillIds), ['checkpoint_skill']);
-  assert.match(folded.chat.message[0].data, /ITEMX2/);
-  folded.chat.message[0].data = '첫 기록을 삭제했다.';
-  const rebuilt = sandbox.__itemxCheckpointForTest(folded.chat);
-  assert.equal(rebuilt.valid, false);
-  assert.equal(rebuilt.itemIds.includes('checkpoint_item_0'), true);
-  assert.equal(rebuilt.itemIds.length, 142);
-  assert.equal(rebuilt.itemIds.includes('manual_prefix'), true);
-  assert.deepEqual(Array.from(rebuilt.skillIds), ['checkpoint_skill']);
-
-  const manualHeavy = Array.from({ length: 140 }, (_, index) => ({
-    at: index,
-    afterIndex: 9,
-    label: 'manual',
-    event: manualItem(`manual_only_${index}`)
-  }));
-  const manualFolded = sandbox.__itemxCheckpointForTest({
-    id: 'manual-heavy',
-    message: Array.from({ length: 10 }, () => ({ role: 'char', data: '기록 없음' })),
-    scriptstate: { $__itemx2_message_events: '[]', $__itemx2_manual_events: JSON.stringify(manualHeavy) }
-  });
-  assert.equal(manualFolded.valid, false);
-  assert.equal(manualFolded.boundary, undefined);
-  assert.equal(manualFolded.tailManual, 140);
-  assert.equal(manualFolded.itemIds.length, 140);
-
-  const manyRows = [],
-    manyMessages = [];
-  for (let index = 0; index < 400; index += 1) {
-    const id = `bounded_${index}`,
-      ref = `i${index.toString(36)}_0_bounded`,
-      item = manualItem(id).item;
-    manyRows.push({ ref, domain: 'item', payload: { v: 2, event: { kind: 'exam', item }, view: item } });
-    manyMessages.push({
-      role: 'char',
-      chatId: `bounded-message-${index}`,
-      data: `기록 ${index}\n<!--ITEMX2@${ref}-->`
-    });
-  }
-  const bounded = sandbox.__itemxCheckpointForTest({
-    id: 'bounded-chat',
-    message: manyMessages,
-    scriptstate: { $__itemx2_message_events: JSON.stringify(manyRows), $__itemx2_manual_events: '[]' }
-  });
-  assert.equal(JSON.parse(bounded.chat.scriptstate['itemx:log']).v, 1);
-  assert.equal(JSON.parse(bounded.chat.scriptstate['itemx:log']).rows.length, 400);
-  assert.equal(bounded.tailRows, 400);
-  assert.equal(bounded.itemIds.length, 400);
-  assert.ok(bounded.itemIds.includes('bounded_0'));
-  assert.deepEqual(Array.from(sandbox.__itemxCheckpointForTest(bounded.chat).itemIds), Array.from(bounded.itemIds));
-  assert.match(bounded.chat.message[0].data, /ITEMX2/);
-  // Explicit cleanup also preserves every user choice, including recent-tail IDs.
-  bounded.chat.scriptstate.$__itemx2_history_preferences = JSON.stringify({
-    after: 10,
-    keep: Object.fromEntries(bounded.itemIds.map((id) => [`item:${id}`, true])),
-    archived: { 'item:bounded_399': true }
-  });
-  const cleaned = sandbox.__itemxCheckpointForTest(bounded.chat, { force: true, keepMessages: 8 });
-  assert.equal(cleaned.itemIds.length, 400);
-  assert.equal(Object.keys(JSON.parse(cleaned.chat.scriptstate.$__itemx2_history_preferences).keep).length, 400);
-  assert.equal(JSON.parse(cleaned.chat.scriptstate.$__itemx2_history_preferences).archived['item:bounded_399'], true);
-
-  // Cross the former count/byte caps and the new warning threshold. Current
-  // state, terminal facts and lifecycle history must round-trip without pruning.
-  const largeItem = { registry: { order: [], items: {} }, history: {} };
-  const largeCodex = {
-    skills: { order: [], entries: {} },
-    monsters: { order: [], entries: {} },
-    history: { skill: {}, monster: {} }
-  };
-  for (let index = 0; index < 200; index++) {
-    const id = `large_${index}`;
-    largeItem.registry.order.push(id);
-    largeItem.registry.items[id] = {
-      ...manualItem(id).item,
-      trivia: '가'.repeat(30000),
-      possession: index % 2 ? 'removed' : 'owned'
-    };
-    largeItem.history[id] = { at: index, reason: 'consume' };
-    for (const domain of ['skill', 'monster']) {
-      const registry = domain === 'skill' ? largeCodex.skills : largeCodex.monsters;
-      registry.order.push(id);
-      registry.entries[id] = { id, name: id, status: domain === 'skill' ? 'lost' : 'dead' };
-      largeCodex.history[domain][id] = { at: index };
-    }
-  }
-  const large = sandbox.__itemxCreateCheckpoint(largeItem, largeCodex, 1, 'large-message');
-  assert.ok(Buffer.byteLength(large.encoded) > 16 * 1024 * 1024);
-  const restored = JSON.parse(large.encoded);
-  assert.deepEqual(restored.item, largeItem);
-  assert.deepEqual(restored.codex, largeCodex);
-  assert.equal(restored.storage.pruned, false);
-  assert.equal(sandbox.__itemxCreateCheckpoint(largeItem, largeCodex, 2, 'next', true).checkpoint.storage.pruned, true);
 });

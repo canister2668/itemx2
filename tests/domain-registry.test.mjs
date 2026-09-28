@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt } from './helpers/modules.mjs';
 
 test('every codex transport tag routes from one registry', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   assert.equal([...codex.DOMAIN_NAMES].join(','), 'skill,monster');
   for (const name of codex.DOMAIN_NAMES) {
     const spec = codex.DOMAINS[name];
@@ -15,20 +15,20 @@ test('every codex transport tag routes from one registry', async () => {
 });
 
 test('tag routing is case-insensitive, as the parser regex is', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   assert.equal(codex.routeTag('SKILLEXAM').domain, 'skill');
   assert.equal(codex.routeTag('monsterpatch').domain, 'monster');
 });
 
 test('an unregistered tag routes nowhere instead of defaulting to the bestiary', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   // This is the regression that made any new domain silently corrupt encounters.
   for (const tag of ['walletPatch', 'questExam', 'itemPatch', 'skil', '', 'monste'])
     assert.equal(codex.routeTag(tag), null, `${tag} must not resolve to a domain`);
 });
 
 test('storeFor resolves each domain registry and rejects unknown ones', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   const state = codex.snapshot();
   assert.equal(codex.storeFor(state, 'skill'), state.skills);
   assert.equal(codex.storeFor(state, 'monster'), state.monsters);
@@ -36,7 +36,7 @@ test('storeFor resolves each domain registry and rejects unknown ones', async ()
 });
 
 test('an unknown transport tag is left alone in the narrative, not consumed', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   const text = 'before <walletPatch><id>gold</id></walletPatch> after';
   const result = codex.extractResponse(text, codex.snapshot(), {});
   assert.equal(result.events.length, 0);
@@ -45,7 +45,7 @@ test('an unknown transport tag is left alone in the narrative, not consumed', as
 });
 
 test('a real encounter transport still registers through the registry', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   const text =
     '<monsterExam><id>wolf</id><name>늑대</name><relation>hostile</relation><status>active</status></monsterExam>';
   const result = codex.extractResponse(text, codex.snapshot(), {});

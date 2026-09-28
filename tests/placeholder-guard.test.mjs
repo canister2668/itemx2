@@ -1,30 +1,46 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationRuntime } from './helpers/presentation-runtime.mjs';
+import { rt } from './helpers/modules.mjs';
 
 // A model that echoes the transport template instead of filling it in used to
 // register a real item whose every field was an ellipsis. Seen live in 무림속으로.
-const ECHOED = '<itemExam><id>...</id><name>...</name><type>...</type><displayrarity>...</displayrarity><power>...</power><trivia>...</trivia><effects>...</effects></itemExam>';
+const ECHOED =
+  '<itemExam><id>...</id><name>...</name><type>...</type><displayrarity>...</displayrarity><power>...</power><trivia>...</trivia><effects>...</effects></itemExam>';
 
 test('an echoed template does not become an item', async () => {
-  const { core } = await presentationRuntime();
+  const { core } = rt;
   const result = core.extractResponse(ECHOED, core.newRegistry());
   assert.equal(result.registry.order.length, 0, 'placeholder appraisal must be rejected');
 });
 
 test('placeholder names paired with template IDs are rejected', async () => {
-  const { core } = await presentationRuntime();
-  for (const name of ['...', '…', '....', '-', '_', '?', 'none', 'N/A', 'unknown', 'TBD', 'placeholder', '없음', '미상', '미정'])
+  const { core } = rt;
+  for (const name of [
+    '...',
+    '…',
+    '....',
+    '-',
+    '_',
+    '?',
+    'none',
+    'N/A',
+    'unknown',
+    'TBD',
+    'placeholder',
+    '없음',
+    '미상',
+    '미정'
+  ])
     assert.equal(
-      core.extractResponse(`<itemExam><id>...</id><name>${name}</name></itemExam>`, core.newRegistry()).registry
-        .order.length,
+      core.extractResponse(`<itemExam><id>...</id><name>${name}</name></itemExam>`, core.newRegistry()).registry.order
+        .length,
       0,
       `${name} must not register`
     );
 });
 
 test('a real item alongside an echoed template still registers', async () => {
-  const { core } = await presentationRuntime();
+  const { core } = rt;
   const text = `${ECHOED}<itemExam><id>real_blade</id><name>청상벽려검</name><type>검</type><internalrarity>legendary</internalrarity></itemExam>`;
   const reg = core.extractResponse(text, core.newRegistry()).registry;
   assert.deepEqual([...reg.order], ['real_blade']);
@@ -32,7 +48,7 @@ test('a real item alongside an echoed template still registers', async () => {
 });
 
 test('placeholder field values do not reach a valid item', async () => {
-  const { core } = await presentationRuntime();
+  const { core } = rt;
   const text =
     '<itemExam><id>blade</id><name>진짜검</name><type>...</type><displayrarity>...</displayrarity><power>...</power><trivia>...</trivia></itemExam>';
   const item = core.extractResponse(text, core.newRegistry()).registry.items.blade;
@@ -44,7 +60,7 @@ test('placeholder field values do not reach a valid item', async () => {
 });
 
 test('skills and encounters treat an ellipsis as an empty value', async () => {
-  const { codex } = await presentationRuntime();
+  const { codex } = rt;
   const text = '<skillExam><id>s</id><name>진짜무공</name><cost>...</cost><cooldown>…</cooldown></skillExam>';
   const skill = codex.extractResponse(text, codex.snapshot(), {}).snapshot.skills.entries.s;
   assert.ok(skill, 'a named skill still registers');

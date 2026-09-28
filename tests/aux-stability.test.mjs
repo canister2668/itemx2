@@ -1,4 +1,3 @@
-import { hydrate, migrate, settingsModel } from './helpers/storage.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -6,8 +5,15 @@ import vm from 'node:vm';
 import { TextEncoder, TextDecoder } from 'node:util';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { project } from '../src/ledger.js';
+import { readDocument } from '../src/store/document.js';
+import { anchored } from './helpers/ledger.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// What the bundle wrote, read back through the same document and replay code.
+const items = (chat) => project({ chat, key: 'k' }).snapshot.registry.items;
+const events = (chat) => Object.values(readDocument(chat).events);
+const guards = (chat) => Object.values(readDocument(chat).guards.aux);
 
 async function bootWithOutput(data, options = {}) {
   let chat = {
@@ -20,7 +26,16 @@ async function bootWithOutput(data, options = {}) {
     chatWrites = 0;
   const prompts = [],
     requests = [];
-  const storage = new Map([['itemx:settings', JSON.stringify(settingsModel.migrate(options.freshDefaults ? {} : {'auxOutput:char-guard': 'missing'}))]]),
+  const storage = new Map([
+      [
+        'itemx:settings',
+        JSON.stringify({
+          v: 1,
+          global: { badgePosition: 'rm' },
+          characters: options.freshDefaults ? {} : { 'char-guard': { auxOutput: 'missing' } }
+        })
+      ]
+    ]),
     handlers = {},
     replacers = {},
     intervals = [];
@@ -82,6 +97,8 @@ async function bootWithOutput(data, options = {}) {
     TextEncoder,
     TextDecoder,
     structuredClone,
+    btoa,
+    atob,
     Date: FakeDate,
     setTimeout: sandboxSetTimeout,
     clearTimeout,
@@ -110,8 +127,7 @@ async function bootWithOutput(data, options = {}) {
     storage,
     prompts,
     requests,
-    chat: () => hydrate(structuredClone(chat)),
-    persistedChat: () => structuredClone(chat),
+    chat: () => structuredClone(chat),
     setLatestData: (value) => {
       chat.message.at(-1).data = value;
     },
@@ -166,7 +182,11 @@ test('missing mode still reviews partially tagged output for omitted sibling ite
       }
     })
   ).toString('base64url');
-  const result = await bootWithOutput(`검과 물약을 함께 얻었다.\n<!--ITEMX2:${payload}-->`);
+  const seeded = anchored({
+    message: [{ data: `검과 물약을 함께 얻었다.\n<!--ITEMX2:${payload}-->` }],
+    scriptstate: {}
+  });
+  const result = await bootWithOutput(seeded.message[0].data, { scriptstate: seeded.scriptstate });
   assert.equal(result.modelCalls, 1);
   assert.match(result.prompts[0], /Recover every settled change omitted by the main output/);
   assert.match(result.prompts[0], /Enabled domains: items, skills, encounters/);
@@ -178,9 +198,9 @@ test('catch-up sanitizes committed raw ITEMX transport before auxiliary review',
   const result = await bootWithOutput(raw);
   const latest = result.chat();
   assert.equal(latest.message[0].data.includes('<itemExam>'), false);
-  assert.match(latest.message[0].data, /<!--ITEMX2@i0_0_[a-f0-9]{8}:[A-Za-z0-9_-]+-->/);
-  assert.match(latest.scriptstate.$__itemx2_message_events, /raw_blade/);
-  assert.ok(JSON.parse(latest.scriptstate.$__itemx2_state).registry.items.raw_blade);
+  assert.match(latest.message[0].data, /^원시 검을 얻었다\.\n\n<!--ix:[0-9a-z]{5,12}-->$/);
+  assert.ok(events(latest).some((row) => row.e.item?.id === 'raw_blade'));
+  assert.ok(items(latest).raw_blade);
   assert.equal(result.modelCalls, 1);
 });
 
@@ -188,9 +208,9 @@ test('auxiliary applies exam and same-batch equip patch in order', async () => {
   const output =
     '<itemExam><id>new_blade</id><name>새 검</name><type>장검</type><emoji>⚔️</emoji><internalrarity>rare</internalrarity><possession>owned</possession><location>inventory</location></itemExam>\n<itemPatch><id>new_blade</id><action>equip</action><slot>main_hand</slot></itemPatch>';
   const result = await bootWithOutput('새 검을 주워 즉시 오른손에 장비했다.', { modelOutput: output });
-  const state = JSON.parse(result.chat().scriptstate.$__itemx2_state);
-  assert.equal(state.registry.items.new_blade.location, 'equipped');
-  assert.equal(state.registry.items.new_blade.slot, 'main_hand');
+  const state = items(result.chat());
+  assert.equal(state.new_blade.location, 'equipped');
+  assert.equal(state.new_blade.slot, 'main_hand');
   assert.equal(result.chatWrites, 1);
 });
 
@@ -265,12 +285,14 @@ test('missing auxiliary plugin provider is quarantined without leaking or repeat
   assert.equal(result.chatWrites, 0);
 });
 
-test('zero-event automatic auxiliary caches the guard without rewriting message text', async () => {
+test('zero-event automatic auxiliary records its guard in the document without rewriting message text', async () => {
   const result = await bootWithOutput('완결된 서술이지만 새 아이템 사건은 없다.');
   assert.equal(result.modelCalls, 1);
   assert.equal(result.chatWrites, 1);
-  const cached = JSON.parse(result.persistedChat().scriptstate['itemx:cache']);
-  assert.equal(Object.keys(cached.auxZero).length, 1);
+  assert.deepEqual(
+    guards(result.chat()).map((guard) => guard.state),
+    ['none']
+  );
   assert.equal(result.chat().message[0].data, '완결된 서술이지만 새 아이템 사건은 없다.');
 });
 
@@ -337,11 +359,10 @@ test('auxiliary corrects a veteran skill from associated proficiency evidence', 
   const modelOutput =
     '<skillExam><id>vibration_strike</id><name>진동타격</name><rank>rare</rank><school>한손둔기</school><type>active</type><status>learned</status><level>1</level><mastery>0</mastery></skillExam>';
   const result = await bootWithOutput(narrative, { modelOutput });
-  const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
-  const row = ledger.find((one) => one.domain === 'codex' && one.payload?.event?.entity?.id === 'vibration_strike');
-  assert.equal(row.payload.event.entity.level, 40);
-  assert.equal(row.payload.event.entity.mastery, 75);
-  assert.deepEqual(row.payload.event.entity._inferred, ['mastery']);
+  const row = events(result.chat()).find((one) => one.d === 'codex' && one.e.entity?.id === 'vibration_strike');
+  assert.equal(row.e.entity.level, 40);
+  assert.equal(row.e.entity.mastery, 75);
+  assert.deepEqual(row.e.entity._inferred, ['mastery']);
 });
 
 test('auxiliary treats the first confirmed already-owned player skill as a discovery event', async () => {
@@ -359,10 +380,9 @@ test('auxiliary treats the first confirmed already-owned player skill as a disco
     result.prompts[0],
     /Keep NPC or opponent techniques only in encounter moves unless the player acquires them/
   );
-  const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
-  const skill = ledger.find((row) => row.domain === 'codex' && row.payload?.event?.domain === 'skill');
-  assert.equal(skill.payload.event.entity.id, 'footwork');
-  assert.equal(skill.payload.event.entity.name, '보법');
+  const skill = events(result.chat()).find((row) => row.d === 'codex' && row.e.domain === 'skill');
+  assert.equal(skill.e.entity.id, 'footwork');
+  assert.equal(skill.e.entity.name, '보법');
 });
 
 test('auxiliary treats a rechargeable character-bound command authority as a persistent skill', async () => {
@@ -375,12 +395,9 @@ test('auxiliary treats a rechargeable character-bound command authority as a per
   assert.equal(result.chatWrites, 1);
   assert.match(result.prompts[0], /character-bound powers, command authorities, supernatural marks, contract rights/);
   assert.match(result.prompts[0], /Finite or rechargeable charges belong in cost\/state/);
-  const ledger = JSON.parse(result.chat().scriptstate.$__itemx2_message_events);
-  const skill = ledger.find(
-    (row) => row.domain === 'codex' && row.payload?.event?.entity?.id === 'contract_command_seal'
-  );
-  assert.equal(skill.payload.event.entity.cost, '발동당 인장 1획');
-  assert.equal(skill.payload.event.entity.status, 'equipped');
+  const skill = events(result.chat()).find((row) => row.d === 'codex' && row.e.entity?.id === 'contract_command_seal');
+  assert.equal(skill.e.entity.cost, '발동당 인장 1획');
+  assert.equal(skill.e.entity.status, 'equipped');
 });
 
 test('detailed multi-item appraisal keeps safe partials and repairs them in one batch with one chat write', async () => {
@@ -393,7 +410,7 @@ test('detailed multi-item appraisal keeps safe partials and repairs them in one 
   const narrative =
     '+12 심연의 묵시록을 얻었다.\n공격력: 4,850~5,320\n강화: +12, 물리 피해 +185%, 관통 +35%\n특수 효과: [심연의 포식] [종말의 전조] [완전한 결속]\n\n무쇠 광석 세 덩이를 얻었다.';
   const result = await bootWithOutput(narrative, { modelOutputs: [initial, repair] });
-  const state = JSON.parse(result.chat().scriptstate.$__itemx2_state).registry.items;
+  const state = items(result.chat());
   assert.equal(result.modelCalls, 2);
   assert.equal(result.chatWrites, 1);
   assert.equal(state.abyssal_apocalypse.power, '4850-5320');
@@ -418,8 +435,7 @@ test('failed partial repair commits once as partial_final and does not auto-retr
   const result = await bootWithOutput(narrative, { modelOutputs: [initial, 'NONE'] });
   assert.equal(result.modelCalls, 2);
   assert.equal(result.chatWrites, 1);
-  const history = JSON.parse(result.chat().scriptstate.$__itemx2_aux_processed);
-  assert.equal(Object.values(history)[0].state, 'partial_final');
+  assert.equal(guards(result.chat())[0].state, 'partial_final');
   await result.intervals.find(({ ms }) => ms === 4500).fn();
   await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   assert.equal(result.modelCalls, 2);
@@ -434,8 +450,7 @@ test('context-established item identity survives a pronoun-only committed output
   });
   assert.equal(result.modelCalls, 1);
   assert.equal(result.chatWrites, 1);
-  const state = JSON.parse(result.chat().scriptstate.$__itemx2_state);
-  assert.equal(state.registry.items.black_iron_blade.name, '흑철검');
+  assert.equal(items(result.chat()).black_iron_blade.name, '흑철검');
 });
 
 test('unsupported auxiliary identity is recorded as rejected, never as no omissions', async () => {
@@ -444,8 +459,6 @@ test('unsupported auxiliary identity is recorded as rejected, never as no omissi
   const result = await bootWithOutput('일행은 빈 방을 지나갔다.', { modelOutput: output });
   assert.equal(result.modelCalls, 1);
   assert.equal(result.chatWrites, 1);
-  const history = JSON.parse(result.chat().scriptstate.$__itemx2_aux_processed);
-  assert.equal(Object.values(history)[0].state, 'rejected');
-  assert.equal(result.storage.has('auxZero:0:0'), false);
-  assert.doesNotMatch(result.chat().message.at(-1).data, /ITEMX2@/);
+  assert.equal(guards(result.chat())[0].state, 'rejected');
+  assert.doesNotMatch(result.chat().message.at(-1).data, /<!--ix:/);
 });

@@ -1,14 +1,15 @@
-# Runtime message catalogs
+# Runtime text catalog
 
-`ko.json` owns the runtime's Korean text. Source modules refer to stable,
-module-prefixed keys through `ITEMXText(key, ...values)`.
+`ko.json` owns every user-visible Korean message and label of the runtime.
+Modules call `t(key, ...values)` from `src/i18n.js`.
 
-A string is a plain message. An array contains the literal segments of an
-interpolated template; its length must equal the number of values plus one.
-Keep HTML markup and interpolation positions intact when translating.
+A string entry is a plain message. An array entry holds the literal segments
+of an interpolated message; its length equals the number of values plus one.
+Entries are text only: markup lives in the templates that call `t()`, so a
+translation can never break the drawer's router hooks.
 
-The concat build resolves messages once, so the SafeDOM bridge does not pay for
-runtime translation lookups. `npm run build` uses Korean. Add a catalog such as
-`en.json`, then run `ITEMX_LOCALE=en npm run build`; missing keys fall back to
-Korean, while a missing catalog or an invalid interpolation count fails the
-build. Domain replay rules and `main-protocol.txt` are not translated.
+`tests/localization.test.mjs` checks that every `t()` call has a static key,
+an existing entry and the right number of values, that no entry carries markup
+and that every entry is used. Domain vocabulary that is stored in events (grade
+labels, default skill costs) and transport parsing aliases stay in the engine
+modules and are not translated.

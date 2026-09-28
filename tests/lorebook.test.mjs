@@ -1,13 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const source = await readFile(resolve(root, 'src/lorebook.js'), 'utf8');
-const lore = vm.runInNewContext(`${source}\nITEMXLorebook;`);
+import * as lore from '../src/engine/lorebook.js';
 
 const snapshot = (monster = {}) => ({
   fingerprint: 'base',

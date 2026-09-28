@@ -1,16 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import vm from 'node:vm';
-import { TextEncoder, TextDecoder } from 'node:util';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const context = vm.createContext({ console, Buffer, TextEncoder, TextDecoder });
-vm.runInContext(await readFile(resolve(root, 'src/core.js'), 'utf8'), context);
-vm.runInContext(await readFile(resolve(root, 'src/codex.js'), 'utf8'), context);
-const codex = context.ITEMXCodex;
+import { replay as replayMessages } from './helpers/ledger.mjs';
+import * as codex from '../src/engine/codex.js';
+import * as core from '../src/engine/core.js';
 
 const auxSkillOptions = { reconcileExistingSkills: true, skillEvidenceText: '' };
 const skillExam = (id, name = '월영참', extra = '') =>
@@ -40,7 +32,7 @@ test('auxiliary duplicate IDs in one batch collapse and subsequent alias patches
   assert.equal(next.events.length, 2);
   assert.equal(next.events[1].patch.id, 'first');
   assert.equal(next.snapshot.skills.entries.first.mastery, 88);
-  const replay = codex.rebuild([{ role: 'char', data: next.content }]);
+  const replay = replayMessages([{ role: 'char', data: next.content }]);
   assert.equal(replay.skills.order.join(','), 'first');
   assert.equal(replay.skills.entries.first.mastery, 88);
 });
@@ -73,7 +65,7 @@ test('auxiliary identity matching preserves real updates and does not merge vari
 test('ordinary extraction and historical replay do not silently merge existing IDs', () => {
   const first = codex.extractResponse(skillExam('a') + skillExam('b'));
   assert.equal(first.events.length, 2);
-  assert.equal(codex.rebuild([{ role: 'char', data: first.content }]).skills.order.join(','), 'a,b');
+  assert.equal(replayMessages([{ role: 'char', data: first.content }]).skills.order.join(','), 'a,b');
 });
 
 test('multiple skill and encounter transports are hidden and replayed in order', () => {
@@ -81,7 +73,7 @@ test('multiple skill and encounter transports are hidden and replayed in order',
   const result = codex.extractResponse(raw, codex.snapshot());
   assert.equal(result.events.length, 2);
   assert.equal(/skillExam|monsterExam/.test(result.content), false);
-  const replay = codex.rebuild([{ role: 'char', data: result.content }]);
+  const replay = replayMessages([{ role: 'char', data: result.content }]);
   assert.equal(replay.skills.entries.moon_slash.mastery, 47);
   assert.equal(replay.monsters.entries.wolf_king.active, true);
 });
@@ -394,8 +386,8 @@ test('incomplete codex transport never leaks raw tags', () => {
 });
 
 test('incomplete codex transport preserves later status trailers and item markers', () => {
-  const itemMarker = context.ITEMXCore.marker({
-    v: context.ITEMXCore.VERSION,
+  const itemMarker = core.marker({
+    v: core.VERSION,
     event: { kind: 'exam', item: { id: 'blade', name: '검' } }
   });
   const result = codex.extractResponse(
@@ -544,7 +536,7 @@ test('repeat skill scans cannot downgrade progress or erase detailed cost and co
   assert.equal(skill.mastery, 88);
   assert.equal(skill.cost, '월광 30%');
   assert.equal(skill.cooldown, '호흡이 완전히 안정된 뒤');
-  const replayed = codex.rebuild([
+  const replayed = replayMessages([
     { role: 'char', data: first.content },
     { role: 'char', data: repeated.content }
   ]);
@@ -556,7 +548,7 @@ test('repeat skill scans cannot downgrade progress or erase detailed cost and co
 
 test('malformed marker events are isolated instead of aborting replay', () => {
   const malformed = codex.marker({ v: codex.VERSION, event: { domain: 'skill', kind: 'exam' } });
-  const state = codex.rebuild([{ role: 'char', data: malformed }]);
+  const state = replayMessages([{ role: 'char', data: malformed }]);
   assert.equal(state.skills.order.length, 0);
   assert.equal(state.skills.diagnostics[0].code, 'exam_invalid');
 });
@@ -686,7 +678,7 @@ test('planning tag mentions cannot swallow the response or execute codex events'
   for (const tag of ['Thoughts', 'Thought', 'think', 'thinking', 'DSThink', 'reasoning', 'analysis']) {
     const planning = `<${tag}>아~ itemx 써야겠다~ 형태는 <monsterExam>이지? 고고혓~ ${skillExam('planned')}</${tag}>`;
     const raw = `${planning}\n# Response\n본문 진행 ${monster} 뒤 서술`;
-    const result = codex.extractResponse(context.ITEMXCore.extractResponse(raw).content);
+    const result = codex.extractResponse(core.extractResponse(raw).content);
     assert.equal(result.events.length, 1);
     assert.equal(result.errors.length, 0);
     assert.ok(result.content.startsWith(planning + '\n# Response\n본문 진행 '));
