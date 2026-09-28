@@ -256,7 +256,6 @@
   ],
   "ledger.005": "출력 스트리밍이 끝난 뒤 최적화할 수 있습니다.",
   "ledger.006": "현재 채팅을 불러오지 못했습니다.",
-  "ledger.007": "최적화 중 채팅이 바뀌었습니다. 다시 시도하세요.",
   "ledger.008": "현재 채팅을 찾을 수 없습니다.",
   "ledger.009": [
     "현재 채팅 정리 완료 · 마커 ",
@@ -264,7 +263,6 @@
   ],
   "ledger.010": "출력 스트리밍이 끝난 뒤 정리할 수 있습니다.",
   "ledger.011": "현재 채팅을 불러오지 못했습니다.",
-  "ledger.012": "정리 중 채팅이 바뀌었습니다. 다시 시도하세요.",
   "ledger.013": "현재 채팅을 찾을 수 없습니다.",
   "ledger.014": "채팅 이사 완료 · 백업 기록을 불러왔습니다",
   "ledger.015": "덮어쓰기 완료 · 백업 기록으로 교체했습니다",
@@ -286,9 +284,11 @@
     ""
   ],
   "ledger.027": "정상",
-  "ledger.028": "이전 버전에서 저장 항목 축소 이력 있음",
   "ledger.029": "저장 용량 16 MiB 이상 · 현재 상태 보존 중",
-  "ledger.030": "ITEMX 기록을 이 버전에서 읽을 수 없어 안전을 위해 읽기 전용으로 잠갔습니다. 설정 → 백업에서 먼저 백업을 내려받으세요.",
+  "ledger.old-markers-done": [
+    "옛 마커 제거 완료 · ",
+    "개"
+  ],
   "aux.001": "누락 정보 보완 실패 · 기존 정보 보존",
   "aux.002": "누락 정보 보완 완료",
   "aux.003": [
@@ -486,8 +486,6 @@
   "ui-panel.050": "장착",
   "ui-panel.051": "보유",
   "ui-panel.052": "전체",
-  "ui-panel.055": "응답이 끝난 뒤 기록 설정을 변경해 주세요.",
-  "ui-panel.056": "현재 채팅을 찾을 수 없습니다.",
   "ui-panel.057": "채팅이 변경되었습니다.",
   "ui-panel.059": "현재 목록",
   "ui-panel.060": "기록 목록",
@@ -576,7 +574,6 @@
     " · 모호 ",
     ""
   ],
-  "ui-panel.132": "출력 스트리밍이 끝난 뒤 로어북을 스캔할 수 있습니다.",
   "ui-panel.133": "현재 채팅을 다시 불러오지 못했습니다.",
   "ui-panel.134": "스캔 중 채팅이 바뀌었습니다. 다시 시도하세요.",
   "ui-panel.135": "현재 채팅을 찾을 수 없습니다.",
@@ -602,6 +599,25 @@
   "ui-settings.confirm-storage": "오래된 표시 마커와 기록을 접어 저장 공간을 줄일까요? 현재 상태는 그대로 남습니다.",
   "ui-settings.confirm-yes-cleanup": "예, 지웁니다",
   "ui-settings.confirm-yes-storage": "예, 최적화",
+  "ui-settings.old-markers-title": "옛 마커",
+  "ui-settings.old-markers-note": [
+    "이전 버전(2.3 이하)이 본문에 남긴 마커 ",
+    "개가 있습니다. 화면과 모델 요청에서는 이미 숨겨지며, 이 버전은 그 기록을 읽지 않습니다."
+  ],
+  "ui-settings.old-markers-button": "옛 마커 본문에서 제거",
+  "ui-settings.old-markers-armed": "옛 마커 제거 확인 대기",
+  "ui-settings.old-markers-working": "본문에서 옛 마커를 지우는 중입니다…",
+  "ui-settings.old-markers-done": [
+    "옛 마커 제거 완료 · 본문 ",
+    "개 · 마커 ",
+    "개"
+  ],
+  "ui-settings.old-markers-failed": [
+    "옛 마커 제거 실패 · ",
+    ""
+  ],
+  "ui-settings.confirm-old-markers": "본문에서 옛 ITEMX 마커를 지울까요? 대화 글은 그대로 남습니다.",
+  "ui-settings.confirm-yes-old-markers": "예, 제거",
   "ui-settings.confirm-no": "아니오",
   "ui-panel.skill-delete": "이 스킬 지우기",
   "ui-panel.skill-delete-confirm": "이 스킬을 목록에서 지울까요? 같은 스킬이 여러 개 생겼을 때 정리용입니다. 모델이 같은 스킬을 다시 기록하면 다시 나타날 수 있습니다.",
@@ -673,8 +689,6 @@
   "ui-panel.019.2": "선택한 탭만 준비하고 있답니다.",
   "ui-panel.018.1": "아이템 불러오는 중",
   "ui-panel.018.2": "16개씩 나누어 준비하고 있답니다.",
-  "presentation.002.1": "📦 ITEMX · 기록 복원 중",
-  "presentation.001.1": "✦ 도감 기록 복원 중",
   "ui-settings.140.1": "저장 / 불러오기",
   "ui-settings.138.1": "백업 · 채팅 이사",
   "ui-settings.138.2": "닫기",

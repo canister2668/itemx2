@@ -9,14 +9,16 @@ import * as Lorebook from '../../src/engine/lorebook.js';
 import * as Renderer from '../../src/render/renderer.js';
 import * as CodexCards from '../../src/render/codex-cards.js';
 import * as Ledger from '../../src/ledger.js';
-import * as Markers from '../../src/markers.js';
 import * as Pipeline from '../../src/pipeline.js';
 import * as Aux from '../../src/aux.js';
 import * as Portraits from '../../src/portraits.js';
 import * as LoreSync from '../../src/lore-sync.js';
 import * as Session from '../../src/session.js';
 import * as Settings from '../../src/settings.js';
-import * as Store from '../../src/storage.js';
+import * as Transport from '../../src/transport.js';
+import * as Anchors from '../../src/store/anchors.js';
+import * as Document from '../../src/store/document.js';
+import * as Replay from '../../src/store/replay.js';
 import * as Presentation from '../../src/ui/presentation.js';
 import * as Panel from '../../src/ui/panel.js';
 import * as SettingsUi from '../../src/ui/settings.js';
@@ -31,8 +33,8 @@ import { after } from 'node:test';
 after(() => workQueue.close());
 
 export const rt = {
-  ...Markers,
   ...Ledger,
+  ...Transport,
   ...Pipeline,
   ...Aux,
   ...Portraits,
@@ -49,7 +51,6 @@ export const rt = {
   history: History,
   lorebook: Lorebook,
   renderer: Renderer,
-  storage: Store,
   settings: Settings,
   session: Session,
   uiState,
@@ -66,10 +67,13 @@ export {
   Lorebook,
   Renderer,
   Ledger,
-  Markers,
+  Transport,
+  Anchors,
+  Document,
+  Replay,
   Pipeline,
   Aux,
   Portraits,
   Session
 };
-export { Settings, Store, Presentation, Panel, SettingsUi, Controls, Style, uiState, setHost };
+export { Settings, Presentation, Panel, SettingsUi, Controls, Style, uiState, setHost };

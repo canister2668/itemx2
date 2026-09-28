@@ -2,18 +2,18 @@
  * public entries into the encounter ledger. */
 import * as Core from './engine/core.js';
 import * as Lorebook from './engine/lorebook.js';
-import { context, readChat, saveChat } from './chat-io.js';
-import { ITEMX_LORE_KEY } from './config.js';
+import { context } from './chat-io.js';
 import { isUnloading } from './connection.js';
 import { emit } from './events.js';
 import { host } from './host.js';
 import { t } from './i18n.js';
 import { debugRecord, workQueue } from './kernel.js';
-import { buildMessageEventLookup, rebuildCodexWithLedger, rebuildCurrent } from './ledger.js';
+import { rebuildCurrent, writeDocument } from './ledger.js';
 import { encounterRegistryFingerprint } from './portraits.js';
-import { invalidateLoaded } from './session.js';
 import { settingsFor } from './settings.js';
 import { setStatus } from './status.js';
+import { readCache } from './store/document.js';
+import { fold } from './store/replay.js';
 let lorebookCache = { key: '', at: 0, rows: [] };
 
 export async function callOptionalRisuApi(name, ...args) {
@@ -49,22 +49,18 @@ export async function lorebookEntries(contextKey, { refresh = false } = {}) {
   return rows;
 }
 
-export async function enrichPendingChat(ctx, chat) {
-  // This derived update can share the transport write; no host mutation here.
+// Folds lorebook enrichment into `doc` (being written with `chat`), so the
+// enrichment shares the commit's single write. Never blocks the commit.
+export async function enrichLore(ctx, doc, chat) {
   try {
     const settings = await settingsFor(ctx.character);
-    if (!settings.encountersEnabled || !settings.lorebookEncounterEnabled) return chat;
+    if (!settings.encountersEnabled || !settings.lorebookEncounterEnabled) return;
     const entries = await lorebookEntries(ctx.key);
-    const active = await context();
-    if (!active || active.key !== ctx.key) return chat;
-    const base = rebuildCodexWithLedger(chat, buildMessageEventLookup(chat));
-    const scanned = Lorebook.scan(base, entries, Lorebook.read(chat));
-    if (!scanned.result.enriched && !scanned.result.removed) return chat;
-    return { ...chat, scriptstate: { ...chat.scriptstate, [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) } };
+    const base = fold(chat, doc, { checkpoint: readCache(chat)?.checkpoint || null }).codex;
+    const scanned = Lorebook.scan(base, entries, doc.lore);
+    if (scanned.result.enriched || scanned.result.removed) doc.lore = scanned.ledger;
   } catch (error) {
-    // Optional enrichment must not prevent committing authoritative events.
     debugRecord('pending lore enrichment', error?.message || String(error));
-    return chat;
   }
 }
 
@@ -75,33 +71,31 @@ export async function scanLorebookEncounters({ refresh = false, silent = false }
     const entries = await lorebookEntries(ctx.key, { refresh });
     const active = await context();
     if (!active || active.key !== ctx.key) throw new Error(t('ui-panel.134'));
-    const scanResult = await (async () => {
-      const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-      if (!latest) throw new Error(t('ui-panel.133'));
-      if (latest.isStreaming || (latest.message || []).some((message) => message?.isStreaming || message?.bgContinue)) {
-        throw new Error(t('ui-panel.132'));
+    let scanned = null;
+    const written = await writeDocument(ctx, (doc, latest) => {
+      const base = fold(latest, doc, { checkpoint: readCache(latest)?.checkpoint || null }).codex;
+      const sourceFingerprint = `${ctx.key}:${encounterRegistryFingerprint(base)}:${Core.fnv1a(JSON.stringify(entries))}:${Core.fnv1a(JSON.stringify(doc.lore.rows))}`;
+      if (!refresh && silent && workQueue.revision('lorebook') === sourceFingerprint) {
+        scanned = { changed: false, sourceFingerprint, result: { enriched: 0, removed: 0, matched: 0, ambiguous: 0 } };
+        return false;
       }
-      const lookup = buildMessageEventLookup(latest);
-      const base = rebuildCodexWithLedger(latest, lookup);
-      const previous = Lorebook.read(latest);
-      const sourceFingerprint = `${ctx.key}:${encounterRegistryFingerprint(base)}:${Core.fnv1a(JSON.stringify(entries))}:${Core.fnv1a(JSON.stringify(previous.rows))}`;
-      if (!refresh && silent && workQueue.revision('lorebook') === sourceFingerprint)
-        return { changed: false, sourceFingerprint, result: { enriched: 0, removed: 0, matched: 0, ambiguous: 0 } };
-      const scanned = Lorebook.scan(base, entries, previous);
-      if (!scanned.result.enriched && !scanned.result.removed) return { ...scanned, changed: false, sourceFingerprint };
-      const next = Core.clone(latest);
-      next.scriptstate = { ...(next.scriptstate || {}), [ITEMX_LORE_KEY]: JSON.stringify(scanned.ledger) };
-      await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
-      return {
-        ...scanned,
+      const result = Lorebook.scan(base, entries, doc.lore);
+      if (!result.result.enriched && !result.result.removed) {
+        scanned = { ...result, changed: false, sourceFingerprint };
+        return false;
+      }
+      doc.lore = result.ledger;
+      scanned = {
+        ...result,
         changed: true,
-        sourceFingerprint: `${ctx.key}:${encounterRegistryFingerprint(base)}:${Core.fnv1a(JSON.stringify(entries))}:${Core.fnv1a(JSON.stringify(scanned.ledger.rows))}`
+        sourceFingerprint: `${ctx.key}:${encounterRegistryFingerprint(base)}:${Core.fnv1a(JSON.stringify(entries))}:${Core.fnv1a(JSON.stringify(result.ledger.rows))}`
       };
-    })();
+    });
+    const scanResult = scanned;
+    if (!written && !scanResult) throw new Error(t('ui-panel.133'));
     const current = await context();
     if (isUnloading() || current?.key !== ctx.key) return scanResult;
     if (scanResult.changed) {
-      invalidateLoaded();
       await emit('data-reset');
       await rebuildCurrent();
     }

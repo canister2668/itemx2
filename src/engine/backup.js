@@ -135,7 +135,7 @@ function capture(loaded) {
     version: 1,
     source: loaded.character?.name || '',
     createdAt: new Date().toISOString(),
-    after: EntityHistory.preferences(loaded.chat).after,
+    after: EntityHistory.preferences(loaded.prefs).after,
     records
   };
   return parse(JSON.stringify(value));

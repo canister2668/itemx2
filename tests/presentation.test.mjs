@@ -3,8 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { rt, setHost, Session, Style, Presentation } from './helpers/modules.mjs';
 import { createFakeHost } from './helpers/fake-host.mjs';
-import { hydrate } from './helpers/storage.mjs';
+import { anchored, documentOf, pendingAnchor } from './helpers/ledger.mjs';
+import { anchorKeys } from '../src/store/anchors.js';
 
+const reviewed = (data, missing) => ({
+  role: 'char',
+  chatId: 'm0',
+  data: `${data}\n${core.marker({ event: { kind: 'exam', item }, view: item, review: { source: 'auxiliary', checked: true, missing } })}`
+});
 const presentationCss = () => readFile(new URL('../src/styles/presentation.css', import.meta.url), 'utf8');
 let hostId = 0;
 function fakeBot(chat, character, extra = {}) {
@@ -28,16 +34,17 @@ test('always auxiliary recovery suppresses main/aux skill duplicates and repeate
   const initial = p.codex.extractResponse(exam('main_skill'));
   const data = `월영참을 사용했다.\n${initial.content}`;
   let calls = 0;
+  const chat = anchored({ message: [{ role: 'char', data, chatId: 'm0' }], scriptstate: {} });
   const fake = fakeBot(
-    { message: [{ role: 'char', data, chatId: 'm0' }], scriptstate: {} },
+    chat,
     { auxOutput: 'always', itemsEnabled: false, skillsEnabled: true, encountersEnabled: false },
     { llm: async () => exam(`aux_${++calls}`) }
   );
   for (let i = 0; i < 2; i++) assert.equal((await p.recoverAuxiliaryOutput()).length, 0);
   // The second pass is refused by the recorded zero result, not by another model call.
   assert.equal(calls, 1);
-  assert.equal(fake.state.chat.message[0].data, data, 'no card may be appended');
-  assert.equal(p.rebuildCodexWithLedger(hydrate(fake.state.chat)).skills.order.join(','), 'main_skill');
+  assert.equal(fake.state.chat.message[0].data, chat.message[0].data, 'no card may be appended');
+  assert.equal(p.project({ chat: fake.state.chat, key: 'k' }).codexSnapshot.skills.order.join(','), 'main_skill');
 });
 const item = {
   id: 'blade',
@@ -113,9 +120,10 @@ test('events animate only after commit, consume once and never embed the active 
     event: { kind: 'exam', domain: 'skill', entity: { id: 'skill' } },
     view: { id: 'skill', name: '화염 참격', affinity: 'fire', rank: '레어', effects: [] }
   };
-  const text = p.codex.marker(payload);
+  const text = pendingAnchor(payload);
+  const keys = anchorKeys(text);
   const chat = { message: [{ role: 'char', data: text }], scriptstate: {} };
-  const html = p.displayHandler(text);
+  const html = await p.displayHandler(text);
   assert.match(html, /x-itemx2-event=/);
   assert.ok(!/class="[^"]*itemx2-burst-active/.test(html));
   fake.dom.body().setHtml(html);
@@ -123,7 +131,7 @@ test('events animate only after commit, consume once and never embed the active 
   const lit = () => card().classes.includes('x-risu-itemx2-burst-active');
   const queries = () => fake.dom.doc.calls.filter((c) => c === 'querySelector').length;
   const before = queries();
-  p.armEventBursts(text);
+  p.armEventBursts(keys);
   await p.flushEventBursts();
   assert.equal(queries(), before, 'an uncommitted burst never touches the host');
   p.commitEventBursts({ ...chat, isStreaming: true });
@@ -135,7 +143,7 @@ test('events animate only after commit, consume once and never embed the active 
   t.mock.timers.tick(1400);
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(lit(), false);
-  p.armEventBursts(text);
+  p.armEventBursts(keys);
   p.commitEventBursts(chat);
   await p.flushEventBursts();
   assert.equal(lit(), false, 'a seen burst plays once');
@@ -146,27 +154,22 @@ test('events animate only after commit, consume once and never embed the active 
 test('fresh chat loads never arm historical event animation', async () => {
   Session.resetSession('chat');
   Presentation.applyVisualSettings({ effectsLevel: 'full', skin: 'dark' });
-  const text = p.codex.marker({
+  const text = pendingAnchor({
     event: { kind: 'exam', domain: 'skill' },
     view: { id: 's', name: '치유', effects: [] }
   });
-  p.refreshLatest({ message: [{ data: text }], scriptstate: {} });
-  p.displayHandler(text);
+  p.refreshLatest({ key: 'chat', chat: { message: [{ data: text }], scriptstate: {} } });
+  await p.displayHandler(text);
   assert.equal(Presentation.pendingBurstCount(), 0);
 });
 
-test('review metadata survives compact fallback without altering event replay', () => {
-  const payload = {
-    v: 2,
-    event: { kind: 'patch', patch: { id: 'blade', op: 'merge', fields: { power: '420' } } },
-    previous: item,
-    view: { ...item, power: '420' },
-    review: { source: 'auxiliary', checked: true, missing: ['effects'] }
-  };
-  const restored = p.inlineViewPayload(p.embeddedViewCode(payload, 'item'), 'item');
-  assert.equal(restored.previous.power, '300');
-  assert.equal(restored.review.missing[0], 'effects');
-  assert.match(renderer.reviewHtml(restored.review), /일부 정보 보완 실패/);
+test('review metadata lives with the event and reaches the drawer annotations', () => {
+  const chat = anchored({ message: [reviewed('강화된 화염검', ['effects'])], scriptstate: {} });
+  const loaded = p.project({ key: 'k', chat });
+  const record = p.presentationRecord('item', 'blade', loaded);
+  assert.equal(record.review.missing[0], 'effects');
+  assert.equal(record.messageIndex, 0);
+  assert.match(renderer.reviewHtml(record.review), /일부 정보 보완 실패/);
   assert.match(renderer.reviewHtml(null, { _inferred: ['level', 'mastery'] }), /추정값 · 레벨, 숙련/);
   assert.ok(!renderer.reviewHtml(null).includes('본문 확정'));
   assert.equal(renderer.reviewHtml(null), '');
@@ -192,17 +195,15 @@ test('new visual decorations honor reduced motion and effects off with no will-c
   assert.ok(!css.includes('blur('));
 });
 
-const reviewed = (data, missing) => ({
-  role: 'char',
-  chatId: 'm0',
-  data: `${data}\n${core.marker({ event: { kind: 'exam', item }, view: item, review: { source: 'auxiliary', checked: true, missing } })}`
-});
 const itemsOn = { itemsEnabled: true, skillsEnabled: false, encountersEnabled: false };
 
 test('single-item repair makes one model call, validates evidence and preserves remaining omissions', async () => {
   let calls = 0;
   const fake = fakeBot(
-    { message: [reviewed('강화된 화염검\n공격력: 420\n내구도: 61/100', ['power', 'durability'])], scriptstate: {} },
+    anchored({
+      message: [reviewed('강화된 화염검\n공격력: 420\n내구도: 61/100', ['power', 'durability'])],
+      scriptstate: {}
+    }),
     itemsOn,
     {
       llm: async () => (calls++, '[itemx: id=blade | op=merge | power=420]')
@@ -213,11 +214,10 @@ test('single-item repair makes one model call, validates evidence and preserves 
   assert.equal(calls, 1);
   assert.equal(fake.state.writes, 1);
   assert.equal(result.snapshot.registry.items.blade.power, '420');
-  const log = JSON.parse(fake.state.chat.scriptstate['itemx:log']);
-  const manual = log.rows.filter((row) => 'afterIndex' in row);
+  const manual = documentOf(fake.state.chat).manual;
   assert.equal(manual.length, 1);
-  assert.equal(manual[0].event.patch.id, 'blade');
-  assert.deepEqual(manual[0].review.missing, ['durability']);
+  assert.equal(manual[0].e.patch.id, 'blade');
+  assert.deepEqual(manual[0].r.missing, ['durability']);
 });
 
 test('single-item repair rejects invented values and extra sibling events without any commit', async () => {
@@ -225,9 +225,13 @@ test('single-item repair rejects invented values and extra sibling events withou
     '[itemx: id=blade | op=merge | power=999]',
     '[itemx: id=blade | op=merge | power=420]\n[itemx: id=other | name=Other | rarity=normal]'
   ]) {
-    const fake = fakeBot({ message: [reviewed('강화된 화염검\n공격력: 420', ['power'])], scriptstate: {} }, itemsOn, {
-      llm: async () => raw
-    });
+    const fake = fakeBot(
+      anchored({ message: [reviewed('강화된 화염검\n공격력: 420', ['power'])], scriptstate: {} }),
+      itemsOn,
+      {
+        llm: async () => raw
+      }
+    );
     const loaded = await p.rebuildCurrent();
     await assert.rejects(p.repairOneItem(loaded, 'blade'));
     assert.equal(fake.state.writes, 0);

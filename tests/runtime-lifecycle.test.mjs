@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { anchored } from './helpers/ledger.mjs';
 import { createFakeHost, settle } from './helpers/fake-host.mjs';
 import { loadBundle } from './helpers/bundle.mjs';
 import { rt, setHost, Session, Style, uiState } from './helpers/modules.mjs';
@@ -113,11 +114,11 @@ test('automatic lore scan invalidates on source edits, source removal and encoun
   const lorebook = [{ id: 'lore', key: 'Reimu', content: '[ITEMX-PUBLIC]\n종류: 무녀' }];
   const fake = createFakeHost({
     character: { chaId: 'lore' },
-    chat: {
+    chat: anchored({
       id: 'chat',
       message: [{ role: 'char', chatId: 'm0', data: `레이무와 싸웠다.\n${exam.content}` }],
       scriptstate: {}
-    },
+    }),
     lorebook
   });
   setHost(fake.api);

@@ -1,8 +1,13 @@
-import { hydrate } from './helpers/storage.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rt, setHost, Session } from './helpers/modules.mjs';
 import { createFakeHost } from './helpers/fake-host.mjs';
+import { anchored, documentOf } from './helpers/ledger.mjs';
+import { DOCUMENT_KEY } from '../src/store/document.js';
+
+// The full projection a backup captures, of a chat whose fixtures may still
+// carry transport markers.
+const backupState = (ctx) => rt.project({ ...ctx, chat: anchored(ctx.chat) }, {}, { full: true });
 
 let harnessId = 0;
 async function harness() {
@@ -101,7 +106,7 @@ function source(h) {
     { role: 'char', data: '응답', chatId: 'a3' }
   ];
   const chat = { id: 'old', message: messages, scriptstate: { $other: 'secret' } };
-  const loaded = h.api.backupState({ character: h.ctx.character, chat });
+  const loaded = backupState({ character: h.ctx.character, chat });
   return h.api.backup.capture(loaded);
 }
 const plain = (x) => JSON.parse(JSON.stringify(x));
@@ -149,18 +154,19 @@ test('restored state survives new patches, compaction, restart-style rebuild and
         })
     }
   );
-  let loaded = h.api.backupState(h.ctx);
+  h.ctx = { chat: anchored(h.ctx.chat) };
+  let loaded = backupState(h.ctx);
   assert.equal(loaded.codexSnapshot.skills.entries.s.mastery, 80);
   assert.equal(h.api.history.entries(loaded, 'monster')[0].age, 3);
   assert.equal(h.api.history.currentEntities(loaded, 'monster').length, 0);
   assert.equal(h.api.history.entries(loaded, 'item')[0].remaining, 8);
   for (let i = 0; i < 70; i++) h.ctx.chat.message.push({ role: 'user', data: '진행' }, { role: 'char', data: '응답' });
-  h.ctx.chat = h.api.refreshReplayCache(h.ctx.chat, { force: true });
-  loaded = h.api.backupState(h.ctx);
+  await h.api.compactCurrentChatStorage();
+  loaded = backupState(h.ctx);
   assert.equal(loaded.snapshot.registry.items.sword.location, 'equipped');
   assert.equal(loaded.codexSnapshot.skills.entries.s.mastery, 80);
   assert.equal(h.api.history.entries(loaded, 'monster')[0].age, 73);
-  const cleared = h.api.backupState({ ...h.ctx, chat: h.api.cleanChatPluginData(h.ctx.chat).chat });
+  const cleared = backupState({ ...h.ctx, chat: h.api.cleanChatPluginData(h.ctx.chat).chat });
   assert.equal(cleared.snapshot.registry.order.length, 0);
   assert.equal(cleared.codexSnapshot.monsters.order.length, 0);
 });
@@ -246,11 +252,14 @@ test('explicit overwrite replaces all records and replay sources, preserving pro
         '<!--ITEMX2@oldref-->\n끝'
     }
   ];
-  h.ctx.chat.scriptstate.$__itemx2_message_events = JSON.stringify([
-    { ref: 'oldref', domain: 'item', payload: { event: { kind: 'exam', item: oldItem } } }
-  ]);
-  h.ctx.chat.scriptstate.$__itemx2_lore_enrichment = JSON.stringify({ stale: 'old' });
-  h.ctx.chat.scriptstate.$__itemx2_aux_processed = JSON.stringify({ already: true });
+  // Stored as 2.4 stores it: anchors plus the document, one aux guard recorded.
+  const seeded = anchored(h.ctx.chat);
+  const doc = documentOf(seeded);
+  doc.guards.aux.a = { k: 'guard', state: 'none', events: 0 };
+  doc.lore = { v: 1, rows: { stale: { fields: {} } }, updatedAt: 1 };
+  seeded.scriptstate[DOCUMENT_KEY] = JSON.stringify(doc);
+  seeded.scriptstate.$__itemx2_message_events = 'left for 2.3';
+  h.ctx = { chat: seeded };
   await assert.rejects(() => h.api.prepareBackupImport(text, h.ctx.key), /이미 ITEMX/);
   const preview = await h.api.prepareBackupImport(text, h.ctx.key, 'replace');
   assert.deepEqual(Array.from(preview.previousCounts), [1, 1, 1]);
@@ -259,15 +268,18 @@ test('explicit overwrite replaces all records and replay sources, preserving pro
   assert.equal(h.writes, 1);
   assert.deepEqual(plain((await h.api.exportCurrentBackup(h.ctx.key)).records), plain(backup.records));
   assert.equal(h.ctx.chat.message[0].data, '원문\n\n  유지');
-  assert.equal(h.ctx.chat.message[1].data, '이전 응답\n\n끝');
+  // Anchors go with the replaced events; a marker of 2.3 stays (hidden) for its own action.
+  assert.equal(h.ctx.chat.message[1].data, '이전 응답\n<!--ITEMX2@oldref-->\n끝');
   assert.equal(h.ctx.chat.scriptstate.$other, 'keep');
-  assert.equal(h.ctx.chat.scriptstate.$__itemx2_lore_enrichment, undefined);
-  assert.equal(h.ctx.chat.scriptstate.$__itemx2_message_events, undefined);
-  assert.equal(hydrate(h.ctx.chat).scriptstate.$__itemx2_aux_processed, '{"already":true}');
+  assert.equal(h.ctx.chat.scriptstate.$__itemx2_message_events, 'left for 2.3');
+  const restored = documentOf(h.ctx.chat);
+  assert.deepEqual(restored.events, {});
+  assert.deepEqual(restored.lore.rows, {});
+  assert.equal(restored.guards.aux.a.k, 'guard');
   await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key, 'replace'));
   assert.deepEqual(plain((await h.api.exportCurrentBackup(h.ctx.key)).records), plain(backup.records));
   h.ctx.chat.message.pop();
-  assert.equal(h.api.backupState(h.ctx).snapshot.registry.items.old_item, undefined);
+  assert.equal(backupState(h.ctx).snapshot.registry.items.old_item, undefined);
 });
 
 test('overwrite preview expires on chat edits and invalid modes cannot bypass protection', async () => {
@@ -275,7 +287,7 @@ test('overwrite preview expires on chat edits and invalid modes cannot bypass pr
     text = JSON.stringify(source(h));
   await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key));
   const preview = await h.api.prepareBackupImport(text, h.ctx.key, 'replace');
-  h.ctx.chat.scriptstate.$other = 'changed';
+  h.ctx.chat.message.push({ role: 'char', data: '편집된 대화', chatId: 'edit' });
   await assert.rejects(() => h.api.commitBackupImport(preview), /변경/);
   await assert.rejects(() => h.api.prepareBackupImport(text, h.ctx.key, 'merge'), /방식/);
   assert.equal(h.writes, 1);
@@ -298,7 +310,7 @@ test('restored replies are not automatically recollected; explicit recovery and 
 
 test('explicit overwrite accepts an empty backup to restore an empty inventory', async () => {
   const h = await harness(),
-    empty = h.api.backup.capture(h.api.backupState(h.ctx));
+    empty = h.api.backup.capture(backupState(h.ctx));
   await h.api.commitBackupImport(await h.api.prepareBackupImport(JSON.stringify(source(h)), h.ctx.key));
   await h.api.commitBackupImport(await h.api.prepareBackupImport(JSON.stringify(empty), h.ctx.key, 'replace'));
   assert.deepEqual(Array.from(h.api.backup.counts(await h.api.exportCurrentBackup(h.ctx.key))), [0, 0, 0]);

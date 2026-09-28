@@ -31,8 +31,8 @@ for (const external of [false, true])
         if (external) await h.workQueue.external(async () => h.change());
         else h.change();
         const latest = await h.readChat(0, 0);
-        latest.scriptstate.itemx = 'update';
-        await h.saveChat(0, 0, latest, latest);
+        // The base stays as read; the change is a new object.
+        await h.saveChat(0, 0, { ...latest, scriptstate: { ...latest.scriptstate, itemx: 'update' } }, latest);
       }
     });
     assert.equal(h.host().message.length, 2, 'host message must not be overwritten');

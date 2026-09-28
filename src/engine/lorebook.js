@@ -1,5 +1,4 @@
 const VERSION = 1;
-const STATE_KEY = '$__itemx2_lore_enrichment';
 const PUBLIC_MARKER_RE = /(?:^|\n)\s*\[ITEMX-PUBLIC\]\s*(?:\n|$)/i;
 const MAX_ROWS = 160;
 
@@ -152,9 +151,10 @@ function emptyLedger() {
   return { v: VERSION, rows: {}, updatedAt: 0 };
 }
 
-function read(chat) {
+// A normalized enrichment ledger from a stored value (object or JSON).
+function read(raw) {
   try {
-    const parsed = JSON.parse(chat?.scriptstate?.[STATE_KEY] || 'null');
+    const parsed = typeof raw === 'string' ? JSON.parse(raw || 'null') : raw;
     if (!parsed || parsed.v !== VERSION || !parsed.rows || typeof parsed.rows !== 'object') return emptyLedger();
     return { v: VERSION, rows: parsed.rows, updatedAt: Number(parsed.updatedAt) || 0 };
   } catch {
@@ -256,4 +256,4 @@ function hash(value) {
   return (out >>> 0).toString(36);
 }
 
-export { VERSION, STATE_KEY, emptyLedger, read, scan, apply, normalize, eligible, publicFields };
+export { VERSION, emptyLedger, read, scan, apply, normalize, eligible, publicFields };

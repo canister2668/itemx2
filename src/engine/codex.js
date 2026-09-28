@@ -1,7 +1,6 @@
 /* ITEMX CODEX core: deterministic skill and encounter-bestiary replay. */
 import * as Core from './core.js';
 const VERSION = 1;
-const STATE_KEY = '$__itemx2_codex_state';
 const MARKER_RE = /<!--CODEX2:([A-Za-z0-9_-]+)-->/g;
 const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const SKILL_TYPES = new Set(['active', 'passive', 'sealed']);
@@ -783,27 +782,6 @@ function extractResponse(content, base = snapshot(), options = {}) {
   output.push(text.slice(cursor));
   return { content: stripResidual(output.join('')), snapshot: state, events, errors };
 }
-function eventsFromText(text) {
-  const out = [];
-  String(text || '').replace(MARKER_RE, (_, code) => {
-    const payload = decodePayload(code);
-    if (payload?.v === VERSION && payload.event) out.push(payload.event);
-    return '';
-  });
-  return out;
-}
-function rebuild(messages) {
-  const state = snapshot();
-  let transport = '';
-  for (const msg of messages || [])
-    for (const event of eventsFromText(Core.messageText(msg))) {
-      applyEvent(state, event);
-      transport += marker({ v: VERSION, event });
-    }
-  state.fingerprint = fnv(transport);
-  state.updatedAt = Date.now();
-  return state;
-}
 function requestView(text) {
   return String(text || '').replace(MARKER_RE, (_, code) => {
     const p = decodePayload(code),
@@ -1148,7 +1126,6 @@ function protocol(assetNames = [], options = {}) {
 
 export {
   VERSION,
-  STATE_KEY,
   MARKER_RE,
   DOMAINS,
   DOMAIN_NAMES,
@@ -1165,8 +1142,6 @@ export {
   applyEvent,
   reconcileSkillEvent,
   extractResponse,
-  eventsFromText,
-  rebuild,
   requestView,
   normalizeAssetName,
   mentionedAssetNames,

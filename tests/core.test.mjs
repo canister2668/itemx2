@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { replay as replayMessages } from './helpers/ledger.mjs';
 import * as core from '../src/engine/core.js';
 import * as renderer from '../src/render/renderer.js';
 
@@ -12,7 +13,7 @@ test('multiple items are extracted in order and raw transports never survive', (
   assert.equal(result.events.length, 3);
   assert.deepEqual(Array.from(result.registry.order), ['blade_a', 'blade_b', 'blade_c']);
   assert.equal(/<\/?item|\[itemx:/i.test(result.content), false);
-  assert.equal(core.eventsFromText(result.content).length, 3);
+  assert.equal((result.content.match(core.MARKER_RE) || []).length, 3);
 });
 
 test('exam provenance stays on the event but never leaks into registry or view', () => {
@@ -57,7 +58,7 @@ test('damage, stack consumption and disappearance are replayed deterministically
   assert.equal(damaged.registry.items.blade_a.durability, '31/100');
   assert.equal(destroyed.registry.items.blade_a.possession, 'removed');
   assert.equal(destroyed.registry.items.blade_a.location, 'unknown');
-  const replay = core.rebuild([
+  const replay = replayMessages([
     { role: 'char', data: first.content },
     { role: 'char', data: damaged.content },
     { role: 'char', data: destroyed.content }
@@ -68,8 +69,8 @@ test('damage, stack consumption and disappearance are replayed deterministically
 test('reroll replacement does not retain the removed response events', () => {
   const oldResult = core.extractResponse(exam('old_blade', '사라질 검'), core.newRegistry());
   const newResult = core.extractResponse(exam('new_blade', '남을 검'), core.newRegistry());
-  const oldState = core.rebuild([{ role: 'char', data: oldResult.content }]);
-  const rerolled = core.rebuild([{ role: 'char', data: newResult.content }]);
+  const oldState = replayMessages([{ role: 'char', data: oldResult.content }]);
+  const rerolled = replayMessages([{ role: 'char', data: newResult.content }]);
   assert.ok(oldState.registry.items.old_blade);
   assert.equal(rerolled.registry.items.old_blade, undefined);
   assert.ok(rerolled.registry.items.new_blade);
@@ -123,21 +124,6 @@ test('unfinished ITEMX transport is quarantined without eating later trailers or
   assert.equal(result.content, '서술 본문.\n[Status: 정상]\n<state>keep</state>');
   const generic = core.extractResponse('일반 HTML <item>표시</item> 뒤 본문', core.newRegistry());
   assert.equal(generic.content, '일반 HTML <item>표시</item> 뒤 본문');
-});
-
-test('oversized derived snapshots are omitted instead of masquerading as an empty registry', () => {
-  const chat = { scriptstate: { unrelated: 'keep' } };
-  const huge = {
-    schema: 2,
-    rev: 2,
-    fingerprint: 'x',
-    updatedAt: Date.now(),
-    registry: { order: ['huge'], items: { huge: { id: 'huge', trivia: '가'.repeat(600000) } }, diagnostics: [] }
-  };
-  const written = core.writeSnapshot(chat, huge);
-  assert.equal(written.scriptstate.$__itemx2_state, undefined);
-  assert.equal(core.readSnapshot(written), null);
-  assert.equal(written.scriptstate.unrelated, 'keep');
 });
 
 test('unknown operations and state-changing merge fields are rejected', () => {

@@ -1,36 +1,38 @@
-/* Chat reads and guarded writes. Reading a chat must observe the host, which
- * runs outside our queue: keep immutable read provenance, never a cache of
- * mutable host state. */
-import * as Store from './storage.js';
+/* Chat reads and guarded writes. A read returns the host's own copy untouched:
+ * no hydration, no clone, no serialization. Write provenance is computed only
+ * when writing: the chat must still equal the copy the change was made from. */
 import { host } from './host.js';
-import { fail, timed, timedSync, workQueue } from './kernel.js';
+import { fail, timed, workQueue } from './kernel.js';
 
-const chatReads = new WeakMap();
+const reads = new WeakMap();
 
-export const readChat = async (characterIndex, chatIndex, ...rest) => {
-  const raw = await timed('host:readChat', () => host().getChatFromIndex(characterIndex, chatIndex, ...rest));
-  const original = JSON.stringify(raw);
-  const chat = timedSync('storage:hydrate', () => Store.hydrate(raw));
-  if (chat) chatReads.set(chat, { characterIndex, chatIndex, original });
+export async function readChat(characterIndex, chatIndex) {
+  const chat = await timed('host:readChat', () => host().getChatFromIndex(characterIndex, chatIndex));
+  if (chat && typeof chat === 'object') reads.set(chat, { characterIndex, chatIndex });
   return chat;
-};
+}
 
-export const saveChat = async (characterIndex, chatIndex, chat, base = chat, { cleanup = false } = {}) => {
+// Writes `next`, made from `base` (a chat this module read and nobody mutated).
+// Stock API has no atomic compare-and-set: this rejects observed conflicts,
+// and the host still owns the interval between the final read and the set.
+export async function saveChat(characterIndex, chatIndex, next, base) {
   workQueue.assertCurrent();
-  const read = chatReads.get(base);
+  const read = reads.get(base);
   if (!read || read.characterIndex !== characterIndex || read.chatIndex !== chatIndex)
     throw new Error('ITEMX write requires its original chat read');
-  // Detach before the first await: persist intentionally shares message arrays.
-  const detached = JSON.parse(JSON.stringify(chat));
-  const persisted = cleanup ? detached : timedSync('storage:persist', () => Store.persist(detached));
+  // Detach before the first await: callers keep building on shared arrays.
+  const written = JSON.parse(JSON.stringify(next));
+  const expected = JSON.stringify(base);
   const latest = await timed('host:readChat', () => host().getChatFromIndex(characterIndex, chatIndex));
   workQueue.assertCurrent();
-  if (JSON.stringify(latest) !== read.original)
-    throw new Error('ITEMX chat changed before saving; retry the operation');
-  // Stock API has no atomic compare-and-set. This rejects observed conflicts;
-  // the host still owns the interval between the final read and whole-chat set.
-  return timed('host:writeChat', () => host().setChatToIndex(characterIndex, chatIndex, persisted));
-};
+  if (JSON.stringify(latest) !== expected) throw new Error('ITEMX chat changed before saving; retry the operation');
+  await timed('host:writeChat', () => host().setChatToIndex(characterIndex, chatIndex, written));
+  reads.set(written, { characterIndex, chatIndex });
+  return written;
+}
+
+export const chatIsStreaming = (chat) =>
+  Boolean(chat?.isStreaming || (chat?.message || []).some((message) => message?.isStreaming || message?.bgContinue));
 
 export async function context() {
   try {

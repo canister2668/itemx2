@@ -1,5 +1,4 @@
 /* Display-only lifecycle policy. Never deletes replay facts or revives an entity. */
-const KEY = '$__itemx2_history_preferences';
 const LIMITS = [0, 5, 10, 20];
 const terminal = (domain, entity) =>
   !!entity &&
@@ -35,9 +34,9 @@ function observe(history, domain, before, after, event, at, source) {
     configurable: true
   });
 }
-function preferences(chat) {
+// Normalized record-list preferences from a stored value (object or JSON).
+function preferences(raw) {
   try {
-    const raw = chat?.scriptstate?.[KEY];
     const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
     return {
       after: LIMITS.includes(value?.after) ? value.after : 10,
@@ -72,7 +71,7 @@ function completedTurns(chat) {
   });
   return { counts, total: count };
 }
-function entry(loaded, domain, entity, prefs = preferences(loaded.chat), turns = completedTurns(loaded.chat)) {
+function entry(loaded, domain, entity, prefs = preferences(loaded.prefs), turns = completedTurns(loaded.chat)) {
   const history = domain === 'item' ? loaded.snapshot?.history : loaded.codexSnapshot?.history?.[domain];
   const evidence = history?.[entity.id];
   const key = `${domain}:${entity.id}`;
@@ -112,7 +111,7 @@ function entries(loaded, domain) {
       : domain === 'skill'
         ? loaded.codexSnapshot?.skills
         : loaded.codexSnapshot?.monsters;
-  const prefs = preferences(loaded.chat),
+  const prefs = preferences(loaded.prefs),
     turns = completedTurns(loaded.chat);
   return (reg?.order || [])
     .map((id) => (reg.items || reg.entries)[id])
@@ -154,7 +153,6 @@ function requestSnapshot(loaded, narrative = '') {
 }
 
 export {
-  KEY,
   LIMITS,
   terminal,
   consumable,

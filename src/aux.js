@@ -2,49 +2,40 @@
 import * as Codex from './engine/codex.js';
 import * as Core from './engine/core.js';
 import * as Quality from './engine/quality.js';
-import * as Store from './storage.js';
-import { context, readChat, saveChat } from './chat-io.js';
-import {
-  ITEMX_AUX_HISTORY_MAX_BYTES,
-  ITEMX_AUX_KEY,
-  ITEMX_AUX_PROMPT_REVISION,
-  ITEMX_AUX_SETTLE_MS,
-  ITEMX_AUX_TIMEOUT_MS,
-  ITEMX_CODEX_REF_RE,
-  ITEMX_REF_RE
-} from './config.js';
+import { chatIsStreaming, context, readChat } from './chat-io.js';
+import { ITEMX_AUX_PROMPT_REVISION, ITEMX_AUX_SETTLE_MS, ITEMX_AUX_TIMEOUT_MS } from './config.js';
 import { isUnloading } from './connection.js';
 import { emit } from './events.js';
 import { host } from './host.js';
 import { t } from './i18n.js';
 import { debugRecord, delay, fail, withTimeout, workQueue } from './kernel.js';
 import {
-  assertLogReadable,
-  boundedObjectTail,
-  buildMessageEventLookup,
-  checkpointStatus,
   commitManualEvents,
-  compactMessageTransports,
-  messageEvents,
+  commitRecords,
   presentationRecord,
-  rebuildCodexWithLedger,
+  project,
   rebuildCurrent,
-  rebuildWithManual,
-  refreshLatest
+  replayFingerprint,
+  writeDocument
 } from './ledger.js';
-import { enrichPendingChat } from './lore-sync.js';
-import { messageData } from './markers.js';
-import {
-  enabledCodexDomains,
-  itemxProtocolText,
-  positionMarkersByNarrative,
-  protocolForSettings,
-  stripItemTransport
-} from './pipeline.js';
+import { enrichLore } from './lore-sync.js';
 import { encounterEntities, modulePortraitAssets, prepareInlinePortraits } from './portraits.js';
 import { activeContextKey, invalidateLoaded } from './session.js';
 import { isEnabled, settingsFor } from './settings.js';
 import { setStatus } from './status.js';
+import { anchorKeys, requestText } from './store/anchors.js';
+import { readDocument } from './store/document.js';
+import {
+  anchorTransport,
+  enabledCodexDomains,
+  itemxProtocolText,
+  protocolForSettings,
+  stripItemTransport
+} from './transport.js';
+
+const messageData = (message) => Core.messageText(message);
+const GUARD_LIMIT = 128;
+
 export function modelText(result) {
   if (typeof result === 'string') return result;
   if (typeof result?.result === 'string') return result.result;
@@ -110,27 +101,16 @@ export async function runAuxModel(prompt, label = t('aux.041')) {
   }
 }
 
-export function auxiliaryHistory(chat) {
-  try {
-    const raw = chat?.scriptstate?.[ITEMX_AUX_KEY];
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-}
+// The auxiliary pass's record for a message, kept in the document so it
+// survives cache loss: which configuration processed it and with what result.
+export const auxGuard = (doc, chatId) => doc?.guards?.aux?.[chatId] || null;
 
-export async function auxiliaryZeroHistory(ctx) {
-  return Store.cache(ctx.chat).auxZero || {};
-}
-
-export async function rememberAuxiliaryZero(ctx, guardKey) {
-  const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-  if (!latest || JSON.stringify(latest.message) !== JSON.stringify(ctx.chat.message)) return;
-  const derived = Store.cache(latest);
-  derived.auxZero = boundedObjectTail({ ...derived.auxZero, [guardKey]: Date.now() }, 64, ITEMX_AUX_HISTORY_MAX_BYTES);
-  latest.scriptstate = { ...latest.scriptstate, [Store.CACHE]: JSON.stringify({ ...derived, v: 1 }) };
-  await saveChat(ctx.characterIndex, ctx.chatIndex, latest);
+function setGuard(doc, chatId, record) {
+  const guards = doc.guards.aux;
+  delete guards[chatId];
+  guards[chatId] = { ...record, at: Date.now() };
+  const ids = Object.keys(guards);
+  for (const id of ids.slice(0, Math.max(0, ids.length - GUARD_LIMIT))) delete guards[id];
 }
 
 export function messageMetadata(message) {
@@ -190,13 +170,11 @@ export function stripAuxiliaryDataBlocks(value) {
   return String(value || '').replace(LIGHTBOARD_DATA_RE, '\n');
 }
 
-export function auxiliaryVisibleText(value, { itemRefs = true } = {}) {
-  let text = stripAuxiliaryDataBlocks(value);
-  text = text.replace(/<(thoughts|analysis)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
-  text = itemRefs
-    ? Codex.requestView(Core.requestView(text))
-    : text.replace(Core.MARKER_RE, '').replace(Codex.MARKER_RE, '');
-  text = text.replace(ITEMX_REF_RE, '').replace(ITEMX_CODEX_REF_RE, '');
+export function auxiliaryVisibleText(value) {
+  const text = requestText(stripAuxiliaryDataBlocks(value)).replace(
+    /<(thoughts|analysis)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,
+    ''
+  );
   return text.replace(/\n{3,}/g, '\n\n').trim();
 }
 
@@ -379,27 +357,25 @@ export function itemEventState(reg, event) {
 export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = false } = {}) {
   const ctx = await context();
   if (!ctx || !(await isEnabled(ctx.character))) return null;
-  // Re-check against this chat rather than the cached flag: recovery commits
-  // straight to the chat and must never land on an unreadable ledger.
-  if (assertLogReadable(ctx.chat)) return null;
   const settings = await settingsFor(ctx.character);
   if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
   if (settings.auxOutput === 'off' && !force) return [];
   if (workQueue.revision('aux-provider') === 'unavailable' && !force) return [];
   const index = assistantMessageIndex(ctx.chat, messageIndex);
   if (index < 0) return null;
-  const restored = checkpointStatus(ctx.chat);
-  if (!force && restored.valid && restored.checkpoint.restored && index <= restored.checkpoint.boundary) return [];
-  const source = messageData(ctx.chat.message[index]);
+  // A malformed document is surfaced here, before any model call.
+  const doc = readDocument(ctx.chat);
+  const messages = ctx.chat.message || [];
+  if (!force && doc.restoredThrough && messages.findIndex((one) => one?.chatId === doc.restoredThrough) >= index)
+    return [];
+  const source = messageData(messages[index]);
   if (!force && !automaticAuxReady(ctx.chat, index, source)) return null;
   const sourceHash = Core.fnv1a(source);
-  // Anchor the recovery ledger on the stable message id. A body-derived key is
-  // invalidated by the very commit this function performs, so every reopen wrote
-  // a fresh key and recovery ran again on an already-recovered message.
-  const auxMessageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
-  const guardKey = `${index}:msg-${auxMessageId}:${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}:q${Quality.REVISION}:p${ITEMX_AUX_PROMPT_REVISION}`;
-  if (auxiliaryHistory(ctx.chat)[guardKey] && !force) return [];
-  if ((await auxiliaryZeroHistory(ctx))[guardKey] && !force) return [];
+  // Guarded by the stable message id: the commit below rewrites the body, so
+  // a body-derived key would invalidate itself.
+  const chatId = messages[index]?.chatId || `idx-${index}`;
+  const guardKey = `${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}:q${Quality.REVISION}:p${ITEMX_AUX_PROMPT_REVISION}`;
+  if (auxGuard(doc, chatId)?.k === guardKey && !force) return [];
   if (typeof host().runLLMModel !== 'function') return null;
 
   return (async () => {
@@ -407,14 +383,16 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     const current = await readChat(ctx.characterIndex, ctx.chatIndex);
     if (!current || Core.fnv1a(messageData(current.message?.[index])) !== sourceHash) return null;
     if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return null;
-    if (auxiliaryHistory(current)[guardKey] && !force) return null;
-    const lookup = buildMessageEventLookup(current);
-    const snapshot = rebuildWithManual(current, lookup);
-    const codexSnapshot = rebuildCodexWithLedger(current, lookup, { rarityMode: settings.rarityMode });
-    const committedNarrative = clipAuxiliaryText(
-      auxiliaryVisibleText(messageData(current.message[index]), { itemRefs: false }),
-      14000
-    );
+    const loaded = project({ ...ctx, chat: current });
+    if (auxGuard(loaded.doc, chatId)?.k === guardKey && !force) return null;
+    const snapshot = loaded.snapshot;
+    const codexSnapshot = loaded.codexSnapshot;
+    // Events this message already carries, which the model must not repeat.
+    const represented = anchorKeys(source)
+      .map((key) => loaded.doc.events[key])
+      .filter((row) => row && row.c === (current.message[index]?.chatId || ''))
+      .map((row) => row.e);
+    const committedNarrative = clipAuxiliaryText(auxiliaryVisibleText(messageData(current.message[index])), 14000);
     if (!committedNarrative && !force) return null;
     const conversation = auxiliaryConversationContext(current, index);
     const domains = enabledCodexDomains(settings);
@@ -444,13 +422,13 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     const itemReconciler = auxiliaryEventReconciler(
       'item',
       snapshot.registry,
-      messageEvents(source, 'item', lookup),
+      represented.filter((event) => !event.domain),
       committedNarrative
     );
     const monsterReconciler = auxiliaryEventReconciler(
       'monster',
       codexSnapshot,
-      messageEvents(source, 'codex', lookup).filter((event) => event.domain === 'monster'),
+      represented.filter((event) => event.domain === 'monster'),
       committedNarrative
     );
     const parsed = settings.itemsEnabled
@@ -537,39 +515,8 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     const allErrors = [...parsed.errors, ...codexParsed.errors];
     if (!valid.length && allErrors.length) throw new Error(t('aux.032', allErrors[0]));
 
-    const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
-    if (!latest || Core.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return null;
-    if (!valid.length) {
-      if (rejectedIds.length) {
-        const next = Core.clone(latest),
-          history = auxiliaryHistory(next);
-        history[guardKey] = {
-          at: Date.now(),
-          qualityRevision: Quality.REVISION,
-          state: 'rejected',
-          events: 0,
-          rejectedIds
-        };
-        next.scriptstate = {
-          ...(next.scriptstate || {}),
-          [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(history, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
-        };
-        await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
-        if (activeContextKey() === ctx.key) {
-          setStatus(t('aux.031'));
-          await setAuxOutcome('failed', t('aux.030'), 0);
-        }
-        return [];
-      }
-      await rememberAuxiliaryZero(ctx, guardKey);
-      if (activeContextKey() === ctx.key) {
-        setStatus(t('aux.029'));
-        await setAuxOutcome('done', t('aux.028'), 0);
-      }
-      return valid;
-    }
-    const next = Core.clone(latest);
-    const history = auxiliaryHistory(next);
+    const guard = { k: guardKey, q: Quality.REVISION };
+    // Transport markers of the valid events, anchored into the message below.
     const reg = Core.clone(snapshot.registry);
     const markers = validItems.map((event) => {
       const id = event.item?.id || event.patch?.id;
@@ -586,49 +533,64 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       const view = Codex.clone(Codex.applyEvent(codexReg, event));
       markers.push(Codex.marker({ v: Codex.VERSION, event, view, previous, review: { source: 'auxiliary' } }));
     }
-    prepareInlinePortraits(ctx, codexReg, settings);
-    const markerText = markers.join('\n');
-    const message = next.message[index];
-    if (typeof message?.data === 'string')
-      message.data = positionMarkersByNarrative(`${message.data.trimEnd()}\n\n${markerText}`);
-    else if (typeof message?.content === 'string')
-      message.content = positionMarkersByNarrative(`${message.content.trimEnd()}\n\n${markerText}`);
-    else return null;
-    const record = {
-      at: Date.now(),
-      qualityRevision: Quality.REVISION,
-      state: unresolvedPartials.length || rejectedIds.length ? 'partial_final' : 'complete',
-      events: valid.length,
-      partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds]
-    };
-    history[guardKey] = record;
-    next.scriptstate = {
-      ...(next.scriptstate || {}),
-      [ITEMX_AUX_KEY]: JSON.stringify(boundedObjectTail(history, 64, ITEMX_AUX_HISTORY_MAX_BYTES))
-    };
-    const compacted = compactMessageTransports(next, index).chat;
-    const compactedLookup = buildMessageEventLookup(compacted);
-    const rebuilt = rebuildWithManual(compacted, compactedLookup);
+    if (valid.length) prepareInlinePortraits(ctx, codexReg, settings);
+    let records = [];
+    const written = await writeDocument(ctx, async (doc, latest) => {
+      const message = latest.message?.[index];
+      if (!message || Core.fnv1a(messageData(message)) !== sourceHash) return false;
+      if (!valid.length) {
+        setGuard(
+          doc,
+          chatId,
+          rejectedIds.length
+            ? { ...guard, state: 'rejected', events: 0, rejectedIds }
+            : { ...guard, state: 'none', events: 0 }
+        );
+        return {};
+      }
+      const field = typeof message.data === 'string' ? 'data' : typeof message.content === 'string' ? 'content' : '';
+      if (!field) return false;
+      const anchored = anchorTransport(message[field], markers.join('\n'), {
+        seed: `${ctx.key}|${chatId}|aux|${doc.seq}`,
+        doc
+      });
+      records = anchored.records;
+      commitRecords(doc, records, typeof message.chatId === 'string' ? message.chatId : '');
+      setGuard(doc, chatId, {
+        ...guard,
+        state: unresolvedPartials.length || rejectedIds.length ? 'partial_final' : 'complete',
+        events: valid.length,
+        partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds]
+      });
+      const chat = {
+        ...latest,
+        message: latest.message.map((one, at) => (at === index ? { ...one, [field]: anchored.content } : one))
+      };
+      await enrichLore(ctx, doc, chat);
+      return { chat };
+    });
+    if (!written) return null;
     const stillActive = activeContextKey() === ctx.key;
-    if (stillActive) {
-      refreshLatest(compacted, compactedLookup);
-      workQueue.remember('host-settling', ctx.key);
+    if (!valid.length) {
+      if (stillActive) {
+        setStatus(rejectedIds.length ? t('aux.031') : t('aux.029'));
+        await setAuxOutcome(
+          rejectedIds.length ? 'failed' : 'done',
+          rejectedIds.length ? t('aux.030') : t('aux.028'),
+          0
+        );
+      }
+      return [];
     }
-    await saveChat(
-      ctx.characterIndex,
-      ctx.chatIndex,
-      await enrichPendingChat(ctx, Core.writeSnapshot(compacted, rebuilt)),
-      latest
-    );
     if (stillActive) {
-      await emit('markers-armed', markerText);
-      await emit('output-committed', compacted);
+      workQueue.remember('host-settling', ctx.key);
+      await emit(
+        'markers-armed',
+        records.map((record) => record.key)
+      );
+      await emit('output-committed', written.chat);
       invalidateLoaded();
-      invalidateLoaded({ drop: false });
-      workQueue.remember('host-settling', ctx.key);
       setStatus(t('aux.027', valid.length));
-    }
-    if (stillActive)
       await setAuxOutcome(
         unresolvedPartials.length || rejectedIds.length ? 'failed' : 'done',
         unresolvedPartials.length || rejectedIds.length
@@ -636,6 +598,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
           : t('aux.025', valid.length),
         valid.length
       );
+    }
     return valid;
   })().catch(async (error) => {
     fail('auxiliary recovery', error);
@@ -687,19 +650,15 @@ export async function repairOneItem(loaded, id) {
     const active = await context();
     if (!active || active.key !== loaded.key) throw new Error(t('aux.011'));
     const chat = active.chat;
-    if (chat.isStreaming || (chat.message || []).some((one) => one.isStreaming || one.bgContinue))
-      throw new Error(t('aux.010'));
+    if (chatIsStreaming(chat)) throw new Error(t('aux.010'));
+    const expectedFingerprint = replayFingerprint(chat);
     const sourceIndex = record.review?.evidenceIndex ?? record.messageIndex;
     const source = messageData(chat.message?.[sourceIndex]);
-    const reg = rebuildWithManual(chat).registry,
+    const reg = project(active).snapshot.registry,
       item = reg.items[id];
     if (!item || item.possession === 'removed') throw new Error(t('aux.009'));
     const conversation = auxiliaryConversationContext(chat, sourceIndex);
-    const narrative = [
-      conversation.triggeringUser,
-      conversation.recent,
-      auxiliaryVisibleText(source, { itemRefs: false })
-    ].join('\n\n');
+    const narrative = [conversation.triggeringUser, conversation.recent, auxiliaryVisibleText(source)].join('\n\n');
     const evidence = Quality.detectItemEvidence(narrative, item, Object.values(reg.items));
     if (!evidence.segment) throw new Error(t('aux.008'));
     const partial = { event: { kind: 'exam', item }, missing, evidence };
@@ -709,12 +668,12 @@ export async function repairOneItem(loaded, id) {
     const events = parsed.events.map((event) => Quality.acceptRepair(event, partialMap, reg)).filter(Boolean);
     if (events.length !== 1 || parsed.events.length !== 1 || parsed.errors.length) throw new Error(t('aux.006'));
     const latest = await context();
-    if (!latest || latest.key !== loaded.key || JSON.stringify(latest.chat) !== JSON.stringify(chat))
+    if (!latest || latest.key !== loaded.key || replayFingerprint(latest.chat) !== expectedFingerprint)
       throw new Error(t('aux.005'));
     const remaining = missing.filter((key) => !Object.prototype.hasOwnProperty.call(events[0].patch.fields, key));
     // This transaction already owns the queue; commitManualEvents only writes.
     await commitManualEvents(
-      { ...loaded, chat: latest.chat, expectedChat: latest.chat },
+      { ...loaded, chat: latest.chat, expectedFingerprint },
       events,
       t('aux.004'),
       { source: 'auxiliary', checked: true, missing: remaining, evidenceIndex: sourceIndex },
@@ -731,6 +690,5 @@ export async function repairOneItem(loaded, id) {
     .catch(async (error) => {
       if (activeContextKey() === loaded.key && !isUnloading()) await setAuxOutcome('failed', t('aux.001'), 0);
       throw error;
-    })
-    .finally(() => {});
+    });
 }

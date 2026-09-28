@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { rt as modules } from './helpers/modules.mjs';
+import { pendingAnchor } from './helpers/ledger.mjs';
 
 // Committed render oracle. It replaced the tests that ran `git show <old commit>`
 // (a shallow CI checkout cannot see them). Regenerate only for an intended visual
@@ -83,7 +84,9 @@ async function renderCases() {
           }
   for (const item of items)
     out[`card/${item.affinity}`] = norm(
-      rt.displayHandler(rt.core.marker({ v: 2, event: { kind: 'exam', item }, view: item }))
+      // Stored text puts the anchor after a paragraph break; the old display
+      // path inserted that break itself when it positioned the marker.
+      await rt.displayHandler(`\n\n${pendingAnchor({ event: { kind: 'exam', item }, view: item })}`)
     );
   return out;
 }

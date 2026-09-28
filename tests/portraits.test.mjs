@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createFakeHost, settle } from './helpers/fake-host.mjs';
 import { rt, setHost, Session, Style, uiState } from './helpers/modules.mjs';
 import { dispatch } from '../src/kernel.js';
+import { pendingAnchor } from './helpers/ledger.mjs';
 
 const monster = (extra = {}) => ({
   id: 'mayuri',
@@ -13,7 +14,7 @@ const monster = (extra = {}) => ({
   relation: 'hostile',
   ...extra
 });
-const marker = (entity) => rt.codex.marker({ v: 1, event: { domain: 'monster', kind: 'exam', entity }, view: entity });
+const marker = (entity) => pendingAnchor({ event: { domain: 'monster', kind: 'exam', entity }, view: entity });
 let unique = 0;
 const character = (ext = 'png', count = 1) => {
   const chaId = `portrait-${++unique}`;
@@ -56,18 +57,18 @@ test('list, detail and inline portraits share one image read', async () => {
   assert.match(detail, /class="x-risu-itemx-monster-portrait" src="data:image\/avif;base64,/);
   rt.prepareInlinePortraits(loaded, loaded.codexSnapshot, { moduleAssetsEnabled: false });
   await settle(5);
-  assert.match(rt.displayWithPortraits(marker(entity)), /itemx2-inline-icon"><img src="data:image\/avif;base64,/);
+  assert.match(await rt.displayHandler(marker(entity)), /itemx2-inline-icon"><img src="data:image\/avif;base64,/);
   assert.equal(reads.length, 1, 'list, detail and inline share the asset cache');
   const unknown = monster({ id: 'brigands', name: '이름 없는 도적들', portrait: 'NONE' });
-  assert.match(rt.displayWithPortraits(marker(unknown)), /itemx2-inline-icon"><span>🪓/);
+  assert.match(await rt.displayHandler(marker(unknown)), /itemx2-inline-icon"><span>🪓/);
 });
 
-test('cold concurrent display returns immediately without host calls', () => {
+test('cold concurrent display of pending cards makes no host calls', async () => {
   let hostCalls = 0;
   setHost(new Proxy({}, { get: () => () => (hostCalls++, new Promise(() => {})) }));
   Session.resetSession('murim-cold');
   for (let i = 0; i < 100; i++) {
-    const html = rt.displayWithPortraits(marker(monster()));
+    const html = await rt.displayHandler(marker(monster()));
     assert.equal(typeof html, 'string', 'display must not wait for any host promise');
     assert.match(html, /마유리/);
   }
@@ -86,10 +87,10 @@ test('portrait preparation coalesces concurrent work and never leaks across chat
     assert.equal(rt.prepareInlinePortraits(ctx, snapshot, { moduleAssetsEnabled: false }), undefined);
   await settle(5);
   assert.equal(reads, 1, 'only one in-flight image read despite concurrent recovery and rebuild');
-  assert.equal(typeof rt.displayWithPortraits(marker(monster())), 'string');
+  assert.equal(typeof (await rt.displayHandler(marker(monster()))), 'string');
   assert.equal(reads, 1, 'display must not retry a stalled image');
   Session.resetSession('another-chat');
-  assert.doesNotMatch(rt.displayWithPortraits(marker(monster())), /<img/, 'old chat portraits must not leak');
+  assert.doesNotMatch(await rt.displayHandler(marker(monster())), /<img/, 'old chat portraits must not leak');
 });
 
 test('large originals never enter inline HTML or the inline-only original cache', async () => {
@@ -103,7 +104,7 @@ test('large originals never enter inline HTML or the inline-only original cache'
   const before = rt.portraitCacheStats().images;
   await rt.loadCodexPortraits(who, { message: [] }, snapshot, { moduleAssetsEnabled: false }, true);
   assert.equal(rt.portraitCacheStats().images, before, 'inline preparation must not retain original images');
-  const html = rt.displayWithPortraits(marker(monster()));
+  const html = await rt.displayHandler(marker(monster()));
   assert.equal(html.includes(full), false);
   assert.match(html, /itemx2-inline-icon"><span>🪓/, 'no thumbnail API: fall back instead of embedding the original');
   const details = await rt.loadCodexPortraits(who, { message: [] }, snapshot, { moduleAssetsEnabled: false });

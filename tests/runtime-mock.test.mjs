@@ -131,21 +131,17 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(translationRequest[0].content, positionedReport);
   assert.equal(await replacers.afterRequest(positionedReport, 'translate'), positionedReport);
   const visibleReport = positionedReport.split('<output target=input>')[1].split('</output>')[0];
-  assert.equal((visibleReport.match(/<!--ITEMX2:/g) || []).length, 1);
-  assert.equal((visibleReport.match(/<!--CODEX2:/g) || []).length, 1);
+  assert.equal((visibleReport.match(/<!--ix:[0-9a-z]+-->/g) || []).length, 2);
+  assert.doesNotMatch(visibleReport, /ITEMX2|CODEX2/);
 
   const raw =
     '런타임 검을 얻었다.\n\n전투가 끝난 뒤 일행은 다음 장소로 떠났다.\n\n<itemExam><id>runtime_blade</id><name>런타임 검</name><type>장검</type><emoji>⚔️</emoji><internalrarity>epic</internalrarity><displayrarity>에픽</displayrarity><power>2200-3100</power><durability>100/100</durability><possession>owned</possession><location>inventory</location><visual><theme>oriental</theme><affinity>lightning</affinity></visual><trivia>실제 훅 검증.</trivia></itemExam>';
   const cleaned = await replacers.afterRequest(raw, 'main');
   assert.equal(cleaned.includes('<itemExam>'), false);
-  assert.match(cleaned, /<!--ITEMX2:/);
+  assert.match(cleaned, /<!--ix:[0-9a-z]+-->/);
   const tokenizedStoredMessage = await handlers.process(cleaned);
   assert.match(tokenizedStoredMessage, /런타임 검을 얻었다/);
-  assert.equal(
-    tokenizedStoredMessage.includes('<!--ITEMX2:'),
-    false,
-    'stored display marker is removed before Hypa tokenization'
-  );
+  assert.equal(tokenizedStoredMessage.includes('<!--ix:'), false, 'stored anchor is removed before Hypa tokenization');
   // The inventory poll can still see the pre-commit chat between the final
   // response hook and the host's first display pass. That stale rebuild must
   // not clear the just-produced marker or the card appears only after editing.
@@ -155,7 +151,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.match(immediateDisplay, /motion-lite/);
   chat.message.push({ role: 'char', data: cleaned });
   await new Promise((resolve) => setTimeout(resolve, 130));
-  assert.equal(chat.scriptstate.$__itemx2_state, undefined);
+  assert.equal(chat.scriptstate['itemx:ledger'], undefined, 'no write before the commit');
 
   const request = await replacers.beforeRequest(
     [
@@ -166,7 +162,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   );
   assert.equal(request[0].role, 'system');
   assert.match(request[0].content, /runtime_blade/);
-  assert.equal(request[1].content.includes('<!--ITEMX2:'), false);
+  assert.equal(request[1].content.includes('<!--ix:'), false);
   const readsBeforeCachedRequest = chatReads;
   const continuationRequest = await replacers.beforeRequest(
     [
@@ -227,8 +223,8 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     '새로운 검결을 깨우쳤다.\n<skillExam><id>hidden_form</id><name>월영참</name><rank>절정</rank><school>음월검법</school><type>active</type><status>equipped</status><level>7</level><mastery>30</mastery><cost>진기 24</cost><cooldown>18초</cooldown><target>단일</target><effects>달빛 검기 ;; 빙결 대상 추가 피해</effects></skillExam>\n\n[Status: 정상]';
   const mixedCleaned = await replacers.afterRequest(mixed, 'main');
   assert.equal(mixedCleaned.includes('<skillExam>'), false);
-  assert.match(mixedCleaned, /<!--CODEX2:/);
-  assert.ok(mixedCleaned.indexOf('<!--CODEX2:') < mixedCleaned.indexOf('[Status: 정상]'));
+  assert.match(mixedCleaned, /<!--ix:/);
+  assert.ok(mixedCleaned.indexOf('<!--ix:') < mixedCleaned.indexOf('[Status: 정상]'));
   const mixedDisplay = await handlers.display(mixedCleaned);
   assert.match(mixedDisplay, /itemx2-inline-skill/);
   assert.match(mixedDisplay, /motion-lite/);
@@ -249,7 +245,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     '새 기술을 익혔다.\n<skillExam><id>trailer_form</id><name>월영참</name><type>active</type><status>learned</status></skillExam>\n\n[Status: 월영참 CD 18초]',
     'main'
   );
-  assert.ok(trailerNameHit.indexOf('<!--CODEX2:') < trailerNameHit.indexOf('[Status: 월영참'));
+  assert.ok(trailerNameHit.indexOf('<!--ix:') < trailerNameHit.indexOf('[Status: 월영참'));
 
   await replacers.beforeRequest([{ role: 'user', content: '설정 캐시를 확인한다.' }], 'main');
   await replacers.afterRequest('설정 캐시 확인 완료.', 'main');
@@ -263,7 +259,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     '적이 나타났다.\n<monsterExam><id>broken\n\n검을 얻었다.\n<itemExam><id>second_blade</id><name>두 번째 검</name><type>장검</type><possession>owned</possession><location>inventory</location></itemExam>\n\n[Status: HP 12]\n<state>keep</state>';
   const brokenCleaned = await replacers.afterRequest(brokenMixed, 'main');
   assert.equal(brokenCleaned.includes('monsterExam'), false);
-  assert.match(brokenCleaned, /<!--ITEMX2:/);
+  assert.match(brokenCleaned, /<!--ix:/);
   assert.match(brokenCleaned, /\[Status: HP 12\]/);
   assert.match(brokenCleaned, /<state>keep<\/state>/);
 });

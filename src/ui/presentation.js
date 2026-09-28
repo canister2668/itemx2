@@ -1,22 +1,19 @@
 /* Chat-body presentation: the display hook's card rendering, one-shot event
  * bursts, and the scroll governor that pauses card effects while the reader
  * scrolls. All state here is private to this module. */
-import * as Codex from '../engine/codex.js';
 import * as Core from '../engine/core.js';
 import * as Renderer from '../render/renderer.js';
 import { scrollActive, setScrollActive } from '../activity.js';
 import { assistantMessageIndex, eventValueKey } from '../aux.js';
-import { ITEMX_CODEX_REF_RE, ITEMX_REF_RE } from '../config.js';
 import { isUnloading } from '../connection.js';
 import { emit } from '../events.js';
-import { t } from '../i18n.js';
 import { debugRecord, workQueue } from '../kernel.js';
-import { coalesceAdjacentItemMarkers, inlineViewPayload, messageData, presentationPayloads } from '../markers.js';
-import { positionMarkersByNarrative } from '../pipeline.js';
+import { anchorPayload, displayProjection } from '../ledger.js';
 import { inlinePortraitImages } from '../portraits.js';
 import { codexInlineEventHtml } from '../render/codex-cards.js';
-import { activeContextKey, currentLatestMarkers, eventPayload } from '../session.js';
+import { activeContextKey, currentLatestKeys } from '../session.js';
 import { FX_MODES, SKIN_MODES } from '../settings.js';
+import { ANCHOR_RE, anchorKeys, hasAnchor, hasOldMarker, removeOldMarkers } from '../store/anchors.js';
 import {
   ITEMX_CHAT_STYLE,
   ITEMX_CHIP_STYLE,
@@ -60,27 +57,28 @@ export function clearMarkerHtmlCache() {
   markerHtmlCache.clear();
 }
 
-export function eventBurstKey(payload) {
-  return `e${Core.fnv1a(activeContextKey())}_${Core.fnv1a(JSON.stringify([payload.event, payload.view]))}`;
-}
+const payloadDomain = (payload) =>
+  payload.domain === 'item' || !payload.event?.domain ? 'item' : payload.event.domain;
 
-export function decorateInlineEvent(html, payload, domain) {
+export function decorateInlineEvent(html, payload, domain, key) {
   const kind = Renderer.eventKind(payload, domain);
   if (!kind || !html) return html;
   return html.replace(/^<(article|section)([^>]*)>/, (opening) =>
     opening.replace(
       />$/,
-      ` x-itemx2-event="${eventBurstKey(payload)}"><span class="itemx2-event-burst itemx2-burst-${kind}" aria-hidden="true"></span>`
+      ` x-itemx2-event="${key}"><span class="itemx2-event-burst itemx2-burst-${kind}" aria-hidden="true"></span>`
     )
   );
 }
 
-export function armEventBursts(text) {
+// Anchors of a response being generated: their cards may play a one-shot
+// burst once the response is committed.
+export function armEventBursts(keys) {
   if (!visualEffectsEnabled || isUnloading()) return;
   for (const [key, candidate] of bursts) if (candidate.expires < Date.now()) bursts.delete(key);
-  for (const { payload, domain } of presentationPayloads(text)) {
-    if (!Renderer.eventKind(payload, domain)) continue;
-    const key = eventBurstKey(payload);
+  for (const key of keys || []) {
+    const payload = anchorPayload(key);
+    if (!payload || !Renderer.eventKind(payload, payloadDomain(payload))) continue;
     if (burstSeen.has(key) || bursts.has(key)) continue;
     if (bursts.size >= 8) break;
     bursts.set(key, { expires: Date.now() + 30000, committed: false });
@@ -96,8 +94,8 @@ export function commitEventBursts(chat) {
   const message = chat?.message?.[assistantMessageIndex(chat)];
   if (!message || message.isStreaming || message.bgContinue) return;
   let activated = false;
-  for (const { payload } of presentationPayloads(messageData(message))) {
-    const candidate = bursts.get(eventBurstKey(payload));
+  for (const key of anchorKeys(Core.messageText(message))) {
+    const candidate = bursts.get(key);
     if (!candidate || candidate.committed || candidate.expires < Date.now()) continue;
     candidate.committed = true;
     candidate.expires = Date.now() + 3000;
@@ -152,144 +150,111 @@ export function clearEventBursts() {
   burstOwners.clear();
 }
 
-export function suppressRepeatedDisplayStates(content) {
-  // Display-only: never delete ledger events. A -> B -> A remains three states.
+// The anchors of one message with their payloads, minus the display-only
+// repeats: a card identical to the previous card of the same entity, and an
+// item card directly followed by a newer card of the same item. Never deletes
+// ledger events: A -> B -> A remains three states.
+function visibleAnchors(source, loaded) {
+  const rows = [...source.matchAll(ANCHOR_RE)].map((match) => ({
+    key: match[1],
+    start: match.index,
+    end: match.index + match[0].length,
+    payload: anchorPayload(match[1], loaded)
+  }));
   const last = new Map();
-  return String(content || '').replace(
-    /<!--(ITEMX2|CODEX2)([:@])([A-Za-z0-9_-]+)(?::([A-Za-z0-9_-]+))?-->/g,
-    (raw, prefix, mode, code, inline) => {
-      const domain = prefix === 'ITEMX2' ? 'item' : 'codex';
-      const payload =
-        mode === ':'
-          ? Core.decodePayload(code)
-          : eventPayload(`${domain}:${code}`) || inlineViewPayload(inline, domain);
-      const view = payload?.view;
-      if (!view?.id || payload.error) return raw;
-      const key = `${domain}:${payload.event?.domain || 'item'}:${view.id}`;
-      const signature = eventValueKey(view);
-      const duplicate = last.get(key) === signature;
-      last.set(key, signature);
-      return duplicate ? '' : raw;
-    }
-  );
+  for (const row of rows) {
+    const view = row.payload?.view;
+    if (!view?.id) continue;
+    const entity = `${payloadDomain(row.payload)}:${view.id}`;
+    const signature = eventValueKey(view);
+    row.hidden = last.get(entity) === signature;
+    last.set(entity, signature);
+  }
+  const shown = rows.filter((row) => !row.hidden);
+  for (let index = 0; index < shown.length - 1; index += 1) {
+    const current = shown[index],
+      next = shown[index + 1];
+    if (payloadDomain(current.payload || {}) !== 'item' || payloadDomain(next.payload || {}) !== 'item') continue;
+    if (
+      current.payload?.view?.id &&
+      current.payload.view.id === next.payload?.view?.id &&
+      !source.slice(current.end, next.start).trim()
+    )
+      current.hidden = true;
+  }
+  return rows;
 }
 
-export const displayHandler = (content, portraits = {}) => {
+function renderItemCard(key, payload, motion) {
+  const cacheKey = `${key}:${motion}`;
+  if (markerHtmlCache.has(cacheKey)) return markerHtmlCache.get(cacheKey);
+  const html = decorateInlineEvent(
+    Renderer.renderMarkerPayload(payload, { inline: true, motion }),
+    payload,
+    'item',
+    key
+  );
+  markerHtmlCache.set(cacheKey, html);
+  while (markerHtmlCache.size > 64) markerHtmlCache.delete(markerHtmlCache.keys().next().value);
+  return html;
+}
+
+// The display hook. Old markers are hidden; anchors become cards from the
+// loaded ledger, which is awaited once per chat. An anchor nothing resolves
+// renders as nothing.
+export async function displayHandler(content) {
   const raw = Core.stripInventoryEcho(content);
-  if (!raw.includes('<!--ITEMX2') && !raw.includes('<!--CODEX2')) return raw;
-  const positioned = raw.includes('<!--ITEMX2:') || raw.includes('<!--CODEX2:') ? positionMarkersByNarrative(raw) : raw;
-  const source = coalesceAdjacentItemMarkers(suppressRepeatedDisplayStates(positioned));
-  let found = false,
-    hasFullCard = false,
-    hasCodexCard = false;
-  const renderPayload = (cacheKey, payload, motion) => {
-    const key = `${cacheKey}:${motion}`;
-    if (markerHtmlCache.has(key)) return markerHtmlCache.get(key);
-    const html = decorateInlineEvent(Renderer.renderMarkerPayload(payload, { inline: true, motion }), payload, 'item');
-    markerHtmlCache.set(key, html);
-    while (markerHtmlCache.size > 64) markerHtmlCache.delete(markerHtmlCache.keys().next().value);
-    return html;
-  };
-  const markerMotion = (key) => {
-    if (fxMotion === 'off') return 'off';
-    if (!currentLatestMarkers().size) return 'lite';
-    return currentLatestMarkers().has(key) ? 'lite' : 'off';
-  };
-  const rendered = source
-    .replace(Core.MARKER_RE, (_, code) => {
-      found = true;
-      const payload = Core.decodePayload(code);
-      if (!payload || payload.error) return '';
-      const motion = markerMotion(`ITEMX2:${code}`);
-      const html = renderPayload(`item:${code}`, payload, motion);
+  const source = hasOldMarker(raw) ? removeOldMarkers(raw) : raw;
+  if (!hasAnchor(source)) return source;
+  const loaded = await displayProjection(anchorKeys(source));
+  const rows = visibleAnchors(source, loaded);
+  const latest = currentLatestKeys();
+  const motion = (key) => (fxMotion === 'off' ? 'off' : !latest.size || latest.has(key) ? 'lite' : 'off');
+  const monsters = rows
+    .map((row) => row.payload)
+    .filter((payload) => payload?.event?.domain === 'monster')
+    .map((payload) => payload.view || payload.event.entity)
+    .filter((entity) => entity?.id);
+  // Display hooks must never call back into the host for portraits: a host
+  // render may be waiting for this callback.
+  const portraits = monsters.length ? inlinePortraitImages(monsters, activeContextKey()) : {};
+  let hasFullCard = false,
+    hasCodexCard = false,
+    cursor = 0,
+    rendered = '';
+  for (const row of rows) {
+    rendered += source.slice(cursor, row.start);
+    cursor = row.end;
+    const payload = row.payload;
+    if (row.hidden || !payload) continue;
+    if (payloadDomain(payload) === 'item') {
+      const html = renderItemCard(row.key, payload, motion(row.key));
       if (html) {
         hasFullCard = true;
-        return html;
-      }
-      const item = payload.event?.kind === 'exam' ? payload.event.item : payload.view;
-      return item
-        ? `<span class="itemx-event-chip">${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name || item.id)}</span>`
-        : '';
-    })
-    .replace(Codex.MARKER_RE, (_, code) => {
-      found = true;
-      const payload = Codex.decodePayload(code);
-      if (!payload || payload.error) return '';
-      const html = decorateInlineEvent(
-        codexInlineEventHtml(
-          payload,
-          markerMotion(`CODEX2:${code}`),
-          portraits[payload.view?.id || payload.event?.entity?.id] || ''
-        ),
-        payload,
-        payload.event?.domain
-      );
-      if (html) {
-        hasCodexCard = true;
-        return html;
-      }
-      return '';
-    })
-    .replace(ITEMX_REF_RE, (_, ref, inline) => {
-      found = true;
-      const payload = eventPayload(`item:${ref}`) || inlineViewPayload(inline, 'item');
-      if (!payload || payload.error) return `<span class="itemx-event-chip">${t('presentation.002.1')}</span>`;
-      const motion = markerMotion(`ITEMX2@${ref}`);
-      const html = renderPayload(`item-ref:${ref}`, payload, motion);
-      if (html) {
-        hasFullCard = true;
-        return html;
+        rendered += html;
+        continue;
       }
       const item = payload.view || payload.event?.item;
-      return item
-        ? `<span class="itemx-event-chip">${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name || item.id)}</span>`
-        : `<span class="itemx-event-chip">📦 ITEMX · ${Core.esc(ref)}</span>`;
-    })
-    .replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
-      found = true;
-      if (!inline && !currentLatestMarkers().has(`CODEX2@${ref}`)) return '';
-      const payload = eventPayload(`codex:${ref}`) || inlineViewPayload(inline, 'codex');
-      if (!payload || payload.error)
-        return inline ? `<span class="itemx-event-chip">${t('presentation.001.1')}</span>` : '';
-      const html = decorateInlineEvent(
-        codexInlineEventHtml(
-          payload,
-          markerMotion(`CODEX2@${ref}`),
-          portraits[payload.view?.id || payload.event?.entity?.id] || ''
-        ),
-        payload,
-        payload.event?.domain
-      );
-      if (html) {
-        hasCodexCard = true;
-        return html;
-      }
-      return '';
-    });
-  if (!found) return source;
-  if (mainStyleInstalled()) return rendered;
+      if (item)
+        rendered += `<span class="itemx-event-chip">${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name || item.id)}</span>`;
+      continue;
+    }
+    // Encounter and skill cards stay with the newest response only.
+    if (latest.size && !latest.has(row.key)) continue;
+    const html = decorateInlineEvent(
+      codexInlineEventHtml(payload, motion(row.key), portraits[payload.view?.id || payload.event?.entity?.id] || ''),
+      payload,
+      payload.event?.domain,
+      row.key
+    );
+    if (html) {
+      hasCodexCard = true;
+      rendered += html;
+    }
+  }
+  rendered += source.slice(cursor);
+  if (mainStyleInstalled() || (!hasFullCard && !hasCodexCard)) return rendered;
   return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
-};
-
-export function displayWithPortraits(content) {
-  const monsters = {};
-  const collect = (payload) => {
-    if (payload?.event?.domain !== 'monster' || payload.error) return;
-    const entity = payload.view || payload.event.entity;
-    if (entity?.id) monsters[entity.id] = entity;
-  };
-  String(content || '').replace(Codex.MARKER_RE, (_, code) => {
-    collect(Codex.decodePayload(code));
-    return '';
-  });
-  String(content || '').replace(ITEMX_CODEX_REF_RE, (_, ref, inline) => {
-    collect(eventPayload(`codex:${ref}`) || inlineViewPayload(inline, 'codex'));
-    return '';
-  });
-  // Display hooks must never call back into the host. A host render may be
-  // waiting for this callback, and concurrent message renders amplify reads.
-  const portraits = inlinePortraitImages(Object.values(monsters), activeContextKey());
-  return displayHandler(content, portraits);
 }
 
 // FX timers must run even while a queued host/model operation is suspended.

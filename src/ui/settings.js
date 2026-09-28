@@ -17,7 +17,8 @@ import {
   exportCurrentBackup,
   itemxStorageFootprint,
   prepareBackupImport,
-  rebuildCurrent
+  rebuildCurrent,
+  removeOldMarkersCurrent
 } from '../ledger.js';
 import { scanLorebookEncounters } from '../lore-sync.js';
 import { enableModuleAssets } from '../portraits.js';
@@ -429,7 +430,23 @@ export function settingsPanelHtml(loaded, skin, parts) {
           'storage-cleanup-cancel'
         )
       : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}${setButton(skin, 'storage-cleanup', t('ui-settings.102'))}</span>`
-  )}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${setCard(
+  )}${
+    parts.oldMarkerCount
+      ? setCard(
+          t('ui-settings.old-markers-title'),
+          t('ui-settings.old-markers-note', parts.oldMarkerCount),
+          parts.oldMarkersArmed
+            ? confirmRow(
+                skin,
+                t('ui-settings.confirm-old-markers'),
+                'old-markers',
+                t('ui-settings.confirm-yes-old-markers'),
+                'old-markers-cancel'
+              )
+            : setButton(skin, 'old-markers', t('ui-settings.old-markers-button'))
+        )
+      : ''
+  }<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${setCard(
     t('ui-settings.110'),
     t('ui-settings.109'),
     parts.cleanupArmed
@@ -486,7 +503,9 @@ export function settingsStorageParts(loaded) {
   return {
     cleanupArmed: uiState.cleanupArmed,
     storageCleanupArmed: uiState.storageCleanupArmed,
-    footprintLabel: t('ui-settings.060', Math.max(1, Math.ceil(footprint.totalBytes / 1024)), footprint.markerCount)
+    oldMarkersArmed: uiState.oldMarkersArmed,
+    oldMarkerCount: footprint.oldMarkerCount,
+    footprintLabel: t('ui-settings.060', Math.max(1, Math.ceil(footprint.totalBytes / 1024)), footprint.anchorCount)
   };
 }
 
@@ -813,6 +832,32 @@ export function rootSettingActions() {
         }
       )
     },
+    {
+      hook: 'itemx2-setting-old-markers',
+      run: armed(
+        'oldMarkersArmed',
+        'itemx2-setting-old-markers',
+        async () => {
+          setStatus(t('ui-settings.old-markers-armed'));
+        },
+        async () => {
+          await showRootFeedback(t('ui-settings.old-markers-working'), 'working', 0);
+          try {
+            const result = await removeOldMarkersCurrent();
+            await showRootFeedback(
+              t('ui-settings.old-markers-done', result.cleanedMessages, result.removedMarkers),
+              'success',
+              3600
+            );
+            if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+          } catch (error) {
+            uiState.oldMarkersArmed = false;
+            await showRootFeedback(t('ui-settings.old-markers-failed', error.message || error), 'error', 4200);
+          }
+        }
+      )
+    },
+    { hook: 'itemx2-setting-old-markers-cancel', run: disarm('oldMarkersArmed', 'itemx2-setting-old-markers') },
     {
       hook: 'itemx2-setting-storage-cleanup-cancel',
       run: disarm('storageCleanupArmed', 'itemx2-setting-storage-cleanup')

@@ -499,49 +499,6 @@
   }
 }
 
-/* Read-only freeze: a present-but-unreadable checkpoint. Reading and backup
-   export stay available; every ledger rewrite is refused. */
-.itemx2-frozen-banner {
-  display: block;
-  margin: 0;
-  padding: 10px 14px;
-  background: rgba(190, 74, 58, 0.16);
-  border-top: 1px solid rgba(214, 108, 90, 0.5);
-  border-bottom: 1px solid rgba(214, 108, 90, 0.5);
-  color: #f6d9d2;
-}
-.itemx2-frozen-banner strong {
-  display: block;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #ffb3a0;
-}
-.itemx2-frozen-banner small {
-  display: block;
-  margin-top: 3px;
-  font-size: 11px;
-  line-height: 1.5;
-  opacity: 0.86;
-}
-.itemx2-skin-frost .itemx2-frozen-banner,
-.x-risu-itemx2-skin-frost .itemx2-frozen-banner {
-  background: rgba(190, 74, 58, 0.1);
-  color: #7a2f22;
-}
-.itemx2-skin-frost .itemx2-frozen-banner strong,
-.x-risu-itemx2-skin-frost .itemx2-frozen-banner strong {
-  color: #a8341f;
-}
-.itemx2-skin-hanji .itemx2-frozen-banner,
-.x-risu-itemx2-skin-hanji .itemx2-frozen-banner {
-  background: rgba(160, 66, 50, 0.1);
-  color: #6d2b1d;
-}
-.itemx2-skin-hanji .itemx2-frozen-banner strong,
-.x-risu-itemx2-skin-hanji .itemx2-frozen-banner strong {
-  color: #94301c;
-}
 .itemx-card .itemx2-change-note {
   border-color: color-mix(in srgb, var(--line) 70%, transparent);
   background: rgba(10, 8, 6, 0.72);

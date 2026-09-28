@@ -5,7 +5,7 @@ import * as EntityHistory from '../engine/history.js';
 import * as Renderer from '../render/renderer.js';
 import { scrollActive } from '../activity.js';
 import { auxActive, repairOneItem, runItemModel } from '../aux.js';
-import { context, readChat, saveChat } from '../chat-io.js';
+import { context } from '../chat-io.js';
 import { ITEMX_ROOT_PAGE_SIZE, ITEMX_VERSION_LABEL } from '../config.js';
 import { hookState, isUnloading, lastError, updateState } from '../connection.js';
 import { installPipelineHooks } from '../hooks.js';
@@ -13,12 +13,13 @@ import { host } from '../host.js';
 import { t } from '../i18n.js';
 import { debugRecord, delay, dispatch, entry, fail, log, phaseReport, workQueue } from '../kernel.js';
 import {
+  anchorPayload,
   cachedOrRebuildCurrent,
   commitManualEvents,
   presentationRecord,
   rebuildCurrent,
-  refreshLatest,
-  replaySourceFingerprint
+  replayFingerprint,
+  saveHistoryPreference
 } from '../ledger.js';
 import { loadCodexPortraits, resetPortraitContext } from '../portraits.js';
 import {
@@ -36,12 +37,11 @@ import {
   activeContextKey,
   cachedLoaded,
   currentGeneration,
-  currentLatestMarkers,
-  eventPayload,
+  currentLatestKeys,
   freshLoaded,
   invalidateLoaded,
   setActiveContextKey,
-  updateCachedChat
+  setLatestKeys
 } from '../session.js';
 import { FONT_SCALES, badgePositionSetting, isEnabled, settingsFor } from '../settings.js';
 import { setStatus, status } from '../status.js';
@@ -518,6 +518,7 @@ export async function setRootOpen(open) {
       // A pending yes / no question does not survive closing the drawer.
       uiState.cleanupArmed = false;
       uiState.storageCleanupArmed = false;
+      uiState.oldMarkersArmed = false;
       uiState.allowDrawerOverSettings = false;
       invalidateHostSettingsVisibility();
       await syncHostSettingsVisibility();
@@ -541,7 +542,6 @@ export async function resetRuntimeForContext(active) {
   workQueue.remember('detail', '');
   invalidateHostSettingsVisibility();
   invalidateLoaded();
-  workQueue.forget('uncommitted-markers');
   clearMarkerHtmlCache();
   detailHtmlCache.clear();
   workQueue.forget('catch-up');
@@ -553,7 +553,7 @@ export async function resetRuntimeForContext(active) {
   workQueue.clearTimer('legacyCommitTimer');
   await resetScrollEffects();
   forgetBodyEffectOwner();
-  refreshLatest(active?.chat || { message: [], scriptstate: {} });
+  setLatestKeys([]);
   await removeRootDrawer();
   return true;
 }
@@ -575,7 +575,7 @@ export async function ensureRootInventoryNow() {
   }
   const cached = cachedLoaded();
   const replayChanged =
-    !contextChanged && cached?.key === active.key && cached.replayFingerprint !== replaySourceFingerprint(active.chat);
+    !contextChanged && cached?.key === active.key && cached.replayFingerprint !== replayFingerprint(active.chat);
 
   if (!contextChanged && (auxActive() > 0 || workQueue.recent('host-settling', 1200) === active.key)) return;
 
@@ -584,7 +584,7 @@ export async function ensureRootInventoryNow() {
       await installPipelineHooks();
     if (contextChanged) {
       if (!mainDoc() && !(await installMainStyle())) return;
-      const loaded = await rebuildCurrent({ upgradeDisplayRefs: true });
+      const loaded = await rebuildCurrent();
       if (loaded) await openRootInventory({ open: false, loaded });
       void dispatch('update', checkForUpdate);
       return;
@@ -724,12 +724,9 @@ export function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 
 // until the drawer is opened.
 export function latestItemDelta() {
   const items = new Map();
-  for (const key of currentLatestMarkers() || []) {
-    const payload = key.startsWith('ITEMX2:')
-      ? Core.decodePayload(key.slice(7))
-      : key.startsWith('ITEMX2@')
-        ? eventPayload(`item:${key.slice(7)}`)
-        : null;
+  for (const key of currentLatestKeys()) {
+    const payload = anchorPayload(key);
+    if (!payload || payload.domain !== 'item') continue;
     const view = payload?.view;
     if (!view?.id || payload.error) continue;
     const seen = items.get(view.id);
@@ -744,7 +741,7 @@ export function latestItemDelta() {
     if (now && !was) gained += 1;
     else if (was && !now) lost += 1;
   }
-  return { gained, lost, signature: [...(currentLatestMarkers() || [])].sort().join('|') };
+  return { gained, lost, signature: [...currentLatestKeys()].sort().join('|') };
 }
 
 export let badgeDeltaDrawn = null;
@@ -832,7 +829,7 @@ export async function prepareHistoryPortraits(loaded) {
 export function historyHtml(loaded) {
   const view = uiState.historyView;
   const { pages, selected } = selectHistoryRows(loaded);
-  const prefs = EntityHistory.preferences(loaded.chat);
+  const prefs = EntityHistory.preferences(loaded.prefs);
   const filters = [
     ['recent', t('ui-panel.079')],
     ...(view.domain === 'item'
@@ -876,23 +873,6 @@ export function historyHtml(loaded) {
       }`
     : '';
   return `<header class="itemx2-history-heading"><button class="itemx2-history-back" type="button">‹ ${selected ? t('ui-panel.060') : t('ui-panel.059')}</button><strong>${{ item: t('ui-panel.063'), skill: t('ui-panel.062'), monster: t('ui-panel.061') }[view.domain]} ${t('ui-panel.058.1')}</strong></header><nav class="itemx2-history-filters">${filters.map(([key, label]) => `<button class="itemx2-history-filter-${key} ${view.filter === key ? 'itemx2-history-filter-on' : ''}" type="button">${label}</button>`).join('')}</nav><div class="itemx2-history-policy"><span>${t('ui-panel.058.2')}</span><button class="itemx2-history-retention" type="button">${prefs.after ? t('ui-panel.064', prefs.after) : 'OFF'}</button><small>${t('ui-panel.058.3')}</small></div><div class="itemx2-history-list">${selected ? detail : cards || `<p>${t('ui-panel.065.1')}</p>`}</div>${!selected && pages > 1 ? `<footer class="itemx2-history-actions"><button class="itemx2-history-prev" type="button">‹</button><span>${view.page + 1} / ${pages}</span><button class="itemx2-history-next" type="button">›</button></footer>` : ''}`;
-}
-
-export async function saveHistoryPreference(loaded, update) {
-  await (async () => {
-    const active = await context();
-    if (!active || active.key !== loaded.key) throw new Error(t('ui-panel.057'));
-    const latest = await readChat(active.characterIndex, active.chatIndex);
-    if (!latest) throw new Error(t('ui-panel.056'));
-    if (latest?.isStreaming || latest?.message?.some((message) => message.isStreaming))
-      throw new Error(t('ui-panel.055'));
-    const prefs = EntityHistory.preferences(latest);
-    update(prefs);
-    const next = { ...latest, scriptstate: { ...latest.scriptstate, [EntityHistory.KEY]: JSON.stringify(prefs) } };
-    await saveChat(active.characterIndex, active.chatIndex, next, latest);
-    loaded.chat = next;
-    updateCachedChat(loaded.key, next);
-  })();
 }
 
 export async function historyAction(action, loaded, native) {
@@ -1008,10 +988,6 @@ export async function routeHistoryControls(event) {
       break;
     }
   return true;
-}
-
-export function frozenBannerHtml() {
-  return '';
 }
 
 export function searchControlsHtml() {
@@ -1173,7 +1149,7 @@ export function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
     )
     .join('');
   const headerStatus = `${enabled ? t('ui-panel.026', counts.owned, counts.equipped, counts.observed) : t('ui-panel.025')} · ${Core.esc(status())}`;
-  return `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${Core.esc(loaded.character.name || t('ui-panel.024'))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav>${frozenBannerHtml(true)}<div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`;
+  return `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${Core.esc(loaded.character.name || t('ui-panel.024'))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`;
 }
 
 export function rootInventoryRegions(html) {
@@ -1294,7 +1270,7 @@ export const rootStateFingerprint = (loaded) =>
     Number(loaded.moduleAssetsEnabled),
     Number(loaded.lorebookEncounterEnabled),
     Number(loaded.debugEnabled),
-    JSON.stringify(EntityHistory.preferences(loaded.chat)),
+    JSON.stringify(EntityHistory.preferences(loaded.prefs)),
     EntityHistory.completedTurns(loaded.chat).total
   ].join(':');
 

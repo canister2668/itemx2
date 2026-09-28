@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rt, setHost } from './helpers/modules.mjs';
+import { rt, setHost, Document, Replay } from './helpers/modules.mjs';
 import { createFakeHost } from './helpers/fake-host.mjs';
+import { anchored, documentOf } from './helpers/ledger.mjs';
 
 const p = rt;
 const h = { ...rt, policy: rt.history };
@@ -27,25 +28,13 @@ function chatOf(events) {
     ])
   };
 }
+// Record preferences live in the ledger document; fixtures set `chat.prefs`.
 function loaded(chat) {
-  const checkpoint = h.checkpointStatus(chat),
-    usable = checkpoint.valid && checkpoint.checkpoint.item.history && checkpoint.checkpoint.codex.history,
-    lookup = h.buildMessageEventLookup(chat),
-    replay = usable
-      ? {
-          start: checkpoint.checkpoint.boundary + 1,
-          registry: checkpoint.checkpoint.item.registry,
-          history: checkpoint.checkpoint.item.history,
-          base: checkpoint.checkpoint.codex
-        }
-      : {},
-    manual = usable ? [] : checkpoint.checkpoint?.manual || [];
+  const doc = Document.emptyDocument();
+  if (chat.prefs) doc.prefs = h.policy.preferences(chat.prefs);
+  const stored = { ...chat, scriptstate: { ...chat.scriptstate, [Document.DOCUMENT_KEY]: JSON.stringify(doc) } };
   return {
-    key: 'test:history-chat',
-    character: { name: '검증' },
-    chat,
-    snapshot: h.rebuildWithManual(chat, lookup, { ...replay, manual }),
-    codexSnapshot: h.rebuildCodexWithLedger(chat, lookup, replay),
+    ...h.project({ key: 'test:history-chat', character: { name: '검증' }, chat: anchored(stored) }),
     enabled: true,
     effectsLevel: 'full',
     rarityMode: 'world'
@@ -128,11 +117,11 @@ test('pin preserves only the record; new acquire starts active and new loss gets
   ]);
   let value = loaded(chat),
     old = row(value);
-  chat.scriptstate[h.policy.KEY] = JSON.stringify({ after: 10, keep: { 'item:pill': true } });
+  chat.prefs = { after: 10, keep: { 'item:pill': true } };
   value = loaded(chat);
   assert.equal(row(value).archived, false);
   assert.equal(row(value).entity.possession, 'removed');
-  chat.scriptstate[h.policy.KEY] = JSON.stringify({ after: 10, archived: { 'item:pill': old.cycle } });
+  chat.prefs = { after: 10, archived: { 'item:pill': old.cycle } };
   chat.message.push(
     ...chatOf([[patch('pill', 'acquire', { quantity: 1 })]]).message.map((x) => ({ ...x, chatId: 'again' + x.chatId }))
   );
@@ -163,23 +152,25 @@ test('sealed skills stay in the active list while lost skills and resolved encou
   assert.equal(h.policy.entries(value, 'monster')[0].archived, false);
 });
 
-test('cache maintenance retains lifecycle metadata and the complete authoritative log', () => {
-  const chat = chatOf([
-    [exam('pill')],
-    [patch('pill', 'consume', { quantity: 1 })],
-    ...Array.from({ length: 70 }, () => [])
-  ]);
-  const compact = h.refreshReplayCache(chat);
-  const snapshot = loaded(compact).snapshot;
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(snapshot.history)),
-    JSON.parse(JSON.stringify(loaded(chat).snapshot.history))
+test('a checkpointed projection keeps lifecycle metadata and the authoritative document', () => {
+  const chat = anchored(
+    chatOf([
+      [exam('pill')],
+      [patch('pill', 'consume', { quantity: 1 })],
+      ...Array.from({ length: 160 }, (_, index) => [exam(`filler${index}`, 'material')])
+    ])
   );
-  assert.match(compact.message[1].data, /ITEMX2/);
-  const before = compact.scriptstate['itemx:log'];
-  compact.message[3].data = '소모하지 않았다';
-  assert.equal(row(loaded(compact)).closed, true);
-  assert.equal(h.refreshReplayCache(compact).scriptstate['itemx:log'], before);
+  const full = Replay.fold(chat, documentOf(chat), { full: true });
+  assert.ok(full.checkpoint);
+  const before = chat.scriptstate[Document.DOCUMENT_KEY];
+  const cached = {
+    ...chat,
+    scriptstate: { ...chat.scriptstate, [Document.CACHE_KEY]: JSON.stringify({ v: 1, checkpoint: full.checkpoint }) }
+  };
+  const value = h.project({ key: 'k', chat: cached });
+  assert.equal(value.complete, false);
+  assert.deepEqual(JSON.parse(JSON.stringify(value.snapshot.history)), JSON.parse(JSON.stringify(full.item.history)));
+  assert.equal(cached.scriptstate[Document.DOCUMENT_KEY], before);
 });
 
 test('old tombstones stay out of ordinary model anchors even when pinned and never erase original markers', () => {
@@ -188,7 +179,7 @@ test('old tombstones stay out of ordinary model anchors even when pinned and nev
     [patch('pill', 'consume', { quantity: 1 })],
     ...Array.from({ length: 11 }, () => [])
   ]);
-  chat.scriptstate[h.policy.KEY] = JSON.stringify({ after: 0, keep: { 'item:pill': true } });
+  chat.prefs = { after: 0, keep: { 'item:pill': true } };
   const value = loaded(chat),
     before = JSON.stringify(chat);
   assert.equal(core.anchor(h.policy.requestSnapshot(value, '평범한 대화')).includes('name=pill'), false);
@@ -196,7 +187,7 @@ test('old tombstones stay out of ordinary model anchors even when pinned and nev
   assert.match(mentioned, /possession=removed/);
   assert.equal(mentioned.includes('durability='), false);
   assert.equal(JSON.stringify(chat), before);
-  assert.equal(h.cleanChatPluginData(chat).chat.scriptstate[h.policy.KEY], undefined);
+  assert.equal(h.cleanChatPluginData(anchored(chat)).chat.scriptstate[Document.DOCUMENT_KEY], undefined);
 });
 
 test('failed consume cannot create a history entry and OFF never expires a spent item', () => {
@@ -206,28 +197,34 @@ test('failed consume cannot create a history entry and OFF never expires a spent
   chat.message.push(
     ...chatOf([[patch('pill', 'consume', { quantity: 1 })], ...Array.from({ length: 20 }, () => [])]).message
   );
-  chat.scriptstate[h.policy.KEY] = JSON.stringify({ after: 0 });
+  chat.prefs = { after: 0 };
   assert.equal(row(loaded(chat)).archived, false);
 });
 
 test('record preferences write only their own field once and refuse streaming or another chat', async () => {
-  let chat = chatOf([[exam('pill')], [patch('pill', 'consume', { quantity: 1 })]]);
+  let chat = anchored(chatOf([[exam('pill')], [patch('pill', 'consume', { quantity: 1 })]]));
   chat.id = 'one';
   chat.scriptstate.unrelated = 'keep me';
-  const before = JSON.stringify(chat);
+  const withoutLedger = (value) => {
+    const copy = structuredClone(value);
+    delete copy.scriptstate[Document.DOCUMENT_KEY];
+    delete copy.scriptstate[Document.CACHE_KEY];
+    return JSON.stringify(copy);
+  };
+  const before = withoutLedger(chat);
+  const eventsBefore = documentOf(chat).events;
   const fake = createFakeHost({ chat, character: { chaId: 'history' } });
   setHost(fake.api);
   const api = rt;
-  const value = { ...loaded(chat), key: 'history:one' };
+  const value = { ...loaded(chat), chat, key: 'history:one' };
   await api.saveHistoryPreference(value, (prefs) => {
     prefs.keep['item:pill'] = true;
   });
   assert.equal(fake.state.writes, 1);
   chat = fake.state.chat;
-  const without = structuredClone(chat);
-  for (const key of [h.policy.KEY, 'itemx:log', 'itemx:prefs', 'itemx:cache']) delete without.scriptstate[key];
-  assert.equal(JSON.parse(chat.scriptstate['itemx:prefs']).keep['item:pill'], true);
-  assert.equal(JSON.stringify(without), before);
+  assert.equal(documentOf(chat).prefs.keep['item:pill'], true);
+  assert.deepEqual(documentOf(chat).events, eventsBefore);
+  assert.equal(withoutLedger(chat), before);
   fake.state.chat.isStreaming = true;
   await assert.rejects(() => api.saveHistoryPreference(value, () => {}), /응답이 끝난/);
   fake.state.chat.isStreaming = false;
@@ -274,6 +271,6 @@ test('ended encounters remain through two completed inputs, expire on third, and
   assert.equal(h.codexEntries(loaded(pending), 'monster').length, 1);
   const value = loaded(pending),
     record = h.policy.entries(value, 'monster')[0];
-  pending.scriptstate[h.policy.KEY] = JSON.stringify({ archived: { 'monster:foe': record.cycle } });
+  pending.prefs = { archived: { 'monster:foe': record.cycle } };
   assert.equal(h.codexEntries(loaded(pending), 'monster').length, 0, 'manual archive overrides the grace period');
 });

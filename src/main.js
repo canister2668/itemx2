@@ -15,7 +15,7 @@ import {
 import { host } from './host.js';
 import { t } from './i18n.js';
 import { delay, dispatch, entry, fail, log, workQueue } from './kernel.js';
-import { rebuildCurrent, refreshLatest, repaintChatBody } from './ledger.js';
+import { rebuildCurrent } from './ledger.js';
 import {
   afterRequest,
   armCatchUpWatchdog,
@@ -51,7 +51,7 @@ import {
   clearEventBursts,
   clearMarkerHtmlCache,
   commitEventBursts,
-  displayWithPortraits,
+  displayHandler,
   forgetBodyEffectOwner,
   installBodyEffectGovernor,
   removeBodyEffectGovernor,
@@ -66,7 +66,7 @@ import { checkForUpdate } from './update-check.js';
 const hookHandlers = {
   process: entry('process', processHandler, true),
   output: entry('output', outputFallback, true),
-  display: entry('display', displayWithPortraits, true),
+  display: entry('display', displayHandler, true),
   before: entry('before-request', beforeRequest, true),
   after: entry('after-request', afterRequest, true),
   listener: (output) => {
@@ -148,7 +148,7 @@ async function recoverAfterBrowserResume() {
     await refreshHookBindings();
     invalidateLoaded();
     await installMainStyle();
-    await rebuildCurrent({ upgradeDisplayRefs: true });
+    await rebuildCurrent();
     await ensureRootInventory();
     backgrounded = false;
   } catch (error) {
@@ -238,10 +238,6 @@ export async function start() {
         styled = false;
       if (initial) {
         setActiveContextKey(initial.key);
-        // The display hook is already live, and a compact ref can only become a
-        // card once the event ledger is loaded. Load it from the chat we just
-        // read, before anything slow runs.
-        refreshLatest(initial.chat);
         setStatus(t('runtime.008'));
         await settingsFor(initial.character);
         styled = await installMainStyle();
@@ -249,8 +245,7 @@ export async function start() {
         await updateRootLoading(t('runtime.006'));
         connected = await installPipelineHooks();
         await updateRootLoading(t('runtime.005'));
-        const upgraded = await rebuildCurrent({ upgradeDisplayRefs: true });
-        if (!upgraded?.wroteDisplayRefs) await repaintChatBody(await context());
+        await rebuildCurrent(initial);
         if (styled) await openRootInventory({ open: false });
         void dispatch('update', checkForUpdate);
       } else {

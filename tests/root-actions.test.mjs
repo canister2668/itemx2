@@ -19,7 +19,8 @@ const LOADED = {
   fontScale: 'small',
   skin: 'dark',
   character: { name: 'T' },
-  chat: { message: [], scriptstate: {} },
+  // One message still carrying a marker of 2.3: its removal control renders.
+  chat: { message: [{ chatId: 'a', data: 'text <!--ITEMX2@i0_0_abc-->' }], scriptstate: {} },
   snapshot: { registry: { order: [], items: {} }, history: {}, fingerprint: 'a' },
   codexSnapshot: {
     skills: { order: [], entries: {} },
@@ -37,7 +38,7 @@ function drawerSettings(rt) {
 
 test('the drawer dispatches settings from one ordered table', async () => {
   const hooks = rt.rootSettingActions().map((a) => a.hook);
-  assert.equal(hooks.length, 37);
+  assert.equal(hooks.length, 39);
   assert.equal(new Set(hooks).size, hooks.length, 'duplicate hook would shadow a later control');
   for (const action of rt.rootSettingActions()) assert.equal(typeof action.run, 'function');
 });
@@ -80,6 +81,8 @@ test('the table keeps the dispatch order the chain had', async () => {
     'itemx2-setting-font-large',
     'itemx2-setting-storage-cleanup',
     'itemx2-setting-cleanup',
+    'itemx2-setting-old-markers',
+    'itemx2-setting-old-markers-cancel',
     'itemx2-setting-storage-cleanup-cancel',
     'itemx2-setting-cleanup-cancel',
     'itemx2-setting-rebuild'
@@ -124,9 +127,11 @@ test('no table row points at a class the drawer never renders', async () => {
   // The "no" buttons exist only while a destructive action waits for its yes / no answer.
   uiState.cleanupArmed = true;
   uiState.storageCleanupArmed = true;
+  uiState.oldMarkersArmed = true;
   const confirming = drawerSettings(rt);
   uiState.cleanupArmed = false;
   uiState.storageCleanupArmed = false;
+  uiState.oldMarkersArmed = false;
   const html = drawerSettings(rt) + confirming;
   // Font and position choices come from helpers the fixture renders separately.
   const missing = [...rt.rootSettingActions().map((a) => a.hook)].filter(

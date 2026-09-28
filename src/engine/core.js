@@ -1,8 +1,6 @@
 /* ITEMX 2 core: deterministic transport parsing and per-chat state replay. */
 
 const VERSION = 2;
-const STATE_KEY = '$__itemx2_state';
-const CHAT_KEY = '$__itemx2_chat_id';
 const MARKER_RE = /<!--ITEMX2:([A-Za-z0-9_-]+)-->/g;
 const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const RARITIES = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
@@ -204,8 +202,6 @@ const fnv1a = (value) => {
   }
   return h.toString(16).padStart(8, '0');
 };
-const randomId = () =>
-  globalThis.crypto?.randomUUID?.() || `itemx2-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 const bytesToB64 = (bytes) => {
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -1073,45 +1069,6 @@ function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
 function messageText(message) {
   return typeof message?.data === 'string' ? message.data : typeof message?.content === 'string' ? message.content : '';
 }
-function eventsFromText(text) {
-  const events = [];
-  String(text || '').replace(MARKER_RE, (_, encoded) => {
-    const payload = decodePayload(encoded);
-    if (payload?.v === VERSION && payload.event) events.push(payload.event);
-    return '';
-  });
-  return events;
-}
-function rebuild(messages) {
-  const reg = newRegistry();
-  let transport = '';
-  for (const msg of messages || []) {
-    const text = messageText(msg);
-    for (const event of eventsFromText(text)) {
-      applyEvent(reg, event);
-      transport += marker({ v: VERSION, event });
-    }
-  }
-  return { schema: VERSION, rev: 1, fingerprint: fnv1a(transport), updatedAt: Date.now(), registry: reg };
-}
-function readSnapshot(chat) {
-  try {
-    const raw = chat?.scriptstate?.[STATE_KEY];
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    return parsed?.schema === VERSION && parsed.registry ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-function writeSnapshot(chat, snapshot) {
-  const next = clone(chat || {});
-  next.scriptstate = { ...(next.scriptstate || {}) };
-  next.scriptstate[CHAT_KEY] ||= randomId();
-  const encoded = JSON.stringify(snapshot);
-  if (encoded.length <= 524288) next.scriptstate[STATE_KEY] = encoded;
-  else delete next.scriptstate[STATE_KEY];
-  return next;
-}
 function requestView(text) {
   return String(text || '').replace(MARKER_RE, (_, encoded) => {
     const payload = decodePayload(encoded);
@@ -1157,8 +1114,6 @@ function anchor(snapshot, max = 12000) {
 
 export {
   VERSION,
-  STATE_KEY,
-  CHAT_KEY,
   MARKER_RE,
   RARITY_LABELS,
   esc,
@@ -1176,10 +1131,6 @@ export {
   truncatedOpener,
   stripInventoryEcho,
   comparisonView,
-  eventsFromText,
-  rebuild,
-  readSnapshot,
-  writeSnapshot,
   requestView,
   anchor,
   ITEM_FIELDS,

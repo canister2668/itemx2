@@ -61,3 +61,14 @@ test('drawer view state never leaves the UI layer', () => {
     []
   );
 });
+
+test('the store layer (anchors, document, replay) depends on the pure engine only', () => {
+  const offenders = files.flatMap((file) =>
+    !file.startsWith('src/store/')
+      ? []
+      : imports(file)
+          .filter((dep) => !dep.startsWith('src/engine/') && !dep.startsWith('src/store/'))
+          .map((dep) => `${file} -> ${dep}`)
+  );
+  assert.deepEqual(offenders, []);
+});

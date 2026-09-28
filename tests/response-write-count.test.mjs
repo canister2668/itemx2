@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createFakeHost } from './helpers/fake-host.mjs';
+import { documentOf } from './helpers/ledger.mjs';
 import { setHost, Pipeline, Ledger, Session } from './helpers/modules.mjs';
 
 const settingsDoc = (lore, id) => ({
@@ -44,13 +45,14 @@ for (const lore of [false, true])
     );
     assert.equal(fake.state.writes, 0);
     fake.state.chat.message.push({ chatId: 'reply', role: 'char', data: output });
-    // The first sighting of a committed output only starts its settle window.
+    // The first sighting commits the response at once, lore included; only the
+    // auxiliary pass waits for the settle window.
     await Pipeline.catchUpLatestOutput({ syncUi: false });
-    assert.equal(fake.state.writes, 0);
+    assert.equal(fake.state.writes, 1);
     t.mock.timers.tick(2000);
     await Pipeline.scheduleCommittedOutputSync();
     assert.equal(fake.state.writes, 1);
-    if (lore) assert.match(fake.state.chat.scriptstate['itemx:cache'], /Guide_Default/);
+    if (lore) assert.match(JSON.stringify(documentOf(fake.state.chat).lore), /Guide_Default/);
     t.mock.timers.tick(2000);
     await Pipeline.scheduleCommittedOutputSync();
     assert.equal(fake.state.writes, 1);

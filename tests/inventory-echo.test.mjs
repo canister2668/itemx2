@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as core from '../src/engine/core.js';
-import { processTransportStripper, processOutput } from '../src/pipeline.js';
+import { processOutput } from '../src/pipeline.js';
+import { requestSafeText } from '../src/transport.js';
 import { displayHandler } from '../src/ui/presentation.js';
 
 const echo = `[ITEMX v2]
@@ -60,8 +61,8 @@ test('current authoritative anchor echo is stripped too', () => {
 });
 
 test('display and request early returns use cleaned text, including no-context output', async () => {
-  assert.equal(processTransportStripper(echo), '');
-  assert.equal(displayHandler(echo), '');
+  assert.equal(requestSafeText(echo), '');
+  assert.equal(await displayHandler(echo), '');
   // Main output strips the echo before deciding there is nothing to extract.
   assert.equal(await processOutput(echo, 'main'), '');
 });
