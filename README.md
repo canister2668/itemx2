@@ -110,13 +110,13 @@ https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js
 
 `1.9.0-beta.*` 공개 검증을 마쳤으며 현재 안정 공개 계열은 `2.0.0`부터 이어진다.
 
-라이브 NAS 배포는 다음 환경변수로 대상을 명시할 수 있다.
+라이브 배포는 PostgreSQL 대상 스크립트 하나만 사용한다(운영자가 대상을 명시적으로 확인한 뒤 실행).
 
 ```bash
-ITEMX_RISU_DB=/path/to/risu.db \
-ITEMX_BACKUP_DIR=/path/to/itemx-backups \
-python3 scripts/deploy-live.py
+python3 scripts/deploy-production-postgres.py
 ```
+
+일회성 조사·이관 스크립트는 `tools/oneoff/`에 보관하며 빌드·테스트 대상이 아니다.
 
 ## 라이선스와 출처
 

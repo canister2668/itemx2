@@ -11,15 +11,15 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run format:check
       - run: npm run build
       - run: npm test
       - run: node --check dist/itemx2.plugin.js
       - name: Verify generated bundle is committed
         run: git diff --exit-code -- dist/itemx2.plugin.js dist/itemx2-preview.html dist/itemx2-ui.css dist/itemx2-main-scoped.css
+      - run: npm run format:check

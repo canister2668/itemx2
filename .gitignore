@@ -8,3 +8,5 @@ __pycache__/
 *.pyc
 dist/risu-pipeline-mobile-preview*.png
 artifacts/
+dist/*.png
+tools/oneoff/*.png
