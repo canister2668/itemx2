@@ -63,10 +63,21 @@ import { installMainStyle, removeMainStyle } from './ui/style.js';
 import { uiState } from './ui/view-state.js';
 import { checkForUpdate } from './update-check.js';
 
+// Display and process are pure text transforms over in-memory state: they run
+// directly, never behind queued work. Output and the request replacers use the
+// queue's reentrant slot because they may land while a model call is pending.
+const direct = (where, work) => async (content) => {
+  try {
+    return await work(content);
+  } catch (error) {
+    fail(where, error);
+    return content;
+  }
+};
 const hookHandlers = {
-  process: entry('process', processHandler, true),
+  process: direct('process', processHandler),
   output: entry('output', outputFallback, true),
-  display: entry('display', displayHandler, true),
+  display: direct('display', displayHandler),
   before: entry('before-request', beforeRequest, true),
   after: entry('after-request', afterRequest, true),
   listener: (output) => {

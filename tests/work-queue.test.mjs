@@ -247,25 +247,29 @@ test('automatic recovery stops after its attempt budget instead of retrying fore
   assert.equal((await queue.attempt('catch-up', 'next-message', () => [], Array.isArray, Infinity, 3)).skipped, false);
 });
 
-test('scroll end runs while a model RPC is suspended, without admitting blocked heavy work', async () => {
+test('the view lane runs while the commit lane waits on the model; commit work stays held', async () => {
   const queue = create(),
     hold = gate(),
     seen = [];
   const aux = queue.enqueue({ kind: 'aux', work: () => queue.external(() => hold.promise) });
   await tick();
-  let scrolling = true;
-  const render = queue.enqueue({ kind: 'render', ready: () => !scrolling, work: () => seen.push('render') });
-  queue.schedule(
-    'bodyFxScrollTimer',
-    () => {
-      scrolling = false;
-      seen.push('scroll end');
-    },
-    0
-  );
+  const settings = queue.enqueue({ kind: 'settings', work: () => seen.push('settings') });
+  queue.schedule('hostSyncTimer', () => seen.push('host sync'), 0);
   await new Promise((resolve) => setTimeout(resolve, 20));
-  assert.deepEqual(seen, ['scroll end']);
+  assert.deepEqual(seen, ['host sync']);
   hold.resolve();
-  await Promise.all([aux, render]);
-  assert.deepEqual(seen, ['scroll end', 'render']);
+  await Promise.all([aux, settings]);
+  assert.deepEqual(seen, ['host sync', 'settings']);
+});
+
+test('a busy view lane never delays the commit lane', async () => {
+  const queue = create(),
+    hold = gate(),
+    seen = [];
+  const render = queue.enqueue({ kind: 'render', lane: 'view', work: () => hold.promise });
+  await tick();
+  await queue.enqueue({ kind: 'committed-output', work: () => seen.push('commit') });
+  assert.deepEqual(seen, ['commit']);
+  hold.resolve();
+  await render;
 });

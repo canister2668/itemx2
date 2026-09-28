@@ -72,3 +72,14 @@ test('the store layer (anchors, document, replay) depends on the pure engine onl
   );
   assert.deepEqual(offenders, []);
 });
+
+// A job that awaits another queued job of its own lane waits for itself.
+// Only the composition root, outside any job, may await a dispatch.
+test('no module awaits a queued dispatch from inside queued work', () => {
+  const offenders = files.filter(
+    (file) => file !== 'src/main.js' && /await\s+(?:dispatch|workQueue\.enqueue)\(/.test(sources[file])
+  );
+  assert.deepEqual(offenders, []);
+  const main = sources['src/main.js'].match(/await\s+dispatch\(\s*'([a-z-]+)'/g) || [];
+  assert.deepEqual(main, ["await dispatch('bootstrap'"]);
+});

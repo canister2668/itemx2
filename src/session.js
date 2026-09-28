@@ -25,9 +25,11 @@ export const cachedLoaded = () => loaded;
 export const freshLoaded = () =>
   loaded && loaded.key === activeKey && loadedGeneration === generation ? loaded : null;
 
-export function storeLoaded(value) {
+// `from` is the generation the projection was read at: a projection whose
+// read predates a later invalidation is kept only as stale.
+export function storeLoaded(value, from = generation) {
   loaded = value;
-  loadedGeneration = generation;
+  loadedGeneration = from;
 }
 
 export function updateCachedChat(key, chat) {

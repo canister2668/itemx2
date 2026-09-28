@@ -413,33 +413,26 @@ export async function installHostObserver() {
   try {
     const body = await mainDoc().querySelector('body');
     if (!body) return;
-    hostObserver = await host().createMutationObserver(
-      entry('host-observer', (recordsSafe) => {
-        if (scrollActive()) {
-          scheduleHostDomSync();
-          return;
+    // Streaming and every chat repaint fire this. It never queues work and
+    // classifies at most two records: mutations confined to our own drawer are
+    // ignored, anything else schedules one debounced host sync.
+    hostObserver = await host().createMutationObserver(async (recordsSafe) => {
+      if (isUnloading()) return;
+      if (scrollActive()) return scheduleHostDomSync();
+      try {
+        const records = await host().unwarpSafeArray(recordsSafe);
+        const sample = records.length > 1 ? [records[0], records.at(-1)] : records;
+        for (const record of sample) {
+          const target = await record.getTarget();
+          if (!target || !(await target.matches('[x-itemx2-drawer="owner"], [x-itemx2-drawer="owner"] *')))
+            return scheduleHostDomSync();
         }
-        return (async () => {
-          try {
-            const records = await host().unwarpSafeArray(recordsSafe);
-            if (!records.length) {
-              scheduleHostDomSync();
-              return;
-            }
-            for (const record of records) {
-              const target = await record.getTarget();
-              if (!target || !(await target.matches('[x-itemx2-drawer="owner"], [x-itemx2-drawer="owner"] *'))) {
-                scheduleHostDomSync();
-                return;
-              }
-            }
-          } catch (error) {
-            debugRecord('host observer classify', error?.message || String(error));
-            scheduleHostDomSync();
-          }
-        })();
-      })
-    );
+        if (!sample.length) scheduleHostDomSync();
+      } catch (error) {
+        debugRecord('host observer classify', error?.message || String(error));
+        scheduleHostDomSync();
+      }
+    });
     if (!hostObserver?.observe) throw new Error('Mutation observer unavailable');
     await hostObserver.observe(body, { childList: true, subtree: true });
     armRemountWatchdog();

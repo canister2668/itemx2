@@ -286,9 +286,8 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
       catalog,
       narrative
     };
-  // Only host I/O yields ownership. The external region uses local values;
-  // cache/catalog writes happen after our queue job resumes. Yield once for
-  // the whole batch, never once per concurrent worker (which has no owner).
+  // Image reads run in the view lane (or a UI action) under one finite budget;
+  // they never hold up the commit lane's model hooks.
   const missingAssets = new Map();
   for (const monster of monsters) {
     const asset = Codex.assetForEntity(catalog, monster, narrative);
@@ -296,9 +295,8 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
     const key = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
     if (!(inlineOnly && portraitThumbnailCache.has(key)) && !portraitCache.has(key)) missingAssets.set(asset.id, asset);
   }
-  const portraitJob = workQueue.token;
   const rawAssets = missingAssets.size
-    ? await workQueue.external(async () => {
+    ? await (async () => {
         const entries = [...missingAssets.values()],
           values = new Map();
         const deadline = Date.now() + 5000; // One budget for all optional images.
@@ -308,7 +306,7 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
             while (cursor < entries.length) {
               const asset = entries[cursor++];
               for (let attempt = 0; attempt < 3; attempt += 1) {
-                if (isUnloading() || portraitJob?.cancelled || Date.now() >= deadline) return;
+                if (isUnloading() || Date.now() >= deadline) return;
                 let raw = null;
                 try {
                   raw = await withTimeout(
@@ -327,7 +325,7 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
           })
         );
         return values;
-      })
+      })()
     : new Map();
   if (activeContextKey() !== ownerKey) return result;
   let portraitCursor = 0;

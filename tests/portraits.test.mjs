@@ -145,7 +145,7 @@ test('history pages load only visible portraits and a late selected record gets 
   assert.match(rt.historyHtml(loaded), /class="itemx-monster-portrait" src="data:image\/png;base64,AAAA/);
 });
 
-test('a stalled portrait read yields the queue to a host output hook', async () => {
+test('a stalled portrait read never holds up a host output hook', async () => {
   let release, started;
   const begun = new Promise((resolve) => (started = resolve));
   const fake = createFakeHost();

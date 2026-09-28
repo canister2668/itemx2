@@ -10,7 +10,7 @@ import {
   automaticAuxReady,
   automaticAuxSettled,
   auxActive,
-  recoverAuxiliaryOutput
+  recoverAuxiliaryOutputNow
 } from './aux.js';
 import { context } from './chat-io.js';
 import { ITEMX_AUX_AUTO_ATTEMPTS, ITEMX_AUX_SETTLE_MS } from './config.js';
@@ -21,7 +21,7 @@ import { debugRecord, dispatch, fail, workQueue } from './kernel.js';
 import { cachedOrRebuildCurrent, commitRecords, rebuildCurrent, writeDocument } from './ledger.js';
 import { enrichLore, scanLorebookEncounters } from './lore-sync.js';
 import { encounterEntities, modulePortraitAssets, prepareInlinePortraits } from './portraits.js';
-import { activeContextKey, addPending, dropPending, pendingRecord, setLatestKeys } from './session.js';
+import { activeContextKey, addPending, dropPending, freshLoaded, pendingRecord, setLatestKeys } from './session.js';
 import { isEnabled, settingsFor } from './settings.js';
 import { setStatus } from './status.js';
 import { anchorKeys, stripTransport } from './store/anchors.js';
@@ -139,6 +139,15 @@ export async function commitLatestOutput(ctx) {
   return { ctx: { ...ctx, chat: result.chat }, index, changed: true };
 }
 
+// Only a failed model call counts toward the retry limit; a lost race or a
+// failure before any model call is simply tried again soon.
+export const auxVerdict = (result) =>
+  result.status === 'ok' || result.status === 'skip'
+    ? true
+    : result.status === 'fail' && result.called
+      ? false
+      : 'retry';
+
 export async function catchUpLatestOutput({ syncUi = true } = {}) {
   if (!activeContextKey() || auxActive() > 0 || scrollActive()) return;
   let ctx = await context();
@@ -167,12 +176,12 @@ export async function catchUpLatestOutput({ syncUi = true } = {}) {
   const attempt = await workQueue.attempt(
     'catch-up',
     `${ctx.key}:${index}:msg-${messageId}`,
-    () => recoverAuxiliaryOutput({ messageIndex: index }),
-    Array.isArray,
+    () => recoverAuxiliaryOutputNow({ messageIndex: index }),
+    auxVerdict,
     Infinity,
     ITEMX_AUX_AUTO_ATTEMPTS
   );
-  if (attempt.skipped && !committed.changed) return;
+  if ((attempt.skipped || !attempt.value?.events.length) && !committed.changed) return;
   if (syncUi) await syncAfterCommit();
 }
 
@@ -254,10 +263,12 @@ export const processHandler = async (content) => requestSafeText(content);
 export async function processOutput(content, type) {
   if (!mainRequestType(type)) return content;
   content = Core.stripInventoryEcho(content);
-  // Streaming calls this per flush. Without a raw tag there is nothing to parse.
+  // Without a raw tag there is nothing to parse.
   if (!RAW_TRANSPORT_RE.test(content)) return content;
   try {
-    const loaded = await cachedOrRebuildCurrent();
+    // Streaming calls this per flush. The projection beforeRequest just built
+    // is still fresh, so a flush reads nothing from the host.
+    const loaded = freshLoaded() || (await cachedOrRebuildCurrent());
     if (!loaded) return content;
     if (!(await isEnabled(loaded.character)) || !loaded.mainOutput) return stripTransport(content);
     const result = anchorize(content, {

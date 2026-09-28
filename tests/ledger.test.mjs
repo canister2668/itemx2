@@ -247,14 +247,15 @@ test('aux guards live in the document and survive cache loss', async () => {
   setHost(fake.api);
   Session.resetSession('guard:chat');
   const first = await Aux.recoverAuxiliaryOutputNow({ force: false });
-  assert.deepEqual(first, []);
+  assert.equal(first.status, 'ok');
+  assert.deepEqual(first.events, []);
   assert.equal(fake.state.llmCalls.length, 1);
   const guard = documentOf(fake.state.chat).guards.aux.reply;
   assert.equal(guard.state, 'none');
   assert.ok(guard.k);
   // Drop the cache: the guard is authoritative data, so no second model call.
   delete fake.state.chat.scriptstate[Document.CACHE_KEY];
-  assert.deepEqual(await Aux.recoverAuxiliaryOutputNow({ force: false }), []);
+  assert.equal((await Aux.recoverAuxiliaryOutputNow({ force: false })).reason, 'guarded');
   assert.equal(fake.state.llmCalls.length, 1);
 });
 
@@ -350,4 +351,27 @@ test('clean-up removes anchors, old markers and every ITEMX state key', () => {
   assert.equal(cleaned.removedMarkers, 2);
   assert.deepEqual(Object.keys(cleaned.chat.scriptstate), ['other']);
   void Core;
+});
+
+test('streamed output flushes reuse the request projection and read no chat', async () => {
+  const fake = createFakeHost({
+    chat: { id: 'chat', message: [{ chatId: 'u', role: 'user', data: '줍는다' }], scriptstate: {} },
+    character: { chaId: 'stream', name: 'T' },
+    settings: settingsDoc('stream')
+  });
+  setHost(fake.api);
+  Session.resetSession('stream:chat');
+  await Pipeline.beforeRequest([{ role: 'user', content: '줍는다' }], 'model');
+  const reads = fake.state.reads;
+  let text = '검을';
+  for (const chunk of [
+    ' 얻었다.',
+    '\n\n<itemExam><id>blade</id><name>검</name>',
+    '<possession>owned</possession></itemExam>'
+  ]) {
+    text += chunk;
+    await Pipeline.processOutput(text, 'main');
+  }
+  assert.equal(fake.state.reads, reads);
+  assert.equal(fake.state.writes, 0);
 });

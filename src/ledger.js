@@ -15,6 +15,7 @@ import { encounterRegistryFingerprint, prepareInlinePortraits } from './portrait
 import {
   activeContextKey,
   cachedLoaded,
+  currentGeneration,
   dropPending,
   freshLoaded,
   invalidateLoaded,
@@ -133,6 +134,7 @@ export function refreshLatest(loaded) {
 }
 
 export async function rebuildCurrent(ctx = null) {
+  const from = currentGeneration();
   ctx ||= await context();
   if (!ctx) return null;
   const settings = await settingsFor(ctx.character);
@@ -148,7 +150,7 @@ export async function rebuildCurrent(ctx = null) {
     )
   );
   prepareInlinePortraits(loaded, loaded.codexSnapshot, settings);
-  storeLoaded(loaded);
+  storeLoaded(loaded, from);
   refreshLatest(loaded);
   return loaded;
 }

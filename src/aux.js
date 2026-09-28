@@ -3,12 +3,17 @@ import * as Codex from './engine/codex.js';
 import * as Core from './engine/core.js';
 import * as Quality from './engine/quality.js';
 import { chatIsStreaming, context, readChat } from './chat-io.js';
-import { ITEMX_AUX_PROMPT_REVISION, ITEMX_AUX_SETTLE_MS, ITEMX_AUX_TIMEOUT_MS } from './config.js';
+import {
+  ITEMX_AUX_AUTO_ATTEMPTS,
+  ITEMX_AUX_PROMPT_REVISION,
+  ITEMX_AUX_SETTLE_MS,
+  ITEMX_AUX_TIMEOUT_MS
+} from './config.js';
 import { isUnloading } from './connection.js';
 import { emit } from './events.js';
 import { host } from './host.js';
 import { t } from './i18n.js';
-import { debugRecord, delay, fail, withTimeout, workQueue } from './kernel.js';
+import { debugRecord, fail, withTimeout, workQueue } from './kernel.js';
 import {
   commitManualEvents,
   commitRecords,
@@ -70,20 +75,39 @@ export async function setAuxOutcome(state, label, events = null) {
   await emit('aux', { active, last: { ...last }, outcome: true });
 }
 
+// A timed-out request is abandoned, not cancelled: the provider keeps working
+// (and billing) until it answers. It stays counted in `active` until then, so
+// no automatic pass starts a second paid request beside it.
 export async function runAuxModel(prompt, label = t('aux.041')) {
   if (typeof host().runLLMModel !== 'function') throw new Error(t('aux.040'));
   active += 1;
   last = { state: 'running', label, at: Date.now(), events: null };
   setStatus(label);
   await emit('aux', { active, last: { ...last }, outcome: false });
+  let request;
   try {
-    const result = await workQueue.external(() =>
-      withTimeout(
-        host().runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: true }),
-        ITEMX_AUX_TIMEOUT_MS,
-        t('aux.039')
-      )
+    request = Promise.resolve(
+      host().runLLMModel({ messages: [{ role: 'user', content: prompt }], mode: 'otherAx', allowPlugins: true })
     );
+  } catch (error) {
+    request = Promise.reject(error);
+  }
+  const report = async () => {
+    if (active === 0) await setAuxOutcome(last.state, last.label, last.events);
+    else await emit('aux', { active, last: { ...last }, outcome: false });
+  };
+  let settled = false,
+    returned = false;
+  void request
+    .catch(() => {})
+    .then(async () => {
+      settled = true;
+      active = Math.max(0, active - 1);
+      // After a timeout the caller is long gone; report the late answer here.
+      if (returned) await report();
+    });
+  try {
+    const result = await workQueue.external(() => withTimeout(request, ITEMX_AUX_TIMEOUT_MS, t('aux.039')));
     const providerError = auxiliaryProviderError(result);
     if (providerError) throw providerError;
     workQueue.forget('aux-provider');
@@ -95,9 +119,8 @@ export async function runAuxModel(prompt, label = t('aux.041')) {
     last = { state: 'failed', label: t('aux.037'), at: Date.now(), events: null };
     throw providerError;
   } finally {
-    active = Math.max(0, active - 1);
-    if (active === 0) await setAuxOutcome(last.state, last.label, last.events);
-    else await emit('aux', { active, last: { ...last }, outcome: false });
+    returned = true;
+    if (settled) await report();
   }
 }
 
@@ -231,8 +254,11 @@ export function assistantMessageIndex(chat, preferred = null) {
   return -1;
 }
 
+// The events a pass committed, [] when it had nothing to do, null when it
+// failed or lost a race: the shape the settings action reports.
 export async function recoverAuxiliaryOutput(options = {}) {
-  return recoverAuxiliaryOutputNow(options);
+  const result = await recoverAuxiliaryOutputNow(options);
+  return result.status === 'ok' || result.status === 'skip' ? result.events : null;
 }
 
 export function stableEventValue(value) {
@@ -354,37 +380,45 @@ export function itemEventState(reg, event) {
   return eventValueKey(ids.map((id) => reg.items[id] || null));
 }
 
+// One auxiliary pass over the latest (or given) response. The result says what
+// happened: `ok` (events, possibly none, committed with their guard), `skip`
+// (nothing to do or not allowed now), `conflict` (the chat changed under us;
+// try again later) or `fail`. `called` says whether the model was reached;
+// only a failure after a model call counts toward the retry limit.
+const skip = (reason) => ({ status: 'skip', reason, events: [], called: false });
+
 export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = false } = {}) {
   const ctx = await context();
-  if (!ctx || !(await isEnabled(ctx.character))) return null;
+  if (!ctx || !(await isEnabled(ctx.character))) return skip('disabled');
   const settings = await settingsFor(ctx.character);
-  if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return [];
-  if (settings.auxOutput === 'off' && !force) return [];
-  if (workQueue.revision('aux-provider') === 'unavailable' && !force) return [];
+  if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return skip('domains');
+  if (settings.auxOutput === 'off' && !force) return skip('off');
+  if (workQueue.revision('aux-provider') === 'unavailable' && !force) return skip('provider');
   const index = assistantMessageIndex(ctx.chat, messageIndex);
-  if (index < 0) return null;
+  if (index < 0) return skip('no-message');
   // A malformed document is surfaced here, before any model call.
   const doc = readDocument(ctx.chat);
   const messages = ctx.chat.message || [];
   if (!force && doc.restoredThrough && messages.findIndex((one) => one?.chatId === doc.restoredThrough) >= index)
-    return [];
+    return skip('restored');
   const source = messageData(messages[index]);
-  if (!force && !automaticAuxReady(ctx.chat, index, source)) return null;
+  if (!force && !automaticAuxReady(ctx.chat, index, source)) return skip('not-ready');
   const sourceHash = Core.fnv1a(source);
   // Guarded by the stable message id: the commit below rewrites the body, so
   // a body-derived key would invalidate itself.
   const chatId = messages[index]?.chatId || `idx-${index}`;
   const guardKey = `${settings.auxOutput}:${Number(settings.itemsEnabled)}${Number(settings.skillsEnabled)}${Number(settings.encountersEnabled)}:q${Quality.REVISION}:p${ITEMX_AUX_PROMPT_REVISION}`;
-  if (auxGuard(doc, chatId)?.k === guardKey && !force) return [];
-  if (typeof host().runLLMModel !== 'function') return null;
+  if (!force && guardSettled(auxGuard(doc, chatId), guardKey)) return skip('guarded');
+  if (typeof host().runLLMModel !== 'function') return skip('no-model');
 
+  let called = false;
   return (async () => {
-    if (!force) await delay(350);
     const current = await readChat(ctx.characterIndex, ctx.chatIndex);
-    if (!current || Core.fnv1a(messageData(current.message?.[index])) !== sourceHash) return null;
-    if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return null;
+    if (!current || Core.fnv1a(messageData(current.message?.[index])) !== sourceHash)
+      return { status: 'conflict', events: [], called };
+    if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return skip('not-ready');
     const loaded = project({ ...ctx, chat: current });
-    if (auxGuard(loaded.doc, chatId)?.k === guardKey && !force) return null;
+    if (!force && guardSettled(auxGuard(loaded.doc, chatId), guardKey)) return skip('guarded');
     const snapshot = loaded.snapshot;
     const codexSnapshot = loaded.codexSnapshot;
     // Events this message already carries, which the model must not repeat.
@@ -393,7 +427,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       .filter((row) => row && row.c === (current.message[index]?.chatId || ''))
       .map((row) => row.e);
     const committedNarrative = clipAuxiliaryText(auxiliaryVisibleText(messageData(current.message[index])), 14000);
-    if (!committedNarrative && !force) return null;
+    if (!committedNarrative && !force) return skip('empty');
     const conversation = auxiliaryConversationContext(current, index);
     const domains = enabledCodexDomains(settings);
     const requested = [
@@ -416,6 +450,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       : '';
     const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${Core.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${Codex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
     setStatus(t('aux.036'));
+    called = true;
     const response = await runAuxModel(prompt, t('aux.035'));
     const raw = modelText(response);
     if (!raw) throw new Error(t('aux.034'));
@@ -569,7 +604,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       await enrichLore(ctx, doc, chat);
       return { chat };
     });
-    if (!written) return null;
+    if (!written) return { status: 'conflict', events: [], called };
     const stillActive = activeContextKey() === ctx.key;
     if (!valid.length) {
       if (stillActive) {
@@ -580,7 +615,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
           0
         );
       }
-      return [];
+      return { status: 'ok', events: [], called };
     }
     if (stillActive) {
       workQueue.remember('host-settling', ctx.key);
@@ -599,15 +634,40 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
         valid.length
       );
     }
-    return valid;
+    return { status: 'ok', events: valid, called };
   })().catch(async (error) => {
     fail('auxiliary recovery', error);
     if (activeContextKey() === ctx.key) {
       setStatus(t('aux.024'));
       await setAuxOutcome('failed', t('aux.023', String(error?.message || error).slice(0, 80)));
     }
-    return error?.code === 'AUX_PROVIDER_UNAVAILABLE' ? [] : null;
+    // A missing provider is quarantined for the session, never retried or counted.
+    if (error?.code === 'AUX_PROVIDER_UNAVAILABLE') return skip('provider');
+    if (called && !force) await recordFailure(ctx, index, sourceHash, chatId, guardKey);
+    return { status: 'fail', events: [], called, error };
   });
+}
+
+// A guard settles its message unless it records failures below the limit.
+function guardSettled(guard, key) {
+  if (guard?.k !== key) return false;
+  return guard.state !== 'failed' || (guard.attempts || 0) >= ITEMX_AUX_AUTO_ATTEMPTS;
+}
+
+// Failed attempts are counted in the document, so a reload does not reset the
+// retry limit and re-bill the same message.
+async function recordFailure(ctx, index, sourceHash, chatId, guardKey) {
+  try {
+    await writeDocument(ctx, (doc, latest) => {
+      if (Core.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return false;
+      const prior = auxGuard(doc, chatId);
+      const attempts = (prior?.k === guardKey && prior.state === 'failed' ? prior.attempts || 0 : 0) + 1;
+      setGuard(doc, chatId, { k: guardKey, q: Quality.REVISION, state: 'failed', events: 0, attempts });
+      return {};
+    });
+  } catch (error) {
+    debugRecord('aux failure record', error?.message || String(error));
+  }
 }
 
 export async function runItemModel(task, loaded, target = null, instruction = '') {

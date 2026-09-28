@@ -298,14 +298,14 @@ test('restored replies are not automatically recollected; explicit recovery and 
     text = JSON.stringify(source(h));
   h.ctx.chat.message = [{ role: 'char', data: '오래된 대화', chatId: 'old' }];
   await h.api.commitBackupImport(await h.api.prepareBackupImport(text, h.ctx.key, 'replace'));
-  assert.deepEqual(Array.from(await h.api.recoverAuxiliaryOutputNow()), []);
+  assert.equal((await h.api.recoverAuxiliaryOutputNow()).reason, 'restored');
   assert.equal(
-    await h.api.recoverAuxiliaryOutputNow({ force: true }),
-    null,
+    (await h.api.recoverAuxiliaryOutputNow({ force: true })).reason,
+    'no-model',
     'explicit recovery passes the restore guard and reaches the unavailable-model check'
   );
   h.ctx.chat.message.push({ role: 'user', data: '진행' }, { role: 'char', data: '새 응답' });
-  assert.equal(await h.api.recoverAuxiliaryOutputNow(), null, 'new response passes the restore guard');
+  assert.equal((await h.api.recoverAuxiliaryOutputNow()).reason, 'no-model', 'new response passes the restore guard');
 });
 
 test('explicit overwrite accepts an empty backup to restore an empty inventory', async () => {

@@ -4,13 +4,18 @@ import * as WorkQueue from './work-queue.js';
 
 export const workQueue = WorkQueue.create();
 
+// Model hooks may run while a commit-lane job waits on the model; drawer and
+// host-DOM work has its own lane.
+const REENTRANT = ['output', 'before-request', 'after-request'];
+const VIEW = ['portraits', 'update'];
 export const dispatch = (kind, work, unique = false, options = {}) =>
   workQueue.enqueue({
     kind,
     work,
     unique,
+    lane: VIEW.includes(kind) ? 'view' : 'commit',
     ...options,
-    reentrant: ['process', 'output', 'display', 'before-request', 'after-request', 'scroll'].includes(kind)
+    reentrant: REENTRANT.includes(kind)
   });
 
 export const entry =
