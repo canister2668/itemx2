@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { rt as modules } from './helpers/modules.mjs';
-import { pendingAnchor } from './helpers/ledger.mjs';
+import { pendingAnchor, withMainStyle } from './helpers/ledger.mjs';
+import { createFakeHost } from './helpers/fake-host.mjs';
 
 // Committed render oracle. It replaced the tests that ran `git show <old commit>`
 // (a shallow CI checkout cannot see them). Regenerate only for an intended visual
@@ -82,6 +83,7 @@ async function renderCases() {
               rt.rootInventoryHtml({ ...loaded, skin, enabled }, open, tab)
             );
           }
+  await withMainStyle(createFakeHost({ document: true }));
   for (const item of items)
     out[`card/${item.affinity}`] = norm(
       // Stored text puts the anchor after a paragraph break; the old display

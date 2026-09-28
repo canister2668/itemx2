@@ -8,7 +8,6 @@ import { host } from '../host.js';
 import { t } from '../i18n.js';
 import { fail } from '../kernel.js';
 import { badgePositionSetting } from '../settings.js';
-import { scopeBlock } from './css-scope.js';
 
 // `shell.css` is the iframe-fallback shell (.stage) plus mockup chrome and is
 // scoped to the plugin's own document; `cards.css` is the card surface that is
@@ -21,8 +20,38 @@ export const ITEMX_CHAT_STYLE = `${cardsCss}\n${presentationCss.trim()}`
   .replace(/\.demo-note\b/g, '.itemx2-never-note')
   .replace(/\.lab\b/g, '.itemx2-never-lab');
 
-let mainScoped = null;
-const mainScopedStyle = () => (mainScoped ??= scopeBlock(ITEMX_CHAT_STYLE.replace(/\/\*[\s\S]*?\*\//g, '')));
+// Top-level rules of a stylesheet, each with its prelude and block.
+function topLevelRules(source) {
+  const rules = [];
+  let cursor = 0;
+  while (cursor < source.length) {
+    const open = source.indexOf('{', cursor);
+    if (open < 0) break;
+    let depth = 1,
+      end = open + 1;
+    while (end < source.length && depth > 0) {
+      if (source[end] === '{') depth += 1;
+      else if (source[end] === '}') depth -= 1;
+      end += 1;
+    }
+    rules.push({ prelude: source.slice(cursor, open).trim(), block: source.slice(open, end) });
+    cursor = end;
+  }
+  return rules;
+}
+
+// Drops the earlier of two identical rules, and earlier definitions of a
+// keyframes name: the later copy decides the cascade either way, so the
+// computed styles are unchanged.
+export function dedupeCss(source) {
+  const rules = topLevelRules(source.replace(/\/\*[\s\S]*?\*\//g, ''));
+  const key = (rule) => (rule.prelude.startsWith('@keyframes') ? rule.prelude : rule.prelude + rule.block);
+  const last = new Map(rules.map((rule, index) => [key(rule), index]));
+  return rules
+    .filter((rule, index) => last.get(key(rule)) === index)
+    .map((rule) => `${rule.prelude}${rule.block}`)
+    .join('\n');
+}
 
 export const ITEMX_CHIP_STYLE =
   '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.3em .62em;border:1px solid rgba(212,175,110,.32);border-radius:6px;background:rgba(20,17,12,.72);color:#e8e0d2;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
@@ -572,13 +601,19 @@ export function skinCss(name) {
 
 export const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
 
-export const mainStyleText = () =>
-  `${mainScopedStyle()}\n${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${ITEMX_CHIP_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}\n${badgeStyle()}`;
+// The host-document sheet: one prefixed copy serves the chat body and the
+// drawer alike (an earlier `.chattext`-scoped second copy computed the same
+// styles and was dropped).
+let mainStyle = null;
+export const mainStyleText = () => (mainStyle ??= dedupeCss(buildMainStyle()));
+const buildMainStyle = () =>
+  `${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${ITEMX_CHIP_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}`;
 
 // The main document connection. Private: other modules ask through mainDoc()
 // and are told about a (re)connection by the `main-document` event.
 let doc = null;
 let styleOwner = null;
+let badgeOwner = null;
 let stylePosition = '';
 
 export const mainDoc = () => doc;
@@ -587,6 +622,7 @@ export const mainStyleInstalled = () => Boolean(styleOwner);
 function forgetMainDocument() {
   doc = null;
   styleOwner = null;
+  badgeOwner = null;
   stylePosition = '';
 }
 
@@ -615,11 +651,28 @@ export async function ensureMainStyleAttached() {
   return installMainStyle();
 }
 
+// Our two <style> elements in the host document, found or created: the large
+// sheet is written once, the badge position has its own small sheet so a
+// position change never rewrites the large one.
+async function ownedStyle(root, name) {
+  const existing = await root.querySelector(`style[x-itemx2-style="${name}"]`);
+  if (existing) return { style: existing, created: false };
+  const style = await root.createElement('style');
+  await style.setAttribute('x-itemx2-style', name);
+  return { style, created: true };
+}
+async function attach(root, style) {
+  const head = await root.querySelector('head');
+  if (head) await head.appendChild(style);
+  else await root.appendChild(style);
+}
+
 export async function installMainStyle() {
   try {
-    if (styleOwner && stylePosition === badgePositionSetting()) {
+    if (styleOwner) {
       try {
         if (!(await styleOwner.getParent())) throw new Error('detached style owner');
+        if (stylePosition !== badgePositionSetting()) await writeBadgeStyle();
         return await connected();
       } catch {
         forgetMainDocument();
@@ -634,17 +687,13 @@ export async function installMainStyle() {
     }
     doc = root;
     setPermission('mainDom', true);
-    const existing = await root.querySelector('style[x-itemx2-style="owner"]');
-    const style = existing || (await root.createElement('style'));
-    if (!existing) await style.setAttribute('x-itemx2-style', 'owner');
-    await style.setTextContent(mainStyleText());
-    if (!existing) {
-      const head = await root.querySelector('head');
-      if (head) await head.appendChild(style);
-      else await root.appendChild(style);
+    const main = await ownedStyle(root, 'owner');
+    if (main.created) {
+      await main.style.setTextContent(mainStyleText());
+      await attach(root, main.style);
     }
-    styleOwner = style;
-    stylePosition = badgePositionSetting();
+    styleOwner = main.style;
+    await writeBadgeStyle();
     return await connected();
   } catch (error) {
     setPermission('mainDom', false);
@@ -655,12 +704,24 @@ export async function installMainStyle() {
   }
 }
 
+async function writeBadgeStyle() {
+  const badge = await ownedStyle(doc, 'badge');
+  await badge.style.setTextContent(badgeStyle());
+  if (badge.created) await attach(doc, badge.style);
+  badgeOwner = badge.style;
+  stylePosition = badgePositionSetting();
+}
+
 export async function removeMainStyle() {
-  const style = styleOwner;
+  const styles = [styleOwner, badgeOwner];
   forgetMainDocument();
-  try {
-    if (style) await style.remove();
-  } catch {}
+  await Promise.all(
+    styles.map((style) =>
+      Promise.resolve()
+        .then(() => style?.remove())
+        .catch(() => {})
+    )
+  );
 }
 
 export function fallbackDocumentHead() {

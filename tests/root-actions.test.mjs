@@ -193,3 +193,27 @@ test('a collapsed control is not hit at the origin', async () => {
   // and the rest of the panel still dispatches normally
   assert.equal(await dispatch(rt, { clientX: 50, clientY: 114 }), hooks[0]);
 });
+
+test('a click measures only the controls its tab can show, in one table', async () => {
+  const settingsRows = rt
+    .rootSettingActions()
+    .filter((action) => !action.header)
+    .map((action) => action.hook);
+  const inventory = rt.hitCandidates('inventory');
+  assert.ok(
+    settingsRows.every((hook) => !inventory.includes(hook)),
+    'settings rows are not measured on inventory'
+  );
+  assert.ok(
+    rt
+      .rootSettingActions()
+      .filter((action) => action.header)
+      .every((a) => inventory.includes(a.hook))
+  );
+  const settings = rt.hitCandidates('settings');
+  assert.ok(settingsRows.every((hook) => settings.includes(hook)));
+  await fakeMainDoc(['itemx2-setting-toggle', 'itemx2-setting-main']);
+  const table = await rt.buildHitTable(['itemx2-setting-toggle', 'itemx2-setting-main', 'itemx2-missing']);
+  assert.equal(table.get('itemx2-missing'), null);
+  assert.equal(table.get('itemx2-setting-main').top, 30);
+});

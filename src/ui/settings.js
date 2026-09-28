@@ -43,6 +43,7 @@ import {
   updateRootSwitch
 } from './controls.js';
 import {
+  hostSettingsCard,
   invalidateHostSettingsVisibility,
   mountRootLoading,
   notifyUser,
@@ -50,7 +51,6 @@ import {
   openRootInventory,
   patchDebugPanel,
   patchRootHeader,
-  patchSettingsCard,
   queryMainClass,
   settingsLoaded,
   showRootFeedback,
@@ -167,10 +167,12 @@ export async function openBackupPanel() {
     url = '',
     busy = false;
   document.body.innerHTML = `<main id="itemx-backup"><header><h2>${t('ui-settings.138.1')}</h2><button id="ix-close" type="button">${t('ui-settings.138.2')}</button></header><p id="ix-target"></p><p>${t('ui-settings.138.3')}</p><section><h3>${t('ui-settings.138.4')}</h3><button id="ix-export" type="button">${t('ui-settings.138.5')}</button><a id="ix-download" hidden>${t('ui-settings.138.6')}</a><button id="ix-copy" type="button" disabled>${t('ui-settings.138.7')}</button><textarea id="ix-export-text" aria-label="${t('ui-settings.138.8')}" readonly placeholder="${t('ui-settings.138.9')}"></textarea></section><section><h3>${t('ui-settings.138.10')}</h3><label>${t('ui-settings.138.11')} <select id="ix-mode"><option value="empty">${t('ui-settings.138.12')}</option><option value="replace">${t('ui-settings.138.13')}</option></select></label><p>${t('ui-settings.138.14')}</p><label>${t('ui-settings.138.15')} <input id="ix-file" type="file" accept=".json,application/json"></label><textarea id="ix-import-text" aria-label="${t('ui-settings.138.16')}" placeholder="${t('ui-settings.138.17')}"></textarea><button id="ix-preview" type="button">${t('ui-settings.138.18')}</button><p id="ix-preview-text"></p><button id="ix-import" type="button" disabled>${t('ui-settings.138.19')}</button></section><p id="ix-status" role="status" aria-live="polite"></p></main>`;
-  const style = document.createElement('style');
+  // Reopening reuses its sheet instead of stacking another copy in the head.
+  const style = document.getElementById('itemx-backup-style') || document.createElement('style');
+  style.id = 'itemx-backup-style';
   style.textContent =
     'body{margin:0;background:#0c121c;color:#e4eaf4;font:15px/1.6 system-ui}#itemx-backup{max-width:680px;margin:auto;padding:20px;box-sizing:border-box}#itemx-backup header{display:flex;align-items:center;justify-content:space-between;gap:12px}#itemx-backup section{padding:16px;margin:16px 0;border:1px solid #33435d;border-radius:12px}#itemx-backup button,#itemx-backup a{display:inline-block;padding:10px;margin:4px;border:1px solid #536884;border-radius:8px;background:#1a2940;color:#eef3fc;font:inherit;cursor:pointer}#itemx-backup [hidden]{display:none}#itemx-backup button:disabled{opacity:.45;cursor:default}#itemx-backup textarea{display:block;box-sizing:border-box;width:100%;min-height:105px;margin:12px 0;padding:10px;background:#090e17;color:#d9e6fc;border:1px solid #40516c;border-radius:8px}#itemx-backup input,#itemx-backup select{max-width:100%}#itemx-backup select{padding:8px;background:#1a2940;color:#eef3fc;border:1px solid #536884;border-radius:8px}#itemx-backup p{overflow-wrap:anywhere}#ix-status{padding:10px;background:#142137}';
-  document.head.appendChild(style);
+  if (!style.isConnected) document.head.appendChild(style);
   const get = (id) => document.getElementById(id);
   get('ix-target').textContent = t(
     'ui-settings.135',
@@ -324,8 +326,9 @@ export const SETTINGS_SKINS = {
   }
 };
 
-export const setCard = (title, note, control = '', extra = '') =>
-  `<section class="itemx2-root-setting-card"><span><strong>${title}</strong><small${extra}>${note}</small></span>${control}</section>`;
+export const setCardInner = (title, note, control = '', extra = '') =>
+  `<span><strong>${title}</strong><small${extra}>${note}</small></span>${control}`;
+export const setCard = (...args) => `<section class="itemx2-root-setting-card">${setCardInner(...args)}</section>`;
 
 export const setButton = (skin, action, label, extra = '') =>
   `<button class="itemx2-root-setting-button${skin.hook(action)}${extra}" type="button"${skin.data(action)}>${label}</button>`;
@@ -345,7 +348,69 @@ export const setSegment = (skin, group, entries, current) =>
     )
     .join('')}</div>`;
 
+// The cards whose controls swap for a yes / no row. Each renders on its own so
+// arming or disarming patches that one card in place (the tab keeps its scroll).
+export function confirmCards(skin, parts) {
+  return {
+    'itemx2-setting-storage-cleanup': [
+      t('ui-settings.106'),
+      t('ui-settings.105', parts.footprintLabel),
+      parts.storageCleanupArmed
+        ? confirmRow(
+            skin,
+            t('ui-settings.confirm-storage'),
+            'storage-cleanup',
+            t('ui-settings.confirm-yes-storage'),
+            'storage-cleanup-cancel'
+          )
+        : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}${setButton(skin, 'storage-cleanup', t('ui-settings.102'))}</span>`
+    ],
+    'itemx2-setting-old-markers': parts.oldMarkerCount
+      ? [
+          t('ui-settings.old-markers-title'),
+          t('ui-settings.old-markers-note', parts.oldMarkerCount),
+          parts.oldMarkersArmed
+            ? confirmRow(
+                skin,
+                t('ui-settings.confirm-old-markers'),
+                'old-markers',
+                t('ui-settings.confirm-yes-old-markers'),
+                'old-markers-cancel'
+              )
+            : setButton(skin, 'old-markers', t('ui-settings.old-markers-button'))
+        ]
+      : null,
+    'itemx2-setting-cleanup': [
+      t('ui-settings.110'),
+      t('ui-settings.109'),
+      parts.cleanupArmed
+        ? confirmRow(
+            skin,
+            t('ui-settings.confirm-cleanup'),
+            'cleanup-chat',
+            t('ui-settings.confirm-yes-cleanup'),
+            'cleanup-cancel'
+          )
+        : setButton(skin, 'cleanup-chat', t('ui-settings.107'))
+    ]
+  };
+}
+const confirmCard = (cards, hook) => (cards[hook] ? setCard(...cards[hook]) : '');
+
+// Re-renders one confirm card of the open drawer in place.
+export async function patchSettingsCard(hook) {
+  const loaded = await settingsLoaded();
+  if (!loaded) return false;
+  const args = confirmCards(SETTINGS_SKINS.native, settingsStorageParts(loaded))[hook];
+  const card = args ? await hostSettingsCard(hook) : null;
+  if (!card) return openRootInventory({ open: true, tab: 'settings', loaded });
+  await card.setInnerHTML(setCardInner(...args));
+  await patchRootHeader(loaded);
+  return true;
+}
+
 export function settingsPanelHtml(loaded, skin, parts) {
+  const cards = confirmCards(skin, parts);
   const connection = parts.connection;
   const connectionCards = skin.native
     ? setCard(
@@ -418,47 +483,7 @@ export function settingsPanelHtml(loaded, skin, parts) {
   )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
     t('ui-settings.101'),
     t('ui-settings.100')
-  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml(skin.native)}${setCard(
-    t('ui-settings.106'),
-    t('ui-settings.105', parts.footprintLabel),
-    parts.storageCleanupArmed
-      ? confirmRow(
-          skin,
-          t('ui-settings.confirm-storage'),
-          'storage-cleanup',
-          t('ui-settings.confirm-yes-storage'),
-          'storage-cleanup-cancel'
-        )
-      : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}${setButton(skin, 'storage-cleanup', t('ui-settings.102'))}</span>`
-  )}${
-    parts.oldMarkerCount
-      ? setCard(
-          t('ui-settings.old-markers-title'),
-          t('ui-settings.old-markers-note', parts.oldMarkerCount),
-          parts.oldMarkersArmed
-            ? confirmRow(
-                skin,
-                t('ui-settings.confirm-old-markers'),
-                'old-markers',
-                t('ui-settings.confirm-yes-old-markers'),
-                'old-markers-cancel'
-              )
-            : setButton(skin, 'old-markers', t('ui-settings.old-markers-button'))
-        )
-      : ''
-  }<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${setCard(
-    t('ui-settings.110'),
-    t('ui-settings.109'),
-    parts.cleanupArmed
-      ? confirmRow(
-          skin,
-          t('ui-settings.confirm-cleanup'),
-          'cleanup-chat',
-          t('ui-settings.confirm-yes-cleanup'),
-          'cleanup-cancel'
-        )
-      : setButton(skin, 'cleanup-chat', t('ui-settings.107'))
-  )}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml(skin.native)}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${confirmCard(cards, 'itemx2-setting-old-markers')}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
 }
 
 export function settingsDomainControls(loaded, skin) {

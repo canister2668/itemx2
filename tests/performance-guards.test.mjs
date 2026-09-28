@@ -1,5 +1,5 @@
 import test from 'node:test';
-import { pendingAnchor } from './helpers/ledger.mjs';
+import { pendingAnchor, withMainStyle } from './helpers/ledger.mjs';
 import assert from 'node:assert/strict';
 import { createFakeHost } from './helpers/fake-host.mjs';
 import { rt, setHost, Session, Presentation, Panel } from './helpers/modules.mjs';
@@ -33,6 +33,7 @@ test('post-commit remount quiet period lasts 1200 ms and never blocks a differen
 });
 
 test('marker and detail HTML caches retain their 64 and 60 entry limits', async () => {
+  await withMainStyle(createFakeHost({ document: true }));
   for (let i = 0; i < 75; i++) {
     const item = rt.core.normalizeItem({ id: 'cache' + i, name: 'cache ' + i, count: 1 }).item;
     await rt.displayHandler(pendingAnchor({ event: { kind: 'exam', item }, view: item }));

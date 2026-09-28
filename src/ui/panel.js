@@ -21,6 +21,7 @@ import {
   replayFingerprint,
   saveHistoryPreference
 } from '../ledger.js';
+import { createLru } from '../lru.js';
 import { loadCodexPortraits, resetPortraitContext } from '../portraits.js';
 import {
   codexHeroFx,
@@ -73,7 +74,7 @@ import { uiState } from './view-state.js';
 import { checkForUpdate } from '../update-check.js';
 
 // Rendered item / codex detail bodies, keyed by content.
-const detailHtmlCache = new Map();
+const detailHtmlCache = createLru(60);
 let hostObserver = null;
 let hostSettingsCache = { at: 0, visible: false };
 
@@ -122,10 +123,10 @@ export function itemDetailHtml(item) {
   const motion = effectsMotion();
   const record = presentationRecord('item', item.id);
   const key = `${item.id}:${Core.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
-  if (detailHtmlCache.has(key)) return detailHtmlCache.get(key);
+  const cached = detailHtmlCache.get(key);
+  if (cached !== undefined) return cached;
   const html = `<div class="itemx2-detail-stack">${Renderer.renderCard(item, { motion })}${detailAnnotations('item', item)}</div>`;
   detailHtmlCache.set(key, html);
-  while (detailHtmlCache.size > 60) detailHtmlCache.delete(detailHtmlCache.keys().next().value);
   return html;
 }
 
@@ -136,14 +137,7 @@ export async function hydrateCheckedItemDetail(loaded) {
     const selected = await panelDocument().querySelector(`#itemx2-detail-${index}:checked`);
     if (!selected) continue;
     const html = itemDetailBodyHtml(detailItems[index]);
-    const detailKey = `item:${index}:${Core.fnv1a(html)}`;
-    // Every tap inside the drawer re-enters here; re-injecting restarts the card effects and scroll.
-    if (workQueue.revision('detail') === detailKey) return true;
-    const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
-    if (!detail) return false;
-    await detail.setInnerHTML(html);
-    workQueue.remember('detail', detailKey);
-    return true;
+    return fillDetailBody(`itemx2-root-detail-body-${index}`, Core.fnv1a(html), () => html);
   }
   return false;
 }
@@ -257,14 +251,28 @@ export async function hydrateCheckedCodexDetail(domain, loaded) {
   }
   if (loaded.key !== activeContextKey()) return false;
   const deleting = deleteArmed === `${domain}:${entity.id}`;
-  const detailKey = `${codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode)}:${deleting ? 'confirm' : ''}`;
-  if (workQueue.revision('detail') === detailKey) return true;
-  const detail = await queryMainClass(`itemx2-root-${domain}-detail-body-${index}`);
-  if (!detail) return false;
-  await detail.setInnerHTML(
-    `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}${entityDeleteHtml(domain, deleting)}`
+  return fillDetailBody(
+    `itemx2-root-${domain}-detail-body-${index}`,
+    `${codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode)}:${deleting ? 'confirm' : ''}`,
+    () =>
+      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}${entityDeleteHtml(domain, deleting)}`
   );
-  workQueue.remember('detail', detailKey);
+}
+
+// What each detail body of the current drawer render holds. Every tap inside
+// the drawer re-enters the hydrators; re-injecting the same card would restart
+// its effects and scroll. Keyed by body, so a card is never assumed to be in a
+// body it was not written to. A drawer render clears it.
+const filledBodies = new Map();
+export function forgetDetailBodies() {
+  filledBodies.clear();
+}
+async function fillDetailBody(className, key, html) {
+  if (filledBodies.get(className) === key) return true;
+  const detail = await queryMainClass(className);
+  if (!detail) return false;
+  await detail.setInnerHTML(html());
+  filledBodies.set(className, key);
   return true;
 }
 
@@ -532,7 +540,7 @@ export async function resetRuntimeForContext(active) {
   clearEventBursts();
   armRemountWatchdog();
   uiState.rootItemPage = 0;
-  workQueue.remember('detail', '');
+  forgetDetailBodies();
   invalidateHostSettingsVisibility();
   invalidateLoaded();
   clearMarkerHtmlCache();
@@ -700,7 +708,8 @@ export function codexDetailCacheKey(domain, entity, portrait = '', rarityMode = 
 
 export function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 'world') {
   const key = codexDetailCacheKey(domain, entity, portrait, rarityMode);
-  if (detailHtmlCache.has(key)) return detailHtmlCache.get(key);
+  const cached = detailHtmlCache.get(key);
+  if (cached !== undefined) return cached;
   const back =
     domain === 'skill'
       ? `<label class="itemx-codex-back" for="itemx2-skill-none">${t('ui-panel.083.1')}</label>`
@@ -709,7 +718,6 @@ export function rootCodexDetailHtml(domain, entity, portrait = '', rarityMode = 
     domain === 'skill' ? skillPageHtml(entity, back, rarityMode) : monsterPageHtml(entity, portrait, back)
   );
   detailHtmlCache.set(key, html);
-  while (detailHtmlCache.size > 60) detailHtmlCache.delete(detailHtmlCache.keys().next().value);
   return html;
 }
 
@@ -987,9 +995,11 @@ export function searchControlsHtml() {
   return `<!--ITEMX2-SEARCH-START--><div class="itemx2-search-controls"><div class="itemx2-search-query" contenteditable="true" role="textbox" aria-label="${t('ui-panel.054.1')}" data-placeholder="${t('ui-panel.054.2')}">${Core.esc(uiState.query)}</div><button class="itemx2-search-apply" type="button">${t('ui-panel.054.3')}</button><button class="itemx2-search-clear" type="button">${t('ui-panel.054.4')}</button></div><!--ITEMX2-SEARCH-END-->`;
 }
 
-export function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
+export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
   if (!open)
-    return `${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>${t('ui-panel.053.1')}</strong><small>${t('ui-panel.053.2')}</small></div></section></div>`;
+    return {
+      html: `${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>${t('ui-panel.053.1')}</strong><small>${t('ui-panel.053.2')}</small></div></section></div>`
+    };
   const all = itemsOf(loaded.snapshot)
     .filter((item) => tab === 'settings' || (!EntityHistory.terminal('item', item) && matches(item)))
     .slice(0, 60);
@@ -1076,9 +1086,6 @@ export function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
           const domainControls = settingsDomainControls(loaded, skin);
           // Phase timings go above the log: they are what a stutter report needs. Only
           // with debug on, so the panel a reader normally sees is unchanged.
-          const debugLog = loaded.debugEnabled
-            ? `-- phase cost --\n${phaseReport()}\n\n${settingsDebugLog()}`
-            : settingsDebugLog();
           const storageParts = settingsStorageParts(loaded);
           // A map of the screen beats six abbreviations: the slot sits where the badge will.
           const managerRows =
@@ -1102,7 +1109,7 @@ export function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
                 `<i class="itemx2-status-chip itemx2-status-chip-${tone} itemx2-connection-${key}">${label}</i>`
             )
             .join('');
-          const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold"><summary>${t('ui-panel.037.1')} <small>${loaded.debugEnabled ? t('ui-panel.038') : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">${t('ui-panel.log')} ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>${t('ui-panel.037.3')}</b><span>${Core.esc(loaded.key)}</span><b>${t('ui-panel.037.4')}</b><span>${currentGeneration()}</span><b>${t('ui-panel.037.5')}</b><span>${Core.esc(loaded.snapshot.fingerprint || '-')} / ${Core.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>${t('ui-panel.037.6')}</b><span>${counts.all} / ${skills.length} / ${monsters.length}</span><b>${t('ui-panel.037.7')}</b><span>${Core.esc(lastError('hook') || lastError('dom') || t('ui-panel.039'))}</span></div><pre class="itemx2-debug-log">${Core.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">${t('ui-panel.037.8')}</button></div></details>`;
+          const debugPanel = `<details class="itemx2-manager-fold itemx2-debug-fold">${debugFoldInner(loaded)}</details>`;
           return settingsPanelHtml(loaded, skin, {
             connection,
             chips,
@@ -1141,54 +1148,51 @@ export function rootInventoryHtml(loaded, open = true, tab = 'inventory') {
         `<button class="itemx-main-tab itemx2-root-tab-${key} ${tab === key ? 'itemx-main-tab-on' : ''}" type="button">${label}</button>`
     )
     .join('');
-  const headerStatus = `${enabled ? t('ui-panel.026', counts.owned, counts.equipped, counts.observed) : t('ui-panel.025')} · ${Core.esc(status())}`;
-  return `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${Core.esc(loaded.character.name || t('ui-panel.024'))}</span><span class="itemx-ph-sub"><!--ITEMX2-HEADER-START-->${headerStatus}<!--ITEMX2-HEADER-END--></span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs"><!--ITEMX2-NAV-START-->${tabs}<!--ITEMX2-NAV-END--></nav><div class="itemx2-root-tab-body"><!--ITEMX2-BODY-START-->${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}<!--ITEMX2-BODY-END--></div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`;
-}
-
-export function rootInventoryRegions(html) {
-  const source = String(html || '');
-  const between = (start, end) => {
-    const from = source.indexOf(start),
-      to = source.indexOf(end, from + start.length);
-    return from >= 0 && to >= 0 ? source.slice(from + start.length, to) : null;
-  };
+  const header = headerStatusHtml(loaded, counts);
+  const body = `${tab === 'settings' ? '' : searchControlsHtml()}${activeContent}`;
   return {
-    header: between('<!--ITEMX2-HEADER-START-->', '<!--ITEMX2-HEADER-END-->'),
-    nav: between('<!--ITEMX2-NAV-START-->', '<!--ITEMX2-NAV-END-->'),
-    body: between('<!--ITEMX2-BODY-START-->', '<!--ITEMX2-BODY-END-->')
+    header,
+    nav: tabs,
+    body,
+    html: `${controls}${searchToggle}${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><input class="itemx2-root-control" id="itemx2-detail-none" name="itemx2-detail" type="radio" checked><header class="itemx-ph"><span class="itemx-ph-text"><span class="itemx-ph-eyebrow">ITEMX · ${ITEMX_VERSION_LABEL}${updateLabelHtml()}</span><span class="itemx-ph-title">${Core.esc(loaded.character.name || t('ui-panel.024'))}</span><span class="itemx-ph-sub">${header}</span></span>${panelMenuHtml(true, enabled)}</header><nav class="itemx-main-tabs">${tabs}</nav><div class="itemx2-root-tab-body">${body}</div><div class="itemx2-feedback" role="status" aria-live="polite"></div></section></div>`
   };
 }
 
-// In-place settings patches. Replacing the tab body resets its scroll, so a control that
-// only changes its own card re-renders the settings HTML as a string and swaps that card.
-export function htmlElementRange(html, start) {
-  const tag = /^<([a-z0-9]+)/i.exec(html.slice(start))?.[1];
-  if (!tag) return null;
-  const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
-  re.lastIndex = start;
-  let depth = 0,
-    m;
-  while ((m = re.exec(html))) {
-    if (m[1]) {
-      depth -= 1;
-      if (!depth) return { open: html.indexOf('>', start) + 1, close: m.index };
-    } else if (!m[0].endsWith('/>')) depth += 1;
-  }
-  return null;
+export const rootInventoryHtml = (loaded, open = true, tab = 'inventory') => rootInventoryParts(loaded, open, tab).html;
+
+// Owned, equipped and observed counts of the listed items, shown in the header.
+function listedItemCounts(loaded, tab) {
+  const listed = itemsOf(loaded.snapshot)
+    .filter((item) => tab === 'settings' || (!EntityHistory.terminal('item', item) && matches(item)))
+    .slice(0, 60);
+  return {
+    owned: listed.filter((item) => item.possession === 'owned').length,
+    equipped: listed.filter((item) => item.location === 'equipped').length,
+    observed: listed.filter((item) => item.possession === 'observed').length
+  };
 }
-export const classAt = (html, className) => html.search(new RegExp(`class="(?:[^"]*\\s)?${className}(?=[\\s"])`));
-export function classInnerHtml(html, className) {
-  const at = classAt(html, className);
-  const range = at < 0 ? null : htmlElementRange(html, html.lastIndexOf('<', at));
-  return range ? html.slice(range.open, range.close) : null;
+
+export function headerStatusHtml(loaded, counts = listedItemCounts(loaded, uiState.activeRootTab || 'settings')) {
+  return `${loaded.enabled === true ? t('ui-panel.026', counts.owned, counts.equipped, counts.observed) : t('ui-panel.025')} · ${Core.esc(status())}`;
 }
-export function settingsCardInnerHtml(html, hook) {
-  const at = classAt(html, hook);
-  if (at < 0) return null;
-  const start = html.lastIndexOf('<section class="itemx2-root-setting-card"', at);
-  const range = start < 0 ? null : htmlElementRange(html, start);
-  return range && range.close > at ? html.slice(range.open, range.close) : null;
+
+// The debug fold's content; the <details> element itself stays in place so an
+// open fold stays open when this is patched.
+export function debugFoldInner(loaded) {
+  // Phase timings go above the log: they are what a stutter report needs. Only
+  // with debug on, so the panel a reader normally sees is unchanged.
+  const debugLog = loaded.debugEnabled
+    ? `-- phase cost --\n${phaseReport()}\n\n${settingsDebugLog()}`
+    : settingsDebugLog();
+  const items = itemsOf(loaded.snapshot).slice(0, 60).length;
+  const skills = (loaded.codexSnapshot?.skills?.order || [])
+    .map((id) => loaded.codexSnapshot.skills.entries[id])
+    .filter((entity) => entity && !EntityHistory.terminal('skill', entity) && matches(entity))
+    .slice(0, 60).length;
+  const monsters = codexEntries(loaded, 'monster').length;
+  return `<summary>${t('ui-panel.037.1')} <small>${loaded.debugEnabled ? t('ui-panel.038') : 'OFF'}</small></summary><div class="itemx2-debug-body"><button class="itemx2-root-setting-button itemx2-setting-debug ${loaded.debugEnabled ? 'itemx2-setting-on' : ''}" type="button">${t('ui-panel.log')} ${loaded.debugEnabled ? 'ON' : 'OFF'}</button><div class="itemx2-debug-grid"><b>${t('ui-panel.037.3')}</b><span>${Core.esc(loaded.key)}</span><b>${t('ui-panel.037.4')}</b><span>${currentGeneration()}</span><b>${t('ui-panel.037.5')}</b><span>${Core.esc(loaded.snapshot.fingerprint || '-')} / ${Core.esc(loaded.codexSnapshot.fingerprint || '-')}</span><b>${t('ui-panel.037.6')}</b><span>${items} / ${skills} / ${monsters}</span><b>${t('ui-panel.037.7')}</b><span>${Core.esc(lastError('hook') || lastError('dom') || t('ui-panel.039'))}</span></div><pre class="itemx2-debug-log">${Core.esc(debugLog)}</pre><button class="itemx2-root-setting-button itemx2-setting-debug-clear" type="button">${t('ui-panel.037.8')}</button></div>`;
 }
+
 export async function hostSettingsCard(hook) {
   let element = await queryMainClass(hook);
   for (let depth = 0; element && depth < 6; depth += 1) {
@@ -1203,36 +1207,22 @@ export async function settingsLoaded() {
   return loaded;
 }
 export async function patchRootHeader(loaded) {
-  const header = rootInventoryRegions(rootInventoryHtml(loaded, true, uiState.activeRootTab || 'settings')).header;
-  const element = header == null ? null : await queryMainClass('itemx-ph-sub');
-  if (element) await element.setInnerHTML(header);
-}
-export async function patchSettingsCard(hook) {
-  const loaded = await settingsLoaded();
-  if (!loaded) return false;
-  const inner = settingsCardInnerHtml(rootInventoryHtml(loaded, true, 'settings'), hook);
-  const card = inner == null ? null : await hostSettingsCard(hook);
-  if (!card) return openRootInventory({ open: true, tab: 'settings', loaded });
-  await card.setInnerHTML(inner);
-  await patchRootHeader(loaded);
-  return true;
+  const element = await queryMainClass('itemx-ph-sub');
+  if (element) await element.setInnerHTML(headerStatusHtml(loaded));
 }
 export async function patchDebugPanel() {
   const loaded = await settingsLoaded();
   if (!loaded) return false;
-  const inner = classInnerHtml(rootInventoryHtml(loaded, true, 'settings'), 'itemx2-debug-fold');
-  const fold = inner == null ? null : await queryMainClass('itemx2-debug-fold');
+  const fold = await queryMainClass('itemx2-debug-fold');
   if (!fold) return openRootInventory({ open: true, tab: 'settings', loaded });
   // The <details> element stays, so an open fold stays open.
-  await fold.setInnerHTML(inner);
+  await fold.setInnerHTML(debugFoldInner(loaded));
   await patchRootHeader(loaded);
   return true;
 }
 
-export async function updateRootRegions(html) {
-  if (!mainDoc() || !uiState.rootDrawer) return false;
-  const regions = rootInventoryRegions(html);
-  if (regions.header == null || regions.nav == null || regions.body == null) return false;
+export async function updateRootRegions(regions) {
+  if (!mainDoc() || !uiState.rootDrawer || regions.body == null) return false;
   const header = await mainDoc().querySelector('.x-risu-itemx-ph-sub');
   const nav = await mainDoc().querySelector('.x-risu-itemx-main-tabs');
   const body = await mainDoc().querySelector('.x-risu-itemx2-root-tab-body');
@@ -1241,7 +1231,7 @@ export async function updateRootRegions(html) {
     await header.setInnerHTML(regions.header);
     await nav.setInnerHTML(regions.nav);
     await body.setInnerHTML(regions.body);
-    workQueue.remember('detail', '');
+    forgetDetailBodies();
     return true;
   } catch (error) {
     debugRecord('root region fallback', error?.message || String(error));
@@ -1282,18 +1272,52 @@ export async function managerRowIndexAtY(count, clientY) {
   return -1;
 }
 
-export async function eventHitsMainClass(event, className) {
+const inside = (rect, event) =>
+  Boolean(rect) &&
+  rect.width > 0 &&
+  rect.height > 0 &&
+  event.clientX >= rect.left &&
+  event.clientX <= rect.right &&
+  event.clientY >= rect.top &&
+  event.clientY <= rect.bottom;
+
+// Rectangles of the controls one click may hit, fetched together when the
+// click arrives: one concurrent round of bridge calls instead of one sequential
+// pair per control. Valid for that click only (the click itself can move
+// things); classes outside the table are queried live.
+let hitTable = null;
+async function rectOf(className) {
   const element = await queryMainClass(className);
-  if (!element) return false;
-  const rect = await element.getBoundingClientRect();
-  return (
-    rect.width > 0 &&
-    rect.height > 0 &&
-    event.clientX >= rect.left &&
-    event.clientX <= rect.right &&
-    event.clientY >= rect.top &&
-    event.clientY <= rect.bottom
-  );
+  return element ? element.getBoundingClientRect() : null;
+}
+export async function buildHitTable(classNames) {
+  const unique = [...new Set(classNames)];
+  const rects = await Promise.all(unique.map((name) => rectOf(name).catch(() => null)));
+  return new Map(unique.map((name, index) => [name, rects[index]]));
+}
+const ROOT_TABS = ['inventory', 'skills', 'bestiary', 'settings'];
+// The controls a click on the drawer can reach, given the open tab: the table
+// is filtered by tab so the settings rows are measured only on that tab.
+export function hitCandidates(tab = uiState.activeRootTab) {
+  const actions = rootSettingActions();
+  return [
+    'itemx2-root-close',
+    'itemx2-search-apply',
+    'itemx2-search-clear',
+    'itemx2-history-open',
+    'itemx2-setting-backup',
+    ...ROOT_TABS.map((name) => `itemx2-root-tab-${name}`),
+    ...actions.filter((action) => action.header).map((action) => action.hook),
+    ...(tab === 'inventory' ? ['itemx2-root-page-prev', 'itemx2-root-page-next', 'itemx2-repair-one'] : []),
+    ...(tab === 'settings'
+      ? ['itemx2-manager-fold', 'itemx2-manager-create-button', ...actions.map((action) => action.hook)]
+      : [])
+  ];
+}
+
+export async function eventHitsMainClass(event, className) {
+  if (hitTable?.has(className)) return inside(hitTable.get(className), event);
+  return inside(await rectOf(className), event);
 }
 
 export async function installRootClickRouter(owner) {
@@ -1331,17 +1355,18 @@ export async function installRootClickRouter(owner) {
     }
   };
   const routeControls = async (event) => {
+    if (!uiState.rootOpen) return;
+    hitTable = await buildHitTable(hitCandidates());
     try {
-      if (!uiState.rootOpen) return;
-      const close = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-root-close'));
-      if (close) {
-        const closeRect = await close.getBoundingClientRect();
-        if (
-          event.clientX >= closeRect.left &&
-          event.clientX <= closeRect.right &&
-          event.clientY >= closeRect.top &&
-          event.clientY <= closeRect.bottom
-        ) {
+      await routeControlsNow(event);
+    } finally {
+      hitTable = null;
+    }
+  };
+  const routeControlsNow = async (event) => {
+    try {
+      {
+        if (await eventHitsMainClass(event, 'itemx2-root-close')) {
           if (uiState.historyView.open && cachedLoaded()) {
             uiState.historyView.open = false;
             await drawRootHistory(cachedLoaded());
@@ -1382,16 +1407,7 @@ export async function installRootClickRouter(owner) {
         ['bestiary', t('ui-panel.021')],
         ['settings', t('ui-panel.020')]
       ]) {
-        const button = panelDocument() && (await panelDocument().querySelector(`.x-risu-itemx2-root-tab-${tab}`));
-        if (!button) continue;
-        const rect = await button.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        )
-          continue;
+        if (!(await eventHitsMainClass(event, `itemx2-root-tab-${tab}`))) continue;
         if (uiState.activeRootTab === tab && !uiState.historyView.open) return;
         uiState.historyView.open = false;
 
@@ -1400,6 +1416,7 @@ export async function installRootClickRouter(owner) {
           const body = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-root-tab-body'));
           if (body) {
             await body.removeClass('x-risu-itemx2-history-opened');
+            forgetDetailBodies();
             await body.setInnerHTML(
               `<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>${label} ${t('ui-panel.019.1')}</strong><small>${t('ui-panel.019.2')}</small></div>`
             );
@@ -1418,20 +1435,11 @@ export async function installRootClickRouter(owner) {
         }
         return;
       }
-      for (const [direction, selector] of [
-        [-1, '.x-risu-itemx2-root-page-prev'],
-        [1, '.x-risu-itemx2-root-page-next']
+      for (const [direction, className] of [
+        [-1, 'itemx2-root-page-prev'],
+        [1, 'itemx2-root-page-next']
       ]) {
-        const button = panelDocument() && (await panelDocument().querySelector(selector));
-        if (!button) continue;
-        const rect = await button.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        )
-          continue;
+        if (!(await eventHitsMainClass(event, className))) continue;
 
         const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return;
@@ -1448,6 +1456,7 @@ export async function installRootClickRouter(owner) {
 
         {
           const body = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-root-tab-body'));
+          forgetDetailBodies();
           if (body)
             await body.setInnerHTML(
               `<div class="itemx2-tab-loading" role="status" aria-live="polite"><i></i><strong>${t('ui-panel.018.1')}</strong><small>${t('ui-panel.018.2')}</small></div>`
@@ -1469,6 +1478,7 @@ export async function installRootClickRouter(owner) {
               const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
               if (activeContextKey() === loaded.key && detail && item)
                 await detail.setInnerHTML(itemDetailBodyHtml(item));
+              forgetDetailBodies();
             } catch (error) {
               await notifyUser(error.message || String(error), 'error');
             }
@@ -1500,6 +1510,7 @@ export async function installRootClickRouter(owner) {
               continue;
             const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
             if (detail) await detail.setInnerHTML(itemDetailBodyHtml(detailItems[index]));
+            forgetDetailBodies();
             return;
           }
         }
@@ -1515,15 +1526,8 @@ export async function installRootClickRouter(owner) {
         return;
       }
       if (uiState.activeRootTab !== 'settings') return;
-      const managerFold = panelDocument() && (await panelDocument().querySelector('.x-risu-itemx2-manager-fold'));
-      if (managerFold) {
-        const foldRect = await managerFold.getBoundingClientRect();
-        const insideManager =
-          event.clientX >= foldRect.left &&
-          event.clientX <= foldRect.right &&
-          event.clientY >= foldRect.top &&
-          event.clientY <= foldRect.bottom;
-        if (insideManager) {
+      {
+        if (await eventHitsMainClass(event, 'itemx2-manager-fold')) {
           const loaded = await cachedOrRebuildCurrent();
           if (loaded) {
             const managedItems = itemsOf(loaded.snapshot).slice(0, 60);
@@ -1676,13 +1680,14 @@ export async function openRootInventoryNow({ open = true, tab = 'inventory', loa
     );
     void syncPowerUi(loaded.enabled);
     if (open) uiState.badgeDeltaSeen = latestItemDelta().signature;
-    const html = rootInventoryHtml(loaded, open, tab);
-    const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(html));
+    const parts = rootInventoryParts(loaded, open, tab);
+    const html = parts.html;
+    const regionUpdated = attached && open && Boolean(workQueue.revision('render')) && (await updateRootRegions(parts));
     if (!regionUpdated) {
       await root.setInnerHTML(html);
       // Only a full drawer write repaints the badge; string-only renders must not claim it.
       badgeDeltaDrawn = badgeDeltaHtml();
-      workQueue.remember('detail', '');
+      forgetDetailBodies();
     }
     if (!attached) {
       const body = await mainDoc().querySelector('body');

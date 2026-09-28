@@ -95,7 +95,9 @@ test('the settings surface is styled in both documents', () => {
     Style.fallbackDocumentHead().includes(Style.ITEMX_SETTINGS_STYLE),
     'the iframe must include the shared surface'
   );
-  assert.ok(Style.mainStyleText().includes(Style.prefixRisuClasses(Style.ITEMX_SETTINGS_STYLE)));
+  const main = Style.mainStyleText();
+  for (const rule of Style.dedupeCss(Style.prefixRisuClasses(Style.ITEMX_SETTINGS_STYLE)).split('\n'))
+    assert.ok(main.includes(rule), rule.slice(0, 80));
   // The radio-tab mechanism that hides the pane stays with the drawer.
   assert.ok(!/itemx2-root-settings\{[^}]*display:none/.test(Style.ITEMX_SETTINGS_STYLE));
 });

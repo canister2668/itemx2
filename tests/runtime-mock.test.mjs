@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { createFakeDocument } from './helpers/fake-dom.mjs';
 import { TextEncoder, TextDecoder } from 'node:util';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +12,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('API v3 runtime processes, commits, injects and renders one real turn', async () => {
   let chat = { id: 'chat-a', message: [], scriptstate: {} };
+  // A host document to hold our stylesheet, so chat cards render in full.
+  const dom = createFakeDocument();
   let updateRequest = null;
   const handlers = {},
     replacers = {},
@@ -62,7 +65,8 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
       return { id: 'setting' };
     },
     unregisterUIPart: async () => {},
-    getRootDocument: async () => null,
+    getRootDocument: async () => dom.document,
+    unwarpSafeArray: async (value) => value,
     nativeFetch: async (url, options) => {
       updateRequest = { url, options };
       return { ok: true, text: async () => '//@name itemx2\n//@version 1.9.0-beta.28\n' };
@@ -88,7 +92,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   });
   await vm.runInContext(await readFile(resolve(root, 'dist/itemx2.plugin.js'), 'utf8'), sandbox);
   await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.deepEqual(bootOrder, ['setting', 'permission:replacer']);
+  assert.deepEqual(bootOrder, ['setting', 'permission:replacer', 'button:chat']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
   assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.28');
   assert.equal(typeof replacers.afterRequest, 'function');

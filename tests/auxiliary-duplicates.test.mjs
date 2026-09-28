@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rt, setHost, Session } from './helpers/modules.mjs';
+import { rt, Session } from './helpers/modules.mjs';
 import { createFakeHost } from './helpers/fake-host.mjs';
-import { anchored, pendingAnchor } from './helpers/ledger.mjs';
+import { anchored, pendingAnchor, withMainStyle } from './helpers/ledger.mjs';
 
 const p = rt;
 const item = (id, extra = '') =>
@@ -37,9 +37,10 @@ async function harness(domain, source, response, mode = 'missing') {
     llm: async () => {
       calls++;
       return typeof response === 'function' ? response(calls) : response;
-    }
+    },
+    document: true
   });
-  setHost(fake.api);
+  await withMainStyle(fake);
   Session.resetSession(`${id}:duplicate-probe`);
   const chat = () => structuredClone(fake.state.chat);
   const loaded = () => p.project({ key: 'k', chat: chat() });
@@ -172,6 +173,7 @@ for (const domain of ['item', 'monster'])
   });
 
 test('display suppresses identical states across paragraphs, without altering replay', async () => {
+  await withMainStyle(createFakeHost({ document: true }));
   for (const domain of ['item', 'monster']) {
     const first = extract(domain, (domain === 'item' ? item : monster)('same'));
     const code = first.content.match(/<!--(?:ITEMX2|CODEX2):([A-Za-z0-9_-]+)-->/)[1];

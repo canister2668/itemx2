@@ -9,27 +9,19 @@ import { isUnloading } from '../connection.js';
 import { emit } from '../events.js';
 import { debugRecord, workQueue } from '../kernel.js';
 import { anchorPayload, displayProjection } from '../ledger.js';
+import { createLru } from '../lru.js';
 import { inlinePortraitImages } from '../portraits.js';
 import { codexInlineEventHtml } from '../render/codex-cards.js';
 import { activeContextKey, currentLatestKeys } from '../session.js';
 import { FX_MODES, SKIN_MODES } from '../settings.js';
 import { ANCHOR_RE, anchorKeys, hasAnchor, hasOldMarker, removeOldMarkers } from '../store/anchors.js';
-import {
-  ITEMX_CHAT_STYLE,
-  ITEMX_CHIP_STYLE,
-  ITEMX_CODEX_INLINE_APPRAISAL_STYLE,
-  ITEMX_CODEX_INLINE_DENSE_STYLE,
-  ITEMX_CODEX_INLINE_STYLE,
-  ITEMX_PRESENTATION_STYLE,
-  SKIN_NAMES,
-  mainDoc,
-  mainStyleInstalled
-} from './style.js';
+import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
 const bursts = new Map();
 const burstSeen = new Set();
 const burstOwners = new Set();
-const markerHtmlCache = new Map();
+// Rendered card HTML by anchor key and motion level.
+const markerHtmlCache = createLru(64);
 let bodyFxClassOwner = null;
 let bodyFxEventIds = [];
 let bodyFxSawScroll = false;
@@ -187,7 +179,8 @@ function visibleAnchors(source, loaded) {
 
 function renderItemCard(key, payload, motion) {
   const cacheKey = `${key}:${motion}`;
-  if (markerHtmlCache.has(cacheKey)) return markerHtmlCache.get(cacheKey);
+  const cached = markerHtmlCache.get(cacheKey);
+  if (cached !== undefined) return cached;
   const html = decorateInlineEvent(
     Renderer.renderMarkerPayload(payload, { inline: true, motion }),
     payload,
@@ -195,7 +188,6 @@ function renderItemCard(key, payload, motion) {
     key
   );
   markerHtmlCache.set(cacheKey, html);
-  while (markerHtmlCache.size > 64) markerHtmlCache.delete(markerHtmlCache.keys().next().value);
   return html;
 }
 
@@ -218,8 +210,11 @@ export async function displayHandler(content) {
   // Display hooks must never call back into the host for portraits: a host
   // render may be waiting for this callback.
   const portraits = monsters.length ? inlinePortraitImages(monsters, activeContextKey()) : {};
-  let hasFullCard = false,
-    hasCodexCard = false,
+  // Without our stylesheet in the host document (no main-document access) a
+  // full card would need its ~80 KB stylesheet inline in every message; a
+  // compact chip with a few hundred bytes of style stands in instead.
+  const full = mainStyleInstalled();
+  let chips = false,
     cursor = 0,
     rendered = '';
   for (const row of rows) {
@@ -227,34 +222,37 @@ export async function displayHandler(content) {
     cursor = row.end;
     const payload = row.payload;
     if (row.hidden || !payload) continue;
-    if (payloadDomain(payload) === 'item') {
-      const html = renderItemCard(row.key, payload, motion(row.key));
-      if (html) {
-        hasFullCard = true;
-        rendered += html;
-        continue;
-      }
-      const item = payload.view || payload.event?.item;
-      if (item)
-        rendered += `<span class="itemx-event-chip">${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name || item.id)}</span>`;
+    const item = payloadDomain(payload) === 'item';
+    // Encounter and skill cards stay with the newest response only.
+    if (!item && latest.size && !latest.has(row.key)) continue;
+    const html = !full
+      ? ''
+      : item
+        ? renderItemCard(row.key, payload, motion(row.key))
+        : decorateInlineEvent(
+            codexInlineEventHtml(
+              payload,
+              motion(row.key),
+              portraits[payload.view?.id || payload.event?.entity?.id] || ''
+            ),
+            payload,
+            payload.event?.domain,
+            row.key
+          );
+    if (html) {
+      rendered += html;
       continue;
     }
-    // Encounter and skill cards stay with the newest response only.
-    if (latest.size && !latest.has(row.key)) continue;
-    const html = decorateInlineEvent(
-      codexInlineEventHtml(payload, motion(row.key), portraits[payload.view?.id || payload.event?.entity?.id] || ''),
-      payload,
-      payload.event?.domain,
-      row.key
-    );
-    if (html) {
-      hasCodexCard = true;
-      rendered += html;
-    }
+    const entity = payload.view || payload.event?.item || payload.event?.entity;
+    if (!entity || (full && !item)) continue;
+    const glyph = item
+      ? Core.resolveItemEmoji(entity)
+      : entity.glyph || (payload.event?.domain === 'skill' ? '✨' : '⚔️');
+    rendered += `<span class="itemx-event-chip">${Core.esc(glyph)} ${Core.esc(entity.name || entity.id)}</span>`;
+    chips = true;
   }
   rendered += source.slice(cursor);
-  if (mainStyleInstalled() || (!hasFullCard && !hasCodexCard)) return rendered;
-  return `<style>${ITEMX_CHIP_STYLE}${ITEMX_PRESENTATION_STYLE}${hasFullCard ? ITEMX_CHAT_STYLE : ''}${hasCodexCard ? `${ITEMX_CODEX_INLINE_STYLE}${ITEMX_CODEX_INLINE_DENSE_STYLE}${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}` : ''}</style>${rendered}`;
+  return chips && !full ? `<style>${ITEMX_CHIP_STYLE}</style>${rendered}` : rendered;
 }
 
 // FX timers must run even while a queued host/model operation is suspended.

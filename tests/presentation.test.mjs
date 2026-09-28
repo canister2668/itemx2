@@ -237,3 +237,12 @@ test('single-item repair rejects invented values and extra sibling events withou
     assert.equal(fake.state.writes, 0);
   }
 });
+
+test('without our stylesheet in the host document a card falls back to a small chip, not an inline sheet', async () => {
+  await Style.removeMainStyle();
+  setHost(createFakeHost().api);
+  const html = await p.displayHandler(`본문\n\n${pendingAnchor({ event: { kind: 'exam', item }, view: item })}`);
+  assert.match(html, /itemx-event-chip/);
+  assert.doesNotMatch(html, /itemx-card/);
+  assert.ok(html.length < 1500, `fallback is ${html.length} bytes`);
+});

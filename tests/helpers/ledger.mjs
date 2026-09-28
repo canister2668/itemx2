@@ -84,3 +84,13 @@ export function replay(messages) {
   const state = fold(chat, readDocument(chat));
   return { ...state.codex, registry: state.item.registry };
 }
+
+// Installs our stylesheet in a fake host document, as a real session has it;
+// without it the display hook falls back to compact chips.
+export async function withMainStyle(fake) {
+  const Style = await import('../../src/ui/style.js');
+  const { setHost } = await import('../../src/host.js');
+  await Style.removeMainStyle();
+  setHost(fake.api);
+  await Style.installMainStyle();
+}
