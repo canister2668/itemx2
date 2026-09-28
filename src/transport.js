@@ -33,6 +33,18 @@ export const stripItemTransport = (content) =>
 export const RAW_TRANSPORT_RE =
   /<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
 
+// A transport tag inside a planning block or `inline code` is a mention, never
+// a transport: the parsers leave it in place, so treating it as pending raw
+// output would re-run the commit on every catch-up.
+const PLANNING_BLOCK_RE =
+  /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi;
+export function hasRawTransport(text) {
+  const visible = String(text || '')
+    .replace(PLANNING_BLOCK_RE, '')
+    .replace(/`[^`\n]*`/g, '');
+  return RAW_TRANSPORT_RE.test(visible);
+}
+
 // What the model is shown of a stored or streamed text: no anchors, no old
 // markers, no transport of any kind.
 export function requestSafeText(content) {
@@ -89,10 +101,15 @@ export function positionMarkersByNarrative(content) {
   const narrative = source.replace(Core.MARKER_RE, '').replace(Codex.MARKER_RE, '').trimEnd();
   const pieces = narrative.split(/(\n{2,})/);
   const placements = new Map();
-  const trailerIndex = pieces.findIndex(
-    (piece, index) =>
-      index % 2 === 0 && /^\s*(?:\[(?:status|state|route)\b|<(?:state|status|route|risu[-_]))/i.test(piece)
-  );
+  // Only a status block that closes the response is a trailer. The same block
+  // at the top of a response is a header, and cards belong below it.
+  const TRAILER_RE = /^\s*(?:\[(?:status|state|route)\b|<(?:state|status|route|risu[-_]))/i;
+  let trailerIndex = -1;
+  for (let index = pieces.length - 1 - ((pieces.length - 1) % 2); index >= 0; index -= 2) {
+    const piece = pieces[index];
+    if (TRAILER_RE.test(piece)) trailerIndex = index;
+    else if (piece.trim() && !/^\s*\[[^\]\n]*\]\s*$/.test(piece)) break;
+  }
   for (const marker of markers) {
     const item =
       marker.prefix === 'ITEMX2'
@@ -155,7 +172,7 @@ function masked(text, work) {
 export const anchorTransport = (content, markers, options) =>
   masked(content, (text) => anchorMarkers(`${text.trimEnd()}\n\n${markers}`, options));
 
-function anchorMarkers(text, { seed, doc, review = null }) {
+function anchorMarkers(text, { seed, doc, review = null, liveAnchor = null }) {
   const records = [];
   const used = new Set();
   let ordinal = 0;
@@ -163,9 +180,14 @@ function anchorMarkers(text, { seed, doc, review = null }) {
   const out = positioned.replace(TRANSPORT_MARKER_RE, (raw, prefix, code) => {
     const payload = (prefix === 'ITEMX2' ? Core : Codex).decodePayload(code);
     if (!payload?.event || payload.error) return '';
-    const markerSeed = `${seed}|${ordinal++}|${Core.fnv1a(code)}`;
+    // The event, not its view: a later pass sees the committed state, so the
+    // view and previous projections differ while the event is the same.
+    const markerSeed = `${seed}|${ordinal++}|${Core.fnv1a(JSON.stringify(payload.event))}`;
     const key = allocateKey(markerSeed, (candidate) => {
-      if (used.has(candidate) || doc.events[candidate]) return true;
+      if (used.has(candidate)) return true;
+      // A committed key is reused only by a later pass over the same response:
+      // its anchor still stands in the message that owns it.
+      if (doc.events[candidate]) return !(liveAnchor && liveAnchor(candidate, doc.events[candidate]));
       const pending = pendingRecord(candidate);
       return Boolean(pending && pending.seed !== markerSeed);
     });
@@ -186,7 +208,10 @@ function anchorMarkers(text, { seed, doc, review = null }) {
 
 // Parses model output against `state` ({ registry, codex }) and anchors every
 // event it produced.
-export function anchorize(content, { state, settings, seed, doc, review = { source: 'main', checked: false } }) {
+export function anchorize(
+  content,
+  { state, settings, seed, doc, review = { source: 'main', checked: false }, liveAnchor = null }
+) {
   return masked(content, (text) => {
     const items = settings.itemsEnabled
       ? Core.extractResponse(text, state.registry)
@@ -196,7 +221,7 @@ export function anchorize(content, { state, settings, seed, doc, review = { sour
       rarityMode: settings.rarityMode,
       skillEvidenceText: text
     });
-    const anchored = anchorMarkers(codex.content, { seed, doc, review });
+    const anchored = anchorMarkers(codex.content, { seed, doc, review, liveAnchor });
     return {
       content: anchored.content,
       records: anchored.records,

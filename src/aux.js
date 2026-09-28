@@ -165,8 +165,19 @@ export function automaticAuxReady(chat, index, source) {
   );
 }
 
+// The narrative a message carries, independent of its anchors: re-running the
+// output hook or an earlier auxiliary pass may re-key anchors without changing
+// what happened, and that must not look like a new or conflicting message.
+export const narrativeHash = (text) =>
+  Core.fnv1a(
+    String(text || '')
+      .replace(/<!--ix:[0-9a-z]{4,12}-->/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  );
+
 export function automaticAuxSettled(ctx, index, source) {
-  const fingerprint = `${ctx.key}:${index}:${Core.fnv1a(source)}`;
+  const fingerprint = `${ctx.key}:${index}:${narrativeHash(source)}`;
   return workQueue.settled('aux-settle', fingerprint, ITEMX_AUX_SETTLE_MS);
 }
 
@@ -403,7 +414,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     return skip('restored');
   const source = messageData(messages[index]);
   if (!force && !automaticAuxReady(ctx.chat, index, source)) return skip('not-ready');
-  const sourceHash = Core.fnv1a(source);
+  const sourceHash = narrativeHash(source);
   // Guarded by the stable message id: the commit below rewrites the body, so
   // a body-derived key would invalidate itself.
   const chatId = messages[index]?.chatId || `idx-${index}`;
@@ -414,7 +425,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
   let called = false;
   return (async () => {
     const current = await readChat(ctx.characterIndex, ctx.chatIndex);
-    if (!current || Core.fnv1a(messageData(current.message?.[index])) !== sourceHash)
+    if (!current || narrativeHash(messageData(current.message?.[index])) !== sourceHash)
       return { status: 'conflict', events: [], called };
     if (!force && !automaticAuxReady(current, index, messageData(current.message[index]))) return skip('not-ready');
     const loaded = project({ ...ctx, chat: current });
@@ -572,7 +583,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     let records = [];
     const written = await writeDocument(ctx, async (doc, latest) => {
       const message = latest.message?.[index];
-      if (!message || Core.fnv1a(messageData(message)) !== sourceHash) return false;
+      if (!message || narrativeHash(messageData(message)) !== sourceHash) return false;
       if (!valid.length) {
         setGuard(
           doc,
@@ -604,7 +615,11 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       await enrichLore(ctx, doc, chat);
       return { chat };
     });
-    if (!written) return { status: 'conflict', events: [], called };
+    if (!written) {
+      // The model was billed; a lost write still counts toward the retry limit.
+      if (called && !force) await recordFailure(ctx, index, sourceHash, chatId, guardKey);
+      return { status: 'conflict', events: [], called };
+    }
     const stillActive = activeContextKey() === ctx.key;
     if (!valid.length) {
       if (stillActive) {
@@ -659,7 +674,11 @@ function guardSettled(guard, key) {
 async function recordFailure(ctx, index, sourceHash, chatId, guardKey) {
   try {
     await writeDocument(ctx, (doc, latest) => {
-      if (Core.fnv1a(messageData(latest.message?.[index])) !== sourceHash) return false;
+      if (
+        latest.message?.[index]?.chatId !== chatId &&
+        narrativeHash(messageData(latest.message?.[index])) !== sourceHash
+      )
+        return false;
       const prior = auxGuard(doc, chatId);
       const attempts = (prior?.k === guardKey && prior.state === 'failed' ? prior.attempts || 0 : 0) + 1;
       setGuard(doc, chatId, { k: guardKey, q: Quality.REVISION, state: 'failed', events: 0, attempts });

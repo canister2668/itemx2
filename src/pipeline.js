@@ -27,7 +27,7 @@ import { setStatus } from './status.js';
 import { anchorKeys, stripTransport } from './store/anchors.js';
 import { readCache } from './store/document.js';
 import { fold } from './store/replay.js';
-import { RAW_TRANSPORT_RE, anchorize, enabledCodexDomains, protocolForSettings, requestSafeText } from './transport.js';
+import { anchorize, enabledCodexDomains, hasRawTransport, protocolForSettings, requestSafeText } from './transport.js';
 
 export function mainRequestType(type) {
   return !/(translate|emotion|memory|otherax|aux|submodel|image|tts)/i.test(String(type || ''));
@@ -54,14 +54,22 @@ export function injectRequestProtocol(messages, instruction) {
 }
 
 // Seed of the anchor keys of the response being generated in `loaded`'s chat:
-// the triggering user message and the document revision, both stable for
-// every flush and hook pass of one response.
+// the triggering user message, stable for every flush and hook pass of one
+// response, including a pass the host runs again after the commit. A reroll
+// gets fresh keys because the committed ones no longer stand in any message.
 function turnSeed(loaded) {
   const messages = loaded.chat?.message || [];
   let user = '';
   for (let index = messages.length - 1; index >= 0 && !user; index -= 1)
     if (/^(?:user|human)$/i.test(String(messages[index]?.role || ''))) user = messages[index].chatId || `u${index}`;
-  return `${loaded.key}|${user}|${loaded.doc.seq}`;
+  return `${loaded.key}|${user}`;
+}
+
+function liveAnchorIn(chat) {
+  return (key, row) => {
+    const owner = (chat?.message || []).find((message) => message?.chatId && message.chatId === row.c);
+    return Boolean(owner && anchorKeys(Core.messageText(owner)).includes(key));
+  };
 }
 
 export function scheduleLegacyCommitRecovery(confirm = false) {
@@ -91,7 +99,7 @@ export async function commitLatestOutput(ctx) {
   if (index < 0) return { ctx, index, changed: false };
   const source = Core.messageText(ctx.chat.message[index]);
   const pending = anchorKeys(source).filter((key) => pendingRecord(key)?.chatKey === ctx.key);
-  const raw = RAW_TRANSPORT_RE.test(source);
+  const raw = hasRawTransport(source);
   if (!pending.length && !raw) return { ctx, index, changed: false };
   const settings = await settingsFor(ctx.character);
   let events = 0,
@@ -139,14 +147,10 @@ export async function commitLatestOutput(ctx) {
   return { ctx: { ...ctx, chat: result.chat }, index, changed: true };
 }
 
-// Only a failed model call counts toward the retry limit; a lost race or a
-// failure before any model call is simply tried again soon.
+// Every pass that reached the model counts toward the retry limit, whether it
+// failed or lost its write; a race before any model call is tried again soon.
 export const auxVerdict = (result) =>
-  result.status === 'ok' || result.status === 'skip'
-    ? true
-    : result.status === 'fail' && result.called
-      ? false
-      : 'retry';
+  result.status === 'ok' || result.status === 'skip' ? true : result.called ? false : 'retry';
 
 export async function catchUpLatestOutput({ syncUi = true } = {}) {
   if (!activeContextKey() || auxActive() > 0 || scrollActive()) return;
@@ -264,7 +268,7 @@ export async function processOutput(content, type) {
   if (!mainRequestType(type)) return content;
   content = Core.stripInventoryEcho(content);
   // Without a raw tag there is nothing to parse.
-  if (!RAW_TRANSPORT_RE.test(content)) return content;
+  if (!hasRawTransport(content)) return content;
   try {
     // Streaming calls this per flush. The projection beforeRequest just built
     // is still fresh, so a flush reads nothing from the host.
@@ -275,9 +279,12 @@ export async function processOutput(content, type) {
       state: { registry: loaded.snapshot.registry, codex: loaded.codexSnapshot },
       settings: loaded,
       seed: turnSeed(loaded),
-      doc: loaded.doc
+      doc: loaded.doc,
+      liveAnchor: liveAnchorIn(loaded.chat)
     });
-    for (const record of result.records) addPending(record.key, { ...record, chatKey: loaded.key });
+    // A key reused from the document is already committed; only new ones wait.
+    for (const record of result.records)
+      if (!loaded.doc.events[record.key]) addPending(record.key, { ...record, chatKey: loaded.key });
     prepareInlinePortraits(loaded, result.codexSnapshot, loaded);
     if (result.records.length || result.errors) {
       const keys = result.records.map((record) => record.key);

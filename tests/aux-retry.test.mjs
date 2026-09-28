@@ -64,17 +64,24 @@ test('a failure before any model call is not counted', async () => {
   assert.equal(documentOf(fake.state.chat).guards.aux.reply, undefined);
 });
 
-test('catch-up counts only failed model calls; lost races are retried soon', () => {
+test('catch-up counts every pass that reached the model; races before the call are retried soon', () => {
   assert.deepEqual(
     [
       { status: 'conflict', called: false },
       { status: 'fail', called: false },
       { status: 'fail', called: true },
+      { status: 'conflict', called: true },
       { status: 'ok', called: true },
       { status: 'skip', called: false }
     ].map(Pipeline.auxVerdict),
-    ['retry', 'retry', false, true, true]
+    ['retry', 'retry', false, false, true, true]
   );
+});
+
+test('re-keyed anchors are the same narrative for the auxiliary pass', () => {
+  const text = '검을 얻었다.\n\n<!--ix:abcde-->\n\n다음 문단.';
+  assert.equal(Aux.narrativeHash(text), Aux.narrativeHash(text.replace('abcde', 'fghij')));
+  assert.notEqual(Aux.narrativeHash(text), Aux.narrativeHash(text.replace('다음', '다른')));
 });
 
 test('a timed-out model request stays in flight until the provider answers', async (t) => {
