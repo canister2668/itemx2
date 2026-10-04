@@ -139,7 +139,7 @@ export async function rebuildCurrent(ctx = null) {
   setStatus(
     t(
       'ledger.026',
-      warning ? t('ledger.029') : t('runtime.003'),
+      warning ? (settings.autoPruneEnabled ? t('ledger.029') : t('ledger.029-off')) : t('runtime.003'),
       loaded.snapshot.registry.order.length,
       loaded.codexSnapshot.skills.order.length,
       loaded.codexSnapshot.monsters.order.length
@@ -244,8 +244,14 @@ export async function writeDocument(ctx, change, { idle = true } = {}) {
   const result = await change(doc, latest);
   if (result === false) return null;
   const chat = result?.chat || latest;
-  // At the storage limit a write prunes what is provably gone, when it can.
-  if (bytesOf(doc) >= ITEMX_STORAGE_WARNING_BYTES && !pruneBlocker(chat)) pruneDocument(doc, chat);
+  // At the storage limit a write prunes what is provably gone, when it can and
+  // the bot has not turned automatic cleanup off.
+  if (
+    bytesOf(doc) >= ITEMX_STORAGE_WARNING_BYTES &&
+    !pruneBlocker(chat) &&
+    (!ctx.character || (await settingsFor(ctx.character)).autoPruneEnabled)
+  )
+    pruneDocument(doc, chat);
   const next = withDocument(chat, doc);
   const written = await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
   if (activeContextKey() === ctx.key) invalidateLoaded();

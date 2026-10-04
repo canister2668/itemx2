@@ -1289,6 +1289,7 @@ export const rootStateFingerprint = (loaded) =>
     loaded.rarityMode,
     Number(loaded.moduleAssetsEnabled),
     Number(loaded.lorebookEncounterEnabled),
+    Number(loaded.autoPruneEnabled),
     Number(loaded.debugEnabled),
     JSON.stringify(EntityHistory.preferences(loaded.prefs)),
     loaded.turn || 0

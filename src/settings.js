@@ -27,6 +27,7 @@ export const schema = Object.freeze({
   fontScale: FONT_SCALES,
   moduleAssetsEnabled: false,
   lorebookEncounterEnabled: false,
+  autoPruneEnabled: true,
   skin: SKIN_MODES
 });
 

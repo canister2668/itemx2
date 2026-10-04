@@ -445,7 +445,7 @@ export function settingsPanelHtml(loaded, skin, parts) {
   )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
     t('ui-settings.101'),
     t('ui-settings.100')
-  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${setCard(t('ui-settings.auto-prune-title'), t('ui-settings.auto-prune-note'), setSwitch(skin, 'auto-prune', loaded.autoPruneEnabled))}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
 }
 
 export function settingsDomainControls(loaded, skin) {
@@ -714,6 +714,18 @@ export function rootSettingActions() {
         setStatus(t('ui-settings.036', value ? 'ON' : 'OFF'));
         if (value) await scanLorebookEncounters({ refresh: true, silent: true });
         await updateRootSwitch('.x-risu-itemx2-setting-lorebook', value);
+      }
+    },
+    {
+      hook: 'itemx2-setting-auto-prune',
+      run: async () => {
+        const loaded = await cachedOrRebuildCurrent();
+        if (!loaded) return;
+        const value = !(cachedSettings(loaded.character) || (await settingsFor(loaded.character))).autoPruneEnabled;
+        await changeSettings(loaded.character, { autoPruneEnabled: value });
+        loaded.autoPruneEnabled = value;
+        setStatus(t('ui-settings.auto-prune-status', value ? 'ON' : 'OFF'));
+        await updateRootSwitch('.x-risu-itemx2-setting-auto-prune', value);
       }
     },
     {

@@ -163,7 +163,7 @@ test('old cards render from their frozen payload outside the replayed window', (
   assert.equal(Ledger.anchorPayload(key, loaded).view.name, 'ring');
 });
 
-const settingsDoc = (id) => ({
+const settingsDoc = (id, extra = {}) => ({
   v: 1,
   global: {},
   characters: {
@@ -173,7 +173,8 @@ const settingsDoc = (id) => ({
       auxOutput: 'off',
       itemsEnabled: true,
       skillsEnabled: false,
-      encountersEnabled: false
+      encountersEnabled: false,
+      ...extra
     }
   }
 });
@@ -684,7 +685,7 @@ test('cleanup refuses a chat with branches, whose other branches hold cards the 
   assert.equal(Ledger.pruneBlocker({ message: [] }), '');
 });
 
-test('a write at the storage limit prunes gone cards on its own, never in a branch chat', async () => {
+test('a write at the storage limit prunes gone cards on its own, never in a branch chat or when turned off', async () => {
   const build = (extra = {}) => {
     const chat = stamped(chatOf([[own('ring')], [own('cup')]]));
     const doc = documentOf(chat);
@@ -692,18 +693,16 @@ test('a write at the storage limit prunes gone cards on its own, never in a bran
     doc.events.gone1 = { c: 'deleted', d: 'item', e: own('junk'), s: 0, t: 1, pad: 'x'.repeat(16 * 1024 * 1024) };
     return { id: 'chat', ...withDoc(chat, doc), ...extra };
   };
-  for (const [name, extra, expectGone] of [
-    ['plain', {}, true],
-    ['branch', { activeBranchId: 'b2' }, false]
+  for (const [name, extra, setting, expectGone] of [
+    ['plain', {}, {}, true],
+    ['branch', { activeBranchId: 'b2' }, {}, false],
+    ['off', {}, { autoPruneEnabled: false }, false]
   ]) {
-    const fake = createFakeHost({
-      chat: build(extra),
-      character: { chaId: `lim${name}`, name: 'T' },
-      settings: settingsDoc(`lim${name}`)
-    });
+    const character = { chaId: `lim${name}`, name: 'T' };
+    const fake = createFakeHost({ chat: build(extra), character, settings: settingsDoc(`lim${name}`, setting) });
     setHost(fake.api);
     Session.resetSession(`lim${name}:chat`);
-    const ctx = { characterIndex: 0, chatIndex: 0, key: `lim${name}:chat` };
+    const ctx = { characterIndex: 0, chatIndex: 0, character, key: `lim${name}:chat` };
     await Ledger.writeDocument(ctx, () => ({}));
     assert.equal(Boolean(documentOf(fake.state.chat).events.gone1), !expectGone, name);
     assert.deepEqual(owned(fake.state.chat), ['ring', 'cup'], name);
