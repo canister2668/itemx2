@@ -35,6 +35,7 @@ import {
   stripTransport
 } from './store/anchors.js';
 import { DOCUMENT_KEY, footprint, readDocument, withDocument } from './store/document.js';
+import { freeze, thaw } from './store/payload.js';
 import { fold, restampEntries, windowOffset } from './store/replay.js';
 
 const messageId = (message) => (typeof message?.chatId === 'string' ? message.chatId : '');
@@ -89,16 +90,18 @@ const asPayload = (row) =>
     : null;
 
 // A committed card frozen at its commit: older cards render without a replay.
-const frozenPayload = (row) =>
-  row?.v
+const frozenPayload = (row) => {
+  const frozen = thaw(row);
+  return frozen
     ? {
         event: row.e,
-        view: row.v,
-        previous: row.p || null,
+        view: frozen.view,
+        previous: frozen.previous,
         review: row.r,
         domain: row.d === 'item' ? 'item' : row.e?.domain
       }
     : null;
+};
 
 // The card behind one anchor: the fold's view, the parsed but not yet
 // committed record of the current response, or the frozen committed card.
@@ -206,7 +209,8 @@ export function commitRecords(doc, records, chatId) {
       d: record.domain === 'item' ? 'item' : 'codex',
       e: record.event,
       ...(record.review ? { r: record.review } : {}),
-      s: doc.seq
+      s: doc.seq,
+      t: Date.now()
     };
   }
 }
@@ -221,13 +225,7 @@ export function stampFrom(doc, chat, index) {
     const event = id.startsWith('e:') ? doc.events[id.slice(2)] : null;
     if (!event) continue;
     // A card the replay can no longer apply must not keep its old face.
-    if (row.view) {
-      event.v = row.view;
-      event.p = row.previous || null;
-    } else {
-      delete event.v;
-      delete event.p;
-    }
+    freeze(event, row.view, row.previous || null);
   }
   return true;
 }
@@ -461,4 +459,55 @@ export function itemxStorageFootprint(chat) {
   }
   const { stateBytes } = footprint(chat);
   return { stateBytes, anchorCount, totalBytes: stateBytes };
+}
+
+// Drops what a fully loaded chat shows to be gone: card events whose anchor
+// stands in no message (rerolled, deleted or edited away) and aux guards of
+// deleted messages, and rewrites frozen cards in their compact form. Events
+// made during the newest turn are kept: a reroll candidate the reader may
+// still swipe back to carries them. Refuses a partially loaded chat, where an
+// absent anchor may simply not be loaded.
+export async function compactCurrentChatStorage() {
+  const { ctx, latest } = await requireIdleActive({
+    missing: t('ui-settings.139'),
+    unreadable: t('ledger.006'),
+    streaming: t('ledger.010')
+  });
+  if (windowOffset(latest)) throw new Error(t('ledger.partial-chat'));
+  const before = footprint(latest).stateBytes;
+  let removed = 0;
+  await writeDocument(ctx, (doc, current) => {
+    if (windowOffset(current)) throw new Error(t('ledger.partial-chat'));
+    const messages = current.message || [];
+    const live = new Set(messages.flatMap((message) => anchorKeys(Core.messageText(message))));
+    const ids = new Set(messages.map(messageId).filter(Boolean));
+    // The newest turn starts at the last user message; an event committed
+    // after it may belong to a reroll candidate. Rows from before 2.5.1 carry
+    // no commit time and fall back to their sequence.
+    let lastUser = -1;
+    for (let index = messages.length - 1; index >= 0 && lastUser < 0; index -= 1)
+      if (/^(?:user|human)$/i.test(String(messages[index]?.role || ''))) lastUser = index;
+    const turnStart = Number(messages[lastUser]?.time) || 0;
+    let settledSeq = 0;
+    for (const message of messages.slice(0, Math.max(0, lastUser)))
+      for (const key of anchorKeys(Core.messageText(message)))
+        settledSeq = Math.max(settledSeq, doc.events[key]?.s || 0);
+    const isCurrentTurn = (row) =>
+      Number.isFinite(row.t) && turnStart ? row.t >= turnStart : (row.s || 0) > settledSeq;
+    for (const [key, row] of Object.entries(doc.events)) {
+      if (live.has(key) || isCurrentTurn(row)) continue;
+      delete doc.events[key];
+      removed += 1;
+    }
+    for (const id of Object.keys(doc.guards.aux)) if (!ids.has(id)) delete doc.guards.aux[id];
+    for (const row of Object.values(doc.events)) {
+      const frozen = thaw(row);
+      if (frozen) freeze(row, frozen.view, frozen.previous);
+    }
+  });
+  invalidateLoaded();
+  void emit('data-reset');
+  const loaded = await rebuildCurrent();
+  const after = footprint(loaded?.chat || latest).stateBytes;
+  return { removed, savedBytes: Math.max(0, before - after), loaded };
 }

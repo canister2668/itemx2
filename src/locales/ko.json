@@ -677,5 +677,25 @@
   "aux.cancel-label": "보조 복구 취소",
   "ui-settings.aux-cancel": "보조 복구 취소",
   "ui-settings.aux-cancel-pending": "취소한 요청이 끝나길 기다리는 중입니다",
-  "ledger.partial-chat": "채팅 앞부분이 아직 불러와지지 않았습니다. 맨 위까지 스크롤하거나 메시지를 한 번 보낸 뒤 다시 시도하세요."
+  "ledger.partial-chat": "채팅 앞부분이 아직 불러와지지 않았습니다. 맨 위까지 스크롤하거나 메시지를 한 번 보낸 뒤 다시 시도하세요.",
+  "ui-settings.020": [
+    "ITEMX 저장 공간 정리 실패: ",
+    ""
+  ],
+  "ui-settings.021": [
+    "정리 실패 · ",
+    ""
+  ],
+  "ui-settings.022": "저장 공간 정리 실패",
+  "ui-settings.023": [
+    "정리 완료 · ",
+    " KiB 절감 · 사라진 카드 ",
+    "개"
+  ],
+  "ui-settings.024": "리롤·삭제로 사라진 카드 기록을 정리하는 중입니다…",
+  "ui-settings.025": "저장 공간 정리 중",
+  "ui-settings.027": "정리 확인 대기",
+  "ui-settings.102": "저장 공간 정리",
+  "ui-settings.confirm-storage": "리롤·삭제로 사라진 카드 기록을 지울까요? 현재 인벤토리는 그대로입니다. 채팅 전체를 불러온 상태에서만 됩니다.",
+  "ui-settings.confirm-yes-storage": "예, 정리"
 }

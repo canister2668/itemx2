@@ -521,6 +521,8 @@ export async function setRootOpen(open) {
       uiState.rootOpen = false;
       // A pending yes / no question does not survive closing the drawer.
       uiState.cleanupArmed = false;
+      uiState.storageCleanupArmed = false;
+      uiState.storageCleanupArmed = false;
       uiState.allowDrawerOverSettings = false;
       invalidateHostSettingsVisibility();
       await syncHostSettingsVisibility();

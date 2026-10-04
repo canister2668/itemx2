@@ -51,7 +51,7 @@ test('the drawer routes every settings control by class, never by attribute', as
   assert.deepEqual(drawer.match(/data-(?:action|seg)="/g) || [], []);
   assert.deepEqual(cardTitles(drawer).slice(0, 1), ['Risu 연결']);
   // The router looks these up by class, including its three aliases.
-  for (const hook of ['main', 'lorebook', 'cleanup', 'rebuild', 'backup'])
+  for (const hook of ['main', 'lorebook', 'cleanup', 'rebuild', 'storage-cleanup', 'backup'])
     assert.ok(drawer.includes(`itemx2-setting-${hook}`), `drawer lost itemx2-setting-${hook}`);
   for (const level of ['full', 'lite', 'off'])
     assert.ok(drawer.includes(`itemx2-seg-fx-${level}`), `drawer lost itemx2-seg-fx-${level}`);

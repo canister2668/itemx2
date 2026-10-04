@@ -53,12 +53,14 @@ async function run(id, chunks) {
   const committed = fake.state.chat.message.at(-1).data;
   return {
     committed,
-    // 2.5 adds the frozen card payload (v, p) and state entries to the
+    // 2.5 adds the frozen card payload, the commit time and state entries to the
     // ledger; the events themselves are compared with the 2.4 baseline.
     events: Object.fromEntries(
-      Object.entries(documentOf(fake.state.chat).events).map(([key, { v, p, ...row }]) => {
-        assert.ok(v, `frozen view of ${key}`);
-        assert.ok(p !== undefined, `frozen previous of ${key}`);
+      Object.entries(documentOf(fake.state.chat).events).map(([key, { v, p, vd, pd, t: committedAt, ...row }]) => {
+        assert.ok(v || vd, `frozen view of ${key}`);
+        void p;
+        void pd;
+        assert.ok(Number.isFinite(committedAt), `commit time of ${key}`);
         return [key, row];
       })
     ),

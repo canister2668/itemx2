@@ -82,8 +82,12 @@ test('an edit of the newest reply that removes a card anchor is honoured', () =>
   const chat = stamped(chatOf([[own('ring')], [own('owl'), own('cage')]]));
   const last = chat.message.at(-1);
   const keys = Anchors.anchorKeys(last.data);
+  // Commit times: each event right after its reply (replies at 1005, 1015, 1025).
+  const timed = documentOf(chat);
+  for (const row of Object.values(timed.events)) row.t = 1006 + (row.s - 1) * 10;
+  const chatTimed = withDoc(chat, timed);
   const edited = {
-    ...chat,
+    ...chatTimed,
     message: [...chat.message.slice(0, -1), { ...last, data: last.data.replace(Anchors.anchor(keys[1]), '') }]
   };
   assert.deepEqual(owned(edited), ['ring', 'owl']);
@@ -153,7 +157,7 @@ test('old cards render from their frozen payload outside the replayed window', (
   const full = stamped(tail(chatOf(loot), 2));
   const doc = documentOf(full);
   const key = Anchors.anchorKeys(full.message[1].data)[0];
-  assert.equal(doc.events[key].v.name, 'ring');
+  assert.equal(Ledger.anchorPayload(key, { doc, views: new Map() }).view.name, 'ring');
   const loaded = Ledger.project({ key: 'k', chat: windowOf(full, 2) });
   assert.equal(loaded.views.has(`e:${key}`), false);
   assert.equal(Ledger.anchorPayload(key, loaded).view.name, 'ring');
@@ -327,7 +331,7 @@ test('a card the replay can no longer apply loses its frozen face', () => {
   const doc = documentOf(edited);
   assert.ok(Ledger.stampFrom(doc, edited, edited.message.length - 1));
   const consume = Anchors.anchorKeys(edited.message.at(-1).data)[0];
-  assert.equal(doc.events[consume].v, undefined);
+  assert.equal(doc.events[consume].v ?? doc.events[consume].vd, undefined);
 });
 
 test('drawer evidence names the card anchor, which a chat copy keeps', () => {
@@ -603,4 +607,63 @@ test('backup export and import refuse a window that cannot ground the state', as
   });
   await assert.rejects(() => Ledger.prepareBackupImport(backup, 'bk:chat', 'replace'), /맨 위까지 스크롤/);
   assert.equal(fake.state.writes, 0);
+});
+
+// 2.5.1: frozen cards are stored as differences; storage cleanup.
+
+test('compact frozen cards thaw to exactly the view the replay produced', async () => {
+  const { thaw } = await import('../src/store/payload.js');
+  const chat = stamped(
+    chatOf([[own('potion', '물약', { itemType: '소모품', count: 2 })], [take('potion')], [own('owl')]])
+  );
+  const doc = documentOf(chat);
+  const replay = Replay.fold({ ...chat, scriptstate: {} }, { ...doc, states: [] }).views;
+  for (const [key, row] of Object.entries(doc.events)) {
+    const frozen = thaw(row);
+    const view = replay.get(`e:${key}`);
+    assert.deepEqual(frozen.view, view.view, key);
+    assert.deepEqual(frozen.previous, view.previous ?? null, key);
+    if (row.e.item) assert.equal(row.v, undefined, 'an exam stores only its difference');
+  }
+});
+
+test('storage cleanup drops events of deleted replies, keeps the newest turn, and refuses a partial chat', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'] });
+  const chat = stamped(chatOf([[own('ring')], [own('cup')], [own('owl')]]));
+  // The cup reply is deleted; the owl reply was rerolled into a card-less reply.
+  const cupKey = Anchors.anchorKeys(chat.message[3].data)[0];
+  const owlKey = Anchors.anchorKeys(chat.message[5].data)[0];
+  // Commit times: each event right after its reply (replies at 1005, 1015, 1025).
+  const timed = documentOf(chat);
+  for (const row of Object.values(timed.events)) row.t = 1006 + (row.s - 1) * 10;
+  const edited = {
+    ...withDoc(chat, timed),
+    message: [
+      ...chat.message.slice(0, 2),
+      chat.message[4],
+      { role: 'char', chatId: 'new', data: '조용한 응답', time: 9999 }
+    ]
+  };
+  const partial = createFakeHost({
+    chat: { id: 'chat', ...windowOf(edited, 2) },
+    character: { chaId: 'sc', name: 'T' },
+    settings: settingsDoc('sc')
+  });
+  setHost(partial.api);
+  Session.resetSession('sc:chat');
+  await assert.rejects(() => Ledger.compactCurrentChatStorage(), /맨 위까지 스크롤/);
+  assert.equal(partial.state.writes, 0);
+  const fake = createFakeHost({
+    chat: { id: 'chat', ...edited },
+    character: { chaId: 'sc', name: 'T' },
+    settings: settingsDoc('sc')
+  });
+  setHost(fake.api);
+  Session.resetSession('sc:chat');
+  const result = await Ledger.compactCurrentChatStorage();
+  const doc = documentOf(fake.state.chat);
+  assert.equal(result.removed, 1);
+  assert.equal(doc.events[cupKey], undefined);
+  assert.ok(doc.events[owlKey], 'the newest turn keeps its reroll candidate');
+  assert.deepEqual(owned(fake.state.chat), ['ring']);
 });

@@ -14,6 +14,7 @@ import {
   cleanCurrentChatItemx,
   commitBackupImport,
   exportCurrentBackup,
+  compactCurrentChatStorage,
   itemxStorageFootprint,
   prepareBackupImport,
   rebuildCurrent
@@ -344,7 +345,15 @@ export function confirmCards(skin, parts) {
     'itemx2-setting-storage-cleanup': [
       t('ui-settings.106'),
       t('ui-settings.105', parts.footprintLabel),
-      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}</span>`
+      parts.storageCleanupArmed
+        ? confirmRow(
+            skin,
+            t('ui-settings.confirm-storage'),
+            'storage-cleanup',
+            t('ui-settings.confirm-yes-storage'),
+            'storage-cleanup-cancel'
+          )
+        : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}${setButton(skin, 'storage-cleanup', t('ui-settings.102'))}</span>`
     ],
     'itemx2-setting-cleanup': [
       t('ui-settings.110'),
@@ -480,6 +489,7 @@ export function settingsStorageParts(loaded) {
   const footprint = itemxStorageFootprint(loaded.chat);
   return {
     cleanupArmed: uiState.cleanupArmed,
+    storageCleanupArmed: uiState.storageCleanupArmed,
     footprintLabel: t('ui-settings.060', Math.max(1, Math.ceil(footprint.totalBytes / 1024)), footprint.anchorCount)
   };
 }
@@ -760,6 +770,34 @@ export function rootSettingActions() {
       }
     })),
     {
+      hook: 'itemx2-setting-storage-cleanup',
+      run: armed(
+        'storageCleanupArmed',
+        'itemx2-setting-storage-cleanup',
+        async () => {
+          setStatus(t('ui-settings.027'));
+        },
+        async () => {
+          setStatus(t('ui-settings.025'));
+          await showRootFeedback(t('ui-settings.024'), 'working', 0);
+          try {
+            const result = await compactCurrentChatStorage();
+            await showRootFeedback(
+              t('ui-settings.023', Math.round(result.savedBytes / 1024), result.removed),
+              'success',
+              4200
+            );
+            if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
+          } catch (error) {
+            uiState.storageCleanupArmed = false;
+            setStatus(t('ui-settings.022'));
+            await showRootFeedback(t('ui-settings.021', error.message || error), 'error', 4200);
+            await notifyUser(t('ui-settings.020', error.message || error), 'error');
+          }
+        }
+      )
+    },
+    {
       hook: 'itemx2-setting-cleanup',
       run: armed(
         'cleanupArmed',
@@ -786,6 +824,10 @@ export function rootSettingActions() {
           }
         }
       )
+    },
+    {
+      hook: 'itemx2-setting-storage-cleanup-cancel',
+      run: disarm('storageCleanupArmed', 'itemx2-setting-storage-cleanup')
     },
     { hook: 'itemx2-setting-cleanup-cancel', run: disarm('cleanupArmed', 'itemx2-setting-cleanup') },
     {
