@@ -17,6 +17,7 @@ import { debugRecord, fail, withTimeout, workQueue } from './kernel.js';
 import {
   commitManualEvents,
   commitRecords,
+  stampFrom,
   presentationRecord,
   project,
   rebuildCurrent,
@@ -652,6 +653,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
         ...latest,
         message: latest.message.map((one, at) => (at === index ? { ...one, [field]: anchored.content } : one))
       };
+      stampFrom(doc, chat, index);
       await enrichLore(ctx, doc, chat);
       return { chat };
     });
@@ -798,16 +800,24 @@ export async function repairOneItem(loaded, id) {
     const chat = active.chat;
     if (chatIsStreaming(chat)) throw new Error(t('aux.010'));
     const expectedFingerprint = replayFingerprint(chat);
-    const sourceIndex = record.review?.evidenceIndex ?? record.messageIndex;
+    // The evidence message: by its card anchor (survives chat copies), else by id.
+    const evidence = record.review?.evidence ?? record.evidence ?? {};
+    const messages = chat.message || [];
+    let sourceIndex = evidence.key
+      ? messages.findIndex((message) => anchorKeys(messageData(message)).includes(evidence.key))
+      : -1;
+    if (sourceIndex < 0 && evidence.chatId)
+      sourceIndex = messages.findIndex((message) => message?.chatId === evidence.chatId);
+    if (sourceIndex < 0) throw new Error(t('aux.008'));
     const source = messageData(chat.message?.[sourceIndex]);
     const reg = project(active).snapshot.registry,
       item = reg.items[id];
     if (!item || item.possession === 'removed') throw new Error(t('aux.009'));
     const conversation = auxiliaryConversationContext(chat, sourceIndex);
     const narrative = [conversation.triggeringUser, conversation.recent, auxiliaryVisibleText(source)].join('\n\n');
-    const evidence = Quality.detectItemEvidence(narrative, item, Object.values(reg.items));
-    if (!evidence.segment) throw new Error(t('aux.008'));
-    const partial = { event: { kind: 'exam', item }, missing, evidence };
+    const found = Quality.detectItemEvidence(narrative, item, Object.values(reg.items));
+    if (!found.segment) throw new Error(t('aux.008'));
+    const partial = { event: { kind: 'exam', item }, missing, evidence: found };
     const raw = modelText(await runAuxModel(Quality.repairPrompt([partial], narrative), t('aux.007', item.name)));
     const parsed = Core.extractResponse(raw, reg);
     const partialMap = new Map([[id, partial]]);
@@ -822,7 +832,7 @@ export async function repairOneItem(loaded, id) {
       { ...loaded, chat: latest.chat, expectedFingerprint },
       events,
       t('aux.004'),
-      { source: 'auxiliary', checked: true, missing: remaining, evidenceIndex: sourceIndex },
+      { source: 'auxiliary', checked: true, missing: remaining, evidence },
       false
     );
     if (activeContextKey() === loaded.key)

@@ -12,7 +12,6 @@ import { rebuildCurrent, writeDocument } from './ledger.js';
 import { encounterRegistryFingerprint } from './portraits.js';
 import { settingsFor } from './settings.js';
 import { setStatus } from './status.js';
-import { readCache } from './store/document.js';
 import { fold } from './store/replay.js';
 let lorebookCache = { key: '', at: 0, rows: [] };
 
@@ -56,7 +55,7 @@ export async function enrichLore(ctx, doc, chat) {
     const settings = await settingsFor(ctx.character);
     if (!settings.encountersEnabled || !settings.lorebookEncounterEnabled) return;
     const entries = await lorebookEntries(ctx.key);
-    const base = fold(chat, doc, { checkpoint: readCache(chat)?.checkpoint || null }).codex;
+    const base = fold(chat, doc).codex;
     const scanned = Lorebook.scan(base, entries, doc.lore);
     if (scanned.result.enriched || scanned.result.removed) doc.lore = scanned.ledger;
   } catch (error) {
@@ -73,7 +72,7 @@ export async function scanLorebookEncounters({ refresh = false, silent = false }
     if (!active || active.key !== ctx.key) throw new Error(t('ui-panel.134'));
     let scanned = null;
     const written = await writeDocument(ctx, (doc, latest) => {
-      const base = fold(latest, doc, { checkpoint: readCache(latest)?.checkpoint || null }).codex;
+      const base = fold(latest, doc).codex;
       const sourceFingerprint = `${ctx.key}:${encounterRegistryFingerprint(base)}:${Core.fnv1a(JSON.stringify(entries))}:${Core.fnv1a(JSON.stringify(doc.lore.rows))}`;
       if (!refresh && silent && workQueue.revision('lorebook') === sourceFingerprint) {
         scanned = { changed: false, sourceFingerprint, result: { enriched: 0, removed: 0, matched: 0, ambiguous: 0 } };

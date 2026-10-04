@@ -10,8 +10,6 @@ export const uiState = {
   allowDrawerOverSettings: false,
   backupOpen: false,
   cleanupArmed: false,
-  storageCleanupArmed: false,
-  oldMarkersArmed: false,
   historyView: { open: false, key: '', domain: 'item', filter: 'recent', selected: null, page: 0 },
   historyRows: [],
   powerButtonState: null,

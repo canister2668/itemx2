@@ -137,7 +137,7 @@ test('portable backup round trips all domains, history ages, equipment, and port
   assert.equal(h.writes, 1);
 });
 
-test('restored state survives new patches, compaction, restart-style rebuild and cleanup', async () => {
+test('restored state survives new patches, a long chat, restart-style rebuild and cleanup', async () => {
   const h = await harness(),
     value = source(h);
   const preview = await h.api.prepareBackupImport(JSON.stringify(value), h.ctx.key);
@@ -161,7 +161,6 @@ test('restored state survives new patches, compaction, restart-style rebuild and
   assert.equal(h.api.history.currentEntities(loaded, 'monster').length, 0);
   assert.equal(h.api.history.entries(loaded, 'item')[0].remaining, 8);
   for (let i = 0; i < 70; i++) h.ctx.chat.message.push({ role: 'user', data: '진행' }, { role: 'char', data: '응답' });
-  await h.api.compactCurrentChatStorage();
   loaded = backupState(h.ctx);
   assert.equal(loaded.snapshot.registry.items.sword.location, 'equipped');
   assert.equal(loaded.codexSnapshot.skills.entries.s.mastery, 80);

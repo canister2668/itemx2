@@ -152,25 +152,30 @@ test('sealed skills stay in the active list while lost skills and resolved encou
   assert.equal(h.policy.entries(value, 'monster')[0].archived, false);
 });
 
-test('a checkpointed projection keeps lifecycle metadata and the authoritative document', () => {
+test('a projection from a state entry keeps lifecycle metadata and turn ages of the full chat', () => {
   const chat = anchored(
-    chatOf([
-      [exam('pill')],
-      [patch('pill', 'consume', { quantity: 1 })],
-      ...Array.from({ length: 160 }, (_, index) => [exam(`filler${index}`, 'material')])
-    ])
+    chatOf([[exam('pill')], [patch('pill', 'consume', { quantity: 1 })], ...Array.from({ length: 6 }, () => [])])
   );
-  const full = Replay.fold(chat, documentOf(chat), { full: true });
-  assert.ok(full.checkpoint);
-  const before = chat.scriptstate[Document.DOCUMENT_KEY];
-  const cached = {
-    ...chat,
-    scriptstate: { ...chat.scriptstate, [Document.CACHE_KEY]: JSON.stringify({ v: 1, checkpoint: full.checkpoint }) }
+  const doc = documentOf(chat);
+  Replay.restampEntries(chat, doc, 0);
+  assert.equal(doc.states.length, 2);
+  const stamped = { ...chat, scriptstate: { ...chat.scriptstate, [Document.DOCUMENT_KEY]: JSON.stringify(doc) } };
+  const full = h.project({ key: 'k', chat: stamped });
+  // The host keeps only the newest four messages in memory.
+  const windowed = {
+    ...stamped,
+    message: stamped.message.slice(-4),
+    messageOffset: stamped.message.length - 4,
+    messagesFullyLoaded: false
   };
-  const value = h.project({ key: 'k', chat: cached });
-  assert.equal(value.complete, false);
-  assert.deepEqual(JSON.parse(JSON.stringify(value.snapshot.history)), JSON.parse(JSON.stringify(full.item.history)));
-  assert.equal(cached.scriptstate[Document.DOCUMENT_KEY], before);
+  const value = h.project({ key: 'k', chat: windowed });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(value.snapshot.history)),
+    JSON.parse(JSON.stringify(full.snapshot.history))
+  );
+  assert.equal(row(value).closed, true);
+  assert.equal(row(value).age, row(full).age);
+  assert.equal(stamped.scriptstate[Document.DOCUMENT_KEY], JSON.stringify(doc));
 });
 
 test('old tombstones stay out of ordinary model anchors even when pinned and never erase original markers', () => {

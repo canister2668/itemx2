@@ -38,7 +38,7 @@ function drawerSettings(rt) {
 
 test('the drawer dispatches settings from one ordered table', async () => {
   const hooks = rt.rootSettingActions().map((a) => a.hook);
-  assert.equal(hooks.length, 39);
+  assert.equal(hooks.length, 35);
   assert.equal(new Set(hooks).size, hooks.length, 'duplicate hook would shadow a later control');
   for (const action of rt.rootSettingActions()) assert.equal(typeof action.run, 'function');
 });
@@ -79,11 +79,7 @@ test('the table keeps the dispatch order the chain had', async () => {
     'itemx2-setting-font-small',
     'itemx2-setting-font-medium',
     'itemx2-setting-font-large',
-    'itemx2-setting-storage-cleanup',
     'itemx2-setting-cleanup',
-    'itemx2-setting-old-markers',
-    'itemx2-setting-old-markers-cancel',
-    'itemx2-setting-storage-cleanup-cancel',
     'itemx2-setting-cleanup-cancel',
     'itemx2-setting-rebuild'
   ];

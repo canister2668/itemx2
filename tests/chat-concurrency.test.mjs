@@ -5,6 +5,51 @@ import { setHost } from '../src/host.js';
 import { readChat, saveChat } from '../src/chat-io.js';
 import { workQueue } from '../src/kernel.js';
 
+// Haejeok b7437 Chat.svelte rm(): the handler keeps the chat object it read
+// across `await alertConfirm()`, splices that object, then calls
+// messageStore.deleteMessage(chat.id, messageId), which finds the chat again
+// by id and filters the message out of whatever object is current.
+function haejeokDelete(fake, heldChat, messageId) {
+  const index = heldChat.message.findIndex((message) => message.chatId === messageId);
+  if (index >= 0) heldChat.message.splice(index, 1);
+  const current = fake.state.chat;
+  if (current?.id === heldChat.id) current.message = current.message.filter((message) => message.chatId !== messageId);
+}
+
+test('a write landing while the host delete confirmation is open does not keep the deleted response', async () => {
+  const fake = createFakeHost({
+    chat: {
+      id: 'delete-chat',
+      message: [{ chatId: 'reply', role: 'char', data: 'Entire AI response' }],
+      scriptstate: {}
+    }
+  });
+  setHost(fake.api);
+  const heldByDeleteHandler = fake.state.chat;
+  const base = await readChat(0, 0);
+  await saveChat(0, 0, { ...base, scriptstate: { itemx: 'guard' } }, base);
+  assert.notEqual(fake.state.chat, heldByDeleteHandler, 'the write replaced the host chat object');
+  haejeokDelete(fake, heldByDeleteHandler, 'reply');
+  assert.equal(fake.state.chat.message.length, 0, 'the deleted response must stay deleted');
+  assert.equal(fake.state.chat.scriptstate.itemx, 'guard');
+});
+
+test('deleting an entire response before saving rejects the stale proposal', async () => {
+  const fake = createFakeHost({
+    chat: {
+      id: 'gone-chat',
+      message: [{ chatId: 'reply', data: 'Delete this response' }],
+      scriptstate: {}
+    }
+  });
+  setHost(fake.api);
+  const base = await readChat(0, 0);
+  fake.state.chat.message = [];
+  await assert.rejects(saveChat(0, 0, { ...base, scriptstate: { itemx: 'pending' } }, base), /changed|conflict/i);
+  assert.equal(fake.state.writes, 0);
+  assert.equal(fake.state.chat.message.length, 0);
+});
+
 function harness() {
   const fake = createFakeHost({ chat: { message: [{ chatId: 'a', data: 'original' }], scriptstate: {} } });
   setHost(fake.api);

@@ -143,7 +143,7 @@ function capture(loaded) {
 function counts(value) {
   return domains.map((domain) => value.records[domain].length);
 }
-function restore(value, chat) {
+function restore(value, turn = 0) {
   const item = {
     schema: Core.VERSION,
     rev: 2,
@@ -155,7 +155,6 @@ function restore(value, chat) {
   const codex = Codex.snapshot();
   codex.history = { skill: {}, monster: {} };
   const prefs = { after: value.after, keep: {}, archived: {} };
-  const at = (chat.message || []).length - 1;
   for (const domain of domains) {
     const registry = domain === 'item' ? item.registry : domain === 'skill' ? codex.skills : codex.monsters;
     const history = domain === 'item' ? item.history : codex.history[domain];
@@ -166,7 +165,7 @@ function restore(value, chat) {
       (registry.items || registry.entries)[one.id] = one;
       if (row.history) {
         const source = `import:${domain}:${one.id}:${Core.fnv1a(JSON.stringify(row))}`;
-        history[one.id] = { at, source, reason: row.history.reason, ageOffset: row.history.age };
+        history[one.id] = { at: turn - row.history.age, source, reason: row.history.reason };
         if (row.archived) prefs.archived[key] = source;
       }
       if (row.kept) prefs.keep[key] = true;

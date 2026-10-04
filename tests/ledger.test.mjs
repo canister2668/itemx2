@@ -69,11 +69,13 @@ test('a deleted message takes its events with it', () => {
   assert.deepEqual(names(chat), ['방패']);
 });
 
-test('an anchor moved into another message does not count there', () => {
+test('an anchor counts in whichever message carries it, so a chat copy with new ids keeps its events', () => {
   const chat = seedChat([{ data: '검', events: [sword()] }, { data: '평범' }]);
   chat.message[1] = { ...chat.message[1], data: chat.message[0].data };
   chat.message[0] = { ...chat.message[0], data: '' };
-  assert.deepEqual(names(chat), []);
+  assert.deepEqual(names(chat), ['검']);
+  const copy = { ...chat, message: chat.message.map((one, index) => ({ ...one, chatId: `copy${index}` })) };
+  assert.deepEqual(names(copy), ['검']);
 });
 
 test('deleting an earlier message keeps later events in current message order', () => {
@@ -137,91 +139,6 @@ test('stored anchors and old markers never reach the model', async () => {
   Session.resetSession('strip:chat');
   const request = await Pipeline.beforeRequest([{ role: 'assistant', content: text }], 'model');
   assert.ok(request.every((message) => !/<!--(?:ix:|ITEMX2|CODEX2)/.test(message.content)));
-});
-
-test('old markers are hidden from display and removed only on request, leaving the text', async () => {
-  const oldText = '옛 문장.\n\n<!--ITEMX2@i0_0_abc:eyJ9-->\n<!--CODEX2:eyJ2IjoxfQ-->';
-  assert.equal(await Presentation.displayHandler(oldText), '옛 문장.\n\n');
-  const chat = seedChat([{ data: oldText }, { data: '새 문장', events: [sword()] }]);
-  const fake = createFakeHost({ chat, character: { chaId: 'old', name: 'T' }, settings: settingsDoc('old') });
-  setHost(fake.api);
-  Session.resetSession('old:chat');
-  const footprint = Ledger.itemxStorageFootprint(fake.state.chat);
-  assert.equal(footprint.oldMarkerCount, 2);
-  assert.equal(footprint.anchorCount, 1);
-  const result = await Ledger.removeOldMarkersCurrent();
-  assert.equal(result.removedMarkers, 2);
-  assert.equal(fake.state.writes, 1);
-  assert.equal(fake.state.chat.message[0].data, '옛 문장.\n\n');
-  // Anchors and the document are untouched.
-  assert.match(fake.state.chat.message[1].data, /<!--ix:/);
-  assert.deepEqual(names(fake.state.chat), ['검']);
-});
-
-test('old marker removal refuses a chat that changed after it was read', async () => {
-  const chat = seedChat([{ data: '문장 <!--ITEMX2@i0_0_abc-->' }]);
-  const fake = createFakeHost({ chat, character: { chaId: 'race', name: 'T' }, settings: settingsDoc('race') });
-  setHost(fake.api);
-  Session.resetSession('race:chat');
-  let reads = 0;
-  fake.state.onRead = (state) => {
-    reads += 1;
-    // The guard re-reads before writing; the user edits in between.
-    if (reads === 3) state.chat.message[0].data = '사용자가 고친 문장 <!--ITEMX2@i0_0_abc-->';
-  };
-  await assert.rejects(Ledger.removeOldMarkersCurrent());
-  assert.equal(fake.state.writes, 0);
-});
-
-test('a corrupt or stale cache is ignored and the fold is rebuilt from the document', () => {
-  const messages = Array.from({ length: 200 }, (_, index) => ({
-    data: `턴 ${index}`,
-    events: [itemExam({ id: `item${index}`, name: `물건${index}`, possession: 'owned', count: 1 })]
-  }));
-  const chat = seedChat(messages);
-  const full = Replay.fold(chat, documentOf(chat), { full: true });
-  assert.ok(full.checkpoint, 'a long chat yields a checkpoint candidate');
-  const expected = JSON.stringify(full.item.registry);
-  const withCache = (value) => ({
-    ...chat,
-    scriptstate: {
-      ...chat.scriptstate,
-      [Document.CACHE_KEY]: typeof value === 'string' ? value : JSON.stringify(value)
-    }
-  });
-  const good = withCache({ v: 1, checkpoint: full.checkpoint });
-  const fromCheckpoint = Ledger.project({ chat: good, key: 'k' });
-  assert.equal(fromCheckpoint.complete, false);
-  assert.equal(JSON.stringify(fromCheckpoint.snapshot.registry), expected);
-  for (const broken of [
-    '{broken',
-    { v: 1, checkpoint: { ...full.checkpoint, chain: 'nope' } },
-    { v: 1, checkpoint: { ...full.checkpoint, steps: 9999 } },
-    { v: 1, checkpoint: { ...full.checkpoint, item: null } }
-  ]) {
-    const loaded = Ledger.project({ chat: withCache(broken), key: 'k' });
-    assert.equal(loaded.complete, true);
-    assert.equal(JSON.stringify(loaded.snapshot.registry), expected);
-  }
-  // A checkpoint whose prefix was edited (a deleted early message) no longer matches.
-  const edited = { ...good, message: good.message.slice(1) };
-  const loaded = Ledger.project({ chat: edited, key: 'k' });
-  assert.equal(loaded.complete, true);
-  assert.equal(loaded.snapshot.registry.items.item0, undefined);
-});
-
-test('an old anchor behind the checkpoint still resolves for display', () => {
-  const messages = Array.from({ length: 200 }, (_, index) => ({
-    data: `턴 ${index}`,
-    events: [itemExam({ id: `item${index}`, name: `물건${index}`, possession: 'owned', count: 1 })]
-  }));
-  const chat = seedChat(messages);
-  const full = Replay.fold(chat, documentOf(chat), { full: true });
-  chat.scriptstate[Document.CACHE_KEY] = JSON.stringify({ v: 1, checkpoint: full.checkpoint });
-  const loaded = Ledger.project({ chat, key: 'k' });
-  const key = Anchors.anchorKeys(chat.message[0].data)[0];
-  assert.equal(Ledger.anchorPayload(key, loaded).view.name, '물건0');
-  assert.equal(loaded.complete, true);
 });
 
 test('a malformed document is surfaced, never replaced', () => {
@@ -342,14 +259,15 @@ test('the commit and rebuild never serialize the chat for provenance on read', a
   assert.equal(calls, 0);
 });
 
-test('clean-up removes anchors, old markers and every ITEMX state key', () => {
+test('clean-up removes anchors, old markers and the ITEMX document', () => {
   const chat = seedChat([{ data: '검 <!--ITEMX2@x-->', events: [sword()] }], {
     scriptstate: { 'itemx:log': '{}', other: 'keep' }
   });
   const cleaned = Ledger.cleanChatPluginData(chat);
   assert.equal(cleaned.chat.message[0].data.trim(), '검');
   assert.equal(cleaned.removedMarkers, 2);
-  assert.deepEqual(Object.keys(cleaned.chat.scriptstate), ['other']);
+  // Keys of ITEMX 2.0 – 2.3 are not 2.5 data and stay untouched.
+  assert.deepEqual(Object.keys(cleaned.chat.scriptstate), ['itemx:log', 'other']);
   void Core;
 });
 

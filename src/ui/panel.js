@@ -3,7 +3,7 @@
 import * as Core from '../engine/core.js';
 import * as EntityHistory from '../engine/history.js';
 import * as Renderer from '../render/renderer.js';
-import { scrollActive } from '../activity.js';
+import { endOutputWindow, outputActive, scrollActive } from '../activity.js';
 import { auxActive, auxRunning, cancelAux, repairOneItem, runItemModel } from '../aux.js';
 import { context } from '../chat-io.js';
 import { ITEMX_ROOT_PAGE_SIZE, ITEMX_VERSION_LABEL } from '../config.js';
@@ -402,6 +402,7 @@ export function scheduleHostDomSync(delayMs = 320, { light = false } = {}) {
     light ? 'hostLightSyncTimer' : 'hostSyncTimer',
     async () => {
       try {
+        if (await deferForOutput()) return;
         await installBodyEffectGovernor();
         if (!light || uiState.rootOpen) await ensureRootInventory();
         await syncHostSettingsVisibility();
@@ -426,7 +427,9 @@ export async function installHostObserver() {
     // ignored, anything else schedules one debounced host sync.
     hostObserver = await host().createMutationObserver(async (recordsSafe) => {
       if (isUnloading()) return;
-      if (scrollActive()) return scheduleHostDomSync();
+      // A streaming flush repaints the message: classifying its records would
+      // cost bridge round trips per flush. The debounced sync decides instead.
+      if (scrollActive() || outputActive()) return scheduleHostDomSync();
       try {
         const records = await host().unwarpSafeArray(recordsSafe);
         const sample = records.length > 1 ? [records[0], records.at(-1)] : records;
@@ -518,8 +521,6 @@ export async function setRootOpen(open) {
       uiState.rootOpen = false;
       // A pending yes / no question does not survive closing the drawer.
       uiState.cleanupArmed = false;
-      uiState.storageCleanupArmed = false;
-      uiState.oldMarkersArmed = false;
       uiState.allowDrawerOverSettings = false;
       invalidateHostSettingsVisibility();
       await syncHostSettingsVisibility();
@@ -549,9 +550,10 @@ export async function resetRuntimeForContext(active) {
   workQueue.forget('aux-settle');
   workQueue.remember('lorebook', '');
   uiState.cleanupArmed = false;
-  uiState.storageCleanupArmed = false;
 
   workQueue.clearTimer('legacyCommitTimer');
+  endOutputWindow();
+  outputDeferred = false;
   await resetScrollEffects();
   forgetBodyEffectOwner();
   setLatestKeys([]);
@@ -559,8 +561,46 @@ export async function resetRuntimeForContext(active) {
   return true;
 }
 
-export function ensureRootInventory() {
-  if (isUnloading() || scrollActive()) return Promise.resolve();
+// Host sync deferred by the output window runs once when the window closes.
+let outputDeferred = false;
+
+// Indexes only: two scalar bridge reads instead of a character and chat
+// snapshot. Any doubt counts as a move so the full sync runs as before.
+async function contextMoved() {
+  const loaded = cachedLoaded();
+  if (!loaded || loaded.key !== activeContextKey()) return true;
+  try {
+    const [characterIndex, chatIndex] = await Promise.all([
+      host().getCurrentCharacterIndex(),
+      host().getCurrentChatIndex()
+    ]);
+    return characterIndex !== loaded.characterIndex || chatIndex !== loaded.chatIndex;
+  } catch {
+    return true;
+  }
+}
+
+// While a response streams into the active chat, drawer and host sync wait
+// for the output window to close. A chat switch is never deferred.
+async function deferForOutput() {
+  if (!outputActive()) return false;
+  if (await contextMoved()) {
+    endOutputWindow();
+    return false;
+  }
+  outputDeferred = true;
+  return true;
+}
+
+export function flushDeferredOutputSync() {
+  if (!outputDeferred || isUnloading()) return;
+  outputDeferred = false;
+  scheduleHostDomSync(180);
+}
+
+export async function ensureRootInventory() {
+  if (isUnloading() || scrollActive()) return;
+  if (await deferForOutput()) return;
   return ensureRootInventoryNow();
 }
 
@@ -1249,7 +1289,7 @@ export const rootStateFingerprint = (loaded) =>
     Number(loaded.lorebookEncounterEnabled),
     Number(loaded.debugEnabled),
     JSON.stringify(EntityHistory.preferences(loaded.prefs)),
-    EntityHistory.completedTurns(loaded.chat).total
+    loaded.turn || 0
   ].join(':');
 
 export async function managerRowIndexAtY(count, clientY) {

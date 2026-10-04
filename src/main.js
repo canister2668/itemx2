@@ -1,6 +1,7 @@
 /* Composition and lifecycle. main.js wires the layers together (hook handlers,
  * upward events) and owns start, browser resume and unload; domain work lives
  * in the imported modules. */
+import { endOutputWindow, setOutputWindowSink } from './activity.js';
 import { context } from './chat-io.js';
 import { ITEMX_PLUGIN_VERSION, ITEMX_UPDATE_CHECK_MS } from './config.js';
 import { isUnloading, markUnloading, registeredUiParts, rememberUiPart } from './connection.js';
@@ -35,6 +36,7 @@ import {
   clearDetailHtmlCache,
   disconnectHostObserver,
   ensureRootInventory,
+  flushDeferredOutputSync,
   installHostObserver,
   mountRootLoading,
   notifyUser,
@@ -54,6 +56,7 @@ import {
   displayHandler,
   forgetBodyEffectOwner,
   installBodyEffectGovernor,
+  outputWindowChanged,
   removeBodyEffectGovernor,
   resetScrollEffects,
   syncMainEffectsState
@@ -81,6 +84,8 @@ const hookHandlers = {
   before: entry('before-request', beforeRequest, true),
   after: entry('after-request', afterRequest, true),
   listener: (output) => {
+    // The host calls this once the response is final: the output window closes.
+    endOutputWindow();
     const loaded = cachedLoaded();
     if (
       output?.chat &&
@@ -143,6 +148,10 @@ function wireEvents() {
     await installHostObserver();
   });
   on('scroll-idle', () => scheduleHostDomSync(180, { light: true }));
+  on('output-idle', () => {
+    flushDeferredOutputSync();
+    workQueue.wake();
+  });
 }
 
 // A backgrounded tab can come back with its host hook sets rebuilt and its
@@ -154,6 +163,7 @@ const resumeBindings = [];
 async function recoverAfterBrowserResume() {
   if (isUnloading()) return;
   workQueue.cancel((intent) => intent.kind === 'committed-output', false);
+  endOutputWindow();
   try {
     await resetScrollEffects();
     await refreshHookBindings();
@@ -206,6 +216,8 @@ function removeBrowserResumeHandlers() {
 // drops none of our hooks, UI parts or main-document nodes itself.
 async function unload() {
   markUnloading();
+  endOutputWindow();
+  setOutputWindowSink(null);
   const quiet = (work) =>
     Promise.resolve()
       .then(work)
@@ -231,6 +243,7 @@ export async function start() {
   // Registered first: a failing or slow bootstrap must still be able to unload.
   await host().onUnload(unload);
   wireEvents();
+  setOutputWindowSink(outputWindowChanged);
   configureHooks(hookHandlers);
   try {
     await loadBadgePosition();

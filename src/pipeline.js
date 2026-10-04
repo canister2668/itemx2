@@ -4,7 +4,7 @@
 import * as Codex from './engine/codex.js';
 import * as Core from './engine/core.js';
 import * as EntityHistory from './engine/history.js';
-import { scrollActive } from './activity.js';
+import { markOutputFlush, scrollActive } from './activity.js';
 import {
   assistantMessageIndex,
   automaticAuxReady,
@@ -18,15 +18,15 @@ import { hookState, isUnloading } from './connection.js';
 import { emit } from './events.js';
 import { t } from './i18n.js';
 import { debugRecord, dispatch, fail, workQueue } from './kernel.js';
-import { cachedOrRebuildCurrent, commitRecords, rebuildCurrent, writeDocument } from './ledger.js';
+import { cachedOrRebuildCurrent, commitRecords, rebuildCurrent, stampFrom, writeDocument } from './ledger.js';
 import { enrichLore, scanLorebookEncounters } from './lore-sync.js';
 import { encounterEntities, modulePortraitAssets, prepareInlinePortraits } from './portraits.js';
 import { activeContextKey, addPending, dropPending, freshLoaded, pendingRecord, setLatestKeys } from './session.js';
 import { isEnabled, settingsFor } from './settings.js';
 import { setStatus } from './status.js';
 import { anchorKeys, stripTransport } from './store/anchors.js';
-import { readCache } from './store/document.js';
-import { fold } from './store/replay.js';
+import { readDocument } from './store/document.js';
+import { fold, stampStart } from './store/replay.js';
 import { anchorize, enabledCodexDomains, hasRawTransport, protocolForSettings, requestSafeText } from './transport.js';
 
 export function mainRequestType(type) {
@@ -100,13 +100,17 @@ export async function commitLatestOutput(ctx) {
   const source = Core.messageText(ctx.chat.message[index]);
   const pending = anchorKeys(source).filter((key) => pendingRecord(key)?.chatKey === ctx.key);
   const raw = hasRawTransport(source);
-  if (!pending.length && !raw) return { ctx, index, changed: false };
+  // Without new cards the pass may still owe the chat its state entries: a
+  // chat from before them, or entries a reroll or deletion left behind.
+  const restamp = pending.length || raw ? -1 : stampStart(ctx.chat, readDocument(ctx.chat));
+  if (!pending.length && !raw && restamp < 0) return { ctx, index, changed: false };
   const settings = await settingsFor(ctx.character);
   let events = 0,
     errors = 0;
   const result = await writeDocument(ctx, async (doc, latest) => {
     const message = latest.message?.[index];
     if (Core.messageText(message) !== source) return false;
+    if (restamp >= 0) return stampFrom(doc, latest, restamp) ? {} : false;
     const chatId = typeof message?.chatId === 'string' ? message.chatId : '';
     commitRecords(
       doc,
@@ -115,7 +119,7 @@ export async function commitLatestOutput(ctx) {
     );
     let text = source;
     if (raw) {
-      const state = fold(latest, doc, { checkpoint: readCache(latest)?.checkpoint || null });
+      const state = fold(latest, doc, { upTo: index });
       const anchored = anchorize(source, {
         state: { registry: state.item.registry, codex: state.codex },
         settings,
@@ -132,6 +136,7 @@ export async function commitLatestOutput(ctx) {
       text === source
         ? latest
         : { ...latest, message: latest.message.map((one, at) => (at === index ? { ...one, [field]: text } : one)) };
+    stampFrom(doc, chat, index);
     await enrichLore(ctx, doc, chat);
     return { chat };
   });
@@ -303,7 +308,10 @@ export async function processOutput(content, type) {
 
 export const afterRequest = async (content, type) => processOutput(content, type);
 
+// The host runs the output script handler for every streaming flush and once
+// for a non-streamed main response; each run keeps the output window open.
 export const outputFallback = async (content) => {
+  markOutputFlush();
   const processed = await processOutput(content, 'main');
   if (hookState('listener') === 'unsupported' && auxActive() === 0) scheduleLegacyCommitRecovery();
   return processed;

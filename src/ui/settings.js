@@ -13,12 +13,10 @@ import {
   cachedOrRebuildCurrent,
   cleanCurrentChatItemx,
   commitBackupImport,
-  compactCurrentChatStorage,
   exportCurrentBackup,
   itemxStorageFootprint,
   prepareBackupImport,
-  rebuildCurrent,
-  removeOldMarkersCurrent
+  rebuildCurrent
 } from '../ledger.js';
 import { scanLorebookEncounters } from '../lore-sync.js';
 import { enableModuleAssets } from '../portraits.js';
@@ -346,31 +344,8 @@ export function confirmCards(skin, parts) {
     'itemx2-setting-storage-cleanup': [
       t('ui-settings.106'),
       t('ui-settings.105', parts.footprintLabel),
-      parts.storageCleanupArmed
-        ? confirmRow(
-            skin,
-            t('ui-settings.confirm-storage'),
-            'storage-cleanup',
-            t('ui-settings.confirm-yes-storage'),
-            'storage-cleanup-cancel'
-          )
-        : `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}${setButton(skin, 'storage-cleanup', t('ui-settings.102'))}</span>`
+      `<span class="itemx2-manager-actions">${setButton(skin, 'rebuild', t('ui-settings.104'))}</span>`
     ],
-    'itemx2-setting-old-markers': parts.oldMarkerCount
-      ? [
-          t('ui-settings.old-markers-title'),
-          t('ui-settings.old-markers-note', parts.oldMarkerCount),
-          parts.oldMarkersArmed
-            ? confirmRow(
-                skin,
-                t('ui-settings.confirm-old-markers'),
-                'old-markers',
-                t('ui-settings.confirm-yes-old-markers'),
-                'old-markers-cancel'
-              )
-            : setButton(skin, 'old-markers', t('ui-settings.old-markers-button'))
-        ]
-      : null,
     'itemx2-setting-cleanup': [
       t('ui-settings.110'),
       t('ui-settings.109'),
@@ -461,7 +436,7 @@ export function settingsPanelHtml(loaded, skin, parts) {
   )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
     t('ui-settings.101'),
     t('ui-settings.100')
-  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${confirmCard(cards, 'itemx2-setting-old-markers')}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
 }
 
 export function settingsDomainControls(loaded, skin) {
@@ -505,9 +480,6 @@ export function settingsStorageParts(loaded) {
   const footprint = itemxStorageFootprint(loaded.chat);
   return {
     cleanupArmed: uiState.cleanupArmed,
-    storageCleanupArmed: uiState.storageCleanupArmed,
-    oldMarkersArmed: uiState.oldMarkersArmed,
-    oldMarkerCount: footprint.oldMarkerCount,
     footprintLabel: t('ui-settings.060', Math.max(1, Math.ceil(footprint.totalBytes / 1024)), footprint.anchorCount)
   };
 }
@@ -788,34 +760,6 @@ export function rootSettingActions() {
       }
     })),
     {
-      hook: 'itemx2-setting-storage-cleanup',
-      run: armed(
-        'storageCleanupArmed',
-        'itemx2-setting-storage-cleanup',
-        async () => {
-          setStatus(t('ui-settings.027'));
-        },
-        async () => {
-          setStatus(t('ui-settings.025'));
-          await showRootFeedback(t('ui-settings.024'), 'working', 0);
-          try {
-            const result = await compactCurrentChatStorage();
-            await showRootFeedback(
-              t('ui-settings.023', Math.round(result.savedBytes / 1024), result.legacyKeysRemoved),
-              'success',
-              4200
-            );
-            if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
-          } catch (error) {
-            uiState.storageCleanupArmed = false;
-            setStatus(t('ui-settings.022'));
-            await showRootFeedback(t('ui-settings.021', error.message || error), 'error', 4200);
-            await notifyUser(t('ui-settings.020', error.message || error), 'error');
-          }
-        }
-      )
-    },
-    {
       hook: 'itemx2-setting-cleanup',
       run: armed(
         'cleanupArmed',
@@ -842,36 +786,6 @@ export function rootSettingActions() {
           }
         }
       )
-    },
-    {
-      hook: 'itemx2-setting-old-markers',
-      run: armed(
-        'oldMarkersArmed',
-        'itemx2-setting-old-markers',
-        async () => {
-          setStatus(t('ui-settings.old-markers-armed'));
-        },
-        async () => {
-          await showRootFeedback(t('ui-settings.old-markers-working'), 'working', 0);
-          try {
-            const result = await removeOldMarkersCurrent();
-            await showRootFeedback(
-              t('ui-settings.old-markers-done', result.cleanedMessages, result.removedMarkers),
-              'success',
-              3600
-            );
-            if (result.loaded) await openRootInventory({ open: true, tab: 'settings', loaded: result.loaded });
-          } catch (error) {
-            uiState.oldMarkersArmed = false;
-            await showRootFeedback(t('ui-settings.old-markers-failed', error.message || error), 'error', 4200);
-          }
-        }
-      )
-    },
-    { hook: 'itemx2-setting-old-markers-cancel', run: disarm('oldMarkersArmed', 'itemx2-setting-old-markers') },
-    {
-      hook: 'itemx2-setting-storage-cleanup-cancel',
-      run: disarm('storageCleanupArmed', 'itemx2-setting-storage-cleanup')
     },
     { hook: 'itemx2-setting-cleanup-cancel', run: disarm('cleanupArmed', 'itemx2-setting-cleanup') },
     {

@@ -6,14 +6,7 @@ import * as Core from './engine/core.js';
 import { ITEMX_PROTOCOL_TEXT } from './config.js';
 import { combinedPortraitAssets } from './portraits.js';
 import { pendingRecord } from './session.js';
-import {
-  OLD_MARKER_RE,
-  TRANSPORT_MARKER_RE,
-  allocateKey,
-  anchor,
-  requestText,
-  stripTransport
-} from './store/anchors.js';
+import { TRANSPORT_MARKER_RE, allocateKey, anchor, requestText, stripTransport } from './store/anchors.js';
 
 export function itemxProtocolText(rarityMode = 'world') {
   const policy =
@@ -110,6 +103,9 @@ export function positionMarkersByNarrative(content) {
     if (TRAILER_RE.test(piece)) trailerIndex = index;
     else if (piece.trim() && !/^\s*\[[^\]\n]*\]\s*$/.test(piece)) break;
   }
+  // Each paragraph is normalized once, not once per marker: streaming runs
+  // this on every flush over the whole response.
+  const normalizedPieces = pieces.map((piece, index) => (index % 2 ? '' : normalizedName(piece)));
   for (const marker of markers) {
     const item =
       marker.prefix === 'ITEMX2'
@@ -126,7 +122,7 @@ export function positionMarkersByNarrative(content) {
     let bestIndex = -1,
       bestScore = 0;
     for (let index = 0; index < pieces.length; index += 2) {
-      const paragraph = normalizedName(pieces[index]);
+      const paragraph = normalizedPieces[index];
       if (!paragraph) continue;
       const exactHit = exact.length >= 2 && paragraph.includes(exact);
       const hits = terms.filter((term) => paragraph.includes(term)).length;
@@ -154,23 +150,12 @@ export function positionMarkersByNarrative(content) {
   return pieces.join('').trimEnd();
 }
 
-// Markers of earlier versions are masked while a pass runs, so their data is
-// never parsed, positioned or turned into anchors.
-function masked(text, work) {
-  const saved = [];
-  const hidden = String(text || '').replace(OLD_MARKER_RE, (raw) => `\u0000ixold${saved.push(raw) - 1}\u0000`);
-  const result = work(hidden);
-  result.content = result.content.replace(/\u0000ixold(\d+)\u0000/g, (_, index) => saved[Number(index)]);
-  return result;
-}
-
 // Positions the transport markers in `content` and replaces each with an
 // anchor. Keys derive from `seed` (chat, turn) and the marker itself, so every
 // pass over the same response agrees; `doc` keys are never reused.
-// `markers` are appended to `content` first; markers already stored in
-// `content` belong to earlier versions and stay masked.
+// `markers` are appended to `content` first.
 export const anchorTransport = (content, markers, options) =>
-  masked(content, (text) => anchorMarkers(`${text.trimEnd()}\n\n${markers}`, options));
+  anchorMarkers(`${String(content || '').trimEnd()}\n\n${markers}`, options);
 
 function anchorMarkers(text, { seed, doc, review = null, liveAnchor = null }) {
   const records = [];
@@ -212,22 +197,21 @@ export function anchorize(
   content,
   { state, settings, seed, doc, review = { source: 'main', checked: false }, liveAnchor = null }
 ) {
-  return masked(content, (text) => {
-    const items = settings.itemsEnabled
-      ? Core.extractResponse(text, state.registry)
-      : { content: stripItemTransport(text), events: [], errors: [] };
-    const codex = Codex.extractResponse(items.content, state.codex, {
-      enabledDomains: enabledCodexDomains(settings),
-      rarityMode: settings.rarityMode,
-      skillEvidenceText: text
-    });
-    const anchored = anchorMarkers(codex.content, { seed, doc, review, liveAnchor });
-    return {
-      content: anchored.content,
-      records: anchored.records,
-      events: items.events.length + codex.events.length,
-      errors: items.errors.length + codex.errors.length,
-      codexSnapshot: codex.snapshot
-    };
+  const text = String(content || '');
+  const items = settings.itemsEnabled
+    ? Core.extractResponse(text, state.registry)
+    : { content: stripItemTransport(text), events: [], errors: [] };
+  const codex = Codex.extractResponse(items.content, state.codex, {
+    enabledDomains: enabledCodexDomains(settings),
+    rarityMode: settings.rarityMode,
+    skillEvidenceText: text
   });
+  const anchored = anchorMarkers(codex.content, { seed, doc, review, liveAnchor });
+  return {
+    content: anchored.content,
+    records: anchored.records,
+    events: items.events.length + codex.events.length,
+    errors: items.errors.length + codex.errors.length,
+    codexSnapshot: codex.snapshot
+  };
 }

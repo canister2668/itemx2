@@ -1,0 +1,395 @@
+{
+ "whole": {
+  "committed": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<!--ix:0kd9l-->\n<!--ix:0okuf-->\n<!--ix:0hcfp-->",
+  "events": {
+   "0kd9l": {
+    "c": "reply",
+    "d": "item",
+    "e": {
+     "kind": "exam",
+     "item": {
+      "id": "blade",
+      "name": "검",
+      "itemType": "검",
+      "emoji": "🗡️",
+      "rarity": "epic",
+      "displayRarity": "에픽",
+      "power": "",
+      "required": "",
+      "durability": "",
+      "cost": "",
+      "possession": "owned",
+      "location": "unknown",
+      "count": 1,
+      "slot": null,
+      "pin": false,
+      "trivia": "",
+      "theme": "arcane",
+      "affinity": "fire",
+      "affinity2": null,
+      "condition": null,
+      "effects": [],
+      "augments": [],
+      "_provided": [
+       "id",
+       "name",
+       "type",
+       "internalrarity",
+       "possession",
+       "affinity"
+      ]
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 1
+   },
+   "0okuf": {
+    "c": "reply",
+    "d": "codex",
+    "e": {
+     "domain": "skill",
+     "kind": "exam",
+     "entity": {
+      "id": "s",
+      "name": "검법",
+      "glyph": "🗡️",
+      "rank": "미분류",
+      "school": "",
+      "type": "active",
+      "status": "equipped",
+      "level": 7,
+      "mastery": 75,
+      "cost": "발동 자원 · 서사 기준",
+      "cooldown": "사용 후 회복 필요",
+      "target": "",
+      "affinity": "",
+      "description": "",
+      "effects": [],
+      "growth": "",
+      "_provided": [
+       "id",
+       "name",
+       "status",
+       "level",
+       "mastery"
+      ],
+      "_placeholder": [],
+      "_inferred": []
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 2
+   },
+   "0hcfp": {
+    "c": "reply",
+    "d": "codex",
+    "e": {
+     "domain": "monster",
+     "kind": "exam",
+     "entity": {
+      "id": "m",
+      "name": "상대",
+      "glyph": "🐾",
+      "aliases": [],
+      "kind": "미분류",
+      "threat": "미상",
+      "relation": "hostile",
+      "status": "defeated",
+      "active": false,
+      "portrait": "",
+      "weaknesses": [],
+      "resistances": [],
+      "moves": [],
+      "description": "",
+      "encounterCount": 1,
+      "outcome": "승리",
+      "outcomeStatus": "defeated",
+      "outcomeEncounter": 1,
+      "_provided": [
+       "id",
+       "name",
+       "status",
+       "relation",
+       "outcome"
+      ]
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 3
+   }
+  },
+  "display": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<article class=\"itemx-card craft-arcane rarity-epic motion-lite itemx-inline-card\" style=\"--p:#ff7a3d;--pg:rgba(255,122,61,.42);--s:#ff7a3d;--sg:rgba(255,122,61,.42);--rk:#dd7be0\" data-itemx-id=\"blade\"><div class=\"itemx-fx\"><div class=\"current-fx\"><div class=\"current-rays\"><i style=\"--r:4deg;--w:9.81%\"></i><i style=\"--r:44deg;--w:5.38%\"></i><i style=\"--r:77deg;--w:14.23%\"></i><i style=\"--r:119deg;--w:6.35%\"></i><i style=\"--r:158deg;--w:11.54%\"></i><i style=\"--r:196deg;--w:8.08%\"></i><i style=\"--r:233deg;--w:15.58%\"></i><i style=\"--r:271deg;--w:5.77%\"></i><i style=\"--r:306deg;--w:10.77%\"></i><i style=\"--r:339deg;--w:4.81%\"></i></div><i class=\"craft-mote shape-shard path-drift \" style=\"--x:19%;--z:5px;--mh:14px;--ca:#b8873a;--cb:#ffe9b5;--o:0.32;--d:8s;--delay:-6s;--drift:-8px;--drift2:5.6px\"></i><i class=\"craft-mote shape-shard path-drift \" style=\"--x:62%;--z:3.5px;--mh:9.799999999999999px;--ca:#d8b25c;--cb:#f6e6bd;--o:0.22;--d:11s;--delay:-4.5s;--drift:-34px;--drift2:23.799999999999997px\"></i><i class=\"craft-mote shape-diamond path-drift diamond\" style=\"--x:4%;--z:2px;--mh:5.6px;--ca:#b8873a;--cb:#ffe9b5;--o:0.52;--d:14s;--delay:-3s;--drift:9px;--drift2:-6.3px\"></i></div><div class=\"affinity-fx\"><div class=\"affinity-signature sig-fire\" style=\"--ac:#ff7a3d\"><span class=\"affinity-signature-visual\"></span></div><div class=\"affinity-flames\" style=\"--ac:#ff7a3d\"><b class=\"af-f2\"></b><b class=\"af-f1\"></b><b class=\"af-f3\"></b></div><div class=\"afx afx-fire\" style=\"--ac:#ff7a3d\"><i style=\"--x:11%;--y:7%;--z:4px;--h:24px;--iw:2.5px;--ih:10px;--ph:7px;--d:2.5s;--delay:-0s;--drift:-42px;--sk:-18deg;--r:-38deg;--ac:#ff7a3d\"></i><i style=\"--x:48%;--y:36%;--z:6.3px;--h:33px;--iw:3.9px;--ih:13.5px;--ph:9.4px;--d:3.26s;--delay:-0.63s;--drift:-19px;--sk:-7deg;--r:-7deg;--ac:#ff7a3d\"></i><i style=\"--x:85%;--y:65%;--z:8.6px;--h:42px;--iw:5.3px;--ih:17px;--ph:11.8px;--d:4.02s;--delay:-1.26s;--drift:4px;--sk:4deg;--r:24deg;--ac:#ff7a3d\"></i></div></div></div><div class=\"itemx-cond\"></div><div class=\"itemx-content\"><div class=\"itemx-head\"><div class=\"itemx-medallion\"><span class=\"itemx-emoji\">🗡️</span></div><div class=\"itemx-titles\"><div class=\"itemx-eyebrow\">ITEMX · APPRAISAL</div><span class=\"itemx-name\">검</span><span class=\"itemx-tier\">에픽</span><span class=\"itemx-subline\"><span>보유 · 위치 불명</span><span>검</span></span></div></div><div class=\"affinity-row\"><span class=\"affinity-chip\" style=\"--chip:#ff7a3d\">🔥 화염<small>단일 속성</small></span></div><div class=\"itemx-rule\"></div></div></article>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-arcane itemx2-inline-tier-magic motion-lite\" style=\"--p:#7f9cff;--pg:rgba(127,156,255,.40);--s:#7f9cff;--sg:rgba(127,156,255,.40);--rk:#6fa8e8\" x-itemx2-event=\"0okuf\"><span class=\"itemx2-event-burst itemx2-burst-learned\" aria-hidden=\"true\"></span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🗡️</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">NEW SKILL ARCHIVED</small><strong class=\"itemx2-inline-name\">검법</strong><span class=\"itemx2-inline-meta\">미분류 · 미분류 · active · equipped</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>LEVEL</b><span>Lv.7</span></i><i class=\"\"><b>숙련도</b><span>75%</span></i><i class=\"\"><b>소모</b><span>발동 자원 · 서사 기준</span></i><i class=\"\"><b>재사용</b><span>사용 후 회복 필요</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>효과</b><span>스킬 정보가 ITEMX에 기록되었습니다.</span><em class=\"itemx2-inline-more\">ITEMX &#8250;</em></footer></section>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-normal itemx2-inline-ended motion-lite\" style=\"--p:#9a6bff;--pg:rgba(154,107,255,.42);--s:#9a6bff;--sg:rgba(154,107,255,.42);--rk:#5c6577\"><span class=\"itemx2-inline-seal\">&#35352;&#37636;</span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🐾</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">ENCOUNTER REGISTERED</small><strong class=\"itemx2-inline-name\">상대</strong><span class=\"itemx2-inline-meta\">미분류</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>분류</b><span>미분류</span></i><i class=\"\"><b>위협도</b><span>미상</span></i><i class=\"\"><b>관계</b><span>hostile</span></i><i class=\"\"><b>상태</b><span>defeated</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>결과</b><span>승리</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>",
+  "lastFlush": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<article class=\"itemx-card craft-arcane rarity-epic motion-lite itemx-inline-card\" style=\"--p:#ff7a3d;--pg:rgba(255,122,61,.42);--s:#ff7a3d;--sg:rgba(255,122,61,.42);--rk:#dd7be0\" data-itemx-id=\"blade\"><div class=\"itemx-fx\"><div class=\"current-fx\"><div class=\"current-rays\"><i style=\"--r:4deg;--w:9.81%\"></i><i style=\"--r:44deg;--w:5.38%\"></i><i style=\"--r:77deg;--w:14.23%\"></i><i style=\"--r:119deg;--w:6.35%\"></i><i style=\"--r:158deg;--w:11.54%\"></i><i style=\"--r:196deg;--w:8.08%\"></i><i style=\"--r:233deg;--w:15.58%\"></i><i style=\"--r:271deg;--w:5.77%\"></i><i style=\"--r:306deg;--w:10.77%\"></i><i style=\"--r:339deg;--w:4.81%\"></i></div><i class=\"craft-mote shape-shard path-drift \" style=\"--x:19%;--z:5px;--mh:14px;--ca:#b8873a;--cb:#ffe9b5;--o:0.32;--d:8s;--delay:-6s;--drift:-8px;--drift2:5.6px\"></i><i class=\"craft-mote shape-shard path-drift \" style=\"--x:62%;--z:3.5px;--mh:9.799999999999999px;--ca:#d8b25c;--cb:#f6e6bd;--o:0.22;--d:11s;--delay:-4.5s;--drift:-34px;--drift2:23.799999999999997px\"></i><i class=\"craft-mote shape-diamond path-drift diamond\" style=\"--x:4%;--z:2px;--mh:5.6px;--ca:#b8873a;--cb:#ffe9b5;--o:0.52;--d:14s;--delay:-3s;--drift:9px;--drift2:-6.3px\"></i></div><div class=\"affinity-fx\"><div class=\"affinity-signature sig-fire\" style=\"--ac:#ff7a3d\"><span class=\"affinity-signature-visual\"></span></div><div class=\"affinity-flames\" style=\"--ac:#ff7a3d\"><b class=\"af-f2\"></b><b class=\"af-f1\"></b><b class=\"af-f3\"></b></div><div class=\"afx afx-fire\" style=\"--ac:#ff7a3d\"><i style=\"--x:11%;--y:7%;--z:4px;--h:24px;--iw:2.5px;--ih:10px;--ph:7px;--d:2.5s;--delay:-0s;--drift:-42px;--sk:-18deg;--r:-38deg;--ac:#ff7a3d\"></i><i style=\"--x:48%;--y:36%;--z:6.3px;--h:33px;--iw:3.9px;--ih:13.5px;--ph:9.4px;--d:3.26s;--delay:-0.63s;--drift:-19px;--sk:-7deg;--r:-7deg;--ac:#ff7a3d\"></i><i style=\"--x:85%;--y:65%;--z:8.6px;--h:42px;--iw:5.3px;--ih:17px;--ph:11.8px;--d:4.02s;--delay:-1.26s;--drift:4px;--sk:4deg;--r:24deg;--ac:#ff7a3d\"></i></div></div></div><div class=\"itemx-cond\"></div><div class=\"itemx-content\"><div class=\"itemx-head\"><div class=\"itemx-medallion\"><span class=\"itemx-emoji\">🗡️</span></div><div class=\"itemx-titles\"><div class=\"itemx-eyebrow\">ITEMX · APPRAISAL</div><span class=\"itemx-name\">검</span><span class=\"itemx-tier\">에픽</span><span class=\"itemx-subline\"><span>보유 · 위치 불명</span><span>검</span></span></div></div><div class=\"affinity-row\"><span class=\"affinity-chip\" style=\"--chip:#ff7a3d\">🔥 화염<small>단일 속성</small></span></div><div class=\"itemx-rule\"></div></div></article>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-arcane itemx2-inline-tier-magic motion-lite\" style=\"--p:#7f9cff;--pg:rgba(127,156,255,.40);--s:#7f9cff;--sg:rgba(127,156,255,.40);--rk:#6fa8e8\" x-itemx2-event=\"0okuf\"><span class=\"itemx2-event-burst itemx2-burst-learned\" aria-hidden=\"true\"></span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🗡️</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">NEW SKILL ARCHIVED</small><strong class=\"itemx2-inline-name\">검법</strong><span class=\"itemx2-inline-meta\">미분류 · 미분류 · active · equipped</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>LEVEL</b><span>Lv.7</span></i><i class=\"\"><b>숙련도</b><span>75%</span></i><i class=\"\"><b>소모</b><span>발동 자원 · 서사 기준</span></i><i class=\"\"><b>재사용</b><span>사용 후 회복 필요</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>효과</b><span>스킬 정보가 ITEMX에 기록되었습니다.</span><em class=\"itemx2-inline-more\">ITEMX &#8250;</em></footer></section>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-normal itemx2-inline-ended motion-lite\" style=\"--p:#9a6bff;--pg:rgba(154,107,255,.42);--s:#9a6bff;--sg:rgba(154,107,255,.42);--rk:#5c6577\"><span class=\"itemx2-inline-seal\">&#35352;&#37636;</span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🐾</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">ENCOUNTER REGISTERED</small><strong class=\"itemx2-inline-name\">상대</strong><span class=\"itemx2-inline-meta\">미분류</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>분류</b><span>미분류</span></i><i class=\"\"><b>위협도</b><span>미상</span></i><i class=\"\"><b>관계</b><span>hostile</span></i><i class=\"\"><b>상태</b><span>defeated</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>결과</b><span>승리</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>"
+ },
+ "stream7": {
+  "committed": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<!--ix:0kd9l-->\n<!--ix:0okuf-->\n<!--ix:0hcfp-->",
+  "events": {
+   "0kd9l": {
+    "c": "reply",
+    "d": "item",
+    "e": {
+     "kind": "exam",
+     "item": {
+      "id": "blade",
+      "name": "검",
+      "itemType": "검",
+      "emoji": "🗡️",
+      "rarity": "epic",
+      "displayRarity": "에픽",
+      "power": "",
+      "required": "",
+      "durability": "",
+      "cost": "",
+      "possession": "owned",
+      "location": "unknown",
+      "count": 1,
+      "slot": null,
+      "pin": false,
+      "trivia": "",
+      "theme": "arcane",
+      "affinity": "fire",
+      "affinity2": null,
+      "condition": null,
+      "effects": [],
+      "augments": [],
+      "_provided": [
+       "id",
+       "name",
+       "type",
+       "internalrarity",
+       "possession",
+       "affinity"
+      ]
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 1
+   },
+   "0okuf": {
+    "c": "reply",
+    "d": "codex",
+    "e": {
+     "domain": "skill",
+     "kind": "exam",
+     "entity": {
+      "id": "s",
+      "name": "검법",
+      "glyph": "🗡️",
+      "rank": "미분류",
+      "school": "",
+      "type": "active",
+      "status": "equipped",
+      "level": 7,
+      "mastery": 75,
+      "cost": "발동 자원 · 서사 기준",
+      "cooldown": "사용 후 회복 필요",
+      "target": "",
+      "affinity": "",
+      "description": "",
+      "effects": [],
+      "growth": "",
+      "_provided": [
+       "id",
+       "name",
+       "status",
+       "level",
+       "mastery"
+      ],
+      "_placeholder": [],
+      "_inferred": []
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 2
+   },
+   "0hcfp": {
+    "c": "reply",
+    "d": "codex",
+    "e": {
+     "domain": "monster",
+     "kind": "exam",
+     "entity": {
+      "id": "m",
+      "name": "상대",
+      "glyph": "🐾",
+      "aliases": [],
+      "kind": "미분류",
+      "threat": "미상",
+      "relation": "hostile",
+      "status": "defeated",
+      "active": false,
+      "portrait": "",
+      "weaknesses": [],
+      "resistances": [],
+      "moves": [],
+      "description": "",
+      "encounterCount": 1,
+      "outcome": "승리",
+      "outcomeStatus": "defeated",
+      "outcomeEncounter": 1,
+      "_provided": [
+       "id",
+       "name",
+       "status",
+       "relation",
+       "outcome"
+      ]
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 3
+   }
+  },
+  "display": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<article class=\"itemx-card craft-arcane rarity-epic motion-lite itemx-inline-card\" style=\"--p:#ff7a3d;--pg:rgba(255,122,61,.42);--s:#ff7a3d;--sg:rgba(255,122,61,.42);--rk:#dd7be0\" data-itemx-id=\"blade\"><div class=\"itemx-fx\"><div class=\"current-fx\"><div class=\"current-rays\"><i style=\"--r:4deg;--w:9.81%\"></i><i style=\"--r:44deg;--w:5.38%\"></i><i style=\"--r:77deg;--w:14.23%\"></i><i style=\"--r:119deg;--w:6.35%\"></i><i style=\"--r:158deg;--w:11.54%\"></i><i style=\"--r:196deg;--w:8.08%\"></i><i style=\"--r:233deg;--w:15.58%\"></i><i style=\"--r:271deg;--w:5.77%\"></i><i style=\"--r:306deg;--w:10.77%\"></i><i style=\"--r:339deg;--w:4.81%\"></i></div><i class=\"craft-mote shape-shard path-drift \" style=\"--x:19%;--z:5px;--mh:14px;--ca:#b8873a;--cb:#ffe9b5;--o:0.32;--d:8s;--delay:-6s;--drift:-8px;--drift2:5.6px\"></i><i class=\"craft-mote shape-shard path-drift \" style=\"--x:62%;--z:3.5px;--mh:9.799999999999999px;--ca:#d8b25c;--cb:#f6e6bd;--o:0.22;--d:11s;--delay:-4.5s;--drift:-34px;--drift2:23.799999999999997px\"></i><i class=\"craft-mote shape-diamond path-drift diamond\" style=\"--x:4%;--z:2px;--mh:5.6px;--ca:#b8873a;--cb:#ffe9b5;--o:0.52;--d:14s;--delay:-3s;--drift:9px;--drift2:-6.3px\"></i></div><div class=\"affinity-fx\"><div class=\"affinity-signature sig-fire\" style=\"--ac:#ff7a3d\"><span class=\"affinity-signature-visual\"></span></div><div class=\"affinity-flames\" style=\"--ac:#ff7a3d\"><b class=\"af-f2\"></b><b class=\"af-f1\"></b><b class=\"af-f3\"></b></div><div class=\"afx afx-fire\" style=\"--ac:#ff7a3d\"><i style=\"--x:11%;--y:7%;--z:4px;--h:24px;--iw:2.5px;--ih:10px;--ph:7px;--d:2.5s;--delay:-0s;--drift:-42px;--sk:-18deg;--r:-38deg;--ac:#ff7a3d\"></i><i style=\"--x:48%;--y:36%;--z:6.3px;--h:33px;--iw:3.9px;--ih:13.5px;--ph:9.4px;--d:3.26s;--delay:-0.63s;--drift:-19px;--sk:-7deg;--r:-7deg;--ac:#ff7a3d\"></i><i style=\"--x:85%;--y:65%;--z:8.6px;--h:42px;--iw:5.3px;--ih:17px;--ph:11.8px;--d:4.02s;--delay:-1.26s;--drift:4px;--sk:4deg;--r:24deg;--ac:#ff7a3d\"></i></div></div></div><div class=\"itemx-cond\"></div><div class=\"itemx-content\"><div class=\"itemx-head\"><div class=\"itemx-medallion\"><span class=\"itemx-emoji\">🗡️</span></div><div class=\"itemx-titles\"><div class=\"itemx-eyebrow\">ITEMX · APPRAISAL</div><span class=\"itemx-name\">검</span><span class=\"itemx-tier\">에픽</span><span class=\"itemx-subline\"><span>보유 · 위치 불명</span><span>검</span></span></div></div><div class=\"affinity-row\"><span class=\"affinity-chip\" style=\"--chip:#ff7a3d\">🔥 화염<small>단일 속성</small></span></div><div class=\"itemx-rule\"></div></div></article>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-arcane itemx2-inline-tier-magic motion-lite\" style=\"--p:#7f9cff;--pg:rgba(127,156,255,.40);--s:#7f9cff;--sg:rgba(127,156,255,.40);--rk:#6fa8e8\" x-itemx2-event=\"0okuf\"><span class=\"itemx2-event-burst itemx2-burst-learned\" aria-hidden=\"true\"></span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🗡️</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">NEW SKILL ARCHIVED</small><strong class=\"itemx2-inline-name\">검법</strong><span class=\"itemx2-inline-meta\">미분류 · 미분류 · active · equipped</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>LEVEL</b><span>Lv.7</span></i><i class=\"\"><b>숙련도</b><span>75%</span></i><i class=\"\"><b>소모</b><span>발동 자원 · 서사 기준</span></i><i class=\"\"><b>재사용</b><span>사용 후 회복 필요</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>효과</b><span>스킬 정보가 ITEMX에 기록되었습니다.</span><em class=\"itemx2-inline-more\">ITEMX &#8250;</em></footer></section>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-normal itemx2-inline-ended motion-lite\" style=\"--p:#9a6bff;--pg:rgba(154,107,255,.42);--s:#9a6bff;--sg:rgba(154,107,255,.42);--rk:#5c6577\"><span class=\"itemx2-inline-seal\">&#35352;&#37636;</span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🐾</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">ENCOUNTER REGISTERED</small><strong class=\"itemx2-inline-name\">상대</strong><span class=\"itemx2-inline-meta\">미분류</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>분류</b><span>미분류</span></i><i class=\"\"><b>위협도</b><span>미상</span></i><i class=\"\"><b>관계</b><span>hostile</span></i><i class=\"\"><b>상태</b><span>defeated</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>결과</b><span>승리</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>",
+  "lastFlush": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<article class=\"itemx-card craft-arcane rarity-epic motion-lite itemx-inline-card\" style=\"--p:#ff7a3d;--pg:rgba(255,122,61,.42);--s:#ff7a3d;--sg:rgba(255,122,61,.42);--rk:#dd7be0\" data-itemx-id=\"blade\"><div class=\"itemx-fx\"><div class=\"current-fx\"><div class=\"current-rays\"><i style=\"--r:4deg;--w:9.81%\"></i><i style=\"--r:44deg;--w:5.38%\"></i><i style=\"--r:77deg;--w:14.23%\"></i><i style=\"--r:119deg;--w:6.35%\"></i><i style=\"--r:158deg;--w:11.54%\"></i><i style=\"--r:196deg;--w:8.08%\"></i><i style=\"--r:233deg;--w:15.58%\"></i><i style=\"--r:271deg;--w:5.77%\"></i><i style=\"--r:306deg;--w:10.77%\"></i><i style=\"--r:339deg;--w:4.81%\"></i></div><i class=\"craft-mote shape-shard path-drift \" style=\"--x:19%;--z:5px;--mh:14px;--ca:#b8873a;--cb:#ffe9b5;--o:0.32;--d:8s;--delay:-6s;--drift:-8px;--drift2:5.6px\"></i><i class=\"craft-mote shape-shard path-drift \" style=\"--x:62%;--z:3.5px;--mh:9.799999999999999px;--ca:#d8b25c;--cb:#f6e6bd;--o:0.22;--d:11s;--delay:-4.5s;--drift:-34px;--drift2:23.799999999999997px\"></i><i class=\"craft-mote shape-diamond path-drift diamond\" style=\"--x:4%;--z:2px;--mh:5.6px;--ca:#b8873a;--cb:#ffe9b5;--o:0.52;--d:14s;--delay:-3s;--drift:9px;--drift2:-6.3px\"></i></div><div class=\"affinity-fx\"><div class=\"affinity-signature sig-fire\" style=\"--ac:#ff7a3d\"><span class=\"affinity-signature-visual\"></span></div><div class=\"affinity-flames\" style=\"--ac:#ff7a3d\"><b class=\"af-f2\"></b><b class=\"af-f1\"></b><b class=\"af-f3\"></b></div><div class=\"afx afx-fire\" style=\"--ac:#ff7a3d\"><i style=\"--x:11%;--y:7%;--z:4px;--h:24px;--iw:2.5px;--ih:10px;--ph:7px;--d:2.5s;--delay:-0s;--drift:-42px;--sk:-18deg;--r:-38deg;--ac:#ff7a3d\"></i><i style=\"--x:48%;--y:36%;--z:6.3px;--h:33px;--iw:3.9px;--ih:13.5px;--ph:9.4px;--d:3.26s;--delay:-0.63s;--drift:-19px;--sk:-7deg;--r:-7deg;--ac:#ff7a3d\"></i><i style=\"--x:85%;--y:65%;--z:8.6px;--h:42px;--iw:5.3px;--ih:17px;--ph:11.8px;--d:4.02s;--delay:-1.26s;--drift:4px;--sk:4deg;--r:24deg;--ac:#ff7a3d\"></i></div></div></div><div class=\"itemx-cond\"></div><div class=\"itemx-content\"><div class=\"itemx-head\"><div class=\"itemx-medallion\"><span class=\"itemx-emoji\">🗡️</span></div><div class=\"itemx-titles\"><div class=\"itemx-eyebrow\">ITEMX · APPRAISAL</div><span class=\"itemx-name\">검</span><span class=\"itemx-tier\">에픽</span><span class=\"itemx-subline\"><span>보유 · 위치 불명</span><span>검</span></span></div></div><div class=\"affinity-row\"><span class=\"affinity-chip\" style=\"--chip:#ff7a3d\">🔥 화염<small>단일 속성</small></span></div><div class=\"itemx-rule\"></div></div></article>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-arcane itemx2-inline-tier-magic motion-lite\" style=\"--p:#7f9cff;--pg:rgba(127,156,255,.40);--s:#7f9cff;--sg:rgba(127,156,255,.40);--rk:#6fa8e8\" x-itemx2-event=\"0okuf\"><span class=\"itemx2-event-burst itemx2-burst-learned\" aria-hidden=\"true\"></span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🗡️</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">NEW SKILL ARCHIVED</small><strong class=\"itemx2-inline-name\">검법</strong><span class=\"itemx2-inline-meta\">미분류 · 미분류 · active · equipped</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>LEVEL</b><span>Lv.7</span></i><i class=\"\"><b>숙련도</b><span>75%</span></i><i class=\"\"><b>소모</b><span>발동 자원 · 서사 기준</span></i><i class=\"\"><b>재사용</b><span>사용 후 회복 필요</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>효과</b><span>스킬 정보가 ITEMX에 기록되었습니다.</span><em class=\"itemx2-inline-more\">ITEMX &#8250;</em></footer></section>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-normal itemx2-inline-ended motion-lite\" style=\"--p:#9a6bff;--pg:rgba(154,107,255,.42);--s:#9a6bff;--sg:rgba(154,107,255,.42);--rk:#5c6577\"><span class=\"itemx2-inline-seal\">&#35352;&#37636;</span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🐾</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">ENCOUNTER REGISTERED</small><strong class=\"itemx2-inline-name\">상대</strong><span class=\"itemx2-inline-meta\">미분류</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>분류</b><span>미분류</span></i><i class=\"\"><b>위협도</b><span>미상</span></i><i class=\"\"><b>관계</b><span>hostile</span></i><i class=\"\"><b>상태</b><span>defeated</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>결과</b><span>승리</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>"
+ },
+ "stream41": {
+  "committed": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<!--ix:0kd9l-->\n<!--ix:0okuf-->\n<!--ix:0hcfp-->",
+  "events": {
+   "0kd9l": {
+    "c": "reply",
+    "d": "item",
+    "e": {
+     "kind": "exam",
+     "item": {
+      "id": "blade",
+      "name": "검",
+      "itemType": "검",
+      "emoji": "🗡️",
+      "rarity": "epic",
+      "displayRarity": "에픽",
+      "power": "",
+      "required": "",
+      "durability": "",
+      "cost": "",
+      "possession": "owned",
+      "location": "unknown",
+      "count": 1,
+      "slot": null,
+      "pin": false,
+      "trivia": "",
+      "theme": "arcane",
+      "affinity": "fire",
+      "affinity2": null,
+      "condition": null,
+      "effects": [],
+      "augments": [],
+      "_provided": [
+       "id",
+       "name",
+       "type",
+       "internalrarity",
+       "possession",
+       "affinity"
+      ]
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 1
+   },
+   "0okuf": {
+    "c": "reply",
+    "d": "codex",
+    "e": {
+     "domain": "skill",
+     "kind": "exam",
+     "entity": {
+      "id": "s",
+      "name": "검법",
+      "glyph": "🗡️",
+      "rank": "미분류",
+      "school": "",
+      "type": "active",
+      "status": "equipped",
+      "level": 7,
+      "mastery": 75,
+      "cost": "발동 자원 · 서사 기준",
+      "cooldown": "사용 후 회복 필요",
+      "target": "",
+      "affinity": "",
+      "description": "",
+      "effects": [],
+      "growth": "",
+      "_provided": [
+       "id",
+       "name",
+       "status",
+       "level",
+       "mastery"
+      ],
+      "_placeholder": [],
+      "_inferred": []
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 2
+   },
+   "0hcfp": {
+    "c": "reply",
+    "d": "codex",
+    "e": {
+     "domain": "monster",
+     "kind": "exam",
+     "entity": {
+      "id": "m",
+      "name": "상대",
+      "glyph": "🐾",
+      "aliases": [],
+      "kind": "미분류",
+      "threat": "미상",
+      "relation": "hostile",
+      "status": "defeated",
+      "active": false,
+      "portrait": "",
+      "weaknesses": [],
+      "resistances": [],
+      "moves": [],
+      "description": "",
+      "encounterCount": 1,
+      "outcome": "승리",
+      "outcomeStatus": "defeated",
+      "outcomeEncounter": 1,
+      "_provided": [
+       "id",
+       "name",
+       "status",
+       "relation",
+       "outcome"
+      ]
+     }
+    },
+    "r": {
+     "source": "main",
+     "checked": false
+    },
+    "s": 3
+   }
+  },
+  "display": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<article class=\"itemx-card craft-arcane rarity-epic motion-lite itemx-inline-card\" style=\"--p:#ff7a3d;--pg:rgba(255,122,61,.42);--s:#ff7a3d;--sg:rgba(255,122,61,.42);--rk:#dd7be0\" data-itemx-id=\"blade\"><div class=\"itemx-fx\"><div class=\"current-fx\"><div class=\"current-rays\"><i style=\"--r:4deg;--w:9.81%\"></i><i style=\"--r:44deg;--w:5.38%\"></i><i style=\"--r:77deg;--w:14.23%\"></i><i style=\"--r:119deg;--w:6.35%\"></i><i style=\"--r:158deg;--w:11.54%\"></i><i style=\"--r:196deg;--w:8.08%\"></i><i style=\"--r:233deg;--w:15.58%\"></i><i style=\"--r:271deg;--w:5.77%\"></i><i style=\"--r:306deg;--w:10.77%\"></i><i style=\"--r:339deg;--w:4.81%\"></i></div><i class=\"craft-mote shape-shard path-drift \" style=\"--x:19%;--z:5px;--mh:14px;--ca:#b8873a;--cb:#ffe9b5;--o:0.32;--d:8s;--delay:-6s;--drift:-8px;--drift2:5.6px\"></i><i class=\"craft-mote shape-shard path-drift \" style=\"--x:62%;--z:3.5px;--mh:9.799999999999999px;--ca:#d8b25c;--cb:#f6e6bd;--o:0.22;--d:11s;--delay:-4.5s;--drift:-34px;--drift2:23.799999999999997px\"></i><i class=\"craft-mote shape-diamond path-drift diamond\" style=\"--x:4%;--z:2px;--mh:5.6px;--ca:#b8873a;--cb:#ffe9b5;--o:0.52;--d:14s;--delay:-3s;--drift:9px;--drift2:-6.3px\"></i></div><div class=\"affinity-fx\"><div class=\"affinity-signature sig-fire\" style=\"--ac:#ff7a3d\"><span class=\"affinity-signature-visual\"></span></div><div class=\"affinity-flames\" style=\"--ac:#ff7a3d\"><b class=\"af-f2\"></b><b class=\"af-f1\"></b><b class=\"af-f3\"></b></div><div class=\"afx afx-fire\" style=\"--ac:#ff7a3d\"><i style=\"--x:11%;--y:7%;--z:4px;--h:24px;--iw:2.5px;--ih:10px;--ph:7px;--d:2.5s;--delay:-0s;--drift:-42px;--sk:-18deg;--r:-38deg;--ac:#ff7a3d\"></i><i style=\"--x:48%;--y:36%;--z:6.3px;--h:33px;--iw:3.9px;--ih:13.5px;--ph:9.4px;--d:3.26s;--delay:-0.63s;--drift:-19px;--sk:-7deg;--r:-7deg;--ac:#ff7a3d\"></i><i style=\"--x:85%;--y:65%;--z:8.6px;--h:42px;--iw:5.3px;--ih:17px;--ph:11.8px;--d:4.02s;--delay:-1.26s;--drift:4px;--sk:4deg;--r:24deg;--ac:#ff7a3d\"></i></div></div></div><div class=\"itemx-cond\"></div><div class=\"itemx-content\"><div class=\"itemx-head\"><div class=\"itemx-medallion\"><span class=\"itemx-emoji\">🗡️</span></div><div class=\"itemx-titles\"><div class=\"itemx-eyebrow\">ITEMX · APPRAISAL</div><span class=\"itemx-name\">검</span><span class=\"itemx-tier\">에픽</span><span class=\"itemx-subline\"><span>보유 · 위치 불명</span><span>검</span></span></div></div><div class=\"affinity-row\"><span class=\"affinity-chip\" style=\"--chip:#ff7a3d\">🔥 화염<small>단일 속성</small></span></div><div class=\"itemx-rule\"></div></div></article>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-arcane itemx2-inline-tier-magic motion-lite\" style=\"--p:#7f9cff;--pg:rgba(127,156,255,.40);--s:#7f9cff;--sg:rgba(127,156,255,.40);--rk:#6fa8e8\" x-itemx2-event=\"0okuf\"><span class=\"itemx2-event-burst itemx2-burst-learned\" aria-hidden=\"true\"></span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🗡️</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">NEW SKILL ARCHIVED</small><strong class=\"itemx2-inline-name\">검법</strong><span class=\"itemx2-inline-meta\">미분류 · 미분류 · active · equipped</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>LEVEL</b><span>Lv.7</span></i><i class=\"\"><b>숙련도</b><span>75%</span></i><i class=\"\"><b>소모</b><span>발동 자원 · 서사 기준</span></i><i class=\"\"><b>재사용</b><span>사용 후 회복 필요</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>효과</b><span>스킬 정보가 ITEMX에 기록되었습니다.</span><em class=\"itemx2-inline-more\">ITEMX &#8250;</em></footer></section>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-normal itemx2-inline-ended motion-lite\" style=\"--p:#9a6bff;--pg:rgba(154,107,255,.42);--s:#9a6bff;--sg:rgba(154,107,255,.42);--rk:#5c6577\"><span class=\"itemx2-inline-seal\">&#35352;&#37636;</span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🐾</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">ENCOUNTER REGISTERED</small><strong class=\"itemx2-inline-name\">상대</strong><span class=\"itemx2-inline-meta\">미분류</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>분류</b><span>미분류</span></i><i class=\"\"><b>위협도</b><span>미상</span></i><i class=\"\"><b>관계</b><span>hostile</span></i><i class=\"\"><b>상태</b><span>defeated</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>결과</b><span>승리</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>",
+  "lastFlush": "검을 뽑았다.  기합과 함께  상대가 쓰러졌다.  끝.\n\n<article class=\"itemx-card craft-arcane rarity-epic motion-lite itemx-inline-card\" style=\"--p:#ff7a3d;--pg:rgba(255,122,61,.42);--s:#ff7a3d;--sg:rgba(255,122,61,.42);--rk:#dd7be0\" data-itemx-id=\"blade\"><div class=\"itemx-fx\"><div class=\"current-fx\"><div class=\"current-rays\"><i style=\"--r:4deg;--w:9.81%\"></i><i style=\"--r:44deg;--w:5.38%\"></i><i style=\"--r:77deg;--w:14.23%\"></i><i style=\"--r:119deg;--w:6.35%\"></i><i style=\"--r:158deg;--w:11.54%\"></i><i style=\"--r:196deg;--w:8.08%\"></i><i style=\"--r:233deg;--w:15.58%\"></i><i style=\"--r:271deg;--w:5.77%\"></i><i style=\"--r:306deg;--w:10.77%\"></i><i style=\"--r:339deg;--w:4.81%\"></i></div><i class=\"craft-mote shape-shard path-drift \" style=\"--x:19%;--z:5px;--mh:14px;--ca:#b8873a;--cb:#ffe9b5;--o:0.32;--d:8s;--delay:-6s;--drift:-8px;--drift2:5.6px\"></i><i class=\"craft-mote shape-shard path-drift \" style=\"--x:62%;--z:3.5px;--mh:9.799999999999999px;--ca:#d8b25c;--cb:#f6e6bd;--o:0.22;--d:11s;--delay:-4.5s;--drift:-34px;--drift2:23.799999999999997px\"></i><i class=\"craft-mote shape-diamond path-drift diamond\" style=\"--x:4%;--z:2px;--mh:5.6px;--ca:#b8873a;--cb:#ffe9b5;--o:0.52;--d:14s;--delay:-3s;--drift:9px;--drift2:-6.3px\"></i></div><div class=\"affinity-fx\"><div class=\"affinity-signature sig-fire\" style=\"--ac:#ff7a3d\"><span class=\"affinity-signature-visual\"></span></div><div class=\"affinity-flames\" style=\"--ac:#ff7a3d\"><b class=\"af-f2\"></b><b class=\"af-f1\"></b><b class=\"af-f3\"></b></div><div class=\"afx afx-fire\" style=\"--ac:#ff7a3d\"><i style=\"--x:11%;--y:7%;--z:4px;--h:24px;--iw:2.5px;--ih:10px;--ph:7px;--d:2.5s;--delay:-0s;--drift:-42px;--sk:-18deg;--r:-38deg;--ac:#ff7a3d\"></i><i style=\"--x:48%;--y:36%;--z:6.3px;--h:33px;--iw:3.9px;--ih:13.5px;--ph:9.4px;--d:3.26s;--delay:-0.63s;--drift:-19px;--sk:-7deg;--r:-7deg;--ac:#ff7a3d\"></i><i style=\"--x:85%;--y:65%;--z:8.6px;--h:42px;--iw:5.3px;--ih:17px;--ph:11.8px;--d:4.02s;--delay:-1.26s;--drift:4px;--sk:4deg;--r:24deg;--ac:#ff7a3d\"></i></div></div></div><div class=\"itemx-cond\"></div><div class=\"itemx-content\"><div class=\"itemx-head\"><div class=\"itemx-medallion\"><span class=\"itemx-emoji\">🗡️</span></div><div class=\"itemx-titles\"><div class=\"itemx-eyebrow\">ITEMX · APPRAISAL</div><span class=\"itemx-name\">검</span><span class=\"itemx-tier\">에픽</span><span class=\"itemx-subline\"><span>보유 · 위치 불명</span><span>검</span></span></div></div><div class=\"affinity-row\"><span class=\"affinity-chip\" style=\"--chip:#ff7a3d\">🔥 화염<small>단일 속성</small></span></div><div class=\"itemx-rule\"></div></div></article>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-arcane itemx2-inline-tier-magic motion-lite\" style=\"--p:#7f9cff;--pg:rgba(127,156,255,.40);--s:#7f9cff;--sg:rgba(127,156,255,.40);--rk:#6fa8e8\" x-itemx2-event=\"0okuf\"><span class=\"itemx2-event-burst itemx2-burst-learned\" aria-hidden=\"true\"></span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🗡️</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">NEW SKILL ARCHIVED</small><strong class=\"itemx2-inline-name\">검법</strong><span class=\"itemx2-inline-meta\">미분류 · 미분류 · active · equipped</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>LEVEL</b><span>Lv.7</span></i><i class=\"\"><b>숙련도</b><span>75%</span></i><i class=\"\"><b>소모</b><span>발동 자원 · 서사 기준</span></i><i class=\"\"><b>재사용</b><span>사용 후 회복 필요</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>효과</b><span>스킬 정보가 ITEMX에 기록되었습니다.</span><em class=\"itemx2-inline-more\">ITEMX &#8250;</em></footer></section>\n<section class=\"itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-normal itemx2-inline-ended motion-lite\" style=\"--p:#9a6bff;--pg:rgba(154,107,255,.42);--s:#9a6bff;--sg:rgba(154,107,255,.42);--rk:#5c6577\"><span class=\"itemx2-inline-seal\">&#35352;&#37636;</span><div class=\"itemx2-inline-main\"><span class=\"itemx2-inline-icon\"><span>🐾</span></span><span class=\"itemx2-inline-copy\"><small class=\"itemx2-inline-kicker\">ENCOUNTER REGISTERED</small><strong class=\"itemx2-inline-name\">상대</strong><span class=\"itemx2-inline-meta\">미분류</span><span class=\"itemx2-inline-quick\"><i class=\"\"><b>분류</b><span>미분류</span></i><i class=\"\"><b>위협도</b><span>미상</span></i><i class=\"\"><b>관계</b><span>hostile</span></i><i class=\"\"><b>상태</b><span>defeated</span></i></span></span><i class=\"itemx2-inline-state\">최초 등록</i></div><footer class=\"itemx2-inline-foot\"><b>결과</b><span>승리</span><em class=\"itemx2-inline-more\">도감 &#8250;</em></footer></section>"
+ }
+}

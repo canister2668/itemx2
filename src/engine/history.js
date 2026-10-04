@@ -48,40 +48,12 @@ function preferences(raw) {
     return { after: 10, keep: {}, archived: {} };
   }
 }
-function completedTurns(chat) {
-  const counts = [];
-  let count = 0,
-    pending = false;
-  const messages = chat?.message || [];
-  messages.forEach((message, index) => {
-    if (!message?.isComment) {
-      if (message.role === 'user') pending = true;
-      else if (
-        pending &&
-        ['char', 'assistant'].includes(message.role) &&
-        !message.isStreaming &&
-        !(chat.isStreaming && index === messages.length - 1) &&
-        String(message.data ?? message.content ?? '').trim()
-      ) {
-        count++;
-        pending = false;
-      }
-    }
-    counts.push(count);
-  });
-  return { counts, total: count };
-}
-function entry(loaded, domain, entity, prefs = preferences(loaded.prefs), turns = completedTurns(loaded.chat)) {
+function entry(loaded, domain, entity, prefs = preferences(loaded.prefs)) {
   const history = domain === 'item' ? loaded.snapshot?.history : loaded.codexSnapshot?.history?.[domain];
   const evidence = history?.[entity.id];
   const key = `${domain}:${entity.id}`;
   const closed = terminal(domain, entity);
-  const age = evidence
-    ? Math.max(
-        0,
-        (evidence.ageOffset || 0) + turns.total - (evidence.at < 0 ? 0 : (turns.counts[evidence.at] ?? turns.total))
-      )
-    : 0;
+  const age = evidence ? Math.max(0, (loaded.turn || 0) - (evidence.at || 0)) : 0;
   const kept = prefs.keep[key] === true;
   const automatic = domain === 'item' && consumable(entity) && evidence?.reason === 'consume';
   const cycle = evidence?.source || '';
@@ -111,12 +83,11 @@ function entries(loaded, domain) {
       : domain === 'skill'
         ? loaded.codexSnapshot?.skills
         : loaded.codexSnapshot?.monsters;
-  const prefs = preferences(loaded.prefs),
-    turns = completedTurns(loaded.chat);
+  const prefs = preferences(loaded.prefs);
   return (reg?.order || [])
     .map((id) => (reg.items || reg.entries)[id])
     .filter(Boolean)
-    .map((entity) => entry(loaded, domain, entity, prefs, turns));
+    .map((entity) => entry(loaded, domain, entity, prefs));
 }
 function currentEntities(loaded, domain) {
   return entries(loaded, domain)
@@ -152,15 +123,4 @@ function requestSnapshot(loaded, narrative = '') {
   return { ...loaded.snapshot, registry: { ...loaded.snapshot.registry, order, items } };
 }
 
-export {
-  LIMITS,
-  terminal,
-  consumable,
-  observe,
-  preferences,
-  completedTurns,
-  entry,
-  entries,
-  currentEntities,
-  requestSnapshot
-};
+export { LIMITS, terminal, consumable, observe, preferences, entry, entries, currentEntities, requestSnapshot };

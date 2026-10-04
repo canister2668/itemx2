@@ -14,7 +14,7 @@ import { inlinePortraitImages } from '../portraits.js';
 import { codexInlineEventHtml } from '../render/codex-cards.js';
 import { activeContextKey, currentLatestKeys } from '../session.js';
 import { FX_MODES, SKIN_MODES } from '../settings.js';
-import { ANCHOR_RE, anchorKeys, hasAnchor, hasOldMarker, removeOldMarkers } from '../store/anchors.js';
+import { ANCHOR_RE, anchorKeys, hasAnchor } from '../store/anchors.js';
 import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
 const bursts = new Map();
@@ -191,12 +191,27 @@ function renderItemCard(key, payload, motion) {
   return html;
 }
 
-// The display hook. Old markers are hidden; anchors become cards from the
+// Skill and encounter cards are pure functions of their payload, motion and
+// portrait; the key carries all three in full, so a hit is always the same HTML.
+function renderCodexCard(key, payload, motion, portrait) {
+  const cacheKey = `c:${key}:${motion}:${portrait}:${JSON.stringify(payload)}`;
+  const cached = markerHtmlCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const html = decorateInlineEvent(
+    codexInlineEventHtml(payload, motion, portrait),
+    payload,
+    payload.event?.domain,
+    key
+  );
+  markerHtmlCache.set(cacheKey, html);
+  return html;
+}
+
+// The display hook. Anchors become cards from the
 // loaded ledger, which is awaited once per chat. An anchor nothing resolves
 // renders as nothing.
 export async function displayHandler(content) {
-  const raw = Core.stripInventoryEcho(content);
-  const source = hasOldMarker(raw) ? removeOldMarkers(raw) : raw;
+  const source = Core.stripInventoryEcho(content);
   if (!hasAnchor(source)) return source;
   const loaded = await displayProjection(anchorKeys(source));
   const rows = visibleAnchors(source, loaded);
@@ -229,15 +244,11 @@ export async function displayHandler(content) {
       ? ''
       : item
         ? renderItemCard(row.key, payload, motion(row.key))
-        : decorateInlineEvent(
-            codexInlineEventHtml(
-              payload,
-              motion(row.key),
-              portraits[payload.view?.id || payload.event?.entity?.id] || ''
-            ),
+        : renderCodexCard(
+            row.key,
             payload,
-            payload.event?.domain,
-            row.key
+            motion(row.key),
+            portraits[payload.view?.id || payload.event?.entity?.id] || ''
           );
     if (html) {
       rendered += html;
@@ -277,6 +288,19 @@ export async function resetScrollEffects() {
       await bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
     } catch {}
   }
+}
+
+// The output window opened or closed. Cards stay as rendered; only their
+// motion pauses while the host repaints the streaming message.
+export function outputWindowChanged(active) {
+  if (isUnloading() && active) return;
+  if (bodyFxClassOwner) {
+    const owner = bodyFxClassOwner;
+    void (
+      active ? owner.addClass('x-risu-itemx-body-streaming') : owner.removeClass('x-risu-itemx-body-streaming')
+    ).catch(() => {});
+  }
+  if (!active) void emit('output-idle');
 }
 
 export function forgetBodyEffectOwner() {

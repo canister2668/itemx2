@@ -8,7 +8,6 @@ import * as Lorebook from './engine/lorebook.js';
 import { chatIsStreaming, context, readChat, saveChat } from './chat-io.js';
 import { ITEMX_STORAGE_WARNING_BYTES } from './config.js';
 import { emit } from './events.js';
-import { host } from './host.js';
 import { t } from './i18n.js';
 import { timedSync, workQueue } from './kernel.js';
 import { encounterRegistryFingerprint, prepareInlinePortraits } from './portraits.js';
@@ -31,22 +30,15 @@ import {
   anchorKeys,
   countOldMarkers,
   hasAnchor,
-  removeOldMarkers,
   stripAnchors,
+  stripOldMarkers,
   stripTransport
 } from './store/anchors.js';
-import {
-  CACHE_KEY,
-  DOCUMENT_KEY,
-  OLD_KEYS,
-  footprint,
-  readCache,
-  readDocument,
-  withDocument
-} from './store/document.js';
-import { CHECKPOINT_VERSION, fold } from './store/replay.js';
+import { DOCUMENT_KEY, footprint, readDocument, withDocument } from './store/document.js';
+import { fold, restampEntries, windowOffset } from './store/replay.js';
 
 const messageId = (message) => (typeof message?.chatId === 'string' ? message.chatId : '');
+const messageTime = (message) => (Number.isFinite(message?.time) && message.time > 0 ? message.time : 0);
 
 // Everything the fold depends on, hashed without serializing the chat: the
 // stored document string and each message's id and anchors.
@@ -61,13 +53,12 @@ export function replayFingerprint(chat) {
   return Core.fnv1a(source);
 }
 
-// A read-only projection of `ctx.chat`. `full` folds from the start so every
-// anchor has its view; otherwise the cached checkpoint may skip the prefix.
-export function project(ctx, settings = {}, { full = false } = {}) {
+// A read-only projection of `ctx.chat`: the fold of its loaded messages from
+// the newest valid state entry.
+export function project(ctx, settings = {}) {
   const doc = readDocument(ctx.chat);
-  const checkpoint = full ? null : readCache(ctx.chat)?.checkpoint || null;
   const pending = (key) => (pendingRecord(key)?.chatKey === ctx.key ? pendingRecord(key) : null);
-  const folded = timedSync('replay', () => fold(ctx.chat, doc, { checkpoint, full, pending }));
+  const folded = timedSync('replay', () => fold(ctx.chat, doc, { pending }));
   const codexBase = folded.codex;
   codexBase.fingerprint = folded.chain;
   const codexSnapshot = Object.keys(doc.lore.rows).length ? Lorebook.apply(codexBase, doc.lore) : codexBase;
@@ -84,24 +75,12 @@ export function project(ctx, settings = {}, { full = false } = {}) {
     },
     codexSnapshot,
     views: folded.views,
-    complete: folded.complete,
-    checkpoint: folded.checkpoint,
+    notes: folded.notes,
+    turn: folded.turn,
+    grounded: folded.grounded,
     lorebookSourceFingerprint: encounterRegistryFingerprint(codexBase),
     replayFingerprint: replayFingerprint(ctx.chat)
   };
-}
-
-// The views of every step. A checkpointed projection lacks the prefix; the
-// first request for an old anchor folds once from the start.
-export function fullViews(loaded) {
-  if (!loaded) return new Map();
-  if (!loaded.complete) {
-    const pending = (key) => (pendingRecord(key)?.chatKey === loaded.key ? pendingRecord(key) : null);
-    const folded = timedSync('replay:full', () => fold(loaded.chat, loaded.doc, { full: true, pending }));
-    loaded.views = folded.views;
-    loaded.complete = true;
-  }
-  return loaded.views;
 }
 
 const asPayload = (row) =>
@@ -109,12 +88,26 @@ const asPayload = (row) =>
     ? { event: row.event, view: row.view, previous: row.previous, review: row.review, domain: row.domain }
     : null;
 
-// The card behind one anchor: the committed fold's view, else the parsed but
-// not yet committed record of the current response.
+// A committed card frozen at its commit: older cards render without a replay.
+const frozenPayload = (row) =>
+  row?.v
+    ? {
+        event: row.e,
+        view: row.v,
+        previous: row.p || null,
+        review: row.r,
+        domain: row.d === 'item' ? 'item' : row.e?.domain
+      }
+    : null;
+
+// The card behind one anchor: the fold's view, the parsed but not yet
+// committed record of the current response, or the frozen committed card.
 export function anchorPayload(key, loaded = cachedLoaded()) {
-  let row = loaded?.views?.get(`e:${key}`);
-  if (!row && loaded && !loaded.complete && loaded.doc?.events?.[key]) row = fullViews(loaded).get(`e:${key}`);
-  return asPayload(row) || asPayload(pendingRecord(key));
+  return (
+    asPayload(loaded?.views?.get(`e:${key}`)) ||
+    asPayload(pendingRecord(key)) ||
+    frozenPayload(loaded?.doc?.events?.[key])
+  );
 }
 
 // Anchors of the newest response, the only cards that may animate and the
@@ -197,39 +190,10 @@ export function displayProjection(keys = []) {
   return Promise.race([displayLoad, timeout]).finally(() => globalThis.clearTimeout(timer));
 }
 
-// Latest view, review and message index of each entity, for the drawer's
-// change and review annotations.
-const records = new WeakMap();
+// The latest previous view and review of an entity, for the drawer's change
+// and review annotations. They travel inside the state.
 export function presentationRecord(domain, id, loaded = cachedLoaded()) {
-  if (!loaded) return {};
-  let byEntity = records.get(loaded);
-  if (!byEntity) {
-    byEntity = new Map();
-    for (const row of fullViews(loaded).values()) {
-      if (!row.view) continue;
-      const rowDomain = row.domain === 'item' ? 'item' : row.event?.domain;
-      const entity = row.view.id || row.event?.item?.id || row.event?.patch?.id;
-      if (!entity) continue;
-      const prior = byEntity.get(`${rowDomain}:${entity}`);
-      const review = { ...row.review };
-      if (row.manual) {
-        review.missing = row.review?.source === 'auxiliary' ? row.review.missing || [] : [];
-        review.checked = row.review?.source === 'auxiliary' ? Boolean(row.review.checked) : false;
-      } else if (prior?.review?.missing?.length && !row.review?.checked) {
-        review.missing = prior.review.missing;
-        review.evidenceIndex = prior.review.evidenceIndex ?? prior.messageIndex;
-      }
-      byEntity.set(`${rowDomain}:${entity}`, {
-        event: row.event,
-        view: row.view,
-        previous: row.previous,
-        review,
-        messageIndex: row.index
-      });
-    }
-    records.set(loaded, byEntity);
-  }
-  return byEntity.get(`${domain}:${id}`) || {};
+  return loaded?.notes?.[`${domain}:${id}`] || {};
 }
 
 // Registers parsed records as committed events of message `chatId`.
@@ -247,13 +211,25 @@ export function commitRecords(doc, records, chatId) {
   }
 }
 
-// The derived cache written alongside a document change: the last projection's
-// checkpoint candidate, validated by its chain hash when it is next read.
-function cacheFor(key) {
-  const loaded = cachedLoaded();
-  return loaded?.key === key && loaded.checkpoint?.v === CHECKPOINT_VERSION
-    ? { v: 1, checkpoint: loaded.checkpoint }
-    : undefined;
+// Recomputes the state entries from local message `index` on (the message a
+// write just changed and every later one) and freezes the card payloads the
+// recomputation produced. A window that cannot ground the state stamps nothing.
+export function stampFrom(doc, chat, index) {
+  const views = restampEntries(chat, doc, index);
+  if (!views) return false;
+  for (const [id, row] of views) {
+    const event = id.startsWith('e:') ? doc.events[id.slice(2)] : null;
+    if (!event) continue;
+    // A card the replay can no longer apply must not keep its old face.
+    if (row.view) {
+      event.v = row.view;
+      event.p = row.previous || null;
+    } else {
+      delete event.v;
+      delete event.p;
+    }
+  }
+  return true;
 }
 
 // Read-modify-write of the chat's document. `change(doc, latest)` edits `doc`
@@ -267,11 +243,7 @@ export async function writeDocument(ctx, change, { idle = true } = {}) {
   const doc = readDocument(latest);
   const result = await change(doc, latest);
   if (result === false) return null;
-  const next = withDocument(
-    result?.chat || latest,
-    doc,
-    result?.cache !== undefined ? result.cache : cacheFor(ctx.key)
-  );
+  const next = withDocument(result?.chat || latest, doc);
   const written = await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
   if (activeContextKey() === ctx.key) invalidateLoaded();
   return { chat: written, doc };
@@ -283,7 +255,7 @@ export async function commitManualEvents(loaded, events, label, review = { sourc
     if (loaded.expectedFingerprint && replayFingerprint(latest) !== loaded.expectedFingerprint)
       throw new Error(t('ledger.003'));
     // Validate against the state the rows will actually follow.
-    const state = fold(latest, doc, { checkpoint: readCache(latest)?.checkpoint || null });
+    const state = fold(latest, doc);
     const after = messageId(latest.message?.at(-1));
     for (const event of events) {
       const codex = ['skill', 'monster'].includes(event?.domain);
@@ -334,7 +306,10 @@ export async function exportCurrentBackup(key) {
   const ctx = await context();
   if (!ctx || ctx.key !== key) throw new Error(t('ledger.022'));
   requireBackupIdle(ctx.chat);
-  return Backup.capture(project(ctx, await settingsFor(ctx.character), { full: true }));
+  const loaded = project(ctx, await settingsFor(ctx.character));
+  // Only part of the chat is loaded and no state entry covers the rest.
+  if (!loaded.grounded) throw new Error(t('ledger.partial-chat'));
+  return Backup.capture(loaded);
 }
 
 export async function prepareBackupImport(text, key, mode = 'empty') {
@@ -344,6 +319,8 @@ export async function prepareBackupImport(text, key, mode = 'empty') {
   if (!ctx || ctx.key !== key) throw new Error(t('ledger.022'));
   requireBackupIdle(ctx.chat);
   const loaded = project(ctx);
+  // Counted on part of the chat, an "empty" chat may not be empty at all.
+  if (!loaded.grounded) throw new Error(t('ledger.partial-chat'));
   const previousCounts = [
     loaded.snapshot.registry.order.length,
     loaded.codexSnapshot.skills.order.length,
@@ -354,8 +331,9 @@ export async function prepareBackupImport(text, key, mode = 'empty') {
   return { value, key, mode, previousCounts, expected: chatSignature(ctx.chat) };
 }
 
-// A restore becomes the document's base state, folded before every message.
-// Events of the chat so far are superseded by it, so their anchors go too.
+// A restore becomes the document's root: the state at the newest message,
+// before every later one. Events, manual rows and entries so far are
+// superseded by it, so the loaded anchors go too.
 export async function commitBackupImport(preview) {
   const ctx = await context();
   if (!ctx || ctx.key !== preview.key) throw new Error(t('ledger.019'));
@@ -367,14 +345,27 @@ export async function commitBackupImport(preview) {
     ctx,
     (doc, latest) => {
       if (chatSignature(latest) !== preview.expected) throw new Error(t('ledger.016'));
-      const restored = Backup.restore(checked.value, latest);
-      doc.base = { item: { registry: restored.item.registry, history: restored.item.history }, codex: restored.codex };
+      const turn = fold(latest, doc).turn;
+      const restored = Backup.restore(checked.value, turn);
+      const last = (latest.message?.length || 0) - 1;
+      doc.root = {
+        x: {
+          item: { registry: restored.item.registry, history: restored.item.history },
+          codex: restored.codex,
+          notes: {}
+        },
+        m: [],
+        w: messageTime(latest.message?.[last]),
+        i: windowOffset(latest) + last,
+        t: turn
+      };
       doc.prefs = restored.prefs;
       doc.restoredThrough = messageId(latest.message?.at(-1));
       doc.events = {};
       doc.manual = [];
+      doc.states = [];
       if (preview.mode === 'replace') doc.lore = Lorebook.emptyLedger();
-      return { chat: mapMessages(latest, stripAnchors).chat, cache: null };
+      return { chat: mapMessages(latest, stripAnchors).chat };
     },
     { idle: true }
   );
@@ -401,24 +392,23 @@ function mapMessages(chat, map) {
 
 const tidy = (text) => text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n');
 
-// Removes every ITEMX trace from a chat: anchors, old markers, stray
-// transport tags, and the document, cache and old state keys.
+// Removes every ITEMX trace from the loaded chat: anchors, markers of earlier
+// versions, stray transport tags and the document.
 export function cleanChatPluginData(chat) {
   let removedMarkers = 0;
   const mapped = mapMessages(chat, (text) => {
     const count = anchorKeys(text).length + countOldMarkers(text);
-    const next = removeOldMarkers(tidy(stripTransport(stripAnchors(text))));
+    const next = tidy(stripTransport(stripOldMarkers(stripAnchors(text))));
     if (next === text) return text;
     removedMarkers += count;
     return next;
   });
   const scriptstate = { ...(chat?.scriptstate || {}) };
   let removedStateKeys = 0;
-  for (const key of [DOCUMENT_KEY, CACHE_KEY, ...OLD_KEYS])
-    if (Object.prototype.hasOwnProperty.call(scriptstate, key)) {
-      delete scriptstate[key];
-      removedStateKeys += 1;
-    }
+  if (Object.prototype.hasOwnProperty.call(scriptstate, DOCUMENT_KEY)) {
+    delete scriptstate[DOCUMENT_KEY];
+    removedStateKeys = 1;
+  }
   return {
     chat: { ...mapped.chat, scriptstate },
     cleanedMessages: mapped.changed,
@@ -463,91 +453,12 @@ export async function cleanCurrentChatItemx() {
   return { ...cleaned, loaded };
 }
 
-// Removes the markers of ITEMX 2.0 – 2.3 from message text. Their data is not
-// read by this version; the text keeps everything else.
-export async function removeOldMarkersCurrent() {
-  const { ctx, latest } = await requireIdleActive({
-    missing: t('ui-settings.139'),
-    unreadable: t('ledger.006'),
-    streaming: t('ledger.010')
-  });
-  let removedMarkers = 0;
-  const mapped = mapMessages(latest, (text) => {
-    removedMarkers += countOldMarkers(text);
-    return removeOldMarkers(text);
-  });
-  if (mapped.changed) await saveChat(ctx.characterIndex, ctx.chatIndex, mapped.chat, latest);
-  invalidateLoaded();
-  void emit('data-reset');
-  setStatus(t('ledger.old-markers-done', removedMarkers));
-  const loaded = await rebuildCurrent();
-  return { cleanedMessages: mapped.changed, removedMarkers, loaded };
-}
-
-export async function removeLegacyPluginStorage() {
-  const storage = host().pluginStorage;
-  if (typeof storage?.keys !== 'function' || typeof storage?.removeItem !== 'function') return 0;
-  let keys;
-  try {
-    keys = await storage.keys();
-  } catch {
-    return 0;
-  }
-  if (!Array.isArray(keys)) return 0;
-  let removed = 0;
-  for (const key of keys.filter((one) => String(one).startsWith('auxZero')))
-    try {
-      await storage.removeItem(key);
-      removed += 1;
-    } catch {}
-  return removed;
-}
-
 export function itemxStorageFootprint(chat) {
-  const { stateBytes, oldBytes } = footprint(chat);
-  let anchorCount = 0,
-    oldMarkerCount = 0;
+  let anchorCount = 0;
   for (const message of chat?.message || []) {
     const text = Core.messageText(message);
-    if (!text.includes('<!--')) continue;
-    anchorCount += anchorKeys(text).length;
-    oldMarkerCount += countOldMarkers(text);
+    if (text.includes('<!--')) anchorCount += anchorKeys(text).length;
   }
-  return { stateBytes, oldBytes, anchorCount, oldMarkerCount, totalBytes: stateBytes + oldBytes };
-}
-
-// Drops events whose anchors are gone for good (rerolled or deleted), the
-// guards of deleted messages and the old state keys, and stores a fresh
-// checkpoint. The fold of the current chat is unchanged.
-export async function compactCurrentChatStorage() {
-  const { ctx, latest } = await requireIdleActive({
-    missing: t('ui-settings.139'),
-    unreadable: t('ledger.006'),
-    streaming: t('ledger.005')
-  });
-  const before = itemxStorageFootprint(latest);
-  const doc = readDocument(latest);
-  const live = new Map();
-  for (const message of latest.message || [])
-    for (const key of anchorKeys(Core.messageText(message))) live.set(key, messageId(message));
-  for (const [key, row] of Object.entries(doc.events)) if (live.get(key) !== row.c) delete doc.events[key];
-  const ids = new Set((latest.message || []).map(messageId));
-  for (const id of Object.keys(doc.guards.aux)) if (!ids.has(id)) delete doc.guards.aux[id];
-  const folded = fold(latest, doc, { full: true });
-  const scriptstate = { ...(latest.scriptstate || {}) };
-  for (const key of OLD_KEYS) delete scriptstate[key];
-  const next = withDocument(
-    { ...latest, scriptstate },
-    doc,
-    folded.checkpoint ? { v: 1, checkpoint: folded.checkpoint } : null
-  );
-  await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
-  const legacyKeysRemoved = await removeLegacyPluginStorage();
-  const after = itemxStorageFootprint(next);
-  invalidateLoaded();
-  void emit('data-reset');
-  const savedBytes = Math.max(0, before.totalBytes - after.totalBytes);
-  setStatus(t('ledger.004', Math.round(savedBytes / 1024)));
-  const loaded = await rebuildCurrent();
-  return { before, after, savedBytes, legacyKeysRemoved, loaded };
+  const { stateBytes } = footprint(chat);
+  return { stateBytes, anchorCount, totalBytes: stateBytes };
 }

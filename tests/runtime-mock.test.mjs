@@ -367,8 +367,9 @@ test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated
     }
   });
   assert.equal(cleaned.removedMarkers, 2);
-  assert.equal(cleaned.removedStateKeys, 7);
+  // 2.5 owns only its ledger key; earlier state keys are not its data.
+  assert.equal(cleaned.removedStateKeys, 0);
   assert.doesNotMatch(cleaned.chat.message[0].data, /ITEMX2|CODEX2/);
   assert.match(cleaned.chat.message[0].data, /<state>보존<\/state>/);
-  assert.equal(JSON.stringify(cleaned.chat.scriptstate), JSON.stringify({ unrelated: 'keep' }));
+  assert.equal(cleaned.chat.scriptstate.unrelated, 'keep');
 });

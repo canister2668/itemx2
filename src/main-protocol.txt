@@ -1,33 +1,23 @@
-## ITEMX Compact Item Event Protocol
+## ITEMX Item Events
+Follow all other protocols; preserve trailer order. If a trailer must be last, place ITEMX before it.
 
-ITEMX is one output protocol among all system protocols already present. Follow every other protocol too. In particular, preserve every required status/state/route trailer and its exact ordering. If another protocol says its trailer must be the final text, put ITEMX events earlier beside the relevant narrative and leave that trailer absolutely last.
+Emit an event only for an item event settled in this response (discovered, obtained, changed, used, equipped, transferred, destroyed, appraised); never for mentions, plans, guesses, scenery or unchanged items. Multiple items are allowed: place each event right after its paragraph, never batched at the end.
 
-Emit an ITEMX event only for a concrete item event settled in this response. Do not emit one for mere mentions, plans, guesses, scenery, or unchanged items. Multiple items are allowed; place each event immediately after the paragraph where that item is discovered, obtained, changed, used, equipped, transferred, destroyed, or appraised. Never batch events at the response end.
+Default one-line form:
+[itemx: id=stable_id | name=이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과::설명 ;; 효과::설명 | trivia=짧은 배경]
+A full appraisal needs id, name, type, emoji, rarity, display, possession, location, count, plus every appraisal field the narrative actually supports (equipment: every stated effect). Use a fitting emoji, not a default or ❔. Never invent level, durability, price, affinity or effects. Ids use letters, digits, `_`, `-`. A newly seen item is `observed` unless ownership is established.
 
-Use the one-line form by default:
-[itemx: id=stable_id | name=아이템 이름 | type=분류 | emoji=🗡️ | rarity=rare | display=레어 | theme=forged | affinity=fire | possession=owned | location=inventory | count=1 | power=300-699 | required=레벨 10 | durability=80/100 | cost=1200 Gold | effects=효과명::설명 ;; 효과명::설명 | trivia=짧은 배경]
-
-For a new full appraisal, include id, name, type, emoji, rarity, display, possession, location, count and every appraisal field actually supported by the narrative. Choose one fitting emoji that reflects the item's identity, form or use; do not mechanically repeat a default and never use `❔`. Equipment also needs every real gameplay effect stated by the narrative. Never invent required level, durability, price, affinity or effects merely to fill a field. Use stable ids containing only letters, digits, `_` or `-`. A newly seen item is `observed` unless the narrative establishes ownership.
-
-Existing ids in the `[ITEMX v2]` state are authoritative. Never appraise them again. Emit only the settled change:
+Existing inventory ids are authoritative; patch them, never re-appraise:
 [itemx: id=healing_potion | action=consume | quantity=1 | reason=물약 사용]
 [itemx: id=quest_ore | action=transfer | quantity=all | destination=guild | reason=납품]
+[itemx: id=sword | action=acquire | quantity=1]
 [itemx: id=sword | action=equip | slot=main_hand]
 [itemx: action=swap | unequip=old_sword | equip=new_sword | slot=main_hand]
 [itemx: action=transform | inputs=ore:3,coal:1 | outputs=ingot:1 | reason=제련]
 [itemx: id=sword | op=merge | durability=61/100]
+Actions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap; never action and op together. transfer/consume/destroy need quantity (positive integer or `all`). `reason` changes nothing. `op=merge` changes descriptive/stat fields only, never possession, location, count or slot. `op=remove` only for legacy complete loss, `op=restore` only for legacy restoration.
+Before equip, check the inventory: an observed item needs an `acquire` the narrative establishes first; never re-acquire an owned item; a removed item needs a narrated restore/acquire; an occupied slot needs unequip or swap. No executable tags inside thoughts, plans, examples or hypotheticals.
 
-Actions: acquire, transfer, consume, equip, unequip, move, transform, destroy, restore, swap. For transfer, consume, and destroy, quantity is mandatory and is a positive integer or `all`. `reason` never changes state by itself. `op=merge` changes only supplied descriptive/stat fields; it cannot change possession, location, count, or slot. Use an action for those. Use `op=remove` only for legacy complete loss and `op=restore` only for legacy restoration.
-Before equip, check the current registry. An observed item is not yet owned: if the narrative actually establishes taking possession, emit [itemx: id=sword | action=acquire | quantity=1] BEFORE the equip event. Do not repeatedly acquire an already owned item. A removed item requires an explicitly narrated restore/acquire first. An occupied slot requires unequip or swap, not a second conflicting equip. Never put executable ITEMX tags inside thoughts, planning, examples or quoted hypothetical actions.
-
-Enums:
-- rarity: normal, magic, rare, unique, epic, legendary, mythical, empyrean
-- possession: observed, owned, removed
-- location: inventory, equipped, storage, unknown
-- theme: arcane, forged, oriental, clockwork, synthetic, celestial, organic
-- affinity/affinity2: fire, ice, lightning, wind, earth, light, dark, poison, blood, void
-- condition: blessed, cursed, corrupted, glitched, sealed
-
-Explicit narrative numbers and named effects are authoritative and must be copied without replacing them with rarity defaults. Only when a full appraisal clearly establishes power but gives no literal number may power use a numeric `minimum-maximum` fantasy-appraisal range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect budget is a maximum, never a requirement to invent effects: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material: East Asian wuxia/xianxia items are oriental even when forged from metal. Emit affinity only when the narrative or established item identity supports it; never invent an element as decoration.
-
-Do not output HTML, CSS, SVG, Markdown fences, generic `<itemx>` wrappers, or `[emoji 이름]` markers. Never write or copy HTML comments: ITEMX places its own card anchors after reading your events. Values must not contain `|` or `]`; use `;;` between effects and `::` between an effect name and description. Before finishing, verify that every event is complete, settled, uses an existing id where applicable, and does not displace another protocol's required final trailer.
+Enums: rarity normal|magic|rare|unique|epic|legendary|mythical|empyrean; possession observed|owned|removed; location inventory|equipped|storage|unknown; theme arcane|forged|oriental|clockwork|synthetic|celestial|organic; affinity/affinity2 fire|ice|lightning|wind|earth|light|dark|poison|blood|void; condition blessed|cursed|corrupted|glitched|sealed.
+Copy narrative numbers and named effects exactly. Only when a full appraisal clearly establishes power without a literal number may power use a range: normal 10-99, magic 100-299, rare 300-699, unique 700-1499, epic 1500-3999, legendary 4000-9999, mythical 10000-29999, empyrean 30000-99999. Effect count is a maximum, never a quota: normal 0-1, magic/rare 1-2, unique/epic 2-3, legendary+ 3. `theme` is visual culture, not material (wuxia/xianxia = oriental). Affinity only when supported, never decoration.
+No HTML, CSS, SVG, Markdown fences, `<itemx>` wrappers, `[emoji 이름]` markers or HTML comments (ITEMX adds its own). Values must not contain `|` or `]`; `;;` separates effects, `::` an effect's name from its description. Before finishing, check each event is complete and settled, reuses existing ids, and leaves required trailers last.

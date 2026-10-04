@@ -168,7 +168,7 @@ test('review metadata lives with the event and reaches the drawer annotations', 
   const loaded = p.project({ key: 'k', chat });
   const record = p.presentationRecord('item', 'blade', loaded);
   assert.equal(record.review.missing[0], 'effects');
-  assert.equal(record.messageIndex, 0);
+  assert.equal(record.evidence.chatId, chat.message[0].chatId);
   assert.match(renderer.reviewHtml(record.review), /일부 정보 보완 실패/);
   assert.match(renderer.reviewHtml(null, { _inferred: ['level', 'mastery'] }), /추정값 · 레벨, 숙련/);
   assert.ok(!renderer.reviewHtml(null).includes('본문 확정'));

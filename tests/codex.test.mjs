@@ -582,7 +582,7 @@ test('skill protocol uses real time cooldowns and world-native costs', () => {
   );
   assert.equal(passive.snapshot.skills.entries.sense.cost, '상시 효과 · 별도 소모 없음');
   assert.equal(passive.snapshot.skills.entries.sense.cooldown, '상시 적용');
-  assert.match(protocol, /Preserve the setting's own native rank/);
+  assert.match(protocol, /preserve the setting's own native rank/);
   const forced = codex.protocol([], { rarityMode: 'itemx' });
   assert.match(forced, /normal\|magic\|rare\|unique\|epic\|legendary\|mythical\|empyrean/);
   assert.doesNotMatch(protocol, /<level>1<\/level>/);
@@ -650,9 +650,9 @@ test('skill and encounter records derive safe emoji fallbacks and request free m
   assert.equal(result.snapshot.skills.entries.flash.glyph, '✨');
   assert.equal(result.snapshot.monsters.entries.wolf.glyph, '🐺');
   const protocol = codex.protocol([]);
-  assert.match(protocol, /choose one fitting emoji that reflects the skill identity/);
-  assert.match(protocol, /choose one fitting emoji that reflects the creature identity/);
-  assert.match(protocol, /never use ❔/);
+  assert.match(protocol, /one fitting emoji for the skill/);
+  assert.match(protocol, /one fitting emoji for the creature/);
+  assert.match(protocol, /never ❔/);
   assert.match(protocol, /character-bound power, command authority, supernatural mark, contract right/);
   assert.match(protocol, /do not make the enduring capability transient/);
 });
