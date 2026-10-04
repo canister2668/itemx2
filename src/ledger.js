@@ -233,6 +233,8 @@ export function stampFrom(doc, chat, index) {
 // Read-modify-write of the chat's document. `change(doc, latest)` edits `doc`
 // in place and may return `{ chat }` with replacement messages, or false to
 // write nothing. The write lands only if the chat is still the one read.
+const bytesOf = (doc) => new TextEncoder().encode(JSON.stringify(doc)).length;
+
 export async function writeDocument(ctx, change, { idle = true } = {}) {
   workQueue.assertCurrent();
   const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
@@ -241,7 +243,10 @@ export async function writeDocument(ctx, change, { idle = true } = {}) {
   const doc = readDocument(latest);
   const result = await change(doc, latest);
   if (result === false) return null;
-  const next = withDocument(result?.chat || latest, doc);
+  const chat = result?.chat || latest;
+  // At the storage limit a write prunes what is provably gone, when it can.
+  if (bytesOf(doc) >= ITEMX_STORAGE_WARNING_BYTES && !pruneBlocker(chat)) pruneDocument(doc, chat);
+  const next = withDocument(chat, doc);
   const written = await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
   if (activeContextKey() === ctx.key) invalidateLoaded();
   return { chat: written, doc };
@@ -461,49 +466,65 @@ export function itemxStorageFootprint(chat) {
   return { stateBytes, anchorCount, totalBytes: stateBytes };
 }
 
-// Drops what a fully loaded chat shows to be gone: card events whose anchor
-// stands in no message (rerolled, deleted or edited away) and aux guards of
-// deleted messages, and rewrites frozen cards in their compact form. Events
-// made during the newest turn are kept: a reroll candidate the reader may
-// still swipe back to carries them. Refuses a partially loaded chat, where an
-// absent anchor may simply not be loaded.
+// Why `chat` cannot be pruned (reader-facing), or '' when it can. A partially loaded chat
+// may simply not show an anchor; a chat with branches keeps the cards of its
+// other branches out of the message list.
+export function pruneBlocker(chat) {
+  if (windowOffset(chat)) return t('ledger.partial-chat');
+  if (chat?.activeBranchId) return t('ledger.branch-chat');
+  return '';
+}
+
+// Drops, in place on `doc`, what `chat` (fully loaded, without branches) shows
+// to be gone: card events whose anchor stands in no message (rerolled,
+// deleted or edited away) and aux guards of deleted messages, and rewrites
+// frozen cards in their compact form. Events made during the newest turn are
+// kept: a reroll candidate the reader may still swipe back to carries them.
+// Returns the number of events removed.
+export function pruneDocument(doc, chat) {
+  const messages = chat?.message || [];
+  const live = new Set(messages.flatMap((message) => anchorKeys(Core.messageText(message))));
+  const ids = new Set(messages.map(messageId).filter(Boolean));
+  // The newest turn starts at the last user message; an event committed after
+  // it may belong to a reroll candidate. Rows from before 2.5.1 carry no
+  // commit time and fall back to their sequence.
+  let lastUser = -1;
+  for (let index = messages.length - 1; index >= 0 && lastUser < 0; index -= 1)
+    if (/^(?:user|human)$/i.test(String(messages[index]?.role || ''))) lastUser = index;
+  const turnStart = Number(messages[lastUser]?.time) || 0;
+  let settledSeq = 0;
+  for (const message of messages.slice(0, Math.max(0, lastUser)))
+    for (const key of anchorKeys(Core.messageText(message))) settledSeq = Math.max(settledSeq, doc.events[key]?.s || 0);
+  const isCurrentTurn = (row) => (Number.isFinite(row.t) && turnStart ? row.t >= turnStart : (row.s || 0) > settledSeq);
+  let removed = 0;
+  for (const [key, row] of Object.entries(doc.events)) {
+    if (live.has(key) || isCurrentTurn(row)) continue;
+    delete doc.events[key];
+    removed += 1;
+  }
+  for (const id of Object.keys(doc.guards.aux)) if (!ids.has(id)) delete doc.guards.aux[id];
+  for (const row of Object.values(doc.events)) {
+    const frozen = thaw(row);
+    if (frozen) freeze(row, frozen.view, frozen.previous);
+  }
+  return removed;
+}
+
+// The settings action. Refuses what pruneBlocker refuses.
 export async function compactCurrentChatStorage() {
   const { ctx, latest } = await requireIdleActive({
     missing: t('ui-settings.139'),
     unreadable: t('ledger.006'),
     streaming: t('ledger.010')
   });
-  if (windowOffset(latest)) throw new Error(t('ledger.partial-chat'));
+  const blocked = pruneBlocker(latest);
+  if (blocked) throw new Error(blocked);
   const before = footprint(latest).stateBytes;
   let removed = 0;
   await writeDocument(ctx, (doc, current) => {
-    if (windowOffset(current)) throw new Error(t('ledger.partial-chat'));
-    const messages = current.message || [];
-    const live = new Set(messages.flatMap((message) => anchorKeys(Core.messageText(message))));
-    const ids = new Set(messages.map(messageId).filter(Boolean));
-    // The newest turn starts at the last user message; an event committed
-    // after it may belong to a reroll candidate. Rows from before 2.5.1 carry
-    // no commit time and fall back to their sequence.
-    let lastUser = -1;
-    for (let index = messages.length - 1; index >= 0 && lastUser < 0; index -= 1)
-      if (/^(?:user|human)$/i.test(String(messages[index]?.role || ''))) lastUser = index;
-    const turnStart = Number(messages[lastUser]?.time) || 0;
-    let settledSeq = 0;
-    for (const message of messages.slice(0, Math.max(0, lastUser)))
-      for (const key of anchorKeys(Core.messageText(message)))
-        settledSeq = Math.max(settledSeq, doc.events[key]?.s || 0);
-    const isCurrentTurn = (row) =>
-      Number.isFinite(row.t) && turnStart ? row.t >= turnStart : (row.s || 0) > settledSeq;
-    for (const [key, row] of Object.entries(doc.events)) {
-      if (live.has(key) || isCurrentTurn(row)) continue;
-      delete doc.events[key];
-      removed += 1;
-    }
-    for (const id of Object.keys(doc.guards.aux)) if (!ids.has(id)) delete doc.guards.aux[id];
-    for (const row of Object.values(doc.events)) {
-      const frozen = thaw(row);
-      if (frozen) freeze(row, frozen.view, frozen.previous);
-    }
+    const again = pruneBlocker(current);
+    if (again) throw new Error(again);
+    removed = pruneDocument(doc, current);
   });
   invalidateLoaded();
   void emit('data-reset');

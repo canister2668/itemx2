@@ -667,3 +667,45 @@ test('storage cleanup drops events of deleted replies, keeps the newest turn, an
   assert.ok(doc.events[owlKey], 'the newest turn keeps its reroll candidate');
   assert.deepEqual(owned(fake.state.chat), ['ring']);
 });
+
+test('cleanup refuses a chat with branches, whose other branches hold cards the list does not show', async () => {
+  const chat = stamped(chatOf([[own('ring')], [own('owl')]]));
+  const fake = createFakeHost({
+    chat: { id: 'chat', ...chat, activeBranchId: 'b2' },
+    character: { chaId: 'br', name: 'T' },
+    settings: settingsDoc('br')
+  });
+  setHost(fake.api);
+  Session.resetSession('br:chat');
+  await assert.rejects(() => Ledger.compactCurrentChatStorage(), /분기/);
+  assert.equal(fake.state.writes, 0);
+  assert.match(Ledger.pruneBlocker({ message: [], activeBranchId: 'b2' }), /분기/);
+  assert.match(Ledger.pruneBlocker({ message: [], messageOffset: 4, messagesFullyLoaded: false }), /맨 위까지/);
+  assert.equal(Ledger.pruneBlocker({ message: [] }), '');
+});
+
+test('a write at the storage limit prunes gone cards on its own, never in a branch chat', async () => {
+  const build = (extra = {}) => {
+    const chat = stamped(chatOf([[own('ring')], [own('cup')]]));
+    const doc = documentOf(chat);
+    // A deleted reply's card, padded past the 16 MiB limit.
+    doc.events.gone1 = { c: 'deleted', d: 'item', e: own('junk'), s: 0, t: 1, pad: 'x'.repeat(16 * 1024 * 1024) };
+    return { id: 'chat', ...withDoc(chat, doc), ...extra };
+  };
+  for (const [name, extra, expectGone] of [
+    ['plain', {}, true],
+    ['branch', { activeBranchId: 'b2' }, false]
+  ]) {
+    const fake = createFakeHost({
+      chat: build(extra),
+      character: { chaId: `lim${name}`, name: 'T' },
+      settings: settingsDoc(`lim${name}`)
+    });
+    setHost(fake.api);
+    Session.resetSession(`lim${name}:chat`);
+    const ctx = { characterIndex: 0, chatIndex: 0, key: `lim${name}:chat` };
+    await Ledger.writeDocument(ctx, () => ({}));
+    assert.equal(Boolean(documentOf(fake.state.chat).events.gone1), !expectGone, name);
+    assert.deepEqual(owned(fake.state.chat), ['ring', 'cup'], name);
+  }
+});
