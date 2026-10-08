@@ -51,6 +51,7 @@ import {
   clearEventBursts,
   clearMarkerHtmlCache,
   effectsMotion,
+  effectsPack,
   flushEventBursts,
   forgetBodyEffectOwner,
   installBodyEffectGovernor,
@@ -120,12 +121,13 @@ export function detailAnnotations(domain, entity) {
 }
 
 export function itemDetailHtml(item) {
-  const motion = effectsMotion();
+  const motion = effectsMotion(),
+    fx = effectsPack();
   const record = presentationRecord('item', item.id);
-  const key = `${item.id}:${Core.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}`;
+  const key = `${item.id}:${Core.fnv1a(JSON.stringify([item, record.previous, record.review]))}:${motion}:${fx}`;
   const cached = detailHtmlCache.get(key);
   if (cached !== undefined) return cached;
-  const html = `<div class="itemx2-detail-stack">${Renderer.renderCard(item, { motion })}${detailAnnotations('item', item)}</div>`;
+  const html = `<div class="itemx2-detail-stack">${Renderer.renderCard(item, { motion, fx })}${detailAnnotations('item', item)}</div>`;
   detailHtmlCache.set(key, html);
   return html;
 }

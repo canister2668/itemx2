@@ -102,7 +102,7 @@ test('skill forms are conservative and add at most one material layer without re
 });
 
 test('blend styling does not invent effects or add repeating particle elements', () => {
-  const html = renderer.renderCard({ ...item, affinity: 'fire', affinity2: 'ice' });
+  const html = renderer.renderCard({ ...item, affinity: 'fire', affinity2: 'ice' }, { fx: 'classic' });
   assert.match(html, /itemx2-blend-fire-ice/);
   assert.equal((html.match(/class="craft-mote/g) || []).length, renderer.particleBudget.epic);
   assert.equal(item.effects.length, 1);
@@ -182,7 +182,7 @@ test('item detail keeps cards and annotations in one vertical flex child', async
   const css = await presentationCss();
   assert.match(
     p.itemDetailHtml(p.core.normalizeItem(item).item),
-    /^<div class="itemx2-detail-stack"><article class="itemx-card/
+    /^<div class="itemx2-detail-stack"><details class="ixp /
   );
   assert.match(css, /\.itemx2-detail-stack\s*\{[^}]*flex-direction: column;[^}]*width: 100%;/);
 });

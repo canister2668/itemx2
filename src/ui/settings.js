@@ -23,6 +23,7 @@ import { scanLorebookEncounters } from '../lore-sync.js';
 import { enableModuleAssets } from '../portraits.js';
 import { invalidateLoaded, setActiveContextKey } from '../session.js';
 import {
+  CARD_FX_MODES,
   DOMAIN_KEYS,
   FX_MODES,
   SKIN_MODES,
@@ -55,6 +56,7 @@ import {
   showRootFeedback,
   updateRootLoading
 } from './panel.js';
+import { CARD_FX_THUMBS } from './card-thumbs.js';
 import { BADGE_POSITIONS, SKIN_LABELS, installMainStyle, mainDoc } from './style.js';
 import { uiState } from './view-state.js';
 
@@ -145,6 +147,7 @@ export const FX_LABELS = {
   lite: t('ui-settings.fx-lite'),
   off: t('ui-settings.147')
 };
+export const CARD_FX_LABELS = { prism: t('ui-settings.card-fx-prism'), classic: t('ui-settings.card-fx-classic') };
 export const AUX_LABELS = { off: t('ui-settings.147'), missing: t('ui-settings.146'), always: t('ui-settings.145') };
 
 export const RARITY_MODE_LABELS = { world: t('ui-settings.144'), itemx: t('ui-settings.143') };
@@ -338,6 +341,16 @@ export const setSegment = (skin, group, entries, current) =>
     )
     .join('')}</div>`;
 
+// Segment buttons that show a picture of each choice; the router hooks are the
+// segment's, so selection and repaint reuse the segment path.
+export const setThumbs = (skin, group, entries, current) =>
+  `<div class="itemx2-seg itemx2-thumbs">${entries
+    .map(
+      ([value, label, image]) =>
+        `<button class="itemx2-seg-btn itemx2-thumb${skin.segHook(group, value)}${current === value ? ' itemx2-seg-on' : ''}" type="button"${skin.segData(group, value)}><img src="${image}" alt="" loading="lazy" decoding="async"><span>${label}</span></button>`
+    )
+    .join('')}</div>`;
+
 // The cards whose controls swap for a yes / no row. Each renders on its own so
 // arming or disarming patches that one card in place (the tab keeps its scroll).
 export function confirmCards(skin, parts) {
@@ -442,6 +455,19 @@ export function settingsPanelHtml(loaded, skin, parts) {
     t('ui-settings.fx-title'),
     t('ui-settings.fx-note'),
     setSegment(skin, 'fx', Object.entries(FX_LABELS), loaded.effectsLevel)
+  )}${setCard(
+    t('ui-settings.card-fx-title'),
+    t('ui-settings.card-fx-note'),
+    setThumbs(
+      skin,
+      'cardfx',
+      CARD_FX_MODES.map((mode) => [mode, CARD_FX_LABELS[mode], CARD_FX_THUMBS[mode]]),
+      loaded.cardFx || 'prism'
+    )
+  )}${setCard(
+    t('ui-settings.card-open-title'),
+    t('ui-settings.card-open-note'),
+    setSwitch(skin, 'card-open-latest', loaded.cardOpenLatest)
   )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
     t('ui-settings.101'),
     t('ui-settings.100')
@@ -682,6 +708,15 @@ export function rootSettingActions() {
         }
       ],
       [
+        'cardfx',
+        CARD_FX_MODES,
+        async (loaded, value) => {
+          await changeSettings(loaded.character, { cardFx: value });
+          loaded.cardFx = value;
+          setStatus(t('ui-settings.card-fx-status', CARD_FX_LABELS[value]));
+        }
+      ],
+      [
         'skin',
         SKIN_MODES,
         async (loaded, value) => {
@@ -714,6 +749,18 @@ export function rootSettingActions() {
         setStatus(t('ui-settings.036', value ? 'ON' : 'OFF'));
         if (value) await scanLorebookEncounters({ refresh: true, silent: true });
         await updateRootSwitch('.x-risu-itemx2-setting-lorebook', value);
+      }
+    },
+    {
+      hook: 'itemx2-setting-card-open-latest',
+      run: async () => {
+        const loaded = await cachedOrRebuildCurrent();
+        if (!loaded) return;
+        const value = !(cachedSettings(loaded.character) || (await settingsFor(loaded.character))).cardOpenLatest;
+        await changeSettings(loaded.character, { cardOpenLatest: value });
+        loaded.cardOpenLatest = value;
+        setStatus(t('ui-settings.card-open-status', value ? 'ON' : 'OFF'));
+        await updateRootSwitch('.x-risu-itemx2-setting-card-open-latest', value);
       }
     },
     {

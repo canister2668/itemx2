@@ -151,7 +151,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   // not clear the just-produced marker or the card appears only after editing.
   await replacers.beforeRequest([{ role: 'user', content: '커밋 전 경합을 재현한다.' }], 'main');
   const immediateDisplay = await handlers.display(cleaned);
-  assert.match(immediateDisplay, /itemx-card/);
+  assert.match(immediateDisplay, /<details class="ixp /);
   assert.match(immediateDisplay, /motion-lite/);
   chat.message.push({ role: 'char', data: cleaned });
   await new Promise((resolve) => setTimeout(resolve, 130));
@@ -219,8 +219,8 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     false
   );
   const display = await handlers.display(cleaned);
-  assert.match(display, /itemx-card/);
-  assert.ok(display.indexOf('itemx-card') < display.indexOf('전투가 끝난 뒤'));
+  assert.match(display, /<details class="ixp /);
+  assert.ok(display.indexOf('<details class="ixp ') < display.indexOf('전투가 끝난 뒤'));
   assert.equal(display.includes('<itemExam>'), false);
 
   const mixed =

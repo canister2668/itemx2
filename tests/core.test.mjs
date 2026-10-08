@@ -261,8 +261,8 @@ test('renderer escapes model content and uses one shared card renderer', () => {
   assert.equal(html.includes('<img src=x'), false);
   assert.equal(html.includes('<script>'), false);
   assert.match(html, /&lt;img/);
-  assert.match(html, /craft-oriental/);
-  assert.match(renderer.renderMarkerPayload({ v: 2, view: item }, { motion: 'off' }), /itemx-card/);
+  assert.match(html, /ixp-t-oriental/);
+  assert.match(renderer.renderMarkerPayload({ v: 2, view: item }, { motion: 'off' }), /<details class="ixp /);
 });
 
 test('rarity particle budgets keep rare and below restrained', () => {
@@ -291,7 +291,7 @@ test('filtered ambient and moving affinity visuals use static child layers witho
     affinity: 'fire',
     affinity2: 'wind'
   }).item;
-  const html = renderer.renderCard(item, { motion: 'full' });
+  const html = renderer.renderCard(item, { motion: 'full', fx: 'classic' });
   assert.match(html, /current-fog"><span class="current-fog-visual"/);
   assert.equal((html.match(/affinity-signature-visual/g) || []).length, 2);
   assert.equal((html.match(/craft-mote /g) || []).length, 16);
@@ -307,9 +307,9 @@ test('inline lite motion preserves the theme while bounding animated particle DO
     theme: 'forged',
     affinity: 'fire'
   }).item;
-  const full = renderer.renderCard(item, { inline: true, motion: 'full' });
-  const lite = renderer.renderCard(item, { inline: true, motion: 'lite' });
-  const off = renderer.renderCard(item, { inline: true, motion: 'off' });
+  const full = renderer.renderCard(item, { inline: true, motion: 'full', fx: 'classic' });
+  const lite = renderer.renderCard(item, { inline: true, motion: 'lite', fx: 'classic' });
+  const off = renderer.renderCard(item, { inline: true, motion: 'off', fx: 'classic' });
   assert.equal((full.match(/craft-mote /g) || []).length, 16);
   // 파티클 하나가 합성 레이어 하나다. CDP 레이어 트리 실측에서 카드 1장이
   // 56개, 2장이 119개였고 4장부터는 크롬이 승격 상한에 걸렸다. lite 의

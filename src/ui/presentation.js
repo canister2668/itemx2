@@ -13,7 +13,7 @@ import { createLru } from '../lru.js';
 import { inlinePortraitImages } from '../portraits.js';
 import { codexInlineEventHtml } from '../render/codex-cards.js';
 import { activeContextKey, currentLatestKeys } from '../session.js';
-import { FX_MODES, SKIN_MODES } from '../settings.js';
+import { CARD_FX_MODES, FX_MODES, SKIN_MODES } from '../settings.js';
 import { ANCHOR_RE, anchorKeys, hasAnchor } from '../store/anchors.js';
 import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
@@ -28,17 +28,22 @@ let bodyFxSawScroll = false;
 let fxMotion = 'full';
 let visualEffectsEnabled = true;
 let visualSkin = 'dark';
+let cardFx = 'prism';
+let cardOpenLatest = false;
 
 export const effectsMotion = () => fxMotion;
 export const effectsSkin = () => visualSkin;
 export const effectsEnabled = () => visualEffectsEnabled;
+export const effectsPack = () => cardFx;
 
 // Settings of the active bot decide the effect level and skin of chat cards.
 export function applyVisualSettings(settings, patch = null) {
   fxMotion = FX_MODES.includes(settings.effectsLevel) ? settings.effectsLevel : 'full';
   visualEffectsEnabled = fxMotion !== 'off';
   visualSkin = SKIN_MODES.includes(settings.skin) ? settings.skin : 'dark';
-  if (patch && 'effectsLevel' in patch) markerHtmlCache.clear();
+  cardFx = CARD_FX_MODES.includes(settings.cardFx) ? settings.cardFx : 'prism';
+  cardOpenLatest = settings.cardOpenLatest === true;
+  if (patch && ['effectsLevel', 'cardFx', 'cardOpenLatest'].some((key) => key in patch)) markerHtmlCache.clear();
 }
 
 // Armed or committed bursts not yet played.
@@ -55,11 +60,15 @@ const payloadDomain = (payload) =>
 export function decorateInlineEvent(html, payload, domain, key) {
   const kind = Renderer.eventKind(payload, domain);
   if (!kind || !html) return html;
+  const burst = `<span class="itemx2-event-burst itemx2-burst-${kind}" aria-hidden="true"></span>`;
+  // A <details> card hides everything but its summary while folded, so the
+  // burst goes inside the summary there.
+  if (html.startsWith('<details'))
+    return html
+      .replace(/^<details([^>]*)>/, (opening) => opening.replace(/>$/, ` x-itemx2-event="${key}">`))
+      .replace(/<summary class="ixp-hero">/, (summary) => summary + burst);
   return html.replace(/^<(article|section)([^>]*)>/, (opening) =>
-    opening.replace(
-      />$/,
-      ` x-itemx2-event="${key}"><span class="itemx2-event-burst itemx2-burst-${kind}" aria-hidden="true"></span>`
-    )
+    opening.replace(/>$/, ` x-itemx2-event="${key}">${burst}`)
   );
 }
 
@@ -177,12 +186,14 @@ function visibleAnchors(source, loaded) {
   return rows;
 }
 
-function renderItemCard(key, payload, motion) {
-  const cacheKey = `${key}:${motion}`;
+// Item cards start folded; the newest response's cards open when the bot's
+// "open latest" switch is on.
+function renderItemCard(key, payload, motion, open) {
+  const cacheKey = `${key}:${motion}:${cardFx}:${open ? 1 : 0}`;
   const cached = markerHtmlCache.get(cacheKey);
   if (cached !== undefined) return cached;
   const html = decorateInlineEvent(
-    Renderer.renderMarkerPayload(payload, { inline: true, motion }),
+    Renderer.renderMarkerPayload(payload, { inline: true, motion, fx: cardFx, fold: !open }),
     payload,
     'item',
     key
@@ -216,7 +227,8 @@ export async function displayHandler(content) {
   const loaded = await displayProjection(anchorKeys(source));
   const rows = visibleAnchors(source, loaded);
   const latest = currentLatestKeys();
-  const motion = (key) => (fxMotion === 'off' ? 'off' : !latest.size || latest.has(key) ? 'lite' : 'off');
+  const isLatest = (key) => !latest.size || latest.has(key);
+  const motion = (key) => (fxMotion === 'off' ? 'off' : isLatest(key) ? 'lite' : 'off');
   const monsters = rows
     .map((row) => row.payload)
     .filter((payload) => payload?.event?.domain === 'monster')
@@ -243,7 +255,7 @@ export async function displayHandler(content) {
     const html = !full
       ? ''
       : item
-        ? renderItemCard(row.key, payload, motion(row.key))
+        ? renderItemCard(row.key, payload, motion(row.key), cardOpenLatest && isLatest(row.key))
         : renderCodexCard(
             row.key,
             payload,

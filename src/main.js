@@ -103,7 +103,7 @@ function wireEvents() {
   on('settings', async ({ settings, patch }) => {
     applyVisualSettings(settings, patch);
     if (!patch) return;
-    if ('effectsLevel' in patch) clearDetailHtmlCache();
+    if ('effectsLevel' in patch || 'cardFx' in patch) clearDetailHtmlCache();
     if ('effectsLevel' in patch || 'skin' in patch) await syncMainEffectsState();
     if ('fontScale' in patch) await syncRootFontScale(settings.fontScale);
     if ('moduleAssetsEnabled' in patch) invalidateModuleAssets();

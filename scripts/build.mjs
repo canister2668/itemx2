@@ -37,12 +37,12 @@ const plugin = `${built.outputFiles[0].text.trimEnd()}\n`;
 
 // Stylesheet snapshot for review and the browser verification scripts; the
 // same concatenation as ITEMX_STYLE in src/ui/style.js.
-const [shellCss, cardsCss, presentationCss] = await Promise.all(
-  ['shell', 'cards', 'presentation'].map((name) =>
+const [shellCss, cardsCss, presentationCss, prismCss] = await Promise.all(
+  ['shell', 'cards', 'presentation', 'prism'].map((name) =>
     loadText(resolve(root, `src/styles/${name}.css`), { minifyCss: true })
   )
 );
-const css = `${shellCss}${cardsCss}\n${presentationCss.trim()}`;
+const css = `${shellCss}${cardsCss}\n${presentationCss.trim()}\n${prismCss.trim()}`;
 
 const previewBuild = await esbuild.build({
   ...common,

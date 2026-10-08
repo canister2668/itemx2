@@ -1,0 +1,1509 @@
+/* ITEMX 2.6 card: one layout, two effect packs (prism | classic).
+ * Every class is ixp- prefixed; animations change transform/opacity only. */
+.ixp {
+  --a: #8b93a7; /* 등급 강조색 */
+  --p: #8b93a7;
+  --s: var(--p); /* 주·부 속성색 */
+  --bg: #0d0e12;
+  --fg: #f2f3f6;
+  --mute: #8a90a0;
+  --hair: rgba(255, 255, 255, 0.07);
+  position: relative;
+  isolation: isolate;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  margin: 0.6rem auto 0.8rem;
+  container-type: inline-size;
+  text-align: left;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Pretendard, 'Noto Sans KR', system-ui, sans-serif;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  box-shadow:
+    0 0 0 1px var(--hair),
+    0 18px 40px -12px rgba(0, 0, 0, 0.7);
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 360px;
+}
+/* 전설 이상: 테두리를 따라 도는 빛. 큰 conic 판 하나를 회전시키고 안쪽 판으로 1.5px만 남긴다 */
+.ixp-rim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.ixp-rim::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160%;
+  aspect-ratio: 1;
+  margin: -80% 0 0 -80%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 58%,
+    color-mix(in srgb, var(--a) 70%, #fff) 70%,
+    var(--p) 78%,
+    transparent 86%,
+    transparent
+  );
+  animation: ixp-spin 6s linear infinite;
+}
+.ixp-rim::after {
+  content: '';
+  position: absolute;
+  inset: 1.5px;
+  border-radius: 19px;
+  background: var(--bg);
+}
+@keyframes ixp-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* ── 히어로: 오로라 두 덩이 + 흩뿌린 불티 ── */
+.ixp-hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 22px 20px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.ixp-hero::-webkit-details-marker {
+  display: none;
+}
+.ixp-hero::before,
+.ixp-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ixp-hero::before {
+  width: 260px;
+  height: 200px;
+  left: -70px;
+  top: -90px;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--p) 55%, transparent),
+    color-mix(in srgb, var(--p) 18%, transparent) 55%,
+    transparent
+  );
+  opacity: var(--glow, 0.55);
+  animation: ixp-drift-a 14s ease-in-out infinite alternate;
+}
+.ixp-hero::after {
+  width: 240px;
+  height: 180px;
+  right: -80px;
+  top: -60px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--s) 45%, transparent), transparent);
+  opacity: calc(var(--glow, 0.55) * 0.8);
+  animation: ixp-drift-b 19s ease-in-out infinite alternate;
+}
+@keyframes ixp-drift-a {
+  to {
+    transform: translate3d(70px, 28px, 0) scale(1.15);
+  }
+}
+@keyframes ixp-drift-b {
+  to {
+    transform: translate3d(-60px, 36px, 0) scale(0.9);
+  }
+}
+
+.ixp-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--p) 30%, #1a1c22), #121318 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px color-mix(in srgb, var(--a) 35%, transparent),
+    0 10px 24px -6px color-mix(in srgb, var(--p) 55%, transparent);
+}
+.ixp-icon > span {
+  font-size: 2.15rem;
+  line-height: 1;
+}
+.ixp-x {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f2f3f6;
+  color: #0d0e12;
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-align: center;
+}
+.ixp-title {
+  min-width: 0;
+}
+.ixp-rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--a);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.ixp-rank::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--a);
+  box-shadow: 0 0 10px var(--a);
+  transform: rotate(45deg);
+}
+.ixp-name {
+  display: block;
+  margin: 4px 0 5px;
+  font-size: 1.32rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+.ixp-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--mute);
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+.ixp-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px 1px 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.ixp-state::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+.ixp-more {
+  display: none;
+  color: var(--mute);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* 불티: 시드로 위치·크기·속도를 흩뿌린 개별 점(한 점에 애니 하나) */
+.ixp-spark {
+  position: absolute;
+  z-index: -1;
+  left: var(--x);
+  top: var(--y);
+  width: var(--z);
+  height: var(--z);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, #fff 0 18%, var(--c) 40%, transparent 70%);
+  opacity: 0;
+  animation: var(--k) var(--d) linear var(--w) infinite;
+}
+@keyframes ixp-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  15% {
+    opacity: var(--o);
+  }
+  80% {
+    opacity: var(--o);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), -90px, 0);
+  }
+}
+@keyframes ixp-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -40px, 0) rotate(0);
+  }
+  15% {
+    opacity: var(--o);
+  }
+  85% {
+    opacity: var(--o);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), 70px, 0) rotate(180deg);
+  }
+}
+@keyframes ixp-blow {
+  0% {
+    opacity: 0;
+    transform: translate3d(-30px, 0, 0) scaleX(1);
+  }
+  20% {
+    opacity: var(--o);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(160px, var(--dx), 0) scaleX(1.6);
+  }
+}
+@keyframes ixp-blink {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  45% {
+    opacity: var(--o);
+    transform: scale(1);
+  }
+  55% {
+    opacity: var(--o);
+    transform: scale(1);
+  }
+}
+.ixp-k-flake {
+  border-radius: 1px;
+  background:
+    linear-gradient(var(--c), var(--c)) center/100% 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) center/1px 100% no-repeat;
+}
+.ixp-k-streak {
+  width: calc(var(--z) * 7);
+  height: 1px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--c), transparent);
+}
+.ixp-k-bubble {
+  background: radial-gradient(circle, transparent 45%, var(--c) 52% 62%, transparent 70%);
+}
+.ixp-k-drop {
+  border-radius: 50% 50% 50% 50%/60% 60% 40% 40%;
+  background: var(--c);
+}
+
+/* ── 본문 ── */
+.ixp-body {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px 20px;
+}
+.ixp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ixp-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--c) 14%, rgba(255, 255, 255, 0.03));
+  color: color-mix(in srgb, var(--c) 60%, #fff);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ixp-tag.ixp-combo {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--p) 22%, transparent),
+    color-mix(in srgb, var(--s) 22%, transparent)
+  );
+  color: #fff;
+}
+.ixp-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.ixp-stat {
+  padding: 10px 12px 11px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+.ixp-stat dt {
+  color: var(--mute);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+.ixp-stat dd {
+  margin: 3px 0 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ixp-stat dd small {
+  color: var(--mute);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.ixp-meter {
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.ixp-meter i {
+  display: block;
+  height: 100%;
+  width: var(--v);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--p), color-mix(in srgb, var(--a) 60%, #fff));
+}
+.ixp-meter.low i {
+  background: linear-gradient(90deg, #ff4d5e, #ff9a62);
+}
+.ixp-list {
+  display: grid;
+  gap: 2px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ixp-list li {
+  position: relative;
+  padding: 8px 0 8px 14px;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #c3c7d1;
+}
+.ixp-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  bottom: 11px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--p);
+}
+.ixp-list li.aug::before {
+  background: var(--s);
+  opacity: 0.7;
+}
+.ixp-list b {
+  display: block;
+  color: var(--fg);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.ixp-list li.aug b::after {
+  content: '증강';
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--mute);
+  font-size: 0.6rem;
+  font-weight: 700;
+  vertical-align: 0.12em;
+}
+.ixp-delta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+.ixp-delta em {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--mute);
+}
+.ixp-delta s {
+  text-decoration: none;
+  opacity: 0.7;
+}
+.ixp-delta b {
+  font-weight: 800;
+}
+.ixp-delta .up {
+  color: #5ee3a1;
+}
+.ixp-delta .dn {
+  color: #ff7a85;
+}
+.ixp-delta b.up::before {
+  content: '▲ ';
+  font-size: 0.7em;
+}
+.ixp-delta b.dn::before {
+  content: '▼ ';
+  font-size: 0.7em;
+}
+.ixp-lore {
+  margin: 14px 0 0;
+  color: #868c9b;
+  font-size: 0.76rem;
+  line-height: 1.65;
+}
+
+/* ── 접힘: 지난 카드는 한 줄 ── */
+.ixp:not([open]) {
+  border-radius: 16px;
+}
+.ixp:not([open]) .ixp-hero {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 10px 14px;
+}
+.ixp:not([open]) .ixp-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+.ixp:not([open]) .ixp-icon > span {
+  font-size: 1.25rem;
+}
+.ixp:not([open]) .ixp-x {
+  display: none;
+}
+.ixp:not([open]) .ixp-name {
+  margin: 1px 0 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ixp:not([open]) .ixp-sub {
+  display: none;
+}
+.ixp:not([open]) .ixp-more {
+  display: block;
+}
+.ixp:not([open]) .ixp-spark,
+.ixp:not([open]) .ixp-rim {
+  display: none;
+}
+.ixp:not([open]) .ixp-hero::before,
+.ixp:not([open]) .ixp-hero::after {
+  animation: none;
+}
+
+/* ══ 등급: 강조색 · 오로라 세기 ══ */
+.ixp-r-normal {
+  --a: #9aa1b2;
+  --glow: 0.18;
+}
+.ixp-r-magic {
+  --a: #5fa8ff;
+  --glow: 0.3;
+}
+.ixp-r-rare {
+  --a: #33d6c4;
+  --glow: 0.4;
+}
+.ixp-r-unique {
+  --a: #a98bff;
+  --glow: 0.48;
+}
+.ixp-r-epic {
+  --a: #e46bff;
+  --glow: 0.56;
+}
+.ixp-r-legendary {
+  --a: #ffb23e;
+  --glow: 0.66;
+}
+.ixp-r-mythical {
+  --a: #ff5f6d;
+  --glow: 0.72;
+}
+.ixp-r-empyrean {
+  --a: #fff1c2;
+  --glow: 0.8;
+}
+.ixp-r-legendary .ixp-name,
+.ixp-r-mythical .ixp-name {
+  background: linear-gradient(95deg, #fff 20%, color-mix(in srgb, var(--a) 70%, #fff) 60%, var(--a));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ixp-r-empyrean .ixp-name {
+  background: linear-gradient(95deg, #fff, #ffe9a8 35%, #b9e4ff 65%, #f6c4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ixp-r-empyrean {
+  --bg: #101014;
+}
+.ixp-r-empyrean .ixp-rim::before {
+  background: conic-gradient(#ffe9a8, #9ee7ff, #f6b8ff, #b6ffcf, #ffe9a8);
+}
+
+/* ══ 상태 ══ */
+.ixp-c-corrupted {
+  --bg: #0f0b12;
+}
+.ixp-c-corrupted .ixp-hero::after {
+  background: radial-gradient(closest-side, rgba(150, 40, 190, 0.75), rgba(60, 10, 80, 0.4) 50%, transparent);
+  opacity: 0.9;
+}
+.ixp-c-corrupted .ixp-body::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: -40px;
+  bottom: -60px;
+  width: 220px;
+  height: 160px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(120, 20, 150, 0.38), transparent);
+  animation: ixp-seep 7s ease-in-out infinite alternate;
+}
+@keyframes ixp-seep {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ixp-c-corrupted .ixp-name {
+  text-shadow:
+    1.5px 0 rgba(255, 50, 150, 0.55),
+    -1.5px 0 rgba(80, 220, 255, 0.4);
+}
+.ixp-c-corrupted .ixp-icon {
+  background: linear-gradient(150deg, #3a1648, #120b16 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(200, 90, 230, 0.5),
+    0 10px 24px -6px rgba(170, 50, 210, 0.6);
+}
+.ixp-c-corrupted .ixp-state {
+  background: rgba(170, 60, 220, 0.18);
+  color: #e29bff;
+}
+.ixp-c-corrupted .ixp-list li::before {
+  background: linear-gradient(#c04cff, #5a1c78);
+}
+.ixp-c-cursed .ixp-hero::after {
+  background: radial-gradient(closest-side, rgba(200, 20, 50, 0.6), transparent);
+  opacity: 0.85;
+}
+.ixp-c-cursed .ixp-state {
+  background: rgba(230, 40, 70, 0.16);
+  color: #ff8597;
+}
+.ixp-c-blessed .ixp-hero::after {
+  background: radial-gradient(closest-side, rgba(255, 236, 180, 0.55), transparent);
+  opacity: 0.9;
+}
+.ixp-c-blessed .ixp-state {
+  background: rgba(255, 220, 140, 0.15);
+  color: #ffe2a0;
+}
+.ixp-c-glitched .ixp-name {
+  text-shadow:
+    2px 0 rgba(255, 40, 120, 0.55),
+    -2px 0 rgba(60, 230, 255, 0.5);
+}
+.ixp-c-glitched .ixp-icon > span {
+  animation: ixp-jit 2.8s steps(1) infinite;
+}
+@keyframes ixp-jit {
+  0%,
+  100% {
+    transform: none;
+  }
+  90% {
+    transform: translate3d(-3px, 1px, 0);
+  }
+  93% {
+    transform: translate3d(3px, -1px, 0);
+  }
+  96% {
+    transform: none;
+  }
+}
+.ixp-c-glitched .ixp-state {
+  background: rgba(60, 230, 255, 0.13);
+  color: #8af0ff;
+}
+.ixp-c-sealed .ixp-spark,
+.ixp-c-sealed .ixp-rim {
+  display: none;
+}
+.ixp-c-sealed .ixp-hero::before,
+.ixp-c-sealed .ixp-hero::after {
+  animation: none;
+  opacity: 0.18;
+}
+.ixp-c-sealed .ixp-icon > span {
+  opacity: 0.45;
+}
+.ixp-c-sealed .ixp-state {
+  background: rgba(200, 205, 220, 0.12);
+  color: #cfd4e0;
+}
+
+/* ══ 공방: 아이콘 판 모양과 바탕 톤만 ══ */
+.ixp-t-oriental {
+  --bg: #100f0d;
+}
+.ixp-t-oriental .ixp-icon {
+  border-radius: 14px;
+}
+.ixp-t-synthetic .ixp-icon {
+  border-radius: 8px;
+}
+.ixp-t-synthetic .ixp-stat dd {
+  font-family: ui-monospace, 'JetBrains Mono', monospace;
+  letter-spacing: -0.04em;
+}
+.ixp-t-organic .ixp-icon {
+  border-radius: 28px 10px 28px 10px;
+}
+.ixp-t-celestial {
+  --bg: #0c0d16;
+}
+.ixp-t-celestial .ixp-icon {
+  border-radius: 50%;
+}
+.ixp-t-forged .ixp-icon {
+  border-radius: 12px;
+}
+
+/* ══ 움직임 정책 ══ */
+.ixp-still *,
+.ixp-still *::before,
+.ixp-still *::after,
+.ixp-still::before {
+  animation-play-state: paused !important;
+}
+.ixp-still .ixp-spark {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ixp *,
+  .ixp *::before,
+  .ixp *::after {
+    animation: none !important;
+  }
+}
+
+/* ══ 좁은 화면 ══ */
+@container (max-width:430px) {
+  .ixp-hero {
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 13px;
+    padding: 18px 16px 14px;
+  }
+  .ixp-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+  }
+  .ixp-icon > span {
+    font-size: 1.8rem;
+  }
+  .ixp-name {
+    font-size: 1.16rem;
+  }
+  .ixp-body {
+    padding: 0 16px 16px;
+  }
+  .ixp-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ══════════ B2: 고등급 강화 ══════════ */
+/* 속성 문양: 카드 전체 바탕에 한 장, 애니 하나 */
+.ixp-sig {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+.ixp-sig::before,
+.ixp-sig::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+.ixp-sig-fire {
+  left: -10%;
+  right: -10%;
+  bottom: -18%;
+  height: 78%;
+  transform-origin: 50% 100%;
+  opacity: 0.62;
+  background:
+    radial-gradient(16% 62% at 12% 100%, color-mix(in srgb, var(--p) 75%, #ffd27a), transparent 72%),
+    radial-gradient(12% 80% at 33% 100%, var(--p), transparent 70%),
+    radial-gradient(19% 58% at 55% 100%, color-mix(in srgb, var(--p) 70%, #ffb15a), transparent 72%),
+    radial-gradient(11% 76% at 76% 100%, var(--p), transparent 70%),
+    radial-gradient(16% 54% at 94% 100%, color-mix(in srgb, var(--p) 70%, #ffd27a), transparent 72%);
+  animation: ixp-flicker 1.6s ease-in-out infinite alternate;
+}
+@keyframes ixp-flicker {
+  0% {
+    transform: scale(1, 0.86);
+  }
+  50% {
+    transform: scale(1.02, 1.04);
+  }
+  100% {
+    transform: scale(0.99, 0.93);
+  }
+}
+.ixp-sig-ice {
+  inset: 0;
+  opacity: 0.5;
+  background:
+    conic-gradient(
+      from 95deg at 0 0,
+      transparent 0 6deg,
+      color-mix(in srgb, var(--p) 55%, transparent) 6deg 9deg,
+      transparent 9deg 22deg,
+      color-mix(in srgb, #e8f8ff 50%, transparent) 22deg 23.5deg,
+      transparent 23.5deg 41deg,
+      color-mix(in srgb, var(--p) 45%, transparent) 41deg 45deg,
+      transparent 45deg 64deg,
+      color-mix(in srgb, var(--p) 40%, transparent) 64deg 66deg,
+      transparent 66deg
+    ),
+    conic-gradient(
+      from 275deg at 100% 100%,
+      transparent 0 12deg,
+      color-mix(in srgb, var(--p) 50%, transparent) 12deg 15deg,
+      transparent 15deg 33deg,
+      color-mix(in srgb, #e8f8ff 45%, transparent) 33deg 34.5deg,
+      transparent 34.5deg 58deg,
+      color-mix(in srgb, var(--p) 40%, transparent) 58deg 61deg,
+      transparent 61deg
+    );
+  -webkit-mask:
+    radial-gradient(55% 45% at 0 0, #000, transparent 75%), radial-gradient(55% 45% at 100% 100%, #000, transparent 75%);
+  mask:
+    radial-gradient(55% 45% at 0 0, #000, transparent 75%), radial-gradient(55% 45% at 100% 100%, #000, transparent 75%);
+  animation: ixp-breathe 3.2s ease-in-out infinite alternate;
+}
+.ixp-sig-lightning {
+  inset: 0;
+}
+.ixp-sig-lightning::before,
+.ixp-sig-lightning::after {
+  top: -4%;
+  width: 46px;
+  height: 62%;
+  background: linear-gradient(180deg, #fff, var(--p) 40%, transparent);
+  opacity: 0;
+  clip-path: polygon(55% 0, 30% 42%, 52% 42%, 18% 100%, 74% 34%, 50% 34%, 78% 0);
+}
+.ixp-sig-lightning::before {
+  right: 16%;
+  animation: ixp-strike 3.4s steps(1) infinite;
+}
+.ixp-sig-lightning::after {
+  right: 58%;
+  height: 44%;
+  transform: scaleX(-1);
+  animation: ixp-strike 4.7s steps(1) -1.9s infinite;
+}
+@keyframes ixp-strike {
+  0%,
+  84%,
+  90%,
+  100% {
+    opacity: 0;
+  }
+  85%,
+  87% {
+    opacity: 0.95;
+  }
+  86%,
+  88% {
+    opacity: 0.3;
+  }
+}
+.ixp-sig-wind {
+  left: 30%;
+  top: -45%;
+  width: 120%;
+  aspect-ratio: 1;
+  opacity: 0.6;
+  background: radial-gradient(
+    circle,
+    transparent 30%,
+    color-mix(in srgb, var(--p) 55%, transparent) 30.6% 31.2%,
+    transparent 32% 41%,
+    color-mix(in srgb, var(--p) 40%, transparent) 41.5% 42%,
+    transparent 42.8% 52%,
+    color-mix(in srgb, var(--p) 30%, transparent) 52.4% 52.8%,
+    transparent 53.5%
+  );
+  -webkit-mask: conic-gradient(#000 0 18%, transparent 30% 48%, #000 58% 72%, transparent 84%);
+  mask: conic-gradient(#000 0 18%, transparent 30% 48%, #000 58% 72%, transparent 84%);
+  animation: ixp-spin 9s linear infinite;
+}
+.ixp-sig-earth {
+  left: -4%;
+  right: -4%;
+  bottom: -6%;
+  height: 46%;
+  opacity: 0.5;
+  background:
+    linear-gradient(transparent 55%, color-mix(in srgb, var(--p) 30%, transparent)),
+    conic-gradient(
+      from 180deg at 18% 100%,
+      transparent 0 160deg,
+      color-mix(in srgb, var(--p) 55%, transparent) 160deg 172deg,
+      transparent 172deg
+    ),
+    conic-gradient(
+      from 180deg at 70% 100%,
+      transparent 0 168deg,
+      color-mix(in srgb, var(--p) 45%, transparent) 168deg 182deg,
+      transparent 182deg
+    );
+  animation: ixp-bob 4s ease-in-out infinite alternate;
+}
+@keyframes ixp-bob {
+  to {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+.ixp-sig-light,
+.ixp-sig-none {
+  inset: 0;
+  opacity: 0.75;
+  background:
+    radial-gradient(75% 42% at 50% -6%, color-mix(in srgb, var(--p) 60%, #fff 15%), transparent 72%),
+    radial-gradient(38% 30% at 12% 0, color-mix(in srgb, var(--p) 34%, transparent), transparent 70%),
+    radial-gradient(38% 30% at 88% 0, color-mix(in srgb, var(--p) 34%, transparent), transparent 70%);
+  animation: ixp-breathe 4.2s ease-in-out infinite alternate;
+}
+.ixp-sig-none {
+  --p: var(--a);
+}
+.ixp-sig-dark {
+  inset: 0;
+  opacity: 0.85;
+  background:
+    radial-gradient(70% 55% at 100% 100%, color-mix(in srgb, var(--p) 30%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 0 100%, rgba(5, 2, 14, 0.9), transparent 70%),
+    repeating-conic-gradient(
+      from 0deg at 100% 100%,
+      transparent 0 7deg,
+      color-mix(in srgb, var(--p) 18%, transparent) 7deg 8deg,
+      transparent 8deg 19deg
+    );
+  -webkit-mask: radial-gradient(85% 70% at 100% 100%, #000 20%, transparent 80%);
+  mask: radial-gradient(85% 70% at 100% 100%, #000 20%, transparent 80%);
+  animation: ixp-breathe 4.5s ease-in-out infinite alternate;
+}
+.ixp-sig-poison {
+  left: -20%;
+  right: -20%;
+  bottom: -20%;
+  height: 60%;
+  opacity: 0.55;
+  background:
+    radial-gradient(22% 40% at 20% 80%, color-mix(in srgb, var(--p) 50%, transparent), transparent 70%),
+    radial-gradient(26% 45% at 52% 90%, color-mix(in srgb, var(--p) 38%, transparent), transparent 70%),
+    radial-gradient(20% 38% at 82% 76%, color-mix(in srgb, var(--p) 46%, transparent), transparent 70%);
+  animation: ixp-ooze 6s ease-in-out infinite alternate;
+}
+@keyframes ixp-ooze {
+  to {
+    transform: translate3d(8%, -6%, 0) scale(1.06);
+  }
+}
+.ixp-sig-blood {
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 42%;
+  transform-origin: 50% 0;
+  opacity: 0.75;
+  background:
+    radial-gradient(3% 52% at 14% 0, var(--p), transparent), radial-gradient(2.2% 80% at 31% 0, var(--p), transparent),
+    radial-gradient(3.5% 40% at 47% 0, var(--p), transparent), radial-gradient(2% 66% at 66% 0, var(--p), transparent),
+    radial-gradient(3% 46% at 84% 0, var(--p), transparent),
+    linear-gradient(color-mix(in srgb, var(--p) 50%, transparent), transparent 18%);
+  animation: ixp-drip 3.8s ease-in-out infinite alternate;
+}
+@keyframes ixp-drip {
+  from {
+    transform: scaleY(0.8);
+  }
+  to {
+    transform: scaleY(1.12);
+  }
+}
+.ixp-sig-void {
+  left: 56px;
+  top: 58px;
+  width: 300px;
+  height: 300px;
+  margin: -150px 0 0 -150px;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle, transparent 0 11px, color-mix(in srgb, var(--p) 40%, transparent) 12px 13px),
+    radial-gradient(circle, color-mix(in srgb, var(--p) 35%, transparent), transparent 60%);
+  -webkit-mask: radial-gradient(circle, #000 15%, transparent 68%);
+  mask: radial-gradient(circle, #000 15%, transparent 68%);
+  animation: ixp-portal 5s ease-in-out infinite alternate;
+}
+@keyframes ixp-portal {
+  from {
+    transform: scale(0.88) rotate(0);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(1.1) rotate(25deg);
+    opacity: 0.95;
+  }
+}
+@keyframes ixp-breathe {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 테두리 안쪽 숨쉬는 빛(에픽 이상) */
+.ixp-edge {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 26px color-mix(in srgb, var(--a) 32%, transparent),
+    inset 0 -40px 60px -40px color-mix(in srgb, var(--p) 40%, transparent);
+  animation: ixp-breathe 3.6s ease-in-out infinite alternate;
+}
+
+.ixp-r-legendary .ixp-icon,
+.ixp-r-mythical .ixp-icon,
+.ixp-r-empyrean .ixp-icon {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--a) 80%, #fff 10%),
+    inset 0 0 18px color-mix(in srgb, var(--p) 40%, transparent),
+    0 0 0 4px rgba(0, 0, 0, 0.35),
+    0 0 0 5px color-mix(in srgb, var(--a) 45%, transparent),
+    0 12px 30px -4px color-mix(in srgb, var(--p) 70%, transparent);
+}
+
+/* 홀로 광택(전설 이상) */
+.ixp-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.ixp-sheen::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: 0;
+  width: 38%;
+  background: linear-gradient(
+    100deg,
+    transparent 0,
+    rgba(255, 255, 255, 0.05) 30%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.05) 70%,
+    transparent 100%
+  );
+  transform: translate3d(-130%, 0, 0) skewX(-16deg);
+  animation: ixp-sweep 6.5s cubic-bezier(0.5, 0.1, 0.3, 1) infinite;
+}
+.ixp-r-mythical .ixp-sheen::before,
+.ixp-r-empyrean .ixp-sheen::before {
+  width: 55%;
+  background: linear-gradient(
+    100deg,
+    transparent 0,
+    rgba(255, 120, 200, 0.1) 22%,
+    rgba(255, 240, 170, 0.2) 38%,
+    rgba(150, 255, 220, 0.2) 52%,
+    rgba(140, 180, 255, 0.16) 66%,
+    transparent 85%
+  );
+}
+@keyframes ixp-sweep {
+  0%,
+  55% {
+    transform: translate3d(-130%, 0, 0) skewX(-16deg);
+  }
+  85%,
+  100% {
+    transform: translate3d(330%, 0, 0) skewX(-16deg);
+  }
+}
+
+/* 등급 배지: 에픽은 테두리 배지, 전설 이상은 금속 띠 */
+.ixp-r-epic .ixp-rank {
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a) 60%, transparent);
+  background: color-mix(in srgb, var(--a) 14%, transparent);
+}
+.ixp-r-legendary .ixp-rank,
+.ixp-r-mythical .ixp-rank,
+.ixp-r-empyrean .ixp-rank {
+  padding: 3px 11px 3px 8px;
+  border-radius: 6px;
+  color: #170f04;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--a) 75%, #000 10%),
+    color-mix(in srgb, var(--a) 50%, #fff) 45%,
+    var(--a) 60%,
+    color-mix(in srgb, var(--a) 80%, #000 15%)
+  );
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--a) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.ixp-r-legendary .ixp-rank::before,
+.ixp-r-mythical .ixp-rank::before,
+.ixp-r-empyrean .ixp-rank::before {
+  background: #170f04;
+  box-shadow: none;
+}
+.ixp-r-empyrean .ixp-rank {
+  background: linear-gradient(100deg, #ffe9a8, #fff 30%, #b9e4ff 55%, #f6c4ff 80%, #ffe9a8);
+}
+.ixp-r-mythical .ixp-rank {
+  color: #fff;
+  background: linear-gradient(100deg, #b8122c, #ff5f6d 45%, #ffb0a0 60%, #c41f3c);
+}
+.ixp-r-mythical .ixp-rank::before {
+  background: #fff;
+}
+.ixp-r-legendary .ixp-name,
+.ixp-r-mythical .ixp-name,
+.ixp-r-empyrean .ixp-name {
+  font-size: 1.42rem;
+  font-weight: 900;
+}
+
+/* 고등급 본문: 문양 위에서도 읽히게 수치 칸을 어둡게 */
+.ixp-r-epic .ixp-stat,
+.ixp-r-legendary .ixp-stat,
+.ixp-r-mythical .ixp-stat,
+.ixp-r-empyrean .ixp-stat {
+  background: rgba(8, 8, 12, 0.55);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a) 22%, transparent);
+}
+.ixp-r-legendary .ixp-stat dd,
+.ixp-r-mythical .ixp-stat dd,
+.ixp-r-empyrean .ixp-stat dd {
+  text-shadow: 0 0 12px color-mix(in srgb, var(--a) 45%, transparent);
+}
+
+/* 빛망울(신화·창천): 큰 불티 */
+.ixp-spark.ixp-bokeh {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--c) 70%, #fff) 0,
+    color-mix(in srgb, var(--c) 30%, transparent) 45%,
+    transparent 70%
+  );
+}
+
+/* 접힘·정지·봉인에서는 강화층을 끈다 */
+.ixp:not([open]) .ixp-sig,
+.ixp:not([open]) .ixp-sheen,
+.ixp:not([open]) .ixp-edge {
+  display: none;
+}
+.ixp:not([open]) .ixp-rank {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--a);
+}
+.ixp:not([open]) .ixp-rank::before {
+  background: var(--a);
+}
+.ixp:not([open]) .ixp-name {
+  font-size: 0.95rem;
+}
+.ixp-still .ixp-sheen {
+  display: none;
+}
+.ixp-c-sealed .ixp-sig,
+.ixp-c-sealed .ixp-sheen,
+.ixp-c-sealed .ixp-edge {
+  display: none;
+}
+@container (max-width:430px) {
+  .ixp-sig-void {
+    left: 46px;
+    top: 50px;
+  }
+  .ixp-r-legendary .ixp-name,
+  .ixp-r-mythical .ixp-name,
+  .ixp-r-empyrean .ixp-name {
+    font-size: 1.24rem;
+  }
+}
+
+/* ══════════ B3: 군집 입자 · 획득 연출 ══════════ */
+/* 군집: 2px 점 하나에 box-shadow 로 점 십여 개를 그리고, 덩어리째 transform+opacity 하나로 움직인다 */
+.ixp-swarm {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  animation: var(--k) var(--d) linear var(--w) infinite;
+}
+@keyframes ixp-s-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 70px, 0);
+  }
+  18% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), -90px, 0);
+  }
+}
+@keyframes ixp-s-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -70px, 0);
+  }
+  18% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx), 90px, 0);
+  }
+}
+@keyframes ixp-s-blow {
+  0% {
+    opacity: 0;
+    transform: translate3d(-90px, 0, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(120px, var(--dx), 0);
+  }
+}
+@keyframes ixp-s-blink {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.96);
+  }
+  35%,
+  60% {
+    opacity: 1;
+    transform: translate3d(var(--dx), -6px, 0) scale(1);
+  }
+}
+/* 획득 연출: 처음 렌더 때 한 번만 */
+.ixp-flash,
+.ixp-shock,
+.ixp-burst {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+}
+.itemx2-burst-active .ixp-flash,
+.itemx2-burst-active .ixp-shock,
+.itemx2-burst-active .ixp-burst {
+  display: block;
+}
+.ixp-flash {
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    60% 55% at 56px 58px,
+    #fff,
+    color-mix(in srgb, var(--a) 70%, transparent) 30%,
+    transparent 70%
+  );
+  animation: ixp-flash 0.75s ease-out 0.05s 1 both;
+}
+@keyframes ixp-flash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.ixp-shock {
+  left: 56px;
+  top: 58px;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--a) 80%, #fff),
+    0 0 24px 4px color-mix(in srgb, var(--a) 60%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--p) 60%, transparent);
+  animation: ixp-shock 0.9s cubic-bezier(0.12, 0.7, 0.3, 1) 0.08s 1 both;
+}
+.ixp-shock.ixp-shock2 {
+  animation-delay: 0.24s;
+  animation-duration: 1.1s;
+}
+@keyframes ixp-shock {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(5.5);
+  }
+}
+.ixp-burst {
+  left: 56px;
+  top: 58px;
+  width: 2px;
+  height: 2px;
+  margin: -1px 0 0 -1px;
+  border-radius: 50%;
+  animation: ixp-burst 1.25s cubic-bezier(0.1, 0.75, 0.25, 1) 0.06s 1 both;
+}
+@keyframes ixp-burst {
+  0% {
+    opacity: 1;
+    transform: scale(0.08);
+  }
+  65% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+.itemx2-burst-active .ixp-title {
+  animation: ixp-title-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s 1 both;
+}
+.itemx2-burst-active .ixp-icon > span {
+  animation: ixp-pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) 0.05s 1 both;
+}
+@keyframes ixp-title-in {
+  from {
+    opacity: 0;
+    transform: translate3d(14px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ixp-pop {
+  from {
+    transform: scale(0.4);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.ixp:not([open]) .ixp-swarm {
+  display: none;
+}
+.ixp:not([open]) .ixp-shock,
+.ixp:not([open]) .ixp-burst {
+  left: 34px;
+  top: 30px;
+}
+.ixp:not([open]) .ixp-flash {
+  background: radial-gradient(
+    60% 120% at 34px 30px,
+    #fff,
+    color-mix(in srgb, var(--a) 70%, transparent) 30%,
+    transparent 70%
+  );
+}
+.ixp-c-sealed .ixp-swarm,
+.ixp-c-sealed .ixp-burst,
+.ixp-c-sealed .ixp-shock,
+.ixp-c-sealed .ixp-flash {
+  display: none;
+}
+@container (max-width:430px) {
+  .ixp-shock,
+  .ixp-burst {
+    left: 46px;
+    top: 48px;
+  }
+  .ixp-flash {
+    background: radial-gradient(
+      60% 55% at 46px 48px,
+      #fff,
+      color-mix(in srgb, var(--a) 70%, transparent) 30%,
+      transparent 70%
+    );
+  }
+}
+
+@media (max-width: 520px) {
+  .ixp {
+    border-radius: 18px;
+  }
+}
+/* summary resets inside the host chat */
+.ixp > summary {
+  display: grid;
+  margin: 0;
+}
+.ixp > summary::marker {
+  content: '';
+}
+.ixp-hero:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--a) 70%, transparent);
+  outline-offset: -2px;
+  border-radius: 18px;
+}
+
+/* classic pack: the 2.5 effect layer inside the new frame */
+.ixp-cfx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+.ixp-cfx > .itemx-fx {
+  z-index: 0;
+}
+.ixp-cfx > .itemx-cond {
+  z-index: 0;
+}
+.ixp-classic .ixp-stat {
+  background: rgba(8, 8, 12, 0.5);
+}
+.ixp:not([open]) .ixp-cfx {
+  display: none;
+}
+.ixp-c-sealed .ixp-cfx {
+  opacity: 0.25;
+}
+
+/* the 2.5 one-shot sweep stays for classic; prism has its own acquisition burst */
+.itemx2-burst-acquired {
+  background: linear-gradient(
+    125deg,
+    transparent 25%,
+    color-mix(in srgb, var(--rk, #e6be6c) 18%, transparent) 40%,
+    rgba(255, 238, 172, 0.55) 44%,
+    transparent 49%
+  );
+}
+
+/* change note inside the new card */
+.ixp .itemx2-change-note {
+  margin: 12px 0 0;
+  border-color: var(--hair);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg);
+}
+.ixp .itemx2-change-note > strong {
+  color: var(--a);
+}
+
+/* the 2.5 sweep span sits inside the summary of a 2.6 card */
+.ixp-hero > .itemx2-event-burst {
+  z-index: 4;
+  border-radius: inherit;
+}
+.itemx2-burst-active .ixp-hero > .itemx2-event-burst {
+  display: block;
+  animation: itemx2-event-reveal 1.25s ease-out both;
+}
+.itemx2-burst-active .ixp-hero > .itemx2-burst-resolved {
+  animation-name: itemx2-event-resolve !important;
+}
+.ixp-prism .ixp-hero > .itemx2-burst-acquired {
+  display: none !important;
+}

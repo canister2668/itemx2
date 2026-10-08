@@ -78,7 +78,7 @@ for (const domain of ['item', 'monster'])
       assert.equal(h.state()[domain === 'item' ? 'items' : 'monsters'].order.length, 1);
       assert.equal(h.text(), before, 'nothing new may be appended to the message');
       assert.equal(
-        ((await h.html()).match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || [])
+        ((await h.html()).match(domain === 'item' ? /<details\b/g : /<section class="itemx2-inline-event /g) || [])
           .length,
         1
       );
@@ -96,7 +96,7 @@ test('item: duplicate batch aliases route subsequent patches', async () => {
   assert.equal(events[1].patch.id, 'one');
   assert.equal(h.state().items.order.join(','), 'one');
   assert.equal(h.state().items.items.one.trivia, '새 설명');
-  assert.equal(((await h.html()).match(/<article\b/g) || []).length, 1);
+  assert.equal(((await h.html()).match(/<details\b/g) || []).length, 1);
 });
 
 test('item: no-op partial appraisal still gets one evidence-checked repair and one commit', async () => {
@@ -179,7 +179,7 @@ test('display suppresses identical states across paragraphs, without altering re
     const code = first.content.match(/<!--(?:ITEMX2|CODEX2):([A-Za-z0-9_-]+)-->/)[1];
     const payload = p.core.decodePayload(code);
     const count = (html) =>
-      (html.match(domain === 'item' ? /<article\b/g : /<section class="itemx2-inline-event /g) || []).length;
+      (html.match(domain === 'item' ? /<details\b/g : /<section class="itemx2-inline-event /g) || []).length;
     // Identical logical view in three anchors of one message.
     const source = `${pendingAnchor(payload)}\n첫 문단.\n${pendingAnchor(payload)}\n둘째 문단.\n${pendingAnchor(payload)}`;
     const html = await p.displayHandler(source);

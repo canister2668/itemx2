@@ -257,18 +257,6 @@ function affinityEffects(kind, role, rarity, motion = 'full') {
   return `${signature}${extra}<div class="afx afx-${kind}${role === 'secondary' ? ' afx-secondary' : ''}" style="--ac:${a.c}">${bits}</div>`;
 }
 
-function affinityUi(item) {
-  if (!item.affinity) return '';
-  const primary = affinities[item.affinity];
-  let out = `<span class="affinity-chip" style="--chip:${primary.c}">${primary.icon} ${primary.name}<small>${item.affinity2 ? t('render.affinity-primary') : t('render.affinity-single')}</small></span>`;
-  if (item.affinity2) {
-    const secondary = affinities[item.affinity2],
-      reaction = reactionFor(item.affinity, item.affinity2);
-    out += `<span class="affinity-chip" style="--chip:${secondary.c}">${secondary.icon} ${secondary.name}<small>${t('render.affinity-secondary')}</small></span><span class="affinity-chip reaction-chip">✦ ${esc(reaction[0])}</span>`;
-  }
-  return `<div class="affinity-row">${out}</div>`;
-}
-
 function renderSkillFx(skill, rarity = 'normal', motion = 'full') {
   const affinity = affinities[skill?.affinity] ? skill.affinity : 'arcane';
   const item = {
@@ -380,6 +368,7 @@ function eventKind(payload, domain = 'item') {
       ? 'resolved'
       : '';
   if (domain === 'skill') return !previous && payload.event?.kind === 'exam' ? 'learned' : '';
+  if (!previous) return 'acquired';
   const numerator = (value) => {
     const found = String(value || '').match(/^\s*(\d+(?:\.\d+)?)\s*\//);
     return found ? Number(found[1]) : null;
@@ -406,60 +395,224 @@ function eventKind(payload, domain = 'item') {
     : '';
 }
 
-function stats(item) {
-  const values = [
-    [t('render.050'), item.power],
-    [t('render.072'), item.required],
-    [t('render.073'), item.durability],
-    [t('render.061'), item.cost]
-  ].filter(([, value]) => value);
-  if (!values.length) return '';
-  return `<div class="itemx-stats">${values.map(([key, value]) => `<div class="itemx-stat"><span class="itemx-statk">${key}</span><span class="itemx-statv">${esc(value)}</span></div>`).join('')}</div>`;
+// ── 2.6 card ──────────────────────────────────────────────────────────
+// One layout for chat and drawer; the effect layer is a pack: 'prism' (light,
+// grouped particles) or 'classic' (the 2.5 layer). Every class is ixp- prefixed.
+const conditionLabels = {
+  blessed: t('render.cond-blessed'),
+  cursed: t('render.cond-cursed'),
+  corrupted: t('render.cond-corrupted'),
+  glitched: t('render.cond-glitched'),
+  sealed: t('render.cond-sealed')
+};
+// Particle motion and palette per affinity.
+const prismMotion = {
+  fire: { k: 'rise', cl: ['#ffb36b', '#ff6a2b', '#ffd89a'] },
+  ice: { k: 'fall', cl: ['#e8f8ff', '#9fe0ff'], shape: 'flake' },
+  lightning: { k: 'blink', cl: ['#fff6b8', '#ffd83d'] },
+  wind: { k: 'blow', cl: ['#c9fff0', '#5fe3b8'], shape: 'streak' },
+  earth: { k: 'fall', cl: ['#e8c08a', '#9c7444'] },
+  light: { k: 'rise', cl: ['#fff6d8', '#ffe08a'] },
+  dark: { k: 'fall', cl: ['#b9a3ff', '#6a4ad8'] },
+  arcane: { k: 'rise', cl: ['#c6d2ff', '#7f9cff'] },
+  poison: { k: 'rise', cl: ['#d4ff9a', '#9be04a'], shape: 'bubble' },
+  blood: { k: 'fall', cl: ['#ff7a8c', '#c41f3c'], shape: 'drop' },
+  void: { k: 'blink', cl: ['#ff9be0', '#9c6bff'] }
+};
+const RANKS = Object.keys(rarityLabels);
+const SPARKS = [0, 0, 3, 4, 6, 8, 10, 12];
+const SWARMS = [0, 0, 0, 0, 2, 3, 4, 4];
+// Deterministic per item, so a re-render never reshuffles the particles.
+function seeded(text) {
+  let h = parseInt(Core.fnv1a(String(text || '?')), 16) >>> 0 || 1;
+  return () => {
+    h = (h + 0x6d2b79f5) >>> 0;
+    let x = Math.imul(h ^ (h >>> 15), 1 | h);
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
 }
+const pick = (list, r) => list[Math.floor(r() * list.length)];
 
-function effectSection(item) {
-  const effects = Array.isArray(item.effects) ? item.effects : [],
-    augments = Array.isArray(item.augments) ? item.augments : [];
+function prismSparks(item, count, bokeh) {
+  const p = prismMotion[item.affinity];
+  if (!p || !count) return '';
+  const q = prismMotion[item.affinity2] || p,
+    r = seeded(`${item.id || item.name}#p`);
   let out = '';
-  if (effects.length)
-    out += `<div class="itemx-gap"></div><div class="itemx-section-label">${t('render.054')}</div><div class="itemx-effects">${effects.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
-  if (augments.length)
-    out += `<div class="itemx-gap"></div><div class="itemx-section-label">${t('render.055')}</div><div class="itemx-effects">${augments.map((one) => `<div class="itemx-effect"><span class="itemx-efname">${esc(one.name)}</span> <span>${esc(one.desc)}</span></div>`).join('')}</div>`;
+  for (let i = 0; i < count; i++) {
+    const a = i % 3 === 2 ? q : p,
+      big = bokeh && i < 3,
+      z = big ? 16 + r() * 14 : (a.shape === 'flake' ? 6 : a.shape === 'bubble' ? 7 : 3) + r() * 3,
+      y = a.k === 'rise' ? 55 + r() * 40 : a.k === 'fall' ? r() * 45 : 10 + r() * 75,
+      shape = big ? ' ixp-bokeh' : a.shape ? ` ixp-k-${a.shape}` : '';
+    out += `<i class="ixp-spark${shape}" style="--x:${(4 + r() * 92).toFixed(1)}%;--y:${y.toFixed(1)}%;--z:${z.toFixed(1)}px;--c:${pick(a.cl, r)};--k:ixp-${a.k};--d:${(3.5 + r() * 4.5).toFixed(2)}s;--w:-${(r() * 8).toFixed(2)}s;--o:${(big ? 0.25 + r() * 0.2 : 0.45 + r() * 0.5).toFixed(2)};--dx:${Math.round(-24 + r() * 48)}px"></i>`;
+  }
   return out;
 }
 
-function themeDecor(theme) {
-  if (theme !== 'oriental') return '';
-  return '<div class="itemx-oriental-paper"></div><i class="itemx-oriental-ink itemx-oriental-ink-a"></i><i class="itemx-oriental-ink itemx-oriental-ink-b"></i><div class="itemx-oriental-frame"></div><span class="itemx-oriental-seal" aria-hidden="true">鑑<br>定</span>';
+// A swarm is one 2px dot whose box-shadow draws 12-16 particles; the whole
+// group moves with a single transform+opacity animation.
+function prismSwarms(item, count) {
+  if (!count) return '';
+  const p = prismMotion[item.affinity],
+    palette = p ? [...p.cl, ...(prismMotion[item.affinity2]?.cl || [])] : ['#fff6d8', '#ffffff'],
+    kind = p ? p.k : 'rise',
+    r = seeded(`${item.id || item.name}#s`);
+  let out = '';
+  for (let j = 0; j < count; j++) {
+    const dots = [],
+      m = 12 + Math.floor(r() * 5);
+    for (let i = 0; i < m; i++) {
+      const x = Math.round(r() * 440),
+        y = Math.round(20 + r() * 340),
+        big = r() < 0.12,
+        col = pick(palette, r);
+      dots.push(
+        big
+          ? `${x}px ${y}px ${8 + Math.round(r() * 6)}px ${3 + Math.round(r() * 3)}px color-mix(in srgb,${col} 35%,transparent)`
+          : `${x}px ${y}px ${1 + Math.round(r() * 3)}px ${(r() * 1.6).toFixed(1)}px ${col}`
+      );
+    }
+    const d = 5 + r() * 4;
+    out += `<i class="ixp-swarm" style="box-shadow:${dots.join(',')};--k:ixp-s-${kind};--d:${d.toFixed(2)}s;--w:-${((j * d) / count + r()).toFixed(2)}s;--dx:${Math.round(-30 + r() * 60)}px"></i>`;
+  }
+  return out;
 }
 
-function renderCard(item, options = {}) {
-  if (!item) return '';
-  const theme = crafts[item.theme] ? item.theme : 'arcane',
-    rarity = rarityLabels[item.rarity] ? item.rarity : 'normal',
-    motion = options.motion || 'full';
+function prismBurst(item) {
+  const p = prismMotion[item.affinity],
+    palette = p ? [...p.cl, '#ffffff'] : ['#ffffff', '#fff1c2'],
+    r = seeded(`${item.id || item.name}#b`),
+    dots = [];
+  for (let i = 0; i < 30; i++) {
+    const angle = (i / 30) * Math.PI * 2 + r() * 0.3,
+      distance = 70 + r() * 150;
+    dots.push(
+      `${Math.round(Math.cos(angle) * distance)}px ${Math.round(Math.sin(angle) * distance * 0.8)}px ${1 + Math.round(r() * 3)}px ${(0.5 + r() * 2).toFixed(1)}px ${pick(palette, r)}`
+    );
+  }
+  return `<i class="ixp-burst" style="box-shadow:${dots.join(',')}"></i>`;
+}
+
+function prismLayers(item, rank, motion) {
+  if (motion === 'off') return { hero: '', back: '', front: '', fresh: '' };
+  const lite = motion === 'lite',
+    sig =
+      rank >= 4
+        ? `<div class="ixp-sig ixp-sig-${prismMotion[item.affinity] && item.affinity !== 'arcane' ? item.affinity : 'none'}"></div>`
+        : '',
+    rim = rank >= 4 ? '<div class="ixp-rim"></div>' : '',
+    edge = rank >= 4 ? '<div class="ixp-edge"></div>' : '',
+    sheen = rank >= 5 ? '<div class="ixp-sheen"></div>' : '',
+    fresh =
+      rank >= 4
+        ? `<div class="ixp-flash"></div><i class="ixp-shock"></i>${rank >= 5 ? `<i class="ixp-shock ixp-shock2"></i>${prismBurst(item)}` : ''}`
+        : '';
+  return {
+    hero: prismSparks(item, Math.min(SPARKS[rank], lite ? 6 : 99), rank >= 6),
+    back: `${rim}${sig}`,
+    front: `${prismSwarms(item, Math.min(SWARMS[rank], lite ? 2 : 9))}${edge}${sheen}`,
+    fresh
+  };
+}
+
+function classicLayer(item, theme, rarity, motion) {
+  if (motion === 'off') return '';
   const strong = ['legendary', 'mythical', 'empyrean'].includes(rarity);
   const classes = [
-    'itemx-card',
+    'ixp-cfx',
     `craft-${theme}`,
     `rarity-${rarity}`,
     strong ? 'itemx2-strong' : '',
     item.condition ? `condition-${item.condition}` : '',
-    motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
-    options.inline ? 'itemx-inline-card' : '',
+    motion === 'lite' ? 'motion-lite' : '',
     item.affinity && item.affinity2 && item.affinity !== item.affinity2
       ? `itemx2-blend-${keyFor(item.affinity, item.affinity2).replace('+', '-')}`
       : ''
   ]
     .filter(Boolean)
     .join(' ');
+  return `<div class="${classes}" style="${itemVars(item)}"><div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>${strong ? '<div class="itemx-edge" aria-hidden="true"></div>' : ''}</div>`;
+}
+
+function prismStats(item) {
+  const rows = [
+    [t('render.050'), item.power],
+    [t('render.072'), item.required],
+    [t('render.073'), item.durability],
+    [t('render.061'), item.cost]
+  ].filter(([, value]) => value);
+  if (!rows.length) return '';
+  return `<dl class="ixp-stats">${rows
+    .map(([label, value]) => {
+      const gauge = label === t('render.073') && String(value).match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+      if (gauge && Number(gauge[2]) > 0) {
+        const pct = Math.max(0, Math.min(100, Math.round((Number(gauge[1]) / Number(gauge[2])) * 100)));
+        return `<div class="ixp-stat"><dt>${label}</dt><dd>${esc(gauge[1])} <small>/ ${esc(gauge[2])}</small></dd><div class="ixp-meter${pct < 35 ? ' low' : ''}"><i style="--v:${pct}%"></i></div></div>`;
+      }
+      return `<div class="ixp-stat"><dt>${label}</dt><dd>${esc(value)}</dd></div>`;
+    })
+    .join('')}</dl>`;
+}
+
+function prismTags(item) {
+  const primary = affinities[item.affinity];
+  if (!primary) return '';
+  const secondary = item.affinity2 && item.affinity2 !== item.affinity ? affinities[item.affinity2] : null;
+  let out = `<span class="ixp-tag" style="--c:${primary.c}">${primary.icon} ${esc(primary.name)}</span>`;
+  if (secondary)
+    out += `<span class="ixp-tag" style="--c:${secondary.c}">${secondary.icon} ${esc(secondary.name)}</span><span class="ixp-tag ixp-combo">✦ ${esc(reactionFor(item.affinity, item.affinity2)[0])}</span>`;
+  return `<div class="ixp-tags">${out}</div>`;
+}
+
+function prismList(item) {
+  const effects = Array.isArray(item.effects) ? item.effects : [],
+    augments = Array.isArray(item.augments) ? item.augments : [];
+  const rows = [
+    ...effects.map((one) => `<li><b>${esc(one.name)}</b>${esc(one.desc)}</li>`),
+    ...augments.map(
+      (one) => `<li class="aug"><b>${esc(one.name)}<small>${t('render.055')}</small></b>${esc(one.desc)}</li>`
+    )
+  ];
+  return rows.length ? `<ul class="ixp-list" aria-label="${t('render.054')}">${rows.join('')}</ul>` : '';
+}
+
+// options: motion 'full'|'lite'|'off', fx 'prism'|'classic', fold (inline: start
+// closed), previous (the item before this event, for the change note).
+function renderCard(item, options = {}) {
+  if (!item) return '';
+  const theme = crafts[item.theme] ? item.theme : 'arcane',
+    rarity = rarityLabels[item.rarity] ? item.rarity : 'normal',
+    rank = RANKS.indexOf(rarity),
+    motion = options.motion || 'full',
+    pack = options.fx === 'classic' ? 'classic' : 'prism';
+  const classes = [
+    'ixp',
+    `ixp-${pack}`,
+    `ixp-r-${rarity}`,
+    `ixp-t-${theme}`,
+    item.condition && conditionLabels[item.condition] ? `ixp-c-${item.condition}` : '',
+    motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
+    options.inline ? 'itemx-inline-card' : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const primary = affinities[item.affinity],
+    secondary = affinities[item.affinity2] || primary,
+    vars = `--p:${primary ? primary.c : 'var(--a)'};--s:${secondary ? secondary.c : 'var(--a)'}`;
+  const layers =
+    pack === 'prism'
+      ? prismLayers(item, rank, motion)
+      : { hero: '', back: classicLayer(item, theme, rarity, motion), front: '', fresh: '' };
   const possession = possessionLabels[item.possession] || item.possession || t('ui-panel.049'),
-    location = locationLabels[item.location] || item.location || t('render.044');
-  const fx =
-    motion === 'off'
-      ? ''
-      : `<div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>${strong ? '<div class="itemx-edge" aria-hidden="true"></div>' : ''}`;
-  return `<article class="${classes}" style="${itemVars(item)}" data-itemx-id="${esc(item.id)}">${themeDecor(theme)}${fx}<div class="itemx-content"><div class="itemx-head"><div class="itemx-medallion"><span class="itemx-emoji">${esc(Core.resolveItemEmoji(item))}</span></div><div class="itemx-titles"><div class="itemx-eyebrow">${esc(crafts[theme].eyebrow)}</div><span class="itemx-name">${esc(item.name || '???')}</span><span class="itemx-tier">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="itemx-subline"><span>${esc(possession)} · ${esc(location)}</span><span>${esc(item.itemType || t('render.item-type-other'))}</span>${Number(item.count) > 1 ? `<span>×${Number(item.count)}</span>` : ''}</span></div></div>${affinityUi(item)}<div class="itemx-rule"></div>${stats(item)}${effectSection(item)}${item.trivia ? `<div class="itemx-flavor">${esc(item.trivia)}</div>` : ''}</div></article>`;
+    location = locationLabels[item.location] || item.location || t('render.044'),
+    state = conditionLabels[item.condition] ? `<span class="ixp-state">${conditionLabels[item.condition]}</span>` : '',
+    count = Number(item.count) > 1 ? `<b class="ixp-x">×${Number(item.count)}</b>` : '';
+  // The acquisition burst lives in the summary so a folded card still plays it.
+  const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(possession)} · ${esc(location)}</span>${state}</span></div><span class="ixp-more">${t('render.expand')}</span></summary>`;
+  const body = `<div class="ixp-body">${prismTags(item)}${prismStats(item)}${prismList(item)}${options.previous ? changesHtml(options.previous, item) : ''}${item.trivia ? `<p class="ixp-lore">${esc(item.trivia)}</p>` : ''}</div>`;
+  return `<details class="${classes}" style="${vars}" data-itemx-id="${esc(item.id)}"${options.fold ? '' : ' open'}>${hero}${layers.back}${body}${layers.front}</details>`;
 }
 
 function renderTile(item) {
@@ -471,11 +624,7 @@ function renderTile(item) {
 
 function renderMarkerPayload(payload, options = {}) {
   if (!payload || payload.error) return '';
-  if (payload.view)
-    return renderCard(payload.view, options).replace(
-      '</article>',
-      `${changesHtml(payload.previous, payload.view)}</article>`
-    );
+  if (payload.view) return renderCard(payload.view, { ...options, previous: payload.previous });
   const id = payload.event?.patch?.id;
   return id ? `<span class="itemx-event-chip">ITEMX · ${esc(id)} ${t('render.changed')}</span>` : '';
 }
