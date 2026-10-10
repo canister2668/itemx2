@@ -24,6 +24,7 @@ import { enableModuleAssets } from '../portraits.js';
 import { invalidateLoaded, setActiveContextKey } from '../session.js';
 import {
   CARD_FX_MODES,
+  CURRENCY_DISPLAY_MODES,
   DOMAIN_KEYS,
   FX_MODES,
   SKIN_MODES,
@@ -148,6 +149,11 @@ export const FX_LABELS = {
   off: t('ui-settings.147')
 };
 export const CARD_FX_LABELS = { prism: t('ui-settings.card-fx-prism'), classic: t('ui-settings.card-fx-classic') };
+export const MONEY_LABELS = {
+  grid: t('ui-settings.money-grid'),
+  both: t('ui-settings.money-both'),
+  wallet: t('ui-settings.money-wallet')
+};
 export const AUX_LABELS = { off: t('ui-settings.147'), missing: t('ui-settings.146'), always: t('ui-settings.145') };
 
 export const RARITY_MODE_LABELS = { world: t('ui-settings.144'), itemx: t('ui-settings.143') };
@@ -442,7 +448,7 @@ export function settingsPanelHtml(loaded, skin, parts) {
     t('ui-settings.093'),
     t('ui-settings.092'),
     setSwitch(skin, 'module-assets', loaded.moduleAssetsEnabled)
-  )}<h4 class="itemx2-set-group">${t('ui-settings.074.3')}</h4>${setCard(
+  )}${setCard(t('ui-settings.plugin-compat-title'), t('ui-settings.plugin-compat-note'))}<h4 class="itemx2-set-group">${t('ui-settings.074.3')}</h4>${setCard(
     t('ui-settings.095'),
     t('ui-settings.094'),
     setSegment(
@@ -468,6 +474,10 @@ export function settingsPanelHtml(loaded, skin, parts) {
     t('ui-settings.card-open-title'),
     t('ui-settings.card-open-note'),
     setSwitch(skin, 'card-open-latest', loaded.cardOpenLatest)
+  )}${setCard(
+    t('ui-settings.money-title'),
+    t('ui-settings.money-note'),
+    setSegment(skin, 'money', Object.entries(MONEY_LABELS), loaded.currencyDisplay || 'grid')
   )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
     t('ui-settings.101'),
     t('ui-settings.100')
@@ -714,6 +724,15 @@ export function rootSettingActions() {
           await changeSettings(loaded.character, { cardFx: value });
           loaded.cardFx = value;
           setStatus(t('ui-settings.card-fx-status', CARD_FX_LABELS[value]));
+        }
+      ],
+      [
+        'money',
+        CURRENCY_DISPLAY_MODES,
+        async (loaded, value) => {
+          await changeSettings(loaded.character, { currencyDisplay: value });
+          loaded.currencyDisplay = value;
+          setStatus(t('ui-settings.money-status', MONEY_LABELS[value]));
         }
       ],
       [

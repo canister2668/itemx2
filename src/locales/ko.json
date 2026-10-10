@@ -722,5 +722,26 @@
   "ui-settings.card-open-status": [
     "최근 출력만 펼치기 ",
     ""
+  ],
+  "ui-panel.money-count": [
+    " · 재화 ",
+    "종"
+  ],
+  "ui-panel.money-mark": "재화로",
+  "ui-panel.money-unmark": "재화 해제",
+  "ui-settings.money-title": "재화 표시",
+  "ui-settings.money-note": "골드·코인 같은 재화를 어디에 보여 줄지 고릅니다. 격자에 둘 때는 어느 페이지·필터에서도 첫 칸에 고정됩니다. 관리 목록의 '재화로' 버튼으로 기존 아이템을 재화로 바꿀 수 있습니다.",
+  "ui-settings.money-grid": "격자만",
+  "ui-settings.money-both": "지갑+격자",
+  "ui-settings.money-wallet": "지갑만",
+  "ui-settings.money-status": [
+    "재화 표시: ",
+    ""
+  ],
+  "ui-settings.plugin-compat-title": "다른 플러그인과 함께 쓰기",
+  "ui-settings.plugin-compat-note": "응답 본문을 고쳐 쓰는 플러그인과는 함께 쓰지 않기를 권합니다. ITEMX 태그나 카드 표식이 지워지거나 바뀌면 기록이 빠질 수 있고, 플러그인 목록 순서로는 처리 순서가 보장되지 않습니다.",
+  "pipeline.anchor-changed": [
+    "ITEMX 앵커 변경 감지: 이 응답의 카드 표식 ",
+    "개가 저장 전에 사라졌습니다. 응답을 고쳐 쓰는 다른 플러그인이 있다면 그 카드는 기록되지 않을 수 있습니다."
   ]
 }

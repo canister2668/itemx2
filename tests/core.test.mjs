@@ -360,3 +360,36 @@ test('reasoning and analysis with attributes cannot execute planned item acquisi
     }
   }
 });
+
+test('money is one stack whose balance survives spending to zero and can be synced', () => {
+  const gold = core.extractResponse(
+    '[itemx: id=gold | name=골드 | type=재화 | emoji=🪙 | rarity=normal | display=일반 | possession=owned | location=inventory | count=1,200]',
+    core.newRegistry()
+  );
+  assert.equal(gold.registry.items.gold.count, 1200);
+  const spent = core.extractResponse(
+    '[itemx: id=gold | action=consume | quantity=1,200 G | reason=숙박비]',
+    gold.registry
+  );
+  assert.equal(spent.registry.items.gold.count, 0);
+  assert.equal(spent.registry.items.gold.possession, 'owned');
+  assert.equal(spent.registry.items.gold.location, 'inventory');
+  const earned = core.extractResponse('[itemx: id=gold | action=acquire | quantity=350]', spent.registry);
+  assert.equal(earned.registry.items.gold.count, 350);
+  const synced = core.extractResponse('[itemx: id=gold | action=set | count=1520 | reason=잔액 확인]', earned.registry);
+  assert.equal(synced.registry.items.gold.count, 1520);
+  assert.equal(core.extractResponse('[itemx: id=gold | action=set | reason=x]', synced.registry).errors.length, 1);
+  assert.match(renderer.renderCard(synced.registry.items.gold), /ixp-x">1,520</);
+});
+
+test('balance set is refused for ordinary items and spending them out still removes them', () => {
+  const potion = core.extractResponse(
+    '[itemx: id=potion | name=물약 | type=소모품 | emoji=🧪 | rarity=normal | display=일반 | possession=owned | location=inventory | count=2]',
+    core.newRegistry()
+  );
+  const set = core.extractResponse('[itemx: id=potion | action=set | count=9]', potion.registry);
+  assert.equal(set.registry.items.potion.count, 2);
+  assert.ok(set.registry.diagnostics.some((one) => one.code === 'action_set_not_currency'));
+  const used = core.extractResponse('[itemx: id=potion | action=consume | quantity=2]', potion.registry);
+  assert.equal(used.registry.items.potion.possession, 'removed');
+});

@@ -21,7 +21,15 @@ import { debugRecord, dispatch, fail, workQueue } from './kernel.js';
 import { cachedOrRebuildCurrent, commitRecords, rebuildCurrent, stampFrom, writeDocument } from './ledger.js';
 import { enrichLore, scanLorebookEncounters } from './lore-sync.js';
 import { encounterEntities, modulePortraitAssets, prepareInlinePortraits } from './portraits.js';
-import { activeContextKey, addPending, dropPending, freshLoaded, pendingRecord, setLatestKeys } from './session.js';
+import {
+  activeContextKey,
+  addPending,
+  currentLatestKeys,
+  dropPending,
+  freshLoaded,
+  pendingRecord,
+  setLatestKeys
+} from './session.js';
 import { isEnabled, settingsFor } from './settings.js';
 import { setStatus } from './status.js';
 import { anchorKeys, stripTransport } from './store/anchors.js';
@@ -91,6 +99,19 @@ export function scheduleLegacyCommitRecovery(confirm = false) {
   );
 }
 
+// Card anchors this response was given but no longer carries, when it still
+// carries others: proof it is the same response, edited after ITEMX anchored
+// it (typically by another output-rewriting plugin). Without a surviving
+// anchor identity is uncertain (reroll, deletion), so nothing is reported.
+// Diagnostic only: no repair, no write, no model call.
+const reportedAnchorLoss = new Set();
+export function lostAnchors(chatKey, source, latest = currentLatestKeys()) {
+  const ours = [...latest].filter((key) => pendingRecord(key)?.chatKey === chatKey);
+  const present = new Set(anchorKeys(source));
+  if (!ours.some((key) => present.has(key))) return [];
+  return ours.filter((key) => !present.has(key));
+}
+
 // Commits the latest response: its anchors whose parsed records are pending
 // become document events owned by the message, and raw tags the output hook
 // never saw are anchored now. One write, lore enrichment included.
@@ -99,6 +120,13 @@ export async function commitLatestOutput(ctx) {
   if (index < 0) return { ctx, index, changed: false };
   const source = Core.messageText(ctx.chat.message[index]);
   const pending = anchorKeys(source).filter((key) => pendingRecord(key)?.chatKey === ctx.key);
+  const lost = lostAnchors(ctx.key, source);
+  if (lost.length && !reportedAnchorLoss.has(lost.join())) {
+    reportedAnchorLoss.add(lost.join());
+    debugRecord('anchor changed', { lost: lost.length, kept: pending.length });
+    setStatus(t('pipeline.anchor-changed', lost.length));
+    void emit('notify', { message: t('pipeline.anchor-changed', lost.length), tone: 'error' });
+  }
   const raw = hasRawTransport(source);
   // Without new cards the pass may still owe the chat its state entries: a
   // chat from before them, or entries a reroll or deletion left behind.

@@ -608,7 +608,11 @@ function renderCard(item, options = {}) {
   const possession = possessionLabels[item.possession] || item.possession || t('ui-panel.049'),
     location = locationLabels[item.location] || item.location || t('render.044'),
     state = conditionLabels[item.condition] ? `<span class="ixp-state">${conditionLabels[item.condition]}</span>` : '',
-    count = Number(item.count) > 1 ? `<b class="ixp-x">×${Number(item.count)}</b>` : '';
+    count = Core.isCurrency(item)
+      ? `<b class="ixp-x">${Number(item.count || 0).toLocaleString('en-US')}</b>`
+      : Number(item.count) > 1
+        ? `<b class="ixp-x">×${Number(item.count)}</b>`
+        : '';
   // The acquisition burst lives in the summary so a folded card still plays it.
   const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(possession)} · ${esc(location)}</span>${state}</span></div><span class="ixp-more">${t('render.expand')}</span></summary>`;
   const body = `<div class="ixp-body">${prismTags(item)}${prismStats(item)}${prismList(item)}${options.previous ? changesHtml(options.previous, item) : ''}${item.trivia ? `<p class="ixp-lore">${esc(item.trivia)}</p>` : ''}</div>`;
@@ -619,7 +623,7 @@ function renderTile(item) {
   const icons = [item.affinity && affinities[item.affinity]?.icon, item.affinity2 && affinities[item.affinity2]?.icon]
     .filter(Boolean)
     .join('');
-  return `<button class="itemx-tile rarity-${esc(item.rarity || 'normal')}" style="${itemVars(item)}" data-item-id="${esc(item.id)}"><span class="itemx-tile-bar"></span>${item.location === 'equipped' ? '<span class="itemx-tile-eq"></span>' : ''}${icons ? `<span class="itemx-tile-aff">${icons}</span>` : ''}<span class="itemx-tile-em">${esc(Core.resolveItemEmoji(item))}</span><span class="itemx-tile-nm">${esc(item.name || '???')}</span><span class="itemx-tile-meta"><span class="itemx-tile-rk">${esc(item.displayRarity || rarityLabels[item.rarity] || rarityLabels.normal)}</span><span class="itemx-tile-lc">${esc(item.itemType || t('render.item-type-other'))}</span></span></button>`;
+  return `<button class="itemx-tile rarity-${esc(item.rarity || 'normal')}" style="${itemVars(item)}" data-item-id="${esc(item.id)}"><span class="itemx-tile-bar"></span>${item.location === 'equipped' ? '<span class="itemx-tile-eq"></span>' : ''}${icons ? `<span class="itemx-tile-aff">${icons}</span>` : ''}<span class="itemx-tile-em">${esc(Core.resolveItemEmoji(item))}</span><span class="itemx-tile-nm">${esc(item.name || '???')}</span><span class="itemx-tile-meta"><span class="itemx-tile-rk">${esc(item.displayRarity || rarityLabels[item.rarity] || rarityLabels.normal)}</span><span class="itemx-tile-lc">${esc(Core.isCurrency(item) ? Number(item.count || 0).toLocaleString('en-US') : item.itemType || t('render.item-type-other'))}</span></span></button>`;
 }
 
 function renderMarkerPayload(payload, options = {}) {

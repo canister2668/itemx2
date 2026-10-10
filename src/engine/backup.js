@@ -17,7 +17,7 @@ const fields = {
 };
 const arrays = new Set('effects augments aliases weaknesses resistances moves _inferred _placeholder'.split(' '));
 const numbers = new Set('count level mastery encounterCount outcomeEncounter'.split(' '));
-const booleans = new Set(['pin', 'active']);
+const booleans = new Set(['pin', 'active', 'currency']);
 const nullable = new Set('level mastery slot affinity affinity2 condition'.split(' '));
 const bad = () => {
   throw new Error(t('backup.001'));

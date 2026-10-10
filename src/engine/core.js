@@ -19,9 +19,101 @@ const ACTIONS = new Set([
   'transform',
   'destroy',
   'restore',
-  'swap'
+  'swap',
+  'set'
 ]);
 const OPS = new Set(['merge', 'remove', 'restore']);
+// Money is one stack whose count is the balance. Spending it to zero keeps it
+// held, so it never turns into a lost item the inventory stops listing.
+// `currency` is stored on the item; items saved before it existed fall back to
+// an exact type word, never a substring (통화 장치, money bag are not money).
+const CURRENCY_TYPES = new Set('재화 화폐 통화 돈 currency money gold 골드 coin coins 코인 금화 은화 동전'.split(' '));
+const normalWord = (value) =>
+  String(value ?? '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+const currencyType = (type) =>
+  String(type ?? '')
+    .split(/[/·,|]/)
+    .some((part) => CURRENCY_TYPES.has(normalWord(part)));
+const isCurrency = (item) => (typeof item?.currency === 'boolean' ? item.currency : currencyType(item?.itemType));
+const flag = (value) => /^(1|true|yes)$/i.test(String(value ?? '').trim());
+// A whole amount as models write it: 1200, 1,200, 1 200 or 1,200 Gold.
+function parseAmount(value) {
+  const found = String(value ?? '')
+    .trim()
+    .match(/^(\d{1,3}(?:[,_ ]\d{3})+|\d+)(?:\s*[\p{L}₩$€¥]+\.?)?$/u);
+  const amount = found ? Number(found[1].replace(/[,_ ]/g, '')) : null;
+  return Number.isSafeInteger(amount) ? amount : null;
+}
+const validAmount = (value) => Number.isSafeInteger(value) && value >= 0;
+// Identity of one currency, for joining a re-registered `gold` onto the held
+// `money_gold`. Whole words only, plus a short alias table; 금화 and 은화 or
+// gold and guild_gold_voucher stay apart.
+const CURRENCY_ALIASES = { 골드: 'gold', 코인: 'coin', coins: 'coin' };
+const currencyWord = (value) => {
+  const word = normalWord(value);
+  return word ? CURRENCY_ALIASES[word] || word : '';
+};
+const currencyStem = (id) =>
+  currencyWord(
+    String(id || '')
+      .toLowerCase()
+      .replace(/^money_/, '')
+      .replace(/_(?:coins|pouch)$/, '')
+  );
+function currencyMatches(reg, keys) {
+  return reg.order.filter((id) => {
+    const item = reg.items[id];
+    return item && isCurrency(item) && [currencyWord(item.name), currencyStem(id)].some((key) => key && keys.has(key));
+  });
+}
+// Resolves money onto the one stack already holding it, before the event is
+// stored: replay, markers and history then all see the real id. A held id
+// always wins; ambiguity rejects the event rather than guessing.
+function resolveCurrencyEvent(reg, event) {
+  if (event.kind === 'exam') {
+    const item = event.item;
+    if (reg.items[item.id] || !isCurrency(item)) return event;
+    const found = currencyMatches(reg, new Set([currencyWord(item.name), currencyStem(item.id)].filter(Boolean)));
+    if (found.length > 1) return { error: 'currency_ambiguous' };
+    if (!found.length) return event;
+    return { kind: 'exam', item: { ...item, id: found[0], name: reg.items[found[0]].name } };
+  }
+  const patch = event.patch;
+  const resolve = (id) => {
+    if (!id || reg.items[id]) return id;
+    const stem = currencyStem(id);
+    const found = stem ? currencyMatches(reg, new Set([stem])) : [];
+    return found.length === 1 ? found[0] : id;
+  };
+  const next = {
+    ...patch,
+    id: resolve(patch.id),
+    equip: resolve(patch.equip),
+    unequip: resolve(patch.unequip),
+    inputs: patch.inputs && patch.inputs.map((row) => ({ ...row, id: resolve(row.id) })),
+    outputs: patch.outputs && patch.outputs.map((row) => ({ ...row, id: resolve(row.id) }))
+  };
+  const changed =
+    next.id !== patch.id ||
+    next.equip !== patch.equip ||
+    next.unequip !== patch.unequip ||
+    (patch.inputs || []).some((row, i) => row.id !== next.inputs[i].id) ||
+    (patch.outputs || []).some((row, i) => row.id !== next.outputs[i].id);
+  return changed ? { kind: 'patch', patch: next } : event;
+}
+// Read-only WALLET line of the request anchor; stripInventoryEcho knows it.
+const WALLET_PREFIX = '- WALLET (money; reuse these ids):';
+function walletLine(reg) {
+  const rows = reg.order
+    .map((id) => reg.items[id])
+    .filter((item) => item && item.possession === 'owned' && isCurrency(item))
+    .map((item) => `${item.id}=${Number(item.count) || 0} ${item.name}`);
+  return `${WALLET_PREFIX} ${rows.length ? rows.join(' | ') : 'none'}`;
+}
 const RARITY_LABELS = {
   normal: '일반',
   magic: '매직',
@@ -91,6 +183,7 @@ const ITEM_FIELDS = [
   { key: 'count', transport: 'count', tags: ['count'], anchor: 'required', backup: true },
   { key: 'slot', transport: 'slot', tags: ['slot'], anchor: 'optional', backup: true },
   { key: 'pin', transport: 'pin', tags: ['pin'], backup: true },
+  { key: 'currency', transport: 'currency', tags: ['currency'], backup: true },
   {
     key: 'theme',
     transport: 'theme',
@@ -139,7 +232,7 @@ const TRANSPORT_TAG_ALT = ITEM_FIELDS.flatMap((field) => field.tags || []).join(
 // BACKUP_FIELD_ORDER is the key order of every exported backup.
 const ANCHOR_OPTIONAL_ORDER = ['slot', 'power', 'durability', 'theme', 'affinity', 'affinity2', 'condition'];
 const BACKUP_FIELD_ORDER =
-  'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin trivia theme affinity affinity2 condition effects augments'.split(
+  'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin currency trivia theme affinity affinity2 condition effects augments'.split(
     ' '
   );
 const DETAIL_FIELD_ORDER = ['power', 'effects', 'augments', 'required', 'durability', 'cost'];
@@ -382,7 +475,7 @@ function normalizeItem(raw, seed = '') {
       ? 'observed'
       : 'owned';
   if (possession === 'removed') location = 'unknown';
-  const count = /^\d+$/.test(f.count || '') ? Math.max(0, Number(f.count)) : 1;
+  const count = parseAmount(f.count) ?? 1;
   const item = {
     id,
     name,
@@ -399,6 +492,7 @@ function normalizeItem(raw, seed = '') {
     count,
     slot: clean(f.slot, 80) || null,
     pin: /^(1|true)$/i.test(f.pin || ''),
+    ...(flag(f.currency) || currencyType(f.type) || /^money_/i.test(id) ? { currency: true } : {}),
     trivia: placeholderValue(f.trivia) ? '' : clean(f.trivia, 1200),
     theme,
     affinity,
@@ -461,7 +555,8 @@ function parseBracket(body, seed) {
 
 function parseQuantity(value) {
   if (value === 'all') return 'all';
-  return /^\d+$/.test(String(value || '')) && Number(value) > 0 ? Number(value) : null;
+  const amount = parseAmount(value);
+  return amount > 0 ? amount : null;
 }
 
 function parseItemList(value) {
@@ -507,6 +602,7 @@ function normalizePatch(raw) {
     slot: 'slot'
   };
   for (const [from, to] of Object.entries(map)) if (f[from] != null) fields[to] = f[from] === '-' ? null : f[from];
+  if (f.currency != null) fields.currency = flag(f.currency);
   if (Array.isArray(raw.effects)) fields.effects = raw.effects;
   if (Array.isArray(raw.augments)) fields.augments = raw.augments;
   if (op === 'merge' && ['location', 'possession', 'count', 'slot'].some((key) => key in fields))
@@ -519,6 +615,10 @@ function normalizePatch(raw) {
   if (action === 'transform' && (!inputs || !outputs)) return { error: 'patch_transform_shape' };
   if (action === 'swap' && (!ID_RE.test(f.equip || '') || !ID_RE.test(f.unequip || '') || !f.slot))
     return { error: 'patch_swap_shape' };
+  if (action === 'set') {
+    if (parseAmount(f.count) == null) return { error: 'patch_set_shape' };
+    fields.count = parseAmount(f.count);
+  }
   return {
     patch: {
       id,
@@ -558,7 +658,12 @@ function removeQuantity(item, quantity) {
     take = quantity === 'all' ? have : quantity || 1;
   if (take < 1 || take > have) return false;
   item.count = have - take;
-  if (item.count === 0) {
+  if (item.count === 0 && isCurrency(item)) {
+    item.possession = 'owned';
+    item.location = 'inventory';
+    item.slot = null;
+    item.removedReason = null;
+  } else if (item.count === 0) {
     item.possession = 'removed';
     item.location = 'unknown';
     item.slot = null;
@@ -616,6 +721,9 @@ function applyExam(reg, source) {
     item.slot = prev.slot || null;
     item.count = Math.max(0, Number(prev.count) || 0);
     item.pin = prev.pin === true;
+    if (isCurrency(prev) || item.currency === true) item.currency = true;
+    else if (prev.currency === false) item.currency = false;
+    else delete item.currency;
     if (prev.removedReason) item.removedReason = prev.removedReason;
   }
   item.emoji = resolveItemEmoji(item);
@@ -639,6 +747,7 @@ function applyFields(item, fields) {
   if (!AFFINITIES.has(item.affinity)) item.affinity = null;
   if (!AFFINITIES.has(item.affinity2) || item.affinity2 === item.affinity) item.affinity2 = null;
   if (!CONDITIONS.has(item.condition)) item.condition = null;
+  if ('currency' in (fields || {})) item.currency = fields.currency === true;
   item.emoji = resolveItemEmoji(item);
 }
 
@@ -678,6 +787,10 @@ function applyPatch(reg, patch) {
     for (const [id, quantity] of outputs) {
       const item = affected.get(id),
         have = item.possession === 'owned' ? available(item) : 0;
+      if (!validAmount(have + quantity)) {
+        diagnostic(reg, 'action_invalid_transform');
+        return null;
+      }
       item.count = have + quantity;
       item.possession = 'owned';
       item.location = 'inventory';
@@ -738,12 +851,32 @@ function applyPatch(reg, patch) {
       }
       const held = item.possession === 'owned' && item.location !== 'unknown';
       const have = item.possession === 'owned' ? available(item) : 0;
+      if (!validAmount(have + (patch.quantity || 1))) {
+        diagnostic(reg, 'action_bad_quantity', item.id);
+        return null;
+      }
       item.count = have + (patch.quantity || 1);
       item.possession = 'owned';
       if (!held) {
         item.location = 'inventory';
         item.slot = null;
       }
+      item.removedReason = null;
+    } else if (patch.action === 'set') {
+      // An absolute balance, for money whose narrative total (a status window)
+      // drifted from the stack. Only money has a balance; zero keeps it held.
+      if (!isCurrency(item)) {
+        diagnostic(reg, 'action_set_not_currency', item.id);
+        return null;
+      }
+      if (!validAmount(patch.fields.count)) {
+        diagnostic(reg, 'action_bad_quantity', item.id);
+        return null;
+      }
+      item.count = patch.fields.count;
+      item.possession = 'owned';
+      if (item.location === 'unknown' || item.location === 'equipped') item.location = 'inventory';
+      item.slot = null;
       item.removedReason = null;
     } else if (patch.action === 'restore') {
       item.count = patch.quantity === 'all' ? 1 : patch.quantity || Math.max(available(item), 1);
@@ -900,6 +1033,7 @@ function stripInventoryEcho(content) {
   const lines = source.match(/[^\n]*\n|[^\n]+$/g) || [];
   const header = /^\s*\[ITEMX(?: v2| 2 · CURRENT INVENTORY · authoritative)\]\s*$/;
   const row = (line) => {
+    if (line.trim().startsWith(WALLET_PREFIX)) return true;
     const cells = line
       .trim()
       .replace(/^[-*]\s+/, '')
@@ -1019,44 +1153,31 @@ function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
       part.kind === 'xml'
         ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
         : parseBracket(part.body, `${part.raw}:${index}`);
-    if (options.prepareEvent && (parsed.item || parsed.patch)) {
-      const prepared = options.prepareEvent(
-        parsed.item ? { kind: 'exam', item: parsed.item } : { kind: 'patch', patch: parsed.patch },
-        reg
-      );
-      if (!prepared) {
+    let event = parsed.item
+      ? { kind: 'exam', item: parsed.item }
+      : parsed.patch
+        ? { kind: 'patch', patch: parsed.patch }
+        : { error: parsed.error || 'invalid_transport' };
+    if (!event.error) event = resolveCurrencyEvent(reg, event);
+    if (!event.error && options.prepareEvent) {
+      event = options.prepareEvent(event, reg);
+      if (!event) {
         cursor = part.end;
         return;
       }
-      if (prepared.kind === 'exam') parsed.item = prepared.item;
-      else parsed.patch = prepared.patch;
     }
-    if (parsed.item) {
-      const previous = comparisonView(reg.items[parsed.item.id]);
-      const event = { kind: 'exam', item: parsed.item },
-        view = clone(applyEvent(reg, event));
-      if (view) {
-        events.push(event);
-        out.push(marker({ v: VERSION, event, view, previous }));
-      } else {
-        const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
-        errors.push(error);
-        out.push(marker({ v: VERSION, error }));
-      }
-    } else if (parsed.patch) {
-      const previous = comparisonView(reg.items[parsed.patch.id]);
-      const event = { kind: 'patch', patch: parsed.patch },
-        view = clone(applyEvent(reg, event));
-      if (view) {
-        events.push(event);
-        out.push(marker({ v: VERSION, event, view, previous }));
-      } else {
-        const error = reg.diagnostics.at(-1)?.code || 'event_apply_failed';
-        errors.push(error);
-        out.push(marker({ v: VERSION, error }));
-      }
+    const view = event.error
+      ? null
+      : (() => {
+          const previous = comparisonView(reg.items[event.kind === 'exam' ? event.item.id : event.patch.id]);
+          const applied = clone(applyEvent(reg, event));
+          return applied ? { applied, previous } : null;
+        })();
+    if (view) {
+      events.push(event);
+      out.push(marker({ v: VERSION, event, view: view.applied, previous: view.previous }));
     } else {
-      const error = parsed.error || 'invalid_transport';
+      const error = event.error || reg.diagnostics.at(-1)?.code || 'event_apply_failed';
       errors.push(error);
       out.push(marker({ v: VERSION, error }));
     }
@@ -1082,7 +1203,7 @@ function anchor(snapshot, max = 12000) {
     .map((id) => reg.items[id])
     .filter(Boolean)
     .sort((a, b) => Number(b.location === 'equipped') - Number(a.location === 'equipped'));
-  const lines = ['[ITEMX 2 · CURRENT INVENTORY · authoritative]'];
+  const lines = ['[ITEMX 2 · CURRENT INVENTORY · authoritative]', walletLine(reg)];
   for (const item of items) {
     const bits = [
       `id=${item.id}`,
@@ -1124,6 +1245,10 @@ export {
   parseBracket,
   normalizeItem,
   normalizePatch,
+  isCurrency,
+  parseAmount,
+  resolveCurrencyEvent,
+  walletLine,
   newRegistry,
   applyEvent,
   extractResponse,

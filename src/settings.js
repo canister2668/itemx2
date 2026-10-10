@@ -13,6 +13,7 @@ export const AUX_MODES = ['off', 'missing', 'always'];
 export const RARITY_MODES = ['world', 'itemx'];
 export const FONT_SCALES = ['small', 'medium', 'large'];
 export const CARD_FX_MODES = ['prism', 'classic'];
+export const CURRENCY_DISPLAY_MODES = ['grid', 'both', 'wallet'];
 export const DOMAIN_KEYS = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
 
 export const schema = Object.freeze({
@@ -31,7 +32,8 @@ export const schema = Object.freeze({
   autoPruneEnabled: true,
   skin: SKIN_MODES,
   cardFx: CARD_FX_MODES,
-  cardOpenLatest: false
+  cardOpenLatest: false,
+  currencyDisplay: CURRENCY_DISPLAY_MODES
 });
 
 export function normalize(value = {}) {

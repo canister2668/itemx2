@@ -44,7 +44,7 @@ import {
   setActiveContextKey,
   setLatestKeys
 } from '../session.js';
-import { FONT_SCALES, badgePositionSetting, isEnabled, settingsFor } from '../settings.js';
+import { CURRENCY_DISPLAY_MODES, FONT_SCALES, badgePositionSetting, isEnabled, settingsFor } from '../settings.js';
 import { setStatus, status } from '../status.js';
 import { auxWorkingLabel, connectionSummary } from './controls.js';
 import {
@@ -98,15 +98,43 @@ export function itemsOf(snapshot) {
   return reg.order.map((id) => reg.items[id]).filter(Boolean);
 }
 
-export function rootPageItems(loaded) {
-  const all = itemsOf(loaded?.snapshot)
-    .filter((item) => !EntityHistory.terminal('item', item))
-    .filter(matches)
-    .slice(0, 60);
-  const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
+// The one inventory layout for render, paging, details and counts. Held money
+// leaves search, filters and the 60-item cap: the wallet bar shows it
+// (`wallet`, `both`) and/or it fills the first cells of every page (`both`,
+// `grid`). Ordinary items page as before after it.
+export function inventoryLayout(loaded) {
+  const listed = itemsOf(loaded?.snapshot).filter((item) => !EntityHistory.terminal('item', item));
+  const held = (item) => item.possession === 'owned' && Core.isCurrency(item);
+  const money = listed.filter(held);
+  const items = listed.filter((item) => !held(item) && matches(item)).slice(0, 60);
+  const mode = CURRENCY_DISPLAY_MODES.includes(loaded?.currencyDisplay) ? loaded.currencyDisplay : 'grid';
+  const pageCount = Math.max(1, Math.ceil(items.length / ITEMX_ROOT_PAGE_SIZE));
   uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
   const start = uiState.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
-  return all.slice(start, start + ITEMX_ROOT_PAGE_SIZE);
+  const pinned = mode === 'wallet' ? [] : money;
+  return {
+    money,
+    items,
+    pageCount,
+    start,
+    pinned: pinned.length,
+    wallet: mode === 'grid' ? [] : money,
+    page: [...pinned, ...items.slice(start, start + ITEMX_ROOT_PAGE_SIZE)]
+  };
+}
+
+export function rootPageItems(loaded) {
+  return inventoryLayout(loaded).page;
+}
+
+function walletBarHtml(money) {
+  if (!money.length) return '';
+  return `<div class="itemx2-wallet">${money
+    .map(
+      (item) =>
+        `<span class="itemx2-wallet-coin"><i>${Core.esc(Core.resolveItemEmoji(item))}</i><b>${(Number(item.count) || 0).toLocaleString('en-US')}</b><small>${Core.esc(item.name)}</small></span>`
+    )
+    .join('')}</div>`;
 }
 
 export function detailAnnotations(domain, entity) {
@@ -1039,13 +1067,11 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
     return {
       html: `${rootBadgeHtml(loaded)}<div class="itemx2-root-layer"><section class="itemx-panel itemx2-root-panel" aria-label="ITEMX"><div class="itemx2-tab-loading itemx2-open-loading" role="status" aria-live="polite"><i></i><strong>${t('ui-panel.053.1')}</strong><small>${t('ui-panel.053.2')}</small></div></section></div>`
     };
-  const all = itemsOf(loaded.snapshot)
-    .filter((item) => tab === 'settings' || (!EntityHistory.terminal('item', item) && matches(item)))
-    .slice(0, 60);
-  const pageCount = Math.max(1, Math.ceil(all.length / ITEMX_ROOT_PAGE_SIZE));
-  uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
-  const pageStart = uiState.rootItemPage * ITEMX_ROOT_PAGE_SIZE;
-  const inventoryPage = tab === 'inventory' ? all.slice(pageStart, pageStart + ITEMX_ROOT_PAGE_SIZE) : [];
+  const layout = inventoryLayout(loaded);
+  const all = tab === 'settings' ? itemsOf(loaded.snapshot).slice(0, 60) : layout.items;
+  const pageCount = layout.pageCount;
+  const pageStart = layout.start;
+  const inventoryPage = tab === 'inventory' ? layout.page : [];
   const skills = (loaded.codexSnapshot?.skills?.order || [])
     .map((id) => loaded.codexSnapshot.skills.entries[id])
     .filter(Boolean)
@@ -1102,6 +1128,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
               .replace(/^<button\b/, '<span')
               .replace(/<\/button>$/, '</span>');
             const classes = [
+              index < layout.pinned && 'itemx2-root-money',
               item.possession === 'owned' && 'itemx2-match-owned',
               item.location === 'equipped' && 'itemx2-match-equipped',
               item.possession === 'observed' && 'itemx2-match-observed',
@@ -1132,7 +1159,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
               ? all
                   .map(
                     (item, index) =>
-                      `<div class="itemx2-manager-row itemx2-manager-row-${index}"><span class="itemx2-manager-name"><strong>${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name)}</strong><small>${Core.esc(item.displayRarity || item.rarity)} · ${Core.esc(item.possession)} / ${Core.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">${t('ui-panel.014')}</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>${t('ui-panel.remove')}</button></span></div>`
+                      `<div class="itemx2-manager-row itemx2-manager-row-${index}"><span class="itemx2-manager-name"><strong>${Core.esc(Core.resolveItemEmoji(item))} ${Core.esc(item.name)}</strong><small>${Core.esc(item.displayRarity || item.rarity)} · ${Core.esc(item.possession)} / ${Core.esc(item.location)}</small></span><span class="itemx2-manager-actions"><button class="itemx2-manager-reroll-${index}" type="button">${t('ui-panel.014')}</button><button class="itemx2-manager-money-${index}" type="button">${Core.isCurrency(item) ? t('ui-panel.money-unmark') : t('ui-panel.money-mark')}</button><button class="itemx2-manager-remove itemx2-manager-remove-${index}" type="button" ${item.possession === 'removed' ? 'disabled' : ''}>${t('ui-panel.remove')}</button></span></div>`
                   )
                   .join('') || `<div class="itemx2-root-empty">${t('ui-panel.041.1')}</div>`
               : '';
@@ -1164,8 +1191,8 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
     pageCount > 1
       ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
       : '';
-  const shownEnd = Math.min(all.length, pageStart + inventoryPage.length);
-  const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsLevel !== 'off' ? t('ui-panel.035') : t('ui-panel.034')}</span><span class="itemx-search">${t('ui-panel.033.1')}</span></div><div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}${t('ui-panel.033.2')}${itemsOf(loaded.snapshot).length > 60 ? t('ui-panel.036') : ''}</span>${pager}</footer></div>`;
+  const shownEnd = Math.min(all.length, pageStart + inventoryPage.length - layout.pinned);
+  const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsLevel !== 'off' ? t('ui-panel.035') : t('ui-panel.034')}</span><span class="itemx-search">${t('ui-panel.033.1')}</span></div>${walletBarHtml(layout.wallet)}<div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}${t('ui-panel.033.2')}${layout.money.length ? t('ui-panel.money-count', layout.money.length) : ''}${itemsOf(loaded.snapshot).length > 60 ? t('ui-panel.036') : ''}</span>${pager}</footer></div>`;
   const skillsContent = `<div class="itemx2-root-skills itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-skill-none" name="itemx2-skill-detail" type="radio" checked><div class="itemx2-codex-note">${t('ui-panel.032.1')}</div>${skillList}</div>`;
   const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">${t('ui-panel.031.1')}</div>${monsterList}</div>`;
   const activeContent =
@@ -1201,9 +1228,7 @@ export const rootInventoryHtml = (loaded, open = true, tab = 'inventory') => roo
 
 // Owned, equipped and observed counts of the listed items, shown in the header.
 function listedItemCounts(loaded, tab) {
-  const listed = itemsOf(loaded.snapshot)
-    .filter((item) => tab === 'settings' || (!EntityHistory.terminal('item', item) && matches(item)))
-    .slice(0, 60);
+  const listed = tab === 'settings' ? itemsOf(loaded.snapshot).slice(0, 60) : inventoryLayout(loaded).items;
   return {
     owned: listed.filter((item) => item.possession === 'owned').length,
     equipped: listed.filter((item) => item.location === 'equipped').length,
@@ -1505,13 +1530,7 @@ export async function installRootClickRouter(owner) {
 
         const loaded = await cachedOrRebuildCurrent();
         if (!loaded) return;
-        const pageCount = Math.max(
-          1,
-          Math.ceil(
-            Math.min(60, itemsOf(loaded.snapshot).filter((item) => !EntityHistory.terminal('item', item)).length) /
-              ITEMX_ROOT_PAGE_SIZE
-          )
-        );
+        const pageCount = inventoryLayout(loaded).pageCount;
         const nextPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage + direction));
         if (nextPage === uiState.rootItemPage) return;
         uiState.rootItemPage = nextPage;
@@ -1605,6 +1624,40 @@ export async function installRootClickRouter(owner) {
                   await commitManualEvents(loaded, [itemEvent], note ? t('ui-panel.015') : t('ui-panel.014'));
                 } catch (error) {
                   setStatus(t('ui-panel.013'));
+                  await notifyUser(`ITEMX: ${error.message || error}`, 'error');
+                }
+                await openRootInventory({ open: true, tab: 'settings' });
+                return;
+              }
+              if (await eventHitsMainClass(event, `itemx2-manager-money-${index}`)) {
+                const marking = !Core.isCurrency(target);
+                const patch = (fields) => ({
+                  id: target.id,
+                  action: null,
+                  op: null,
+                  fields,
+                  quantity: null,
+                  destination: '',
+                  reason: 'manual_currency',
+                  slot: null,
+                  inputs: null,
+                  outputs: null,
+                  equip: null,
+                  unequip: null
+                });
+                const events = [{ kind: 'patch', patch: { ...patch({ currency: marking }), op: 'merge' } }];
+                // A lost pouch comes back as an empty wallet entry; the next
+                // `set` or `acquire` restores the balance.
+                if (marking && target.possession !== 'owned')
+                  events.push({ kind: 'patch', patch: { ...patch({ count: 0 }), action: 'set' } });
+                try {
+                  await commitManualEvents(
+                    loaded,
+                    events,
+                    marking ? t('ui-panel.money-mark') : t('ui-panel.money-unmark')
+                  );
+                } catch (error) {
+                  setStatus(t('ui-panel.010'));
                   await notifyUser(`ITEMX: ${error.message || error}`, 'error');
                 }
                 await openRootInventory({ open: true, tab: 'settings' });

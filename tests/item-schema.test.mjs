@@ -4,7 +4,7 @@ import { rt } from './helpers/modules.mjs';
 
 // These were the exact literals duplicated across six files before the schema
 // existed. They are pinned here so the derivation can never drift from the
-// behaviour that shipped.
+// behaviour that shipped. 2.6.1 added `currency`.
 const ALIASES_AT_2_1_1 = {
   id: 'id',
   name: 'name',
@@ -36,6 +36,7 @@ const ALIASES_AT_2_1_1 = {
   count: 'count',
   slot: 'slot',
   pin: 'pin',
+  currency: 'currency',
   theme: 'theme',
   craft: 'theme',
   affinity: 'affinity',
@@ -60,7 +61,7 @@ const ALIASES_AT_2_1_1 = {
   unequip: 'unequip'
 };
 const TAGS_AT_2_1_1 =
-  'id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip';
+  'id|name|type|emoji|internalrarity|displayrarity|power|required|durability|cost|possession|location|count|slot|pin|currency|theme|craft|affinity2?|condition|trivia|effects?|effectname|effectdesc|augments?|augmentname|augmentdesc|action|op|quantity|destination|reason|inputs|outputs|equip|unequip';
 
 test('the schema derives exactly the alias map that shipped', async () => {
   const { core } = rt;
@@ -82,7 +83,7 @@ test('anchor, backup and quality field orders are unchanged', async () => {
   assert.equal([...core.ANCHOR_OPTIONAL].join(','), 'slot,power,durability,theme,affinity,affinity2,condition');
   assert.equal(
     [...core.BACKUP_FIELDS].join(' '),
-    'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin trivia theme affinity affinity2 condition effects augments'
+    'id name itemType emoji rarity displayRarity power required durability cost possession location count slot pin currency trivia theme affinity affinity2 condition effects augments'
   );
   assert.equal([...core.DETAIL_FIELDS].join(','), 'power,effects,augments,required,durability,cost');
 });
