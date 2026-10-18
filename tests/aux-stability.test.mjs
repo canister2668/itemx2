@@ -446,11 +446,67 @@ test('context-established item identity survives a pronoun-only committed output
     '<itemExam><id>black_iron_blade</id><name>흑철검</name><type>장검</type><emoji>🗡️</emoji><internalrarity>rare</internalrarity><possession>owned</possession><location>equipped</location></itemExam>';
   const result = await bootWithOutput('그 검을 허리에 찼다.', {
     prefixMessages: [{ role: 'char', data: '앞서 흑철검을 넘겨받아 소유권을 확인했다.' }],
-    modelOutput: output
+    modelOutputs: [output, 'NONE']
   });
-  assert.equal(result.modelCalls, 1);
+  // The second call is the equipment appraisal; it found nothing to add.
+  assert.equal(result.modelCalls, 2);
+  assert.match(result.prompts[1], /Complete the appraisal/);
   assert.equal(result.chatWrites, 1);
   assert.equal(items(result.chat()).black_iron_blade.name, '흑철검');
+});
+
+test('thin equipment gets one auxiliary appraisal that fills only its empty fields', async () => {
+  const output =
+    '[itemx: id=supernova_sword | name=+9 빛의 소드 오브 슈퍼노바 | type=양손 무기 | emoji=⚔️ | rarity=legendary | display=레전더리 | theme=synthetic | affinity=light | possession=owned | location=equipped | count=1 | power=4000-9999 | trivia=아리스의 보물 1호]\n[itemx: id=hp_potion | name=상급 HP 포션 | type=소모품 | emoji=🧪 | rarity=normal | display=커먼 | possession=owned | location=inventory | count=10]';
+  const appraisal =
+    '[itemx: id=supernova_sword | op=merge | required=레벨 100 | durability=100/100 | effects=빛의 포격::전방에 빛 피해 ;; 과충전::다음 일격 강화]\n[itemx: id=supernova_sword | op=merge | trivia=덮어쓰기 금지]';
+  const result = await bootWithOutput(
+    '아리스가 장비창을 열었다. 주무기는 +9 빛의 소드 오브 슈퍼노바, 상급 HP 포션 열 개도 있었다.',
+    {
+      modelOutputs: [output, appraisal]
+    }
+  );
+  assert.equal(result.modelCalls, 2);
+  assert.match(result.prompts[1], /id=supernova_sword/);
+  assert.doesNotMatch(result.prompts[1], /id=hp_potion/);
+  const sword = items(result.chat()).supernova_sword;
+  assert.equal(sword.required, '레벨 100');
+  assert.equal(sword.durability, '100/100');
+  assert.deepEqual(
+    sword.effects.map((one) => one.name),
+    ['빛의 포격', '과충전']
+  );
+  assert.equal(sword.trivia, '아리스의 보물 1호');
+  assert.equal(sword.power, '4000-9999');
+  assert.equal(result.chatWrites, 1);
+});
+
+test('an item already sent for appraisal is not appraised again automatically', async () => {
+  const output =
+    '<itemExam><id>black_iron_blade</id><name>흑철검</name><type>장검</type><emoji>🗡️</emoji><internalrarity>rare</internalrarity><possession>owned</possession><location>equipped</location></itemExam>';
+  const ledger = {
+    v: 2,
+    seq: 0,
+    events: {},
+    manual: [],
+    states: [],
+    guards: { aux: { earlier: { k: 'old', state: 'none', events: 0, appraisalTried: ['black_iron_blade'] } } }
+  };
+  const result = await bootWithOutput('흑철검을 허리에 찼다.', {
+    modelOutputs: [output, 'NONE'],
+    scriptstate: { 'itemx:ledger': JSON.stringify(ledger) }
+  });
+  assert.equal(result.modelCalls, 1);
+  assert.equal(items(result.chat()).black_iron_blade.name, '흑철검');
+});
+
+test('auxiliary appraisal rejects more effects than the rarity allows', async () => {
+  const output =
+    '[itemx: id=plain_ring | name=수수한 반지 | type=장신구 | emoji=💍 | rarity=magic | display=매직 | possession=owned | location=equipped | count=1]';
+  const appraisal = '[itemx: id=plain_ring | op=merge | effects=하나::가 ;; 둘::나 ;; 셋::다]';
+  const result = await bootWithOutput('수수한 반지를 끼었다.', { modelOutputs: [output, appraisal] });
+  assert.equal(result.modelCalls, 2);
+  assert.deepEqual(items(result.chat()).plain_ring.effects, []);
 });
 
 test('unsupported auxiliary identity is recorded as rejected, never as no omissions', async () => {

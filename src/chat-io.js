@@ -21,14 +21,64 @@ export async function saveChat(characterIndex, chatIndex, next, base) {
   if (!read || read.characterIndex !== characterIndex || read.chatIndex !== chatIndex)
     throw new Error('ITEMX write requires its original chat read');
   // Detach before the first await: callers keep building on shared arrays.
-  const written = JSON.parse(JSON.stringify(next));
-  const expected = JSON.stringify(base);
+  // Each message record is copied shallowly: its text strings are shared,
+  // never re-serialized, yet a caller assigning a field later changes nothing.
+  const written = {
+    ...next,
+    message: Array.isArray(next?.message)
+      ? next.message.map((message) => (message && typeof message === 'object' ? { ...message } : message))
+      : next?.message,
+    scriptstate: next?.scriptstate && typeof next.scriptstate === 'object' ? { ...next.scriptstate } : next?.scriptstate
+  };
   const latest = await timed('host:readChat', () => host().getChatFromIndex(characterIndex, chatIndex));
   workQueue.assertCurrent();
-  if (JSON.stringify(latest) !== expected) throw new Error('ITEMX chat changed before saving; retry the operation');
+  if (!sameChat(latest, base)) throw new Error('ITEMX chat changed before saving; retry the operation');
   await timed('host:writeChat', () => host().setChatToIndex(characterIndex, chatIndex, written));
   reads.set(written, { characterIndex, chatIndex });
   return written;
+}
+
+// Whether the host's chat still equals the copy a change was made from. Same
+// result as comparing serializations, without serializing a long chat twice:
+// top-level fields and message fields compare by value, text by string
+// equality (native, no copy), nested values by serialization only when the
+// references differ.
+const sameValue = (a, b) =>
+  a === b || (typeof a === 'object' && typeof b === 'object' && JSON.stringify(a) === JSON.stringify(b));
+// Keys a serialization would keep: undefined values vanish from JSON.
+const definedKeys = (value) => Object.keys(value).filter((key) => value[key] !== undefined);
+function sameRecord(a, b) {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+  const keys = definedKeys(a);
+  if (keys.length !== definedKeys(b).length) return false;
+  for (const key of keys) {
+    if (b[key] === undefined) return false;
+    if (!sameValue(a[key], b[key])) return false;
+  }
+  return true;
+}
+export function sameChat(a, b) {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+  const keys = definedKeys(a);
+  if (keys.length !== definedKeys(b).length) return false;
+  for (const key of keys) {
+    if (b[key] === undefined) return false;
+    if (key === 'message') {
+      const left = a.message,
+        right = b.message;
+      if (!Array.isArray(left) || !Array.isArray(right)) {
+        if (!sameValue(left, right)) return false;
+        continue;
+      }
+      if (left.length !== right.length) return false;
+      for (let index = 0; index < left.length; index += 1) if (!sameRecord(left[index], right[index])) return false;
+    } else if (key === 'scriptstate') {
+      if (!sameRecord(a.scriptstate, b.scriptstate)) return false;
+    } else if (!sameValue(a[key], b[key])) return false;
+  }
+  return true;
 }
 
 export const chatIsStreaming = (chat) =>

@@ -27,13 +27,16 @@ import {
   currentLatestKeys,
   dropPending,
   freshLoaded,
+  pendingEntries,
   pendingRecord,
+  setPendingOwner,
   setLatestKeys
 } from './session.js';
 import { isEnabled, settingsFor } from './settings.js';
 import { setStatus } from './status.js';
-import { anchorKeys, stripTransport } from './store/anchors.js';
+import { anchorKeys, messageKeys, stripTransport } from './store/anchors.js';
 import { readDocument } from './store/document.js';
+import { forgetStoredPending, restoreStoredPending, storePending } from './pending-store.js';
 import { fold, stampStart } from './store/replay.js';
 import { anchorize, enabledCodexDomains, hasRawTransport, protocolForSettings, requestSafeText } from './transport.js';
 
@@ -76,7 +79,7 @@ function turnSeed(loaded) {
 function liveAnchorIn(chat) {
   return (key, row) => {
     const owner = (chat?.message || []).find((message) => message?.chatId && message.chatId === row.c);
-    return Boolean(owner && anchorKeys(Core.messageText(owner)).includes(key));
+    return Boolean(owner && messageKeys(owner).includes(key));
   };
 }
 
@@ -112,12 +115,43 @@ export function lostAnchors(chatKey, source, latest = currentLatestKeys()) {
   return ours.filter((key) => !present.has(key));
 }
 
+// Pending records of earlier messages whose own commit failed (in this
+// session, or restored after a reload). Each remembers its owner message id,
+// so only that message is looked up, from the end and within a short window:
+// a long chat is never scanned, and an owner further back is left alone.
+const ORPHAN_WINDOW = 24;
+function orphanPending(ctx, latestIndex) {
+  const owners = new Map();
+  for (const [key, record] of pendingEntries(ctx.key))
+    if (record.owner) owners.set(record.owner, [...(owners.get(record.owner) || []), key]);
+  if (!owners.size) return [];
+  const messages = ctx.chat.message || [];
+  const rows = [];
+  for (
+    let index = messages.length - 1;
+    index >= Math.max(0, messages.length - ORPHAN_WINDOW) && owners.size;
+    index -= 1
+  ) {
+    const keys = owners.get(messages[index]?.chatId);
+    if (!keys || index === latestIndex) continue;
+    owners.delete(messages[index].chatId);
+    const present = messageKeys(messages[index]);
+    for (const key of keys) if (present.includes(key)) rows.push({ key, index });
+  }
+  return rows;
+}
+
+// Consecutive failed commits per chat; the user is told once per chat until
+// a commit lands again.
+const commitFailures = new Map();
+
 // Commits the latest response: its anchors whose parsed records are pending
 // become document events owned by the message, and raw tags the output hook
 // never saw are anchored now. One write, lore enrichment included.
 export async function commitLatestOutput(ctx) {
   const index = assistantMessageIndex(ctx.chat);
   if (index < 0) return { ctx, index, changed: false };
+  await restoreStoredPending(ctx.key);
   const source = Core.messageText(ctx.chat.message[index]);
   const pending = anchorKeys(source).filter((key) => pendingRecord(key)?.chatKey === ctx.key);
   const lost = lostAnchors(ctx.key, source);
@@ -128,55 +162,100 @@ export async function commitLatestOutput(ctx) {
     void emit('notify', { message: t('pipeline.anchor-changed', lost.length), tone: 'error' });
   }
   const raw = hasRawTransport(source);
+  const orphans = orphanPending(ctx, index);
   // Without new cards the pass may still owe the chat its state entries: a
   // chat from before them, or entries a reroll or deletion left behind.
-  const restamp = pending.length || raw ? -1 : stampStart(ctx.chat, readDocument(ctx.chat));
-  if (!pending.length && !raw && restamp < 0) return { ctx, index, changed: false };
+  const restamp = pending.length || raw || orphans.length ? -1 : stampStart(ctx.chat, readDocument(ctx.chat));
+  if (!pending.length && !raw && !orphans.length && restamp < 0) return { ctx, index, changed: false };
   const settings = await settingsFor(ctx.character);
   let events = 0,
-    errors = 0;
-  const result = await writeDocument(ctx, async (doc, latest) => {
-    const message = latest.message?.[index];
-    if (Core.messageText(message) !== source) return false;
-    if (restamp >= 0) return stampFrom(doc, latest, restamp) ? {} : false;
-    const chatId = typeof message?.chatId === 'string' ? message.chatId : '';
-    commitRecords(
-      doc,
-      pending.filter((key) => !doc.events[key]).map((key) => ({ key, ...pendingRecord(key) })),
-      chatId
-    );
-    let text = source;
-    if (raw) {
-      const state = fold(latest, doc, { upTo: index });
-      const anchored = anchorize(source, {
-        state: { registry: state.item.registry, codex: state.codex },
-        settings,
-        seed: `${ctx.key}|${index}|repair|${doc.seq}`,
-        doc
-      });
-      commitRecords(doc, anchored.records, chatId);
-      text = anchored.content;
-      events = anchored.events;
-      errors = anchored.errors;
+    errors = 0,
+    landed = [];
+  let result;
+  try {
+    result = await writeDocument(ctx, async (doc, latest) => {
+      const message = latest.message?.[index];
+      if (Core.messageText(message) !== source) return false;
+      if (restamp >= 0) return stampFrom(doc, latest, restamp) ? {} : false;
+      // An orphan lands only while its anchor still stands in its message.
+      const orphanRows = orphans.filter(
+        (row) => !doc.events[row.key] && messageKeys(latest.message?.[row.index]).includes(row.key)
+      );
+      for (const row of orphanRows) {
+        const owner = latest.message[row.index];
+        commitRecords(
+          doc,
+          [{ key: row.key, ...pendingRecord(row.key) }],
+          typeof owner?.chatId === 'string' ? owner.chatId : ''
+        );
+      }
+      const chatId = typeof message?.chatId === 'string' ? message.chatId : '';
+      const fresh = pending.filter((key) => !doc.events[key]);
+      commitRecords(
+        doc,
+        fresh.map((key) => ({ key, ...pendingRecord(key) })),
+        chatId
+      );
+      // Orphans another write already landed are done too.
+      landed = [...orphans.map((row) => row.key), ...fresh];
+      let text = source;
+      if (raw) {
+        const state = fold(latest, doc, { upTo: index });
+        const anchored = anchorize(source, {
+          state: { registry: state.item.registry, codex: state.codex },
+          settings,
+          seed: `${ctx.key}|${index}|repair|${doc.seq}`,
+          doc
+        });
+        commitRecords(doc, anchored.records, chatId);
+        text = anchored.content;
+        events = anchored.events;
+        errors = anchored.errors;
+      }
+      const field = typeof message.data === 'string' ? 'data' : 'content';
+      const chat =
+        text === source
+          ? latest
+          : { ...latest, message: latest.message.map((one, at) => (at === index ? { ...one, [field]: text } : one)) };
+      stampFrom(doc, chat, Math.min(index, ...orphanRows.map((row) => row.index)));
+      await enrichLore(ctx, doc, chat);
+      return { chat };
+    });
+  } catch (error) {
+    // Keep what was parsed, with the message that owns it: memory alone does
+    // not survive a reload.
+    const owner = ctx.chat.message?.[index]?.chatId;
+    if (typeof owner === 'string' && owner) setPendingOwner(pending, owner);
+    const keys = [...pending, ...orphans.map((row) => row.key)];
+    await storePending(ctx.key, keys).catch((storeError) => debugRecord('pending store write', storeError?.message));
+    const failures = (commitFailures.get(ctx.key) || 0) + 1;
+    commitFailures.set(ctx.key, failures);
+    if (failures === 1 && keys.length) {
+      const message = t('pipeline.commit-failed', keys.length);
+      setStatus(message);
+      void emit('notify', { message, tone: 'error' });
     }
-    const field = typeof message.data === 'string' ? 'data' : 'content';
-    const chat =
-      text === source
-        ? latest
-        : { ...latest, message: latest.message.map((one, at) => (at === index ? { ...one, [field]: text } : one)) };
-    stampFrom(doc, chat, index);
-    await enrichLore(ctx, doc, chat);
-    return { chat };
-  });
+    throw error;
+  }
   if (!result) return { ctx, index, changed: false };
-  dropPending(pending);
+  commitFailures.delete(ctx.key);
+  dropPending([...pending, ...landed]);
+  await forgetStoredPending(ctx.key, [...pending, ...landed]).catch((error) =>
+    debugRecord('pending store forget', error?.message)
+  );
   const stillActive = activeContextKey() === ctx.key;
   if (stillActive) {
     workQueue.remember('host-settling', ctx.key);
     void emit('data-reset');
     if (raw) setStatus(errors ? t('pipeline.010', errors) : t('pipeline.009', events));
   }
-  debugRecord('commit output', { committed: pending.length, repaired: raw, events, errors });
+  debugRecord('commit output', {
+    committed: pending.length,
+    orphans: landed.length - pending.length,
+    repaired: raw,
+    events,
+    errors
+  });
   return { ctx: { ...ctx, chat: result.chat }, index, changed: true };
 }
 

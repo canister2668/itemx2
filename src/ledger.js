@@ -30,11 +30,13 @@ import {
   anchorKeys,
   countOldMarkers,
   hasAnchor,
+  messageKeys,
   stripAnchors,
   stripOldMarkers,
   stripTransport
 } from './store/anchors.js';
 import { DOCUMENT_KEY, footprint, readDocument, withDocument } from './store/document.js';
+import { forgetStoredPending } from './pending-store.js';
 import { freeze, thaw } from './store/payload.js';
 import { fold, restampEntries, windowOffset } from './store/replay.js';
 
@@ -43,15 +45,20 @@ const messageTime = (message) => (Number.isFinite(message?.time) && message.time
 
 // Everything the fold depends on, hashed without serializing the chat: the
 // stored document string and each message's id and anchors.
+// The document string can be megabytes; it is hashed once per distinct value.
+let documentHash = { raw: null, hash: '' };
+function hashDocument(raw) {
+  const text = typeof raw === 'string' ? raw : raw == null ? '' : JSON.stringify(raw);
+  if (documentHash.raw !== text) documentHash = { raw: text, hash: Core.fnv1a(text) };
+  return documentHash.hash;
+}
 export function replayFingerprint(chat) {
-  const raw = chat?.scriptstate?.[DOCUMENT_KEY];
-  let source = typeof raw === 'string' ? raw : raw == null ? '' : JSON.stringify(raw);
+  const parts = [hashDocument(chat?.scriptstate?.[DOCUMENT_KEY])];
   for (const message of chat?.message || []) {
-    const text = Core.messageText(message);
-    source += `|${messageId(message)}`;
-    if (hasAnchor(text)) source += `:${anchorKeys(text).join(',')}`;
+    const keys = messageKeys(message);
+    parts.push(keys.length ? `${messageId(message)}:${keys.join(',')}` : messageId(message));
   }
-  return Core.fnv1a(source);
+  return Core.fnv1a(parts.join('|'));
 }
 
 // A read-only projection of `ctx.chat`: the fold of its loaded messages from
@@ -124,7 +131,7 @@ export function refreshLatest(loaded) {
     keys = anchorKeys(text);
     break;
   }
-  for (const [key] of pendingEntries(loaded?.key || activeContextKey())) keys.push(key);
+  for (const [key, record] of pendingEntries(loaded?.key || activeContextKey())) if (!record.restored) keys.push(key);
   setLatestKeys(keys);
   void emit('markers');
 }
@@ -170,16 +177,23 @@ export async function cachedOrRebuildCurrent() {
 // a reload per render), bounded so a stalled host never blanks a message.
 const DISPLAY_WAIT_MS = 8000;
 let displayLoad = null;
-const displayMisses = new WeakMap();
+// Misses belong to the chat's replay inputs, not to one projection object:
+// every rebuild makes a new object, and an anchor the ledger never had (a
+// lost or deleted card) must not rebuild the projection on every render.
+let displayMisses = { at: '', keys: new Set() };
 const knows = (loaded, key) => Boolean(loaded?.doc?.events?.[key] || pendingRecord(key));
+function missesOf(loaded) {
+  const at = `${loaded.key}|${loaded.replayFingerprint}|${loaded.doc?.seq ?? 0}`;
+  if (displayMisses.at !== at) displayMisses = { at, keys: new Set() };
+  return displayMisses.keys;
+}
 export function displayProjection(keys = []) {
   const loaded = cachedLoaded();
   if (loaded?.key === activeContextKey()) {
-    const misses = displayMisses.get(loaded) || new Set();
+    const misses = missesOf(loaded);
     const unknown = keys.filter((key) => !knows(loaded, key) && !misses.has(key));
     if (!unknown.length) return loaded;
     for (const key of unknown) misses.add(key);
-    displayMisses.set(loaded, misses);
   } else if (keys.length && keys.every((key) => pendingRecord(key))) return loaded;
   displayLoad ||= rebuildCurrent()
     .catch(() => null)
@@ -437,7 +451,9 @@ async function requireIdleActive(errors) {
 
 function forgetChatRuntime(ctx) {
   setLatestKeys([]);
-  dropPending(pendingEntries(ctx.key).map(([key]) => key));
+  const keys = pendingEntries(ctx.key).map(([key]) => key);
+  dropPending(keys);
+  void forgetStoredPending(ctx.key, keys).catch(() => {});
   workQueue.forget('catch-up');
   workQueue.forget('aux-settle');
   invalidateLoaded();
@@ -489,7 +505,7 @@ export function pruneBlocker(chat) {
 // Returns the number of events removed.
 export function pruneDocument(doc, chat) {
   const messages = chat?.message || [];
-  const live = new Set(messages.flatMap((message) => anchorKeys(Core.messageText(message))));
+  const live = new Set(messages.flatMap((message) => messageKeys(message)));
   const ids = new Set(messages.map(messageId).filter(Boolean));
   // The newest turn starts at the last user message; an event committed after
   // it may belong to a reroll candidate. Rows from before 2.5.1 carry no
@@ -500,7 +516,7 @@ export function pruneDocument(doc, chat) {
   const turnStart = Number(messages[lastUser]?.time) || 0;
   let settledSeq = 0;
   for (const message of messages.slice(0, Math.max(0, lastUser)))
-    for (const key of anchorKeys(Core.messageText(message))) settledSeq = Math.max(settledSeq, doc.events[key]?.s || 0);
+    for (const key of messageKeys(message)) settledSeq = Math.max(settledSeq, doc.events[key]?.s || 0);
   const isCurrentTurn = (row) => (Number.isFinite(row.t) && turnStart ? row.t >= turnStart : (row.s || 0) > settledSeq);
   let removed = 0;
   for (const [key, row] of Object.entries(doc.events)) {

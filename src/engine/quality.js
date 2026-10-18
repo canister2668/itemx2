@@ -223,8 +223,69 @@ function acceptRepair(event, partialMap, registry) {
   return Core.applyEvent(scratch, event) ? event : null;
 }
 
+// Equipment whose appraisal the narrative left thin: an auxiliary appraisal
+// may complete it once. Only empty fields are ever filled, so a completed
+// appraisal is never rolled again.
+const EQUIPMENT_TYPE =
+  /무기|방어구|장신구|갑옷|투구|장갑|신발|부츠|반지|목걸이|귀걸이|팔찌|망토|방패|weapon|armou?r|accessor|shield|ring|amulet|necklace|helm|glove|boot|cloak/i;
+const EFFECT_LIMIT = { normal: 1, magic: 2, rare: 2, unique: 3, epic: 3, legendary: 3, mythical: 3, empyrean: 3 };
+const APPRAISAL_FIELDS = ['power', 'required', 'durability', 'effects', 'trivia'];
+const emptyField = (item, key) => (key === 'effects' ? !(item[key] || []).length : !clean(item[key]));
+
+function appraisalGaps(item) {
+  // Only the player's own gear: an item merely seen (an NPC's weapon) is not worth an appraisal.
+  if (!item || item.possession !== 'owned' || item.currency) return [];
+  if (!(EQUIPMENT_TYPE.test(String(item.itemType || '')) || item.location === 'equipped' || item.slot)) return [];
+  const gaps = APPRAISAL_FIELDS.filter((key) => emptyField(item, key));
+  // A plain item may rightly have no effect; it is thin only without any detail.
+  if (item.rarity === 'normal' && gaps.length < APPRAISAL_FIELDS.length - 1) return [];
+  return gaps.includes('effects') || (gaps.includes('required') && gaps.includes('durability')) ? gaps : [];
+}
+
+// Only the passages that show the listed items: the appraisal needs their
+// scene and the world's terms, not the whole conversation.
+const APPRAISAL_CONTEXT_MAX = 6000;
+function appraisalContext(rows, context) {
+  const items = rows.map((row) => row.item);
+  const passages = [];
+  for (const item of items) {
+    const passage = relevantItemNarrative(context, item, items);
+    if (passage && !passages.some((one) => one.includes(passage))) passages.push(passage);
+  }
+  const text = passages.join('\n…\n');
+  return (text || String(context || '').slice(-3000)).slice(0, APPRAISAL_CONTEXT_MAX);
+}
+
+function appraisalPrompt(rows, context) {
+  const list = rows
+    .map(
+      ({ item, gaps }) =>
+        `- id=${item.id} | name=${item.name} | type=${item.itemType || ''} | rarity=${item.rarity} | theme=${item.theme || ''} | affinity=${item.affinity || ''} | power=${item.power || ''} | trivia=${item.trivia || ''} | fill=${gaps.join(', ')} | max effects=${EFFECT_LIMIT[item.rarity] ?? 2}`
+    )
+    .join('\n');
+  return `Complete the appraisal of the ITEMX equipment listed below; the story showed these items without their stats. For each item fill only its listed fields. Use facts the context states first; otherwise design values that fit the world's own system, the item's name, rarity, theme and role in the story, and stay consistent with every established fact. Effects: at most the listed count, each a short name and description, written in the story's language. required follows the world's terms (a level only in a level-based world). durability is current/max matching the item's narrated condition. power: a number or the rarity range. trivia: one short line of background. Never change id, name, rarity, possession, location, count or slot; never create items. Emit one line per item:\n[itemx: id=<id> | op=merge | power=... | required=... | durability=... | effects=이름::설명 ;; 이름::설명 | trivia=...]\nOmit fields not listed. Output no prose or code fence; output NONE if nothing fits.\n\nEQUIPMENT:\n${list}\n\nCONTEXT:\n${appraisalContext(rows, context)}`;
+}
+
+function acceptAppraisal(event, rows, registry) {
+  if (event?.kind !== 'patch' || event.patch?.op !== 'merge' || event.patch.action) return null;
+  const row = rows.get(event.patch.id),
+    fields = event.patch.fields || {},
+    keys = Object.keys(fields);
+  if (!row || !keys.length || keys.some((key) => !row.gaps.includes(key))) return null;
+  if (
+    keys.some((key) => (key === 'effects' ? !Array.isArray(fields[key]) || !fields[key].length : !clean(fields[key])))
+  )
+    return null;
+  if (fields.effects && fields.effects.length > (EFFECT_LIMIT[row.item.rarity] ?? 2)) return null;
+  const scratch = Core.clone(registry);
+  return Core.applyEvent(scratch, event) ? event : null;
+}
+
 export {
   REVISION,
+  appraisalGaps,
+  appraisalPrompt,
+  acceptAppraisal,
   narrativeText,
   relevantItemNarrative,
   detectItemEvidence,

@@ -100,6 +100,15 @@ function requestSnapshot(loaded, narrative = '') {
     order = [];
   for (const row of entries(loaded, 'item')) {
     const item = row.entity;
+    // A sighting is context only while the scene still mentions it; its id
+    // then stays reusable if the player picks the item up.
+    if (item.possession === 'observed') {
+      if (item.name && text.includes(item.name.normalize('NFKC').toLowerCase())) {
+        items[item.id] = item;
+        order.push(item.id);
+      }
+      continue;
+    }
     if (!row.closed) {
       items[item.id] = item;
       order.push(item.id);

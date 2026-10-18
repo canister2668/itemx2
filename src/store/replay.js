@@ -16,7 +16,7 @@
 import * as Codex from '../engine/codex.js';
 import * as Core from '../engine/core.js';
 import * as EntityHistory from '../engine/history.js';
-import { anchorKeys } from './anchors.js';
+import { anchorKeys, messageKeys } from './anchors.js';
 
 export const ENTRY_LIMIT = 8;
 
@@ -25,7 +25,7 @@ const messageId = (message) => (typeof message?.chatId === 'string' ? message.ch
 const sendTime = (message) => (Number.isFinite(message?.time) && message.time > 0 ? message.time : 0);
 // Card keys and send time of each loaded message, read once per pass.
 function layoutOf(messages) {
-  const keys = messages.map((message) => anchorKeys(Core.messageText(message)));
+  const keys = messages.map(messageKeys);
   keys.sent = messages.map(sendTime);
   keys.ids = messages.map(messageId);
   return keys;
@@ -70,7 +70,7 @@ export function turnCounts(chat) {
         ['char', 'assistant'].includes(message?.role) &&
         !message.isStreaming &&
         !(chat.isStreaming && index === messages.length - 1) &&
-        String(message.data ?? message.content ?? '').trim()
+        /\S/.test(String(message.data ?? message.content ?? ''))
       ) {
         count += 1;
         pending = false;
@@ -354,7 +354,7 @@ export function fold(chat, doc, { pending = null, upTo = null, from = null } = {
 function entryOf(chat, index, folded) {
   const message = chat.message[index];
   return {
-    k: anchorKeys(Core.messageText(message)),
+    k: [...messageKeys(message)],
     c: messageId(message),
     i: windowOffset(chat) + index,
     w: Number.isFinite(message?.time) ? message.time : 0,

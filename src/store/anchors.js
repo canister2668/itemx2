@@ -15,7 +15,28 @@ export const anchor = (key) => `<!--ix:${key}-->`;
 export const hasAnchor = (text) => ANCHOR_TEST_RE.test(String(text || ''));
 
 export function anchorKeys(text) {
-  return [...String(text || '').matchAll(ANCHOR_RE)].map((match) => match[1]);
+  const source = String(text || '');
+  if (!source.includes('<!--ix:')) return [];
+  return [...source.matchAll(ANCHOR_RE)].map((match) => match[1]);
+}
+
+// Card keys of a stored message, remembered by message id. Every pass reads
+// the keys of every loaded message; a long chat must not regex-scan all of
+// its text each time. A hit costs one string comparison (a pointer check when
+// the host hands back the same string).
+const KEY_CACHE_LIMIT = 4096;
+const keyCache = new Map();
+export function messageKeys(message) {
+  const text = Core.messageText(message);
+  const id = typeof message?.chatId === 'string' ? message.chatId : '';
+  if (!id) return anchorKeys(text);
+  const hit = keyCache.get(id);
+  if (hit && hit.text === text) return hit.keys;
+  const keys = anchorKeys(text);
+  keyCache.delete(id);
+  keyCache.set(id, { text, keys });
+  if (keyCache.size > KEY_CACHE_LIMIT) keyCache.delete(keyCache.keys().next().value);
+  return keys;
 }
 
 const tidy = (text) => text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n');

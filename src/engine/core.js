@@ -1204,6 +1204,7 @@ function anchor(snapshot, max = 12000) {
     .filter(Boolean)
     .sort((a, b) => Number(b.location === 'equipped') - Number(a.location === 'equipped'));
   const lines = ['[ITEMX 2 · CURRENT INVENTORY · authoritative]', walletLine(reg)];
+  let length = lines.join('\n').length;
   for (const item of items) {
     const bits = [
       `id=${item.id}`,
@@ -1214,17 +1215,21 @@ function anchor(snapshot, max = 12000) {
       `location=${item.location}`,
       `count=${item.count || 0}`
     ];
-    for (const key of ANCHOR_OPTIONAL) if (item[key]) bits.push(`${key}=${item[key]}`);
+    // Continuity only: the model patches by id and never re-appraises, so
+    // effect descriptions and the visual theme stay in the ledger, not in
+    // every request.
+    for (const key of ANCHOR_OPTIONAL) if (key !== 'theme' && item[key]) bits.push(`${key}=${item[key]}`);
     if (item.effects?.length)
       bits.push(
         `effects=${item.effects
           .slice(0, 3)
-          .map((one) => `${one.name}::${one.desc}`)
+          .map((one) => one.name)
           .join(' ;; ')}`
       );
     const line = `- ${bits.join(' | ')}`;
-    if (lines.join('\n').length + line.length > max) break;
+    if (length + line.length + 1 > max) break;
     lines.push(line);
+    length += line.length + 1;
   }
   lines.push('Use existing ids. Emit events only for settled item creation or change.');
   lines.push(

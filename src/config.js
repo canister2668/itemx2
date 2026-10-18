@@ -21,7 +21,7 @@ export const ITEMX_AUX_TIMEOUT_MS = 240000;
 // Automatic recovery gives up on a message after this many failures; the manual run still works.
 export const ITEMX_AUX_AUTO_ATTEMPTS = 3;
 
-export const ITEMX_AUX_PROMPT_REVISION = 2;
+export const ITEMX_AUX_PROMPT_REVISION = 3;
 
 export const ITEMX_ROOT_PAGE_SIZE = 16;
 

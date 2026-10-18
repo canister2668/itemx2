@@ -14,7 +14,7 @@ import { inlinePortraitImages } from '../portraits.js';
 import { codexInlineEventHtml } from '../render/codex-cards.js';
 import { activeContextKey, currentLatestKeys } from '../session.js';
 import { CARD_FX_MODES, FX_MODES, SKIN_MODES } from '../settings.js';
-import { ANCHOR_RE, anchorKeys, hasAnchor } from '../store/anchors.js';
+import { ANCHOR_RE, anchorKeys, hasAnchor, messageKeys } from '../store/anchors.js';
 import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
 const bursts = new Map();
@@ -95,7 +95,7 @@ export function commitEventBursts(chat) {
   const message = chat?.message?.[assistantMessageIndex(chat)];
   if (!message || message.isStreaming || message.bgContinue) return;
   let activated = false;
-  for (const key of anchorKeys(Core.messageText(message))) {
+  for (const key of messageKeys(message)) {
     const candidate = bursts.get(key);
     if (!candidate || candidate.committed || candidate.expires < Date.now()) continue;
     candidate.committed = true;

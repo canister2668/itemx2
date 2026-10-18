@@ -103,7 +103,11 @@ export function itemsOf(snapshot) {
 // (`wallet`, `both`) and/or it fills the first cells of every page (`both`,
 // `grid`). Ordinary items page as before after it.
 export function inventoryLayout(loaded) {
-  const listed = itemsOf(loaded?.snapshot).filter((item) => !EntityHistory.terminal('item', item));
+  // An observed item is something the player saw (an NPC's weapon), not
+  // something carried: it stays on its message card, out of the inventory.
+  const listed = itemsOf(loaded?.snapshot).filter(
+    (item) => !EntityHistory.terminal('item', item) && item.possession !== 'observed'
+  );
   const held = (item) => item.possession === 'owned' && Core.isCurrency(item);
   const money = listed.filter(held);
   const items = listed.filter((item) => !held(item) && matches(item)).slice(0, 60);
@@ -234,13 +238,45 @@ export function deleteEvent(domain, id) {
     }
   };
 }
+// The open entry and the selector of its detail body. Every detail opened
+// before stays in the DOM (hidden) with its own delete button, so a control is
+// measured inside the open detail only: the first match in the document may
+// be a hidden one and never take the click.
+async function openDeleteTarget(loaded, domain) {
+  if (domain === 'item') {
+    const items = rootPageItems(loaded);
+    for (let index = 0; index < items.length; index += 1)
+      if (await panelDocument()?.querySelector(`#itemx2-detail-${index}:checked`))
+        return {
+          entity: items[index],
+          scope: (prefix) => `#itemx2-detail-${index}:checked ~ .${prefix}itemx2-root-detail`
+        };
+    return null;
+  }
+  const entity = await selectedCodexEntity(domain, loaded);
+  return entity
+    ? {
+        entity,
+        scope: (prefix) => `.${prefix}itemx2-${domain}-entry-choice:checked ~ .${prefix}itemx2-${domain}-detail`
+      }
+    : null;
+}
+async function hitInOpenDetail(event, target, className) {
+  for (const prefix of ['x-risu-', '']) {
+    const element = await panelDocument()?.querySelector(`${target.scope(prefix)} .${prefix}${className}`);
+    if (element) return inside(await element.getBoundingClientRect(), event);
+  }
+  return false;
+}
 export async function routeEntityDelete(event, loaded, domain) {
-  const yes = await eventHitsMainClass(event, 'itemx2-entity-delete-yes');
-  const no = !yes && (await eventHitsMainClass(event, 'itemx2-entity-delete-no'));
-  const ask = !yes && !no && (await eventHitsMainClass(event, 'itemx2-entity-delete'));
+  if (!panelDocument()) return false;
+  const target = await openDeleteTarget(loaded, domain);
+  if (!target) return false;
+  const yes = await hitInOpenDetail(event, target, 'itemx2-entity-delete-yes');
+  const no = !yes && (await hitInOpenDetail(event, target, 'itemx2-entity-delete-no'));
+  const ask = !yes && !no && (await hitInOpenDetail(event, target, 'itemx2-entity-delete'));
   if (!yes && !no && !ask) return false;
-  const entity = domain === 'item' ? await selectedItem(loaded) : await selectedCodexEntity(domain, loaded);
-  if (!entity) return true;
+  const entity = target.entity;
   if (ask || no) {
     deleteArmed = ask ? `${domain}:${entity.id}` : '';
     if (domain === 'item') await hydrateCheckedItemDetail(loaded);
@@ -1083,14 +1119,12 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
     all: all.length,
     owned: all.filter((item) => item.possession === 'owned').length,
     equipped: all.filter((item) => item.location === 'equipped').length,
-    observed: all.filter((item) => item.possession === 'observed').length,
     removed: all.filter((item) => item.possession === 'removed').length
   };
   const filters = [
     ['all', t('ui-panel.052')],
     ['owned', t('ui-panel.051')],
-    ['equipped', t('presentation.046')],
-    ['observed', t('ui-panel.049')]
+    ['equipped', t('presentation.046')]
   ];
   const controls = filters
     .map(
@@ -1131,7 +1165,6 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
               index < layout.pinned && 'itemx2-root-money',
               item.possession === 'owned' && 'itemx2-match-owned',
               item.location === 'equipped' && 'itemx2-match-equipped',
-              item.possession === 'observed' && 'itemx2-match-observed',
               item.possession === 'removed' && 'itemx2-match-removed'
             ]
               .filter(Boolean)
@@ -1226,18 +1259,17 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
 
 export const rootInventoryHtml = (loaded, open = true, tab = 'inventory') => rootInventoryParts(loaded, open, tab).html;
 
-// Owned, equipped and observed counts of the listed items, shown in the header.
+// Owned and equipped counts of the listed items, shown in the header.
 function listedItemCounts(loaded, tab) {
   const listed = tab === 'settings' ? itemsOf(loaded.snapshot).slice(0, 60) : inventoryLayout(loaded).items;
   return {
     owned: listed.filter((item) => item.possession === 'owned').length,
-    equipped: listed.filter((item) => item.location === 'equipped').length,
-    observed: listed.filter((item) => item.possession === 'observed').length
+    equipped: listed.filter((item) => item.location === 'equipped').length
   };
 }
 
 export function headerStatusHtml(loaded, counts = listedItemCounts(loaded, uiState.activeRootTab || 'settings')) {
-  return `${loaded.enabled === true ? t('ui-panel.026', counts.owned, counts.equipped, counts.observed) : t('ui-panel.025')} · ${Core.esc(status())}`;
+  return `${loaded.enabled === true ? t('ui-panel.026', counts.owned, counts.equipped) : t('ui-panel.025')} · ${Core.esc(status())}`;
 }
 
 // The debug fold's content; the <details> element itself stays in place so an

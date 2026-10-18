@@ -494,7 +494,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       entities: encounterEntities(codexSnapshot)
     };
     const itemRecoveryRules = settings.itemsEnabled
-      ? `Recover every settled item acquisition, creation, equipment, damage, loss, destruction, money earned or spent, or material appraisal omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.`
+      ? `Track the player character's own items only: what the player carries, equips, gains, spends or loses. Items other characters hold, wield or wear are not the player's; never emit them, not even as observed, unless the narrative transfers them to the player. Recover every settled item acquisition, creation, equipment, damage, loss, destruction, money earned or spent, or material appraisal of the player's items omitted by the main output, even when the main output already emitted some other ITEMX events. Reuse existing ids from CURRENT INVENTORY. For a genuinely new item, emit a complete itemExam with coherent identity, rarity, visual theme, affinity only when established, and concrete effects supported by context. If the triggering turn and committed output conclusively correct an existing item's name or descriptive identity, including an earlier misspelling, emit itemPatch op=merge for that existing id with only the corrected descriptive fields; never re-emit a complete itemExam merely to correct an existing item. CURRENT INVENTORY is authoritative for continuity, not for a contradicted typo.`
       : '';
     const codexRecoveryRules = domains.length
       ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.`
@@ -576,6 +576,50 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
         .map((one) => ({ ...one, missing: one.missing.filter((key) => !repaired.get(one.event.item.id)?.has(key)) }))
         .filter((one) => one.missing.length);
     }
+    // Equipment this message shows without its stats gets one appraisal that
+    // fills only the empty fields; the appraisal is then part of the record.
+    const appraised = new Set();
+    // An item is appraised at most once automatically, even when the model
+    // found nothing: later messages showing it again do not pay for it again.
+    const appraisalTried = [];
+    if (settings.itemsEnabled) {
+      const tried = new Set(Object.values(loaded.doc.guards.aux).flatMap((record) => record?.appraisalTried || []));
+      // Automatic passes appraise the gear this message shows; a manual check
+      // also completes the rest of the player's gear (the registry, never the chat).
+      const shown = new Set(
+        [...represented.filter((event) => !event.domain), ...validItems]
+          .map((event) => event.item?.id || event.patch?.id)
+          .filter(Boolean)
+      );
+      if (force) for (const id of validationRegistry.order) shown.add(id);
+      const rows = new Map();
+      for (const id of shown) {
+        const item = validationRegistry.items[id];
+        const gaps = Quality.appraisalGaps(item);
+        if (rows.size >= 8) break;
+        if (gaps.length && (force || !tried.has(id)) && !unresolvedPartials.some((one) => one.event.item.id === id))
+          rows.set(id, { item, gaps });
+      }
+      if (rows.size) {
+        appraisalTried.push(...rows.keys());
+        try {
+          const appraisalRaw = modelText(
+            await runAuxModel(Quality.appraisalPrompt([...rows.values()], itemEvidenceContext), t('aux.appraise'))
+          );
+          const appraisalParsed = appraisalRaw
+            ? Core.extractResponse(appraisalRaw, validationRegistry)
+            : { events: [] };
+          for (const event of appraisalParsed.events) {
+            const accepted = Quality.acceptAppraisal(event, rows, validationRegistry);
+            if (!accepted || appraised.has(accepted.patch.id) || !acceptItemEvent(accepted)) continue;
+            appraised.add(accepted.patch.id);
+          }
+        } catch (error) {
+          if (isAuxCancelled(error)) throw error;
+          fail('auxiliary appraisal', error);
+        }
+      }
+    }
     const skillEvidenceText = [conversation.triggeringUser, conversation.recent, committedNarrative]
       .filter(Boolean)
       .join('\n\n');
@@ -597,6 +641,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       codexEvents: validCodex.length,
       partials: partials.length,
       partialFinal: unresolvedPartials.length,
+      appraised: appraised.size,
       rejected: rejectedIds.length
     });
     const allErrors = [...parsed.errors, ...codexParsed.errors];
@@ -610,7 +655,12 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       const previous = Core.comparisonView(reg.items[id]);
       const view = Core.clone(Core.applyEvent(reg, event));
       const partial = unresolvedPartials.find((one) => one.event.item.id === id);
-      const review = { source: 'auxiliary', checked: checkedIds.has(id), missing: partial?.missing || [] };
+      const review = {
+        source: 'auxiliary',
+        checked: checkedIds.has(id),
+        missing: partial?.missing || [],
+        ...(event.kind === 'patch' && appraised.has(id) ? { appraised: true } : {})
+      };
       return Core.marker({ v: Core.VERSION, event, view, previous, review });
     });
     const codexReg = Codex.clone(codexSnapshot);
@@ -630,8 +680,8 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
           doc,
           chatId,
           rejectedIds.length
-            ? { ...guard, state: 'rejected', events: 0, rejectedIds }
-            : { ...guard, state: 'none', events: 0 }
+            ? { ...guard, state: 'rejected', events: 0, rejectedIds, appraisalTried }
+            : { ...guard, state: 'none', events: 0, appraisalTried }
         );
         return {};
       }
@@ -647,7 +697,8 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
         ...guard,
         state: unresolvedPartials.length || rejectedIds.length ? 'partial_final' : 'complete',
         events: valid.length,
-        partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds]
+        partialIds: [...unresolvedPartials.map((one) => one.event.item.id), ...rejectedIds],
+        appraisalTried
       });
       const chat = {
         ...latest,

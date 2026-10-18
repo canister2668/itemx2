@@ -56,6 +56,13 @@ export function addPending(key, record) {
   while (pending.size > PENDING_LIMIT) pending.delete(pending.keys().next().value);
 }
 export const pendingRecord = (key) => pending.get(key) || null;
+// The message a pending record belongs to, once its own commit failed.
+export function setPendingOwner(keys, owner) {
+  for (const key of keys) {
+    const record = pending.get(key);
+    if (record) record.owner = owner;
+  }
+}
 export const pendingEntries = (chatKey) => [...pending].filter(([, record]) => record.chatKey === chatKey);
 export function dropPending(keys) {
   for (const key of keys) pending.delete(key);
