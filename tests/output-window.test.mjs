@@ -90,10 +90,10 @@ test('a chat switch during the window is never deferred and closes the window', 
   reset(t);
   markOutputFlush();
   fake.state.chatIndex = 3;
-  const before = calls('getCharacter');
+  const before = calls('getChatFromIndex');
   await Panel.ensureRootInventory();
   assert.equal(outputActive(), false);
-  assert.ok(calls('getCharacter') > before);
+  assert.ok(calls('getChatFromIndex') > before);
 });
 
 test('closing without deferred work schedules nothing', async (t) => {

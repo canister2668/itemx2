@@ -328,17 +328,21 @@ export function renderEncounterCard(monster, options = {}) {
         );
   const aliases = Array.isArray(monster.aliases) ? monster.aliases.filter(Boolean) : [];
   const list = (values) => (Array.isArray(values) ? values.filter(Boolean) : []);
+  // resultOnly: the card right after a meeting card already lists the rest.
+  const detail = !options.resultOnly;
   const body = [
     encounterTrack(monster),
     monster.outcome
       ? `<p class="ixp-note ixp-outcome"><b>${t('presentation.006')}</b>${Core.esc(monster.outcome)}</p>`
       : '',
-    tags([
-      ...list(monster.weaknesses).map((one) => tag('#5ee3a1', t('codex.weak', one))),
-      ...list(monster.resistances).map((one) => tag('#9aa1b2', t('codex.resist', one)))
-    ]),
-    effectList(list(monster.moves).slice(0, options.full ? 12 : 3)),
-    monster.description ? `<p class="ixp-lore">${Core.esc(monster.description)}</p>` : '',
+    detail
+      ? tags([
+          ...list(monster.weaknesses).map((one) => tag('#5ee3a1', t('codex.weak', one))),
+          ...list(monster.resistances).map((one) => tag('#9aa1b2', t('codex.resist', one)))
+        ])
+      : '',
+    detail ? effectList(list(monster.moves).slice(0, options.full ? 12 : 3)) : '',
+    detail && monster.description ? `<p class="ixp-lore">${Core.esc(monster.description)}</p>` : '',
     options.full && monster._lore ? `<p class="ixp-id">${t('ui-panel.098.1')}</p>` : '',
     options.full ? `<p class="ixp-id">ID · ${Core.esc(monster.id)}</p>` : ''
   ].join('');
@@ -388,7 +392,12 @@ export function codexInlineEventHtml(payload, options = {}) {
     previous: payload.previous || {},
     inline: true
   };
-  return domain === 'skill'
-    ? renderSkillCard(entity, common)
-    : renderEncounterCard(entity, { ...common, portrait: options.portrait || '' });
+  if (domain === 'skill') return renderSkillCard(entity, common);
+  const portrait = options.portrait || '';
+  // A fight registered with its result already set began and ended in one
+  // response: show the meeting first, then the result, as two cards.
+  if (event.kind !== 'exam' || !encounterEnded(entity)) return renderEncounterCard(entity, { ...common, portrait });
+  const met = { ...entity, status: 'active', active: true };
+  delete met.outcome;
+  return `${renderEncounterCard(met, { ...common, portrait, state: t('presentation.018'), previous: {} })}${renderEncounterCard(entity, { ...common, portrait, resultOnly: true })}`;
 }

@@ -84,16 +84,30 @@ export function sameChat(a, b) {
 export const chatIsStreaming = (chat) =>
   Boolean(chat?.isStreaming || (chat?.message || []).some((message) => message?.isStreaming || message?.bgContinue));
 
+// The character of the open chat. On stock RisuAI getCharacter() snapshots the
+// whole database to return one character (about half a second on a large
+// one), so it is read once per chat and reused until the chat changes.
+let characterCache = null;
+export function forgetCharacter() {
+  characterCache = null;
+}
+
 export async function context() {
   try {
-    const [characterIndex, chatIndex, character] = await Promise.all([
+    const [characterIndex, chatIndex] = await Promise.all([
       host().getCurrentCharacterIndex(),
-      host().getCurrentChatIndex(),
-      host().getCharacter()
+      host().getCurrentChatIndex()
     ]);
-    if (characterIndex == null || chatIndex == null || !character) return null;
+    if (characterIndex == null || chatIndex == null) return null;
     const chat = await readChat(characterIndex, chatIndex);
     if (!chat) return null;
+    const owner = `${characterIndex}:${chat.id ?? chatIndex}`;
+    let character = characterCache?.owner === owner && characterCache.api === host() ? characterCache.character : null;
+    if (!character) {
+      character = await timed('host:readCharacter', () => host().getCharacter());
+      if (!character) return null;
+      characterCache = { api: host(), owner, character };
+    }
     return {
       characterIndex,
       chatIndex,

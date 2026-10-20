@@ -534,7 +534,15 @@ export async function hostPluginSettingsVisible() {
   const now = Date.now();
   if (now - hostSettingsCache.at < 750) return hostSettingsCache.visible;
   try {
-    const safeTargets = await mainDoc().querySelectorAll('button,[role="button"]');
+    // RisuAI and its forks draw the settings screen inside .rs-setting-cont. One
+    // query answers "not open" for every repaint; only an open settings screen
+    // has its own buttons read, instead of every button of the page.
+    const settingsRoot = await mainDoc().querySelector('.rs-setting-cont');
+    if (!settingsRoot) {
+      hostSettingsCache = { at: now, visible: false };
+      return false;
+    }
+    const safeTargets = await settingsRoot.querySelectorAll('button,[role="button"]');
     const targets = await host().unwarpSafeArray(safeTargets);
     for (const target of targets.slice(0, 96)) {
       const text = String((await target.textContent()) || '')

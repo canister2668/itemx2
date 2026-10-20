@@ -2,7 +2,7 @@
  * upward events) and owns start, browser resume and unload; domain work lives
  * in the imported modules. */
 import { endOutputWindow, setOutputWindowSink } from './activity.js';
-import { context } from './chat-io.js';
+import { context, forgetCharacter } from './chat-io.js';
 import { ITEMX_PLUGIN_VERSION } from './config.js';
 import { isUnloading, markUnloading, registeredUiParts, rememberUiPart } from './connection.js';
 import { clearListeners, on } from './events.js';
@@ -167,6 +167,7 @@ async function recoverAfterBrowserResume() {
   try {
     await resetScrollEffects();
     await refreshHookBindings();
+    forgetCharacter();
     invalidateLoaded();
     await installMainStyle();
     await rebuildCurrent();

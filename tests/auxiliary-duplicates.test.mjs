@@ -186,8 +186,13 @@ test('display suppresses identical states across paragraphs, without altering re
     assert.equal(count(html), 1);
     assert.ok(html.includes('첫 문단.') && html.includes('둘째 문단.'));
     assert.equal((source.match(/<!--/g) || []).length, 3);
+    // For encounters B is a defeat patch: a registration that already carries
+    // its result is drawn as two cards (meeting, then result).
     const changed = {
       ...payload,
+      ...(domain === 'item'
+        ? {}
+        : { event: { domain, kind: 'patch', patch: { id: payload.view.id, action: 'defeat', fields: {} } } }),
       view: { ...payload.view, ...(domain === 'item' ? { durability: '50/100' } : { status: 'defeated' }) }
     };
     // A -> B -> A remains three states.
