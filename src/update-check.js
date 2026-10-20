@@ -1,6 +1,6 @@
-/* Update check: reads the version line of the published bundle, at most once
- * per interval, and announces the result on the `update` event. */
-import { ITEMX_PLUGIN_VERSION, ITEMX_UPDATE_CACHE_KEY, ITEMX_UPDATE_CHECK_MS, ITEMX_UPDATE_URL } from './config.js';
+/* Update check: reads the version line of the published bundle once per page
+ * load and announces the result on the `update` event. */
+import { ITEMX_PLUGIN_VERSION, ITEMX_UPDATE_URL } from './config.js';
 import { setUpdateState, updateState } from './connection.js';
 import { emit } from './events.js';
 import { host } from './host.js';
@@ -37,24 +37,16 @@ export function compareVersions(left, right) {
   return 0;
 }
 
+// Once per page load: the first chat after a refresh reads the published
+// version line; later chat switches reuse the answer.
+let checkedThisLoad = false;
+
 export async function checkForUpdate() {
-  if (updateState().checking || !activeContextKey() || typeof host().nativeFetch !== 'function') return;
+  if (checkedThisLoad || updateState().checking || !activeContextKey() || typeof host().nativeFetch !== 'function')
+    return;
+  checkedThisLoad = true;
   setUpdateState({ checking: true });
   try {
-    let cached = null;
-    try {
-      cached = JSON.parse((await host().safeLocalStorage.getItem(ITEMX_UPDATE_CACHE_KEY)) || 'null');
-    } catch {}
-    if (cached?.latest) {
-      const latest = String(cached.latest);
-      setUpdateState({
-        checkedAt: Number(cached.checkedAt) || 0,
-        latest,
-        available: compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0
-      });
-      await emit('update', updateState());
-    }
-    if (Date.now() - updateState().checkedAt < ITEMX_UPDATE_CHECK_MS) return;
     const response = await withTimeout(
       host().nativeFetch(ITEMX_UPDATE_URL, {
         method: 'GET',
@@ -68,11 +60,7 @@ export async function checkForUpdate() {
     const header = String((await response.text()) || '');
     const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
     if (!latest) throw new Error(t('ui-settings.148'));
-    const checkedAt = Date.now();
-    setUpdateState({ checkedAt, latest, available: compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0 });
-    try {
-      await host().safeLocalStorage.setItem(ITEMX_UPDATE_CACHE_KEY, JSON.stringify({ checkedAt, latest }));
-    } catch {}
+    setUpdateState({ checkedAt: Date.now(), latest, available: compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0 });
     await emit('update', updateState());
   } catch (error) {
     debugRecord('update check', error?.message || String(error));

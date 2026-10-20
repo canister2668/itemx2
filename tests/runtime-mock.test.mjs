@@ -94,7 +94,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.deepEqual(bootOrder, ['setting', 'permission:replacer', 'button:chat']);
   assert.equal(updateRequest.options.headers.Range, 'bytes=0-2047');
-  assert.equal(JSON.parse(localStorage.get('itemx2:update-check')).latest, '1.9.0-beta.28');
+  assert.equal(localStorage.has('itemx2:update-check'), false, 'the update check keeps nothing between loads');
   assert.equal(typeof replacers.afterRequest, 'function');
   assert.equal(typeof replacers.beforeRequest, 'function');
   assert.equal(typeof handlers.display, 'function');
@@ -230,14 +230,14 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.match(mixedCleaned, /<!--ix:/);
   assert.ok(mixedCleaned.indexOf('<!--ix:') < mixedCleaned.indexOf('[Status: 정상]'));
   const mixedDisplay = await handlers.display(mixedCleaned);
-  assert.match(mixedDisplay, /itemx2-inline-skill/);
+  assert.match(mixedDisplay, /ixp-codex ixp-skill/);
   assert.match(mixedDisplay, /motion-lite/);
-  assert.match(mixedDisplay, /NEW SKILL ARCHIVED/);
+  assert.match(mixedDisplay, /class="ixp-ev">최초 등록/);
   assert.match(mixedDisplay, /월영참/);
-  assert.match(mixedDisplay, /itemx2-inline-quick/);
+  assert.match(mixedDisplay, /ixp-stats/);
   assert.match(mixedDisplay, /진기 24/);
   assert.match(mixedDisplay, /18초/);
-  assert.match(mixedDisplay, /달빛 검기 · 빙결 대상 추가 피해/);
+  assert.match(mixedDisplay, /<li><b>달빛 검기<\/b><\/li><li><b>빙결 대상 추가 피해<\/b><\/li>/);
   const historicalDisplay = await handlers.display(cleaned);
   assert.match(historicalDisplay, /motion-off/);
   assert.equal(
@@ -336,7 +336,7 @@ test('Home route stays idle until a chat exists instead of reading chatPage', as
   assert.deepEqual(bootOrder, ['setting', 'script-handler', 'script-handler', 'script-handler']);
   assert.deepEqual(
     intervals.map((row) => row.ms),
-    [10000, 4500, 30 * 60 * 1000]
+    [10000, 4500]
   );
   await assert.doesNotReject(
     () => settingHandler(),

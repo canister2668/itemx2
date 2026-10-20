@@ -54,13 +54,13 @@ test('list, detail and inline portraits share one image read', async () => {
   uiState.query = '';
   assert.equal(await rt.hydrateCheckedCodexDetail('monster', loaded), true);
   const detail = fake.dom.root.find('.x-risu-itemx2-root-monster-detail-body-0')[0].html();
-  assert.match(detail, /class="x-risu-itemx-monster-portrait" src="data:image\/avif;base64,/);
+  assert.match(detail, /class="x-risu-ixp-icon x-risu-ixp-portrait"><img src="data:image\/avif;base64,/);
   rt.prepareInlinePortraits(loaded, loaded.codexSnapshot, { moduleAssetsEnabled: false });
   await settle(5);
-  assert.match(await rt.displayHandler(marker(entity)), /itemx2-inline-icon"><img src="data:image\/avif;base64,/);
+  assert.match(await rt.displayHandler(marker(entity)), /ixp-icon ixp-portrait"><img src="data:image\/avif;base64,/);
   assert.equal(reads.length, 1, 'list, detail and inline share the asset cache');
   const unknown = monster({ id: 'brigands', name: '이름 없는 도적들', portrait: 'NONE' });
-  assert.match(await rt.displayHandler(marker(unknown)), /itemx2-inline-icon"><span>🪓/);
+  assert.match(await rt.displayHandler(marker(unknown)), /ixp-icon"><span>🪓/);
 });
 
 test('cold concurrent display of pending cards makes no host calls', async () => {
@@ -106,7 +106,7 @@ test('large originals never enter inline HTML or the inline-only original cache'
   assert.equal(rt.portraitCacheStats().images, before, 'inline preparation must not retain original images');
   const html = await rt.displayHandler(marker(monster()));
   assert.equal(html.includes(full), false);
-  assert.match(html, /itemx2-inline-icon"><span>🪓/, 'no thumbnail API: fall back instead of embedding the original');
+  assert.match(html, /ixp-icon"><span>🪓/, 'no thumbnail API: fall back instead of embedding the original');
   const details = await rt.loadCodexPortraits(who, { message: [] }, snapshot, { moduleAssetsEnabled: false });
   assert.equal(details.mayuri, full, 'detail keeps its original portrait');
 });
@@ -142,7 +142,7 @@ test('history pages load only visible portraits and a late selected record gets 
   assert.equal(reads.length, 17);
   assert.equal(reads.at(-1), `assets/${who.chaId}-32.png`);
   assert.equal(loaded.portraits.m32, 'data:image/png;base64,AAAA');
-  assert.match(rt.historyHtml(loaded), /class="itemx-monster-portrait" src="data:image\/png;base64,AAAA/);
+  assert.match(rt.historyHtml(loaded), /class="ixp-icon ixp-portrait"><img src="data:image\/png;base64,AAAA/);
 });
 
 test('a stalled portrait read never holds up a host output hook', async () => {

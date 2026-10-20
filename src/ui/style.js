@@ -57,105 +57,6 @@ export function dedupeCss(source) {
 export const ITEMX_CHIP_STYLE =
   '.itemx-event-chip{display:inline-flex;align-items:center;max-width:100%;margin:.28em .2em;padding:.3em .62em;border:1px solid rgba(212,175,110,.32);border-radius:6px;background:rgba(20,17,12,.72);color:#e8e0d2;font-size:.76rem;font-weight:700;line-height:1.35;vertical-align:middle}';
 
-export const ITEMX_CODEX_INLINE_STYLE = `.itemx2-inline-event{--ix-tone:#a58add;position:relative;isolation:isolate;display:block;max-width:720px;margin:.7rem auto 1rem;overflow:hidden;border:1px solid rgba(132,146,170,.34);border-radius:14px;background:linear-gradient(145deg,rgba(24,31,44,.98),rgba(11,15,23,.98));box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);contain:layout paint style;color:#e9eef6;font-family:Inter,Pretendard,"Noto Sans KR",sans-serif}.itemx2-inline-event::before{content:"";position:absolute;z-index:-2;inset:-65% -12% auto 40%;height:180%;background:radial-gradient(closest-side,var(--ix-glow,rgba(165,138,221,.22)),transparent 72%);transform:rotate(-12deg)}.itemx2-inline-event::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(105deg,transparent 48%,rgba(255,255,255,.025),transparent 84%)}.itemx2-inline-main{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:11px;min-height:86px;padding:12px}.itemx2-inline-icon{position:relative;width:50px;height:50px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(150,165,190,.3);border-radius:12px;background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(165,138,221,.22)),rgba(9,12,18,.86) 72%);font-size:1.45rem;box-shadow:inset 0 0 18px rgba(120,135,165,.08)}.itemx2-inline-copy{display:grid;gap:3px;min-width:0}.itemx2-inline-kicker{color:var(--ix-tone);font-size:.53rem;font-weight:900;letter-spacing:.15em}.itemx2-inline-name{overflow:hidden;color:#f1f4f9;font-size:.94rem;font-weight:900;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-meta{color:#8795aa;font-size:.61rem}.itemx2-inline-state{align-self:start;padding:4px 7px;border:1px solid rgba(150,165,190,.28);border-radius:999px;background:rgba(120,135,160,.08);color:var(--ix-tone);font-size:.53rem;font-weight:900;font-style:normal}.itemx2-inline-delta{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.58rem}.itemx2-inline-delta i{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.045);color:#8794a8;font-style:normal}.itemx2-inline-delta i:last-child{color:#f2cd80}.itemx2-inline-delta b{color:#69778d}.itemx2-inline-foot{display:flex;align-items:flex-start;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.055);background:rgba(4,7,12,.24);color:#95a1b3;font-size:.64rem;line-height:1.45}.itemx2-inline-foot b{flex:0 0 auto;color:var(--ix-tone);font-size:.57rem}.itemx2-inline-skill-theme-fire{--ix-tone:#f0ad66;--ix-glow:rgba(226,92,43,.26)}.itemx2-inline-skill-theme-ice{--ix-tone:#91dff1;--ix-glow:rgba(82,184,218,.22)}.itemx2-inline-skill-theme-lightning{--ix-tone:#f0d878;--ix-glow:rgba(131,151,255,.24)}.itemx2-inline-skill-theme-dark{--ix-tone:#b697e8;--ix-glow:rgba(91,44,141,.3)}.itemx2-inline-skill-theme-light{--ix-tone:#ead9a8;--ix-glow:rgba(235,216,161,.2)}.itemx2-inline-skill-theme-arcane{--ix-tone:#b59bea;--ix-glow:rgba(128,91,207,.24)}.itemx2-inline-skill .itemx2-inline-icon::before{content:"";position:absolute;width:31px;height:31px;border-radius:44% 56% 62% 38%;background:radial-gradient(circle at 65% 30%,rgba(255,255,255,.48),var(--ix-glow) 32%,transparent 68%);animation:itemx2-inline-drift 7s ease-in-out infinite alternate}.itemx2-inline-icon>span{position:relative;z-index:1}.itemx2-inline-encounter{--ix-tone:#df8588;--ix-glow:rgba(199,69,76,.22)}.itemx2-inline-encounter .itemx2-inline-icon{background:radial-gradient(circle at 50% 24%,rgba(133,82,100,.82),rgba(58,39,55,.9) 48%,#11141b 78%);text-shadow:0 5px 12px #000}.itemx2-inline-warning{position:absolute;z-index:-1;right:-8%;bottom:16px;width:62%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,102,.7),transparent);box-shadow:0 0 7px rgba(255,80,80,.5);animation:itemx2-inline-scan 4.4s ease-in-out infinite}.itemx2-inline-ended{--ix-tone:#a6aeb9;--ix-glow:rgba(150,160,173,.13)}.itemx2-inline-ended .itemx2-inline-icon{filter:grayscale(1) saturate(.2) brightness(.72)}.itemx2-inline-ended .itemx2-inline-warning{display:none}.itemx2-inline-ended::before{animation:none}.itemx2-inline-event.motion-off::before,.itemx2-inline-event.motion-off::after,.itemx2-inline-event.motion-off .itemx2-inline-icon::before,.itemx2-inline-event.motion-off .itemx2-inline-warning{display:none!important;animation:none!important}@keyframes itemx2-inline-drift{from{transform:translate(-3px,2px) rotate(-8deg);opacity:.62}to{transform:translate(4px,-3px) rotate(11deg);opacity:1}}@keyframes itemx2-inline-scan{0%,100%{transform:translateY(-13px);opacity:.12}45%,55%{opacity:.72}50%{transform:translateY(13px)}}@media(prefers-reduced-motion:reduce){.itemx2-inline-event::before,.itemx2-inline-event::after,.itemx2-inline-icon::before,.itemx2-inline-warning{animation:none!important}}@media(max-width:520px){.itemx2-inline-event{margin:.62rem 0 .9rem}.itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:9px;padding:10px}.itemx2-inline-icon{width:46px;height:46px}.itemx2-inline-name{font-size:.86rem}.itemx2-inline-foot{font-size:.6rem}}`;
-
-export const ITEMX_CODEX_INLINE_DENSE_STYLE = `.itemx2-inline-event.itemx2-inline-event{align-self:start;box-sizing:border-box;width:min(400px,calc(100% - 8px));max-width:400px;margin:.42rem auto .65rem;border-radius:11px;line-height:1.2}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;height:auto;padding:6px 8px 5px}.itemx2-inline-event .itemx2-inline-icon{align-self:center;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:9px;font-size:1.08rem;line-height:1}.itemx2-inline-event .itemx2-inline-copy{align-self:center;gap:1px;line-height:1.15}.itemx2-inline-event .itemx2-inline-kicker{font-size:.46rem;line-height:1.2;letter-spacing:.12em}.itemx2-inline-event .itemx2-inline-name{font-size:.82rem;line-height:1.18}.itemx2-inline-event .itemx2-inline-meta{font-size:.51rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.itemx2-inline-event .itemx2-inline-quick{display:flex;align-items:center;gap:3px;min-width:0;margin-top:2px;overflow:hidden}.itemx2-inline-event .itemx2-inline-quick i{flex:0 1 auto;min-width:0;height:auto;padding:1px 4px;border:1px solid rgba(150,165,190,.16);border-radius:4px;background:rgba(255,255,255,.035);color:#9ca9bb;font-size:.47rem;font-style:normal;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-quick i b{color:var(--ix-tone);font-weight:900}.itemx2-inline-event .itemx2-inline-foot{align-items:center;min-height:23px;height:auto;padding:4px 8px;font-size:.53rem;line-height:1.3}.itemx2-inline-event .itemx2-inline-foot b{font-size:.49rem}.itemx2-inline-event .itemx2-inline-foot span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.itemx2-inline-event .itemx2-inline-state{display:inline-flex;align-self:center;align-items:center;justify-content:center;width:auto;height:auto;min-height:0;padding:2px 5px;font-size:.46rem;line-height:1.2;white-space:nowrap}@media(max-width:520px){.itemx2-inline-event.itemx2-inline-event{margin:.36rem auto .58rem}.itemx2-inline-event .itemx2-inline-main{grid-template-columns:34px minmax(0,1fr) auto;gap:6px;min-height:51px;padding:5px 7px 4px}.itemx2-inline-event .itemx2-inline-icon{width:34px;height:34px;min-width:34px;min-height:34px}.itemx2-inline-event .itemx2-inline-name{font-size:.78rem}.itemx2-inline-event .itemx2-inline-quick{gap:2px}.itemx2-inline-event .itemx2-inline-quick i{padding:1px 3px;font-size:.44rem}.itemx2-inline-event .itemx2-inline-quick i:nth-last-child(n+5){display:none}.itemx2-inline-event .itemx2-inline-foot{min-height:21px;padding:3px 7px;font-size:.5rem}}`;
-
-export const ITEMX_CODEX_INLINE_APPRAISAL_STYLE = `
-.itemx2-inline-event.itemx2-inline-appraisal{--ix-fg:#e8e0d2;--ix-dim:#9f9586;--ix-line:#544936;--ix-surface:rgba(93,76,48,.18);border:1px solid var(--ix-line);border-radius:3px;background:repeating-linear-gradient(102deg,rgba(255,235,190,.024) 0 2px,transparent 2px 7px),repeating-linear-gradient(11deg,rgba(0,0,0,.13) 0 3px,transparent 3px 9px),radial-gradient(115% 92% at 50% -16%,#292218,#11100e 72%);color:var(--ix-fg);font-family:"Nanum Myeongjo","Noto Serif KR",Georgia,serif;box-shadow:inset 0 0 36px rgba(0,0,0,.54),0 7px 18px rgba(0,0,0,.22),0 0 14px color-mix(in srgb,var(--rk,#a58add) 18%,transparent)}
-.itemx2-inline-event.itemx2-inline-appraisal::before{inset:0 0 auto;z-index:5;width:auto;height:2px;background:linear-gradient(90deg,transparent,var(--rk,#a58add) 18%,var(--rk,#a58add) 82%,transparent);opacity:.82;transform:none}
-.itemx2-inline-event.itemx2-inline-appraisal::after{z-index:-1;background:radial-gradient(72% 125% at 8% 20%,var(--ix-glow),transparent 68%),linear-gradient(105deg,transparent 54%,rgba(255,255,255,.025),transparent 86%)}
-.itemx2-inline-appraisal .itemx2-inline-main{position:relative;grid-template-columns:42px minmax(0,1fr) auto;gap:8px;min-height:58px;padding:8px 9px 6px}
-.itemx2-inline-appraisal .itemx2-inline-main::before{content:"";position:absolute;right:-12%;bottom:-58%;width:66%;height:145%;border-radius:50%;background:radial-gradient(closest-side,var(--ix-glow),transparent 73%);opacity:.7;pointer-events:none}
-.itemx2-inline-appraisal .itemx2-inline-icon{width:42px;height:42px;min-width:42px;min-height:42px;border:1px solid color-mix(in srgb,var(--rk,#a58add) 58%,#4c4437);border-radius:50%;background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--rk,#a58add) 26%,transparent),rgba(12,11,10,.94) 70%);font-size:1.2rem;box-shadow:inset 0 0 0 2px rgba(9,8,7,.55),inset 0 0 15px var(--ix-glow),0 0 10px color-mix(in srgb,var(--rk,#a58add) 18%,transparent)}
-.itemx2-inline-appraisal .itemx2-inline-copy{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 6px}
-.itemx2-inline-appraisal .itemx2-inline-kicker{grid-column:1/-1;color:color-mix(in srgb,var(--rk,#a58add) 76%,#dccba8);font-size:.43rem;letter-spacing:.18em}
-.itemx2-inline-appraisal .itemx2-inline-name{grid-column:1;align-self:end;color:#f2eadc;font-size:.84rem;text-shadow:0 1px 2px #000,0 0 7px var(--ix-glow)}
-.itemx2-inline-appraisal .itemx2-inline-tier{grid-column:2;align-self:end;color:var(--rk,#c7ae79);font-size:.52rem;font-weight:800;white-space:nowrap}
-.itemx2-inline-appraisal .itemx2-inline-meta{grid-column:1/-1;color:var(--ix-dim);font-size:.49rem}
-.itemx2-inline-appraisal .itemx2-inline-state{position:relative;z-index:1;align-self:start;margin-top:1px;border:1px solid color-mix(in srgb,var(--rk,#a58add) 44%,#4e4639);border-radius:2px;background:rgba(18,15,11,.6);color:color-mix(in srgb,var(--rk,#a58add) 78%,#efe2c8);font-size:.44rem;letter-spacing:.04em}
-.itemx2-inline-appraisal .itemx2-inline-rule{height:1px;margin:0 9px;background:linear-gradient(90deg,transparent,var(--ix-line) 12%,color-mix(in srgb,var(--rk,#a58add) 34%,var(--ix-line)) 50%,var(--ix-line) 88%,transparent)}
-.itemx2-inline-appraisal .itemx2-inline-quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;margin:5px 8px 6px;overflow:visible}
-.itemx2-inline-appraisal .itemx2-inline-quick i{display:grid;gap:1px;min-width:0;padding:3px 4px;border:1px solid color-mix(in srgb,var(--ix-line) 72%,transparent);border-radius:2px;background:var(--ix-surface);color:#d8d0c3;font-size:.48rem;line-height:1.15;white-space:normal}
-.itemx2-inline-appraisal .itemx2-inline-quick i b{overflow:hidden;color:var(--ix-dim);font-size:.39rem;letter-spacing:.08em;text-overflow:ellipsis;white-space:nowrap}
-.itemx2-inline-appraisal .itemx2-inline-quick i span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.itemx2-inline-appraisal .itemx2-inline-foot{min-height:25px;padding:4px 8px;border-top:1px solid rgba(180,158,116,.13);background:rgba(5,5,4,.26);color:#bcb2a2;font-size:.51rem}
-.itemx2-inline-appraisal .itemx2-inline-foot b{color:color-mix(in srgb,var(--rk,#a58add) 72%,#ddc99e);font-size:.43rem;letter-spacing:.08em}
-.itemx2-inline-appraisal.itemx2-inline-encounter{--ix-line:#51413f;--ix-surface:rgba(95,53,52,.16);background:repeating-linear-gradient(101deg,rgba(237,199,190,.018) 0 2px,transparent 2px 8px),radial-gradient(105% 85% at 84% 0,rgba(121,48,53,.16),transparent 64%),linear-gradient(151deg,#1c1715,#0e0e0e 68%)}
-.itemx2-inline-appraisal.itemx2-inline-ended{--ix-line:#41454b;--ix-surface:rgba(92,98,108,.12);filter:none;background:repeating-linear-gradient(101deg,rgba(220,225,232,.014) 0 2px,transparent 2px 8px),linear-gradient(151deg,#18191a,#0d0e10 70%)}
-.itemx2-inline-appraisal.itemx2-inline-ended::after{filter:grayscale(1);opacity:.46}
-.itemx2-inline-appraisal.motion-off::before{display:block!important;animation:none!important}
-@media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:38px minmax(0,1fr) auto;min-height:54px;padding:7px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-icon{width:38px;height:38px;min-width:38px;min-height:38px}.itemx2-inline-appraisal .itemx2-inline-quick{grid-template-columns:repeat(2,minmax(0,1fr));margin:4px 7px 5px}.itemx2-inline-appraisal .itemx2-inline-quick i{padding:3px}.itemx2-inline-appraisal .itemx2-inline-quick i:nth-last-child(n+5){display:grid}.itemx2-inline-appraisal .itemx2-inline-foot{padding:4px 7px}}
-
-/* v5 inline pass: carry the card's rarity frame, serif weight and encounter states
- into the body cards without growing them, so chat keeps one visual language. */
-.itemx2-inline-event.itemx2-inline-appraisal{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rk,#a58add) 34%,transparent),inset 0 0 36px rgba(0,0,0,.54),0 7px 18px rgba(0,0,0,.24),0 0 16px color-mix(in srgb,var(--rk,#a58add) 20%,transparent)}
-.itemx2-inline-appraisal .itemx2-inline-name{font-size:1rem;font-weight:700;letter-spacing:-.005em}
-.itemx2-inline-appraisal .itemx2-inline-kicker{color:color-mix(in srgb,var(--rk,#a58add) 62%,#9f9586)}
-/* Active encounter: a threat ring on the portrait and a scan sweep across the card. */
-.itemx2-inline-encounter:not(.itemx2-inline-ended) .itemx2-inline-icon{position:relative;overflow:visible}
-.itemx2-inline-encounter:not(.itemx2-inline-ended) .itemx2-inline-icon::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px solid color-mix(in srgb,var(--rk,#d64b60) 66%,transparent);opacity:0;animation:itemx2-inline-threat 2.6s ease-out infinite}
-@keyframes itemx2-inline-threat{0%{opacity:.85;transform:scale(.88)}70%{opacity:0;transform:scale(1.16)}100%{opacity:0}}
-/* Resolved encounter: the record seal replaces the live state. */
-.itemx2-inline-ended .itemx2-inline-state{position:relative;rotate:-7deg;border-radius:4px;border-width:1.5px;letter-spacing:.2em;font-family:"Nanum Myeongjo","Noto Serif KR",serif}
-.itemx2-inline-encounter.motion-off .itemx2-inline-icon::after,.itemx2-inline-encounter.motion-lite .itemx2-inline-icon::after{animation:none!important;opacity:0}
-@media(prefers-reduced-motion:reduce){.itemx2-inline-encounter .itemx2-inline-icon::after{animation:none!important;opacity:0}}
-
-.itemx2-inline-stat-changed{border-color:color-mix(in srgb,var(--rk,#a58add) 46%,transparent)}
-.itemx2-inline-stat-changed>s{color:var(--ix-dim,#9f9586);text-decoration:none;opacity:.72;font-size:.92em}
-.itemx2-inline-stat-changed>u{margin:0 3px;color:var(--ix-dim,#9f9586);text-decoration:none;font-size:.85em}
-.itemx2-inline-stat-changed>em{color:color-mix(in srgb,var(--rk,#a58add) 74%,var(--ix-fg,#e8e0d2));font-style:normal;font-weight:800}
-
-/* v6 body cards: the item card's frame language at inline scale. Chips carry every
- change, so the card keeps its old height while saying more. */
-.itemx2-inline-event.itemx2-inline-appraisal{border-radius:13px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rk,#a58add) 40%,transparent),inset 0 0 30px rgba(0,0,0,.5),0 6px 18px rgba(0,0,0,.26),0 0 16px color-mix(in srgb,var(--rk,#a58add) 18%,transparent)}
-.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:46px minmax(0,1fr) auto;gap:11px;align-items:start;padding:12px 13px 10px;min-height:0}
-.itemx2-inline-appraisal .itemx2-inline-icon{align-self:start;width:46px;height:46px;min-width:46px;min-height:46px;border-radius:12px;font-size:1.3rem}
-.itemx2-inline-appraisal .itemx2-inline-name{display:block;margin:2px 0 3px;font-size:1.02rem;font-weight:700;letter-spacing:-.005em;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.32}
-.itemx2-inline-appraisal .itemx2-inline-kicker{color:color-mix(in srgb,var(--rk,#a58add) 64%,#9f9586)}
-.itemx2-inline-appraisal .itemx2-inline-meta{display:block;font-size:.63rem;line-height:1.6;color:var(--ix-dim,#9f9586);white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
-.itemx2-inline-appraisal .itemx2-inline-state{align-self:start;margin-top:2px}
-/* Compact chips replace the fixed four-cell grid. */
-.itemx2-inline-appraisal .itemx2-inline-quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;grid-template-columns:none}
-.itemx2-inline-appraisal .itemx2-inline-quick>i{display:inline-flex;align-items:baseline;gap:4px;padding:2.5px 7px;border:1px solid var(--ix-line,#544936);border-radius:6px;background:rgba(255,255,255,.04);font-size:.6rem;font-weight:700;color:var(--ix-fg,#e8e0d2);font-style:normal}
-.itemx2-inline-appraisal .itemx2-inline-quick>i>b{color:var(--ix-dim,#9f9586);font-size:.55rem;font-weight:800;letter-spacing:.06em}
-.itemx2-inline-appraisal .itemx2-inline-quick>i>span{color:var(--ix-fg,#e8e0d2)}
-.itemx2-inline-appraisal .itemx2-inline-stat-changed{border-color:color-mix(in srgb,var(--rk,#a58add) 52%,transparent)}
-.itemx2-inline-appraisal .itemx2-inline-stat-changed>s{color:var(--ix-dim,#9f9586);text-decoration:none;opacity:.8}
-.itemx2-inline-appraisal .itemx2-inline-stat-changed>u{color:var(--ix-dim,#9f9586);text-decoration:none;margin:0 1px}
-.itemx2-inline-appraisal .itemx2-inline-stat-changed>em{font-style:normal;font-weight:800;color:color-mix(in srgb,var(--rk,#a58add) 76%,var(--ix-fg,#e8e0d2))}
-.itemx2-inline-appraisal .itemx2-inline-foot{display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 9px;padding:9px 13px 10px;border-top:1px solid var(--ix-line,#544936);background:rgba(8,7,6,.42);font-size:.66rem;line-height:1.7}
-.itemx2-inline-appraisal .itemx2-inline-foot>b{flex:0 0 auto;color:color-mix(in srgb,var(--rk,#a58add) 70%,#9f9586);font-size:.56rem;font-weight:900;letter-spacing:.1em}
-.itemx2-inline-appraisal .itemx2-inline-foot>span{flex:1 1 200px;min-width:0;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}.itemx2-inline-appraisal .itemx2-inline-foot>b{padding-top:1px}
-.itemx2-inline-more{flex:0 0 auto;font-style:normal;font-size:.6rem;font-weight:800;color:color-mix(in srgb,var(--rk,#a58add) 72%,var(--ix-fg,#e8e0d2));opacity:.85}
-/* Affinity body layer, one per card. */
-.itemx2-inline-body{position:absolute;inset:0;pointer-events:none;z-index:0}
-.itemx2-inline-body-fire{inset:auto -4% -14% -4%;height:72%;mix-blend-mode:screen;background:radial-gradient(44% 96% at 22% 100%,color-mix(in srgb,var(--rk,#ff7a3d) 34%,transparent),transparent 84%),radial-gradient(48% 100% at 72% 100%,color-mix(in srgb,var(--rk,#ff7a3d) 27%,transparent),transparent 86%);animation:itemx2-inline-fire 3.4s ease-in-out infinite alternate}
-@keyframes itemx2-inline-fire{from{opacity:.42}to{opacity:.92}}
-.itemx2-inline-body-bolt{mix-blend-mode:screen;background:radial-gradient(ellipse at 66% 16%,color-mix(in srgb,var(--rk,#f5d13c) 38%,transparent),transparent 58%);opacity:0;animation:itemx2-inline-bolt 3.6s step-end infinite}
-@keyframes itemx2-inline-bolt{0%,78%,85%,100%{opacity:0}79%,81%{opacity:1}80%,82.5%{opacity:.25}}
-.itemx2-inline-body-dark{mix-blend-mode:multiply;background:radial-gradient(120% 96% at 50% 50%,transparent 36%,rgba(8,5,16,.5) 78%,rgba(4,2,10,.8));animation:itemx2-inline-dark 7s ease-in-out infinite alternate}
-@keyframes itemx2-inline-dark{from{opacity:.4}to{opacity:.9}}
-.itemx2-inline-body-haze{mix-blend-mode:screen;background:linear-gradient(108deg,transparent 20%,color-mix(in srgb,var(--rk,#a58add) 20%,transparent) 47%,transparent 74%);animation:itemx2-inline-haze 7s ease-in-out infinite alternate}
-@keyframes itemx2-inline-haze{from{opacity:.35;transform:translateX(-6%)}to{opacity:.85;transform:translateX(6%)}}
-/* Encounter states. */
-.itemx2-inline-scan{position:absolute;left:0;right:0;top:0;height:1.5px;pointer-events:none;z-index:1;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--rk,#d64b60) 85%,#fff 8%),transparent);box-shadow:0 0 10px color-mix(in srgb,var(--rk,#d64b60) 55%,transparent);animation:itemx2-inline-sweep 3.6s ease-in-out infinite}
-@keyframes itemx2-inline-sweep{0%,100%{transform:translateY(4px);opacity:.14}50%{transform:translateY(84px);opacity:.9}}
-.itemx2-inline-seal{position:absolute;right:12px;top:50%;z-index:3;padding:3px 8px;background:rgba(10,9,8,.62);border:1.5px solid color-mix(in srgb,var(--rk,#6c7686) 55%,transparent);border-radius:5px;font-family:"Nanum Myeongjo","Noto Serif KR",serif;font-size:.62rem;font-weight:900;letter-spacing:.22em;color:color-mix(in srgb,var(--rk,#6c7686) 72%,#9f9586);opacity:.8;transform:translateY(-50%) rotate(-8deg)}
-.itemx2-inline-ended .itemx2-inline-state{display:none}.itemx2-inline-ended .itemx2-inline-copy{padding-right:64px}
-.itemx2-inline-ended .itemx2-inline-body{display:none}
-.motion-off .itemx2-inline-body,.motion-off .itemx2-inline-scan,.itemx2-inline-event.motion-off .itemx2-inline-icon::after{animation:none!important}
-@media(prefers-reduced-motion:reduce){.itemx2-inline-body,.itemx2-inline-scan{animation:none!important}}
-/* Body layers sit under the footer text, not over it. */
-.itemx2-inline-appraisal .itemx2-inline-foot{position:relative;z-index:1}
-/* Readable kicker and state on phones. */
-.itemx2-inline-appraisal .itemx2-inline-kicker{font-size:.56rem;letter-spacing:.14em}
-.itemx2-inline-appraisal .itemx2-inline-state{font-size:.58rem;padding:3px 7px}
-.itemx-inline-card{margin:.5rem auto .75rem}
-/* Must follow the v6 block above, which otherwise overrides the compact phone layout. */
-@media(max-width:520px){.itemx2-inline-appraisal .itemx2-inline-main{grid-template-columns:40px minmax(0,1fr) auto;gap:9px;padding:10px 10px 8px}.itemx2-inline-appraisal .itemx2-inline-icon{width:40px;height:40px;min-width:40px;min-height:40px;font-size:1.15rem}.itemx2-inline-appraisal .itemx2-inline-foot{padding:8px 10px 9px}}
-`;
-
 export const ITEMX_PRESENTATION_STYLE = presentationCss;
 
 export const BADGE_POSITIONS = [
@@ -465,13 +366,12 @@ export function skinCss(name) {
     `${S} .ixp-c-corrupted .ixp-name,${S} .ixp-c-glitched .ixp-name{text-shadow:1px 0 rgba(200,30,110,.35),-1px 0 rgba(30,150,200,.3)}`,
     `${S} .ixp-r-legendary .ixp-stat dd,${S} .ixp-r-mythical .ixp-stat dd,${S} .ixp-r-empyrean .ixp-stat dd{text-shadow:none}`,
     `${S} .ixp-sig,${S} .ixp-swarm,${S} .ixp-cfx{opacity:.45}`,
-    // Inline chat cards were tuned for dark only; on paper skins their cream text vanished.
-    `${S} .itemx2-inline-event{--ix-fg:${c.fg};--ix-dim:${c.dim2};--ix-line:${line('.34')};--ix-surface:${line('.1')}}`,
-    `${S} .itemx2-inline-appraisal .itemx2-inline-foot{background:${line('.08')};color:${c.body}}`,
-    `${S} .itemx2-inline-appraisal .itemx2-inline-name{text-shadow:none}`,
-    `${S} .itemx2-inline-appraisal .itemx2-inline-quick>i{background:rgba(255,255,255,.55)}`,
-    `${S} .itemx2-inline-appraisal .itemx2-inline-icon{box-shadow:inset 0 0 0 1px rgba(255,255,255,.6),0 0 8px color-mix(in srgb,var(--rk) 22%,transparent)}`,
-    `${S} .itemx2-inline-body-dark{opacity:.3}`,
+    `${S} .ixp-ev{background:color-mix(in srgb,var(--p) 14%,rgba(255,255,255,.6));color:color-mix(in srgb,var(--p) 62%,${c.ink})}`,
+    `${S} .ixp-ev-seal{background:transparent;color:${c.dim}}`,
+    `${S} .ixp-track,${S} .ixp-note{background:rgba(255,255,255,.55)}`,
+    `${S} .ixp-note{color:${c.body}}`,
+    `${S} .ixp-step.live b{color:color-mix(in srgb,var(--p) 62%,${c.ink})}`,
+    `${S} .ixp-codex .ixp-stat.ixp-up dd{color:color-mix(in srgb,var(--a) 55%,${c.ink})}`,
     `${S} .itemx-event-chip{background:${c.surfHi};border-color:${line('.34')};color:${c.fg}}`,
     `${S} .rarity-epic .itemx-name,${S} .rarity-legendary .itemx-name,${S} .rarity-mythical .itemx-name,${S} .rarity-empyrean .itemx-name{color:color-mix(in srgb,var(--rk) 42%,${c.ink2});text-shadow:none}`,
     `${S} .itemx-medallion{background:radial-gradient(circle at 32% 28%,${c.medalA},${c.medalB} 72%)}`,
@@ -611,13 +511,7 @@ export function skinCss(name) {
     `${S} .itemx2-seg-on{background:${c.segOn};color:${c.ink2};box-shadow:0 1px 3px rgba(${c.shadowRGB},.18)}`,
     // The toast sits outside the panel but still belongs to the skin. The side badge
     // is an image, so it has nothing to recolour.
-    `${S} .itemx2-feedback{border-color:${line('.4')};background:${c.surfHi};color:${c.ink2};box-shadow:0 10px 30px rgba(${c.shadowRGB},.22)}`,
-    // Inline chat event chips.
-    `${S} .itemx2-inline-event{border-color:${line('.34')};background:linear-gradient(145deg,${c.surfHi},${c.surfLo});color:${c.fg};box-shadow:0 12px 30px rgba(${c.shadowRGB},.18)}`,
-    `${S} .itemx2-inline-icon{border-color:${line('.3')};background:radial-gradient(circle at 35% 27%,var(--ix-glow,rgba(${c.glowRGB},.2)),${c.paperHi} 72%)}`,
-    `${S} .itemx2-inline-name{color:${c.ink2}}`,
-    `${S} .itemx2-inline-meta{color:${c.dim3}}`,
-    `${S} .itemx2-inline-state{border-color:${line('.3')};background:rgba(255,255,255,.5)}`
+    `${S} .itemx2-feedback{border-color:${line('.4')};background:${c.surfHi};color:${c.ink2};box-shadow:0 10px 30px rgba(${c.shadowRGB},.22)}`
   ].join('');
 }
 
@@ -629,7 +523,7 @@ export const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
 let mainStyle = null;
 export const mainStyleText = () => (mainStyle ??= dedupeCss(buildMainStyle()));
 const buildMainStyle = () =>
-  `${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CODEX_INLINE_STYLE}\n${ITEMX_CODEX_INLINE_DENSE_STYLE}\n${ITEMX_CODEX_INLINE_APPRAISAL_STYLE}\n${ITEMX_CHIP_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyStreamingStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}`;
+  `${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CHIP_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyStreamingStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}`;
 
 // The main document connection. Private: other modules ask through mainDoc()
 // and are told about a (re)connection by the `main-document` event.

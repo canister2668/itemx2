@@ -110,176 +110,285 @@ export function codexInlineEventSignificant(payload) {
   return important.some((key) => keys.has(key));
 }
 
-export function codexInlineAppraisalStyle(entity, domain) {
-  if (domain === 'skill') {
-    const tier = skillRankTier(entity?.rank, 'world');
-    const affinity = skillTheme(entity || {});
-    return {
-      tier,
-      style: Renderer.itemVars({ id: entity?.id, name: entity?.name, theme: 'arcane', rarity: tier, affinity })
-    };
-  }
-  const level = encounterThreatLevel(entity?.threat);
-  const tier = ['normal', 'rare', 'epic', 'legendary'][level] || 'normal';
-  const relation = themeText(entity?.relation);
-  const affinity = /hostile|적대|enemy/.test(relation) ? 'dark' : /spar|대련/.test(relation) ? 'light' : 'arcane';
-  return {
-    tier,
-    style: Renderer.itemVars({ id: entity?.id, name: entity?.name, theme: 'forged', rarity: tier, affinity })
-  };
-}
-
-export const INLINE_BODY = {
-  fire: 'fire',
-  blood: 'fire',
-  lightning: 'bolt',
-  light: 'bolt',
-  dark: 'dark',
-  void: 'dark',
-  poison: 'haze',
-  earth: 'haze',
-  ice: 'haze',
-  wind: 'haze',
-  arcane: 'haze'
+// Plain labels of the model's enum values; anything else is shown as written.
+const SKILL_TYPES = {
+  active: () => t('codex.type-active'),
+  passive: () => t('codex.type-passive'),
+  sealed: () => t('codex.type-sealed')
 };
-
-export const codexInlineBody = (affinity) => {
-  const kind = INLINE_BODY[affinity];
-  return kind ? `<span class="itemx2-inline-body itemx2-inline-body-${kind}"></span>` : '';
+const SKILL_STATUS = {
+  learned: () => t('codex.status-learned'),
+  equipped: () => t('codex.status-equipped'),
+  sealed: () => t('codex.status-sealed'),
+  lost: () => t('codex.status-lost')
 };
-
-export const codexInlineStat = (label, value, from) => {
-  const now = Core.esc(value || t('presentation.009'));
-  const changed = from != null && String(from) !== '' && String(from) !== String(value);
-  const body = changed ? `<s>${Core.esc(from)}</s><u>→</u><em>${now}</em>` : `<span>${now}</span>`;
-  return `<i class="${changed ? 'itemx2-inline-stat-changed' : ''}"><b>${Core.esc(label)}</b>${body}</i>`;
+const RELATIONS = {
+  hostile: () => t('codex.rel-hostile'),
+  sparring: () => t('codex.rel-sparring'),
+  neutral: () => t('codex.rel-neutral'),
+  allied: () => t('codex.rel-allied'),
+  unknown: () => t('codex.rel-unknown')
 };
+const ENCOUNTER_STATUS = {
+  active: () => t('presentation.018'),
+  ended: () => t('presentation.023'),
+  escaped: () => t('presentation.022'),
+  defeated: () => t('presentation.021'),
+  dead: () => t('presentation.020'),
+  unknown: () => t('presentation.009')
+};
+const labelOf = (labels, value, fallback = '') => {
+  const known = labels[themeText(value)];
+  return known ? known() : String(value || '').trim() || fallback;
+};
+export const skillTypeLabel = (value) => labelOf(SKILL_TYPES, value, SKILL_TYPES.active());
+export const skillStatusLabel = (value) => labelOf(SKILL_STATUS, value, SKILL_STATUS.learned());
+export const relationLabel = (value) => labelOf(RELATIONS, value, RELATIONS.unknown());
+export const encounterStatusLabel = (value) => labelOf(ENCOUNTER_STATUS, value, ENCOUNTER_STATUS.unknown());
+
+const ENDED = new Set(['ended', 'escaped', 'defeated', 'dead']);
+export const encounterEnded = (monster) => ENDED.has(themeText(monster?.status));
+const RELATION_TONE = {
+  hostile: '#ff5f6d',
+  sparring: '#5fa8ff',
+  neutral: '#9aa1b2',
+  allied: '#5ee3a1',
+  unknown: '#c08bff'
+};
+const ENDED_TONE = '#8a90a0';
 
 const SKILL_ACTIONS = {
-  learn: ['SKILL LEARNED', () => t('presentation.047')],
-  equip: ['SKILL EQUIPPED', () => t('presentation.046')],
-  unequip: ['SKILL UPDATED', () => t('presentation.045')],
-  mastery: ['SKILL MASTERY UPDATED', () => t('presentation.044')],
-  seal: ['SKILL SEALED', () => t('presentation.043')],
-  unseal: ['SKILL UNSEALED', () => t('presentation.042')],
-  forget: ['SKILL LOST', () => t('presentation.039')]
+  learn: () => t('presentation.047'),
+  equip: () => t('presentation.046'),
+  unequip: () => t('presentation.045'),
+  mastery: () => t('presentation.044'),
+  seal: () => t('presentation.043'),
+  unseal: () => t('presentation.042'),
+  forget: () => t('presentation.039')
 };
 const ENCOUNTER_ACTIONS = {
-  encounter: ['ENCOUNTER RESUMED', () => t('presentation.024')],
-  end: ['ENCOUNTER RESOLVED', () => t('presentation.023')],
-  escape: ['ENCOUNTER RESOLVED', () => t('presentation.022')],
-  defeat: ['ENCOUNTER RESOLVED', () => t('presentation.021')],
-  kill: ['ENCOUNTER RESOLVED', () => t('presentation.020')],
-  ally: ['ENCOUNTER UPDATED', () => t('presentation.019')]
+  encounter: () => t('presentation.024'),
+  end: () => t('presentation.023'),
+  escape: () => t('presentation.022'),
+  defeat: () => t('presentation.021'),
+  kill: () => t('presentation.020'),
+  ally: () => t('presentation.019')
 };
-// Kicker and state label of a skill or encounter event.
-function eventLabels(event, entity, noun) {
+// The event chip of a skill or encounter card.
+function eventState(event, entity, domain) {
   const action = event.patch?.action || '',
     op = event.patch?.op || '';
-  if (event.kind === 'exam')
-    return noun === 'SKILL'
-      ? ['NEW SKILL ARCHIVED', t('presentation.017')]
-      : ['ENCOUNTER REGISTERED', entity.status === 'active' ? t('presentation.018') : t('presentation.017')];
-  const known = (noun === 'SKILL' ? SKILL_ACTIONS : ENCOUNTER_ACTIONS)[action];
-  if (known) return [known[0], known[1]()];
-  if (op === 'remove') return [`${noun} LOST`, noun === 'SKILL' ? t('presentation.039') : t('presentation.016')];
-  if (op === 'restore') return [`${noun} RESTORED`, t('presentation.015')];
-  return [noun === 'SKILL' ? 'SKILL RECORD UPDATED' : 'ENCOUNTER UPDATED', t('presentation.014')];
+  if (event.kind === 'exam') {
+    if (domain === 'skill') return t('presentation.017');
+    // A fight that began and ended in one response arrives as one registration
+    // already carrying its result.
+    if (encounterEnded(entity)) return encounterStatusLabel(entity.status);
+    return entity.active || themeText(entity.status) === 'active' ? t('presentation.018') : t('presentation.017');
+  }
+  const known = (domain === 'skill' ? SKILL_ACTIONS : ENCOUNTER_ACTIONS)[action];
+  if (known) return known();
+  if (op === 'remove') return domain === 'skill' ? t('presentation.039') : t('presentation.016');
+  if (op === 'restore') return t('presentation.015');
+  return t('presentation.014');
 }
 
-const motionClass = (motion) => (motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '');
 const knownNumber = (value) => (value != null && Number.isFinite(Number(value)) ? Number(value) : null);
+const motionClass = (motion) => (motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '');
+const NO_LAYERS = { hero: '', back: '', front: '', fresh: '' };
 
-// One view-model per domain; both render through the same inline template.
-function skillCardModel(event, entity, previous, motion) {
-  const appraisal = codexInlineAppraisalStyle(entity, 'skill');
-  const [kicker, state] = eventLabels(event, entity, 'SKILL');
-  const mastery = knownNumber(entity.mastery),
-    priorMastery = knownNumber(previous.mastery);
-  return {
-    classes: `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-skill itemx2-inline-skill-theme-${skillTheme(entity)} itemx2-inline-tier-${appraisal.tier} ${motionClass(motion)}`,
-    style: appraisal.style,
-    lead: codexInlineBody(entity.affinity),
-    icon: `<span>${Core.esc(skillEmoji(entity))}</span>`,
-    kicker,
-    state,
-    meta: [
-      entity.rank,
+function stat(label, value, from, meter) {
+  if (value == null || String(value).trim() === '') return '';
+  const changed = from != null && String(from) !== '' && String(from) !== String(value);
+  const bar =
+    meter == null ? '' : `<div class="ixp-meter"><i style="--v:${Math.max(0, Math.min(100, meter))}%"></i></div>`;
+  return `<div class="ixp-stat${changed ? ' ixp-up' : ''}"><dt>${Core.esc(label)}</dt><dd>${changed ? `<s>${Core.esc(from)}</s>` : ''}${Core.esc(value)}</dd>${bar}</div>`;
+}
+const stats = (rows) => {
+  const html = rows.join('');
+  return html ? `<dl class="ixp-stats">${html}</dl>` : '';
+};
+// Skill effects are "name" or "name::description" strings.
+function effectList(values) {
+  const rows = (Array.isArray(values) ? values : [])
+    .map((one) => String(one || '').trim())
+    .filter(Boolean)
+    .map((one) => {
+      const [name, ...rest] = one.split('::');
+      return `<li><b>${Core.esc(name.trim())}</b>${Core.esc(rest.join('::').trim())}</li>`;
+    });
+  return rows.length ? `<ul class="ixp-list">${rows.join('')}</ul>` : '';
+}
+const tag = (color, text) => `<span class="ixp-tag" style="--c:${color}">${Core.esc(text)}</span>`;
+const tags = (list) => (list.length ? `<div class="ixp-tags">${list.join('')}</div>` : '');
+
+function frame({ classes, vars, open, icon, rank, name, sub, chip, layers, body }) {
+  return `<details class="${classes.filter(Boolean).join(' ')}" style="${vars}"${open ? ' open' : ''}><summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon${icon.portrait ? ' ixp-portrait' : ''}">${icon.html}</div><div class="ixp-title"><span class="ixp-rank">${Core.esc(rank)}</span><span class="ixp-name">${Core.esc(name)}</span><span class="ixp-sub">${sub
+    .filter(Boolean)
+    .map((one) => `<span>${Core.esc(one)}</span>`)
+    .join('')}</span></div>${chip}</summary>${layers.back}<div class="ixp-body">${body}</div>${layers.front}</details>`;
+}
+
+// options: motion, open, state (event chip), previous, inline, full (drawer
+// extras), rarityMode.
+export function renderSkillCard(skill, options = {}) {
+  if (!skill) return '';
+  const motion = options.motion || 'full',
+    previous = options.previous || {},
+    tier = skillRankTier(skill.rank, options.rarityMode || 'world'),
+    affinity = Renderer.affinities[themeText(skill.affinity)] ? themeText(skill.affinity) : skillTheme(skill),
+    tone = Renderer.affinities[affinity]?.c || Renderer.affinities.arcane.c,
+    dim = ['sealed', 'lost'].includes(themeText(skill.status));
+  const mastery = knownNumber(skill.mastery),
+    priorMastery = knownNumber(previous.mastery),
+    level = knownNumber(skill.level),
+    priorLevel = knownNumber(previous.level);
+  const layers =
+    motion === 'off' || dim
+      ? NO_LAYERS
+      : Renderer.prismLayersFor({ id: skill.id, name: skill.name, affinity }, tier, motion);
+  const element =
+    Renderer.affinities[themeText(skill.affinity)] || (affinity !== 'arcane' && Renderer.affinities[affinity]);
+  const body = [
+    tags(
       [
-        entity.school || t('presentation.011'),
-        entity.type || 'active',
-        entity.status || 'learned',
-        entity.target ? t('presentation.027', entity.target) : ''
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    ]
-      .filter(Boolean)
-      .join(' · '),
-    quick: [
-      [
-        'LEVEL',
-        entity.level == null ? t('presentation.009') : `Lv.${entity.level}`,
-        previous.level == null || previous.level === entity.level ? null : `Lv.${previous.level}`
-      ],
-      [
+        element ? tag(element.c, `${element.icon} ${element.name}`) : '',
+        skill.target ? tag(tone, t('codex.target-of', skill.target)) : ''
+      ].filter(Boolean)
+    ),
+    stats([
+      stat(t('codex.level'), level == null ? null : `Lv.${level}`, priorLevel == null ? null : `Lv.${priorLevel}`),
+      stat(
         t('presentation.035'),
-        mastery == null ? t('presentation.009') : `${mastery}%`,
-        priorMastery == null ? null : `${priorMastery}%`
-      ],
-      [t('presentation.033'), entity.cost || t('presentation.009'), previous.cost || null],
-      [t('presentation.031'), entity.cooldown || t('presentation.009'), previous.cooldown || null]
+        mastery == null ? null : `${mastery}%`,
+        priorMastery == null ? null : `${priorMastery}%`,
+        mastery
+      ),
+      stat(t('presentation.033'), skill.cost, previous.cost),
+      stat(t('presentation.031'), skill.cooldown, previous.cooldown)
+    ]),
+    effectList(skill.effects),
+    skill.description ? `<p class="ixp-lore">${Core.esc(skill.description)}</p>` : '',
+    options.full && skill.growth ? `<p class="ixp-note"><b>${t('codex.growth')}</b>${Core.esc(skill.growth)}</p>` : '',
+    options.full ? `<p class="ixp-id">ID · ${Core.esc(skill.id)}</p>` : ''
+  ].join('');
+  return frame({
+    classes: [
+      'ixp',
+      'ixp-prism',
+      `ixp-r-${tier}`,
+      'ixp-codex',
+      'ixp-skill',
+      dim ? 'ixp-ended' : '',
+      motionClass(motion),
+      options.inline ? 'itemx-inline-card' : ''
     ],
-    footLabel: event.patch?.action === 'mastery' ? t('presentation.026') : t('presentation.025'),
-    foot:
-      (entity.effects || []).slice(0, 2).join(' · ') || entity.description || entity.growth || t('presentation.029'),
-    more: 'ITEMX &#8250;'
-  };
+    vars: `--p:${dim ? ENDED_TONE : tone};--s:${dim ? ENDED_TONE : tone}`,
+    open: options.open !== false,
+    icon: { html: `<span>${Core.esc(skillEmoji(skill))}</span>` },
+    rank: skill.rank || Renderer.rarityLabels[tier],
+    name: skill.name || skill.id,
+    sub: [skill.school, `${skillTypeLabel(skill.type)} · ${skillStatusLabel(skill.status)}`],
+    chip: options.state ? `<span class="ixp-ev">${Core.esc(options.state)}</span>` : '',
+    layers,
+    body
+  });
 }
 
-function encounterCardModel(event, entity, previous, motion, portrait) {
-  const appraisal = codexInlineAppraisalStyle(entity, 'monster');
-  const [kicker, state] = eventLabels(event, entity, 'ENCOUNTER');
-  const ended = /ended|escaped|defeated|dead/i.test(String(entity.status || ''));
-  const warning =
-    entity.active && ['hostile', 'sparring'].includes(String(entity.relation || ''))
-      ? '<span class="itemx2-inline-warning" aria-hidden="true"></span>'
-      : '';
-  const aliases = Array.isArray(entity.aliases) ? entity.aliases.slice(0, 2).join(' · ') : '';
-  return {
-    classes: `itemx2-inline-event itemx2-inline-appraisal itemx2-inline-encounter itemx2-inline-tier-${appraisal.tier} ${ended ? 'itemx2-inline-ended' : ''} ${motionClass(motion)}`,
-    style: appraisal.style,
-    lead: `${warning}${ended ? '<span class="itemx2-inline-seal">&#35352;&#37636;</span>' : '<span class="itemx2-inline-scan"></span>'}`,
-    icon: portrait
-      ? `<img src="${Core.esc(portrait)}" alt="" style="width:100%;height:100%;object-fit:cover">`
-      : `<span>${Core.esc(encounterEmoji(entity))}</span>`,
-    kicker,
-    state,
-    meta: [entity.kind, aliases || entity.description].filter(Boolean).join(' · ') || t('presentation.004'),
-    quick: [
-      [t('presentation.012'), entity.kind || t('presentation.011'), null],
-      [t('presentation.010'), entity.threat || t('presentation.009'), previous.threat || null],
-      [t('presentation.008'), entity.relation || 'unknown', previous.relation || null],
-      [t('presentation.007'), entity.status || 'unknown', previous.status || null]
-    ],
-    footLabel: ended ? t('presentation.006') : t('presentation.005'),
-    foot: entity.outcome || (entity.moves || []).slice(0, 3).join(' · ') || t('presentation.013'),
-    more: t('presentation.003.1')
-  };
+// The encounter's course: met, then fighting or its result. A card for a
+// fight that started and ended in one response shows both steps at once.
+function encounterTrack(monster) {
+  const count = Number(monster.encounterCount) || 1;
+  const met = `<span class="ixp-step on"><i></i><b>${t('ui-panel.061')}</b>${count > 1 ? `<small>${t('codex.encounter-nth', count)}</small>` : ''}</span>`;
+  const ended = encounterEnded(monster),
+    status = themeText(monster.status);
+  const result = ended
+    ? `<span class="ixp-step on end"><i></i><b>${Core.esc(encounterStatusLabel(status))}</b></span>`
+    : status === 'active' || monster.active
+      ? `<span class="ixp-step live"><i></i><b>${t('presentation.018')}</b></span>`
+      : `<span class="ixp-step"><i></i><b>${Core.esc(encounterStatusLabel(status))}</b></span>`;
+  return `<div class="ixp-track">${met}<span class="ixp-link"></span>${result}</div>`;
 }
 
-const inlineCardHtml = (card) =>
-  `<section class="${card.classes}" style="${card.style}">${card.lead}<div class="itemx2-inline-main"><span class="itemx2-inline-icon">${card.icon}</span><span class="itemx2-inline-copy"><small class="itemx2-inline-kicker">${card.kicker}</small><strong class="itemx2-inline-name">${Core.esc(card.name)}</strong><span class="itemx2-inline-meta">${Core.esc(card.meta)}</span><span class="itemx2-inline-quick">${card.quick.map(([label, value, from]) => codexInlineStat(label, value, from)).join('')}</span></span><i class="itemx2-inline-state">${card.state}</i></div><footer class="itemx2-inline-foot"><b>${card.footLabel}</b><span>${Core.esc(card.foot)}</span><em class="itemx2-inline-more">${card.more}</em></footer></section>`;
+// options: motion, open, state, previous, portrait, inline, full.
+export function renderEncounterCard(monster, options = {}) {
+  if (!monster) return '';
+  const ended = encounterEnded(monster),
+    relation = themeText(monster.relation),
+    motion = ended ? 'off' : options.motion || 'full',
+    tier = ['normal', 'rare', 'epic', 'legendary'][encounterThreatLevel(monster.threat)] || 'normal',
+    tone = ended ? ENDED_TONE : RELATION_TONE[relation] || RELATION_TONE.unknown,
+    live = !ended && (monster.active || themeText(monster.status) === 'active');
+  const layers =
+    motion === 'off'
+      ? NO_LAYERS
+      : Renderer.prismLayersFor(
+          { id: monster.id, name: monster.name, affinity: relation === 'hostile' ? 'blood' : '' },
+          tier,
+          motion
+        );
+  const aliases = Array.isArray(monster.aliases) ? monster.aliases.filter(Boolean) : [];
+  const list = (values) => (Array.isArray(values) ? values.filter(Boolean) : []);
+  const body = [
+    encounterTrack(monster),
+    monster.outcome
+      ? `<p class="ixp-note ixp-outcome"><b>${t('presentation.006')}</b>${Core.esc(monster.outcome)}</p>`
+      : '',
+    tags([
+      ...list(monster.weaknesses).map((one) => tag('#5ee3a1', t('codex.weak', one))),
+      ...list(monster.resistances).map((one) => tag('#9aa1b2', t('codex.resist', one)))
+    ]),
+    effectList(list(monster.moves).slice(0, options.full ? 12 : 3)),
+    monster.description ? `<p class="ixp-lore">${Core.esc(monster.description)}</p>` : '',
+    options.full && monster._lore ? `<p class="ixp-id">${t('ui-panel.098.1')}</p>` : '',
+    options.full ? `<p class="ixp-id">ID · ${Core.esc(monster.id)}</p>` : ''
+  ].join('');
+  const chip = options.state
+    ? `<span class="ixp-ev${ended ? ' ixp-ev-seal' : live ? ' ixp-ev-live' : ''}">${Core.esc(options.state)}</span>`
+    : '';
+  return frame({
+    classes: [
+      'ixp',
+      'ixp-prism',
+      `ixp-r-${ended ? 'normal' : tier}`,
+      'ixp-codex',
+      'ixp-encounter',
+      ended ? 'ixp-ended' : '',
+      motionClass(motion),
+      options.inline ? 'itemx-inline-card' : ''
+    ],
+    vars: `--p:${tone};--s:${tone}`,
+    open: options.open !== false,
+    icon: options.portrait
+      ? { portrait: true, html: `<img src="${Core.esc(options.portrait)}" alt="">` }
+      : { html: `<span>${Core.esc(encounterEmoji(monster))}</span>` },
+    rank: t('codex.threat', monster.threat || t('presentation.009')),
+    name: monster.name || monster.id,
+    sub: [
+      monster.kind,
+      relationLabel(relation),
+      options.full && aliases.length ? aliases.join(' · ') : aliases.slice(0, 1).join('')
+    ],
+    chip,
+    layers,
+    body
+  });
+}
 
-export function codexInlineEventHtml(payload, motion = 'full', portrait = '') {
+// options: motion, open, portrait.
+export function codexInlineEventHtml(payload, options = {}) {
   if (!codexInlineEventSignificant(payload)) return '';
   const event = payload.event,
     entity = payload.view || event.entity;
   if (!entity) return '';
-  const previous = payload.previous || {};
-  const card =
-    event.domain === 'skill'
-      ? skillCardModel(event, entity, previous, motion)
-      : encounterCardModel(event, entity, previous, motion, portrait);
-  return inlineCardHtml({ ...card, name: entity.name || entity.id });
+  const domain = event.domain;
+  const common = {
+    motion: options.motion || 'full',
+    open: options.open,
+    state: eventState(event, entity, domain),
+    previous: payload.previous || {},
+    inline: true
+  };
+  return domain === 'skill'
+    ? renderSkillCard(entity, common)
+    : renderEncounterCard(entity, { ...common, portrait: options.portrait || '' });
 }

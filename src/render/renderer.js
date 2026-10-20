@@ -517,6 +517,12 @@ function prismLayers(item, rank, motion) {
   };
 }
 
+// The prism effect layers for a card that is not an item (skills, encounters):
+// `seed` carries id/name/affinity, `rarity` one of the item grades.
+function prismLayersFor(seed, rarity, motion) {
+  return prismLayers(seed, Math.max(0, RANKS.indexOf(rarity)), motion);
+}
+
 function classicLayer(item, theme, rarity, motion) {
   if (motion === 'off') return '';
   const strong = ['legendary', 'mythical', 'empyrean'].includes(rarity);
@@ -640,6 +646,7 @@ export {
   reactions,
   particleBudget,
   renderCard,
+  prismLayersFor,
   renderTile,
   renderMarkerPayload,
   renderSkillFx,

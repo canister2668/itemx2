@@ -338,16 +338,11 @@
     "깨진 전송 격리 · ",
     "건"
   ],
-  "presentation.004": "전투 도감 기록",
-  "presentation.005": "최근",
   "presentation.006": "결과",
   "presentation.007": "상태",
   "presentation.008": "관계",
   "presentation.009": "미상",
   "presentation.010": "위협도",
-  "presentation.011": "미분류",
-  "presentation.012": "분류",
-  "presentation.013": "조우 정보가 전투 도감에 기록되었습니다.",
   "presentation.014": "큰 변화",
   "presentation.015": "복원",
   "presentation.016": "기록 소실",
@@ -359,13 +354,6 @@
   "presentation.022": "도주",
   "presentation.023": "종료",
   "presentation.024": "교전 개시",
-  "presentation.025": "효과",
-  "presentation.026": "개방",
-  "presentation.027": [
-    "대상 ",
-    ""
-  ],
-  "presentation.029": "스킬 정보가 ITEMX에 기록되었습니다.",
   "presentation.031": "재사용",
   "presentation.033": "소모",
   "presentation.035": "숙련도",
@@ -434,19 +422,6 @@
   "ui-panel.075": "보관됨",
   "ui-panel.077": "파손·소실",
   "ui-panel.079": "최근 기록",
-  "ui-panel.087": "📖 보관 기록",
-  "ui-panel.088": "🔥 현재 교전 기록",
-  "ui-panel.091": "🏷️ 별칭",
-  "ui-panel.093": "🎯 확인된 약점",
-  "ui-panel.095": "🛡️ 확인된 내성",
-  "ui-panel.097": "💥 관측 행동",
-  "ui-panel.100": "결말 기록",
-  "ui-panel.101": [
-    " · ",
-    "번째 조우"
-  ],
-  "ui-panel.104": "토벌",
-  "ui-panel.106": "교전 종료",
   "ui-panel.123": "숙련 미상",
   "ui-panel.124": [
     "숙련 ",
@@ -510,15 +485,9 @@
     "삭제 실패: ",
     ""
   ],
-  "presentation.003.1": "도감 &#8250;",
   "ui-panel.137.1": "화면과 모델 연결을 준비하고 있습니다.",
-  "ui-panel.109.1": "✨ 숙련도 ·",
-  "ui-panel.109.2": "💫 발현 효과",
-  "ui-panel.109.3": "📈 성장 기록",
   "ui-panel.107.1": "· 위협",
-  "ui-panel.099.1": "⚔️ 최근 전투 결과",
   "ui-panel.098.1": "📚 로어북 공개 정보로 보완된 기록",
-  "ui-panel.084.1": "회",
   "ui-panel.083.1": "‹ 스킬 목록",
   "ui-panel.082.1": "‹ 조우 목록",
   "ui-panel.058.1": "기록",
@@ -583,9 +552,7 @@
   "ui-settings.061.1": "대화 화면",
   "ui-settings.061.2": "현재",
   "ui-settings.061.3": "· 고르면 배지와 패널이 바로 옮겨집니다.",
-  "ui-panel.115.1": "📜 기술 해설",
   "ui-panel.108.1": "🎯 약점",
-  "ui-panel.089.1": "👁️ 관찰 기록",
   "ui-panel.065.1": "해당 기록이 없습니다.",
   "ui-settings.085.1": "메인 모델이 형식을 놓쳤을 때 대신 확인합니다. Risu 설정에서",
   "ui-settings.085.2": "기타 보조모델",
@@ -747,5 +714,39 @@
   "pipeline.anchor-changed": [
     "ITEMX 앵커 변경 감지: 이 응답의 카드 표식 ",
     "개가 저장 전에 사라졌습니다. 응답을 고쳐 쓰는 다른 플러그인이 있다면 그 카드는 기록되지 않을 수 있습니다."
+  ],
+  "codex.type-active": "액티브",
+  "codex.type-passive": "패시브",
+  "codex.type-sealed": "봉인형",
+  "codex.status-learned": "습득",
+  "codex.status-equipped": "장착 중",
+  "codex.status-sealed": "봉인됨",
+  "codex.status-lost": "상실",
+  "codex.rel-hostile": "적대",
+  "codex.rel-sparring": "대련",
+  "codex.rel-neutral": "중립",
+  "codex.rel-allied": "우호",
+  "codex.rel-unknown": "관계 미상",
+  "codex.level": "레벨",
+  "codex.growth": "성장",
+  "codex.encounter-nth": [
+    "",
+    "번째"
+  ],
+  "codex.weak": [
+    "약점 ",
+    ""
+  ],
+  "codex.resist": [
+    "내성 ",
+    ""
+  ],
+  "codex.threat": [
+    "위협 ",
+    ""
+  ],
+  "codex.target-of": [
+    "대상 ",
+    ""
   ]
 }

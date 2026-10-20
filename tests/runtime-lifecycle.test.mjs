@@ -48,7 +48,7 @@ test('watchdogs arm at their mode interval and nothing rearms after unload', asy
   // The mutation observer makes the remount watchdog a slow safety net.
   assert.deepEqual(
     [...life.intervals.values()].sort((a, b) => a - b),
-    [10000, 45000, 30 * 60 * 1000]
+    [10000, 45000]
   );
   await host.state.unload();
   assert.equal(life.intervals.size, 0);

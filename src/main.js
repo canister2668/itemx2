@@ -3,7 +3,7 @@
  * in the imported modules. */
 import { endOutputWindow, setOutputWindowSink } from './activity.js';
 import { context } from './chat-io.js';
-import { ITEMX_PLUGIN_VERSION, ITEMX_UPDATE_CHECK_MS } from './config.js';
+import { ITEMX_PLUGIN_VERSION } from './config.js';
 import { isUnloading, markUnloading, registeredUiParts, rememberUiPart } from './connection.js';
 import { clearListeners, on } from './events.js';
 import {
@@ -277,7 +277,6 @@ export async function start() {
       }
       armRemountWatchdog();
       armCatchUpWatchdog();
-      workQueue.schedule('updateTimer', () => void dispatch('update', checkForUpdate), ITEMX_UPDATE_CHECK_MS, true);
       if (initial)
         void dispatch('catch-up', catchUpLatestOutput).catch((error) => fail('initial output catch-up', error));
       installBrowserResumeHandlers();

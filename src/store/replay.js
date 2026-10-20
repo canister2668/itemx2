@@ -16,7 +16,7 @@
 import * as Codex from '../engine/codex.js';
 import * as Core from '../engine/core.js';
 import * as EntityHistory from '../engine/history.js';
-import { anchorKeys, messageKeys } from './anchors.js';
+import { messageKeys } from './anchors.js';
 
 export const ENTRY_LIMIT = 8;
 

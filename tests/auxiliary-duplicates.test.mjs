@@ -78,7 +78,7 @@ for (const domain of ['item', 'monster'])
       assert.equal(h.state()[domain === 'item' ? 'items' : 'monsters'].order.length, 1);
       assert.equal(h.text(), before, 'nothing new may be appended to the message');
       assert.equal(
-        ((await h.html()).match(domain === 'item' ? /<details\b/g : /<section class="itemx2-inline-event /g) || [])
+        ((await h.html()).match(domain === 'item' ? /<details\b/g : /<details class="ixp [^"]*ixp-codex/g) || [])
           .length,
         1
       );
@@ -179,7 +179,7 @@ test('display suppresses identical states across paragraphs, without altering re
     const code = first.content.match(/<!--(?:ITEMX2|CODEX2):([A-Za-z0-9_-]+)-->/)[1];
     const payload = p.core.decodePayload(code);
     const count = (html) =>
-      (html.match(domain === 'item' ? /<details\b/g : /<section class="itemx2-inline-event /g) || []).length;
+      (html.match(domain === 'item' ? /<details\b/g : /<details class="ixp [^"]*ixp-codex/g) || []).length;
     // Identical logical view in three anchors of one message.
     const source = `${pendingAnchor(payload)}\n첫 문단.\n${pendingAnchor(payload)}\n둘째 문단.\n${pendingAnchor(payload)}`;
     const html = await p.displayHandler(source);

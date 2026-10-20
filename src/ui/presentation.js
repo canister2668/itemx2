@@ -202,14 +202,14 @@ function renderItemCard(key, payload, motion, open) {
   return html;
 }
 
-// Skill and encounter cards are pure functions of their payload, motion and
-// portrait; the key carries all three in full, so a hit is always the same HTML.
-function renderCodexCard(key, payload, motion, portrait) {
-  const cacheKey = `c:${key}:${motion}:${portrait}:${JSON.stringify(payload)}`;
+// Skill and encounter cards are pure functions of their payload, motion, fold
+// and portrait; the key carries all of them in full, so a hit is always the same HTML.
+function renderCodexCard(key, payload, motion, open, portrait) {
+  const cacheKey = `c:${key}:${motion}:${open ? 1 : 0}:${portrait}:${JSON.stringify(payload)}`;
   const cached = markerHtmlCache.get(cacheKey);
   if (cached !== undefined) return cached;
   const html = decorateInlineEvent(
-    codexInlineEventHtml(payload, motion, portrait),
+    codexInlineEventHtml(payload, { motion, open, portrait }),
     payload,
     payload.event?.domain,
     key
@@ -260,6 +260,7 @@ export async function displayHandler(content) {
             row.key,
             payload,
             motion(row.key),
+            cardOpenLatest && isLatest(row.key),
             portraits[payload.view?.id || payload.event?.entity?.id] || ''
           );
     if (html) {

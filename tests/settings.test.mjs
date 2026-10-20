@@ -52,3 +52,22 @@ test('the badge position is a global preference with a closed set of values', as
   assert.equal(JSON.parse(fake.state.storage.get('itemx:settings')).global.badgePosition, 'lt');
   assert.equal(await Settings.loadBadgePosition(), 'lt');
 });
+
+test('the update check reads the published version once per page load', async () => {
+  const { checkForUpdate } = await import('../src/update-check.js');
+  const { updateState } = await import('../src/connection.js');
+  const { resetSession } = await import('../src/session.js');
+  let fetches = 0;
+  setHost({
+    nativeFetch: async () => {
+      fetches += 1;
+      return { ok: true, text: async () => '//@name itemx2\n//@version 99.0.0\n' };
+    }
+  });
+  resetSession('update-once');
+  await checkForUpdate();
+  await checkForUpdate();
+  assert.equal(fetches, 1);
+  assert.equal(updateState().latest, '99.0.0');
+  assert.equal(updateState().available, true);
+});

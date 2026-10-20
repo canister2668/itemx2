@@ -246,3 +246,24 @@ test('without our stylesheet in the host document a card falls back to a small c
   assert.doesNotMatch(html, /itemx-card/);
   assert.ok(html.length < 1500, `fallback is ${html.length} bytes`);
 });
+
+test('an encounter fought and ended in one response shows both the meeting and its result', async () => {
+  const fake = createFakeHost({ document: true });
+  setHost(fake.api);
+  await Style.installMainStyle();
+  Session.resetSession('one-turn-kill');
+  Presentation.applyVisualSettings({ effectsLevel: 'full', skin: 'dark' });
+  const parsed = p.codex.extractResponse(
+    '<monsterExam><id>goblin</id><name>고블린 척후병</name><type>인간형</type><threat>낮음</threat><relation>hostile</relation><status>dead</status><outcome>일격에 쓰러졌다.</outcome></monsterExam>'
+  );
+  const code = parsed.content.match(/<!--CODEX2:([A-Za-z0-9_-]+)-->/)[1];
+  const html = await p.displayHandler(pendingAnchor(p.codex.decodePayload(code)));
+  assert.match(html, /ixp-codex ixp-encounter[^"]*ixp-ended/);
+  assert.match(html, /class="ixp-ev ixp-ev-seal">사망/);
+  assert.match(
+    html,
+    /<span class="ixp-step on"><i><\/i><b>조우<\/b><\/span><span class="ixp-link"><\/span><span class="ixp-step on end"><i><\/i><b>사망<\/b>/
+  );
+  assert.match(html, /일격에 쓰러졌다\./);
+  assert.doesNotMatch(html, /\b(?:hostile|dead)\b/, 'enum values are shown as labels');
+});

@@ -24,15 +24,17 @@ import {
 import { createLru } from '../lru.js';
 import { loadCodexPortraits, resetPortraitContext } from '../portraits.js';
 import {
-  codexHeroFx,
   codexListFx,
   encounterEmoji,
   encounterFxClasses,
+  encounterStatusLabel,
+  relationLabel,
+  renderEncounterCard,
+  renderSkillCard,
   skillEmoji,
   skillFxClasses,
-  skillRankTier,
-  skillTheme,
-  themeText
+  skillStatusLabel,
+  skillTypeLabel
 } from '../render/codex-cards.js';
 import {
   activeContextKey,
@@ -742,28 +744,20 @@ export function skillSummaryHtml(skill, rarityMode = 'world') {
   const filled = knownMastery ? Math.max(0, Math.min(5, Math.ceil(Number(skill.mastery) / 20))) : 0;
   const levelLabel = skill.level == null ? t('ui-panel.125') : `Lv.${Number(skill.level)}`;
   const masteryLabel = knownMastery ? t('ui-panel.124', Number(skill.mastery)) : t('ui-panel.123');
-  return `${codexListFx('skill', skillFxClasses(skill, rarityMode))}<span class="itemx2-codex-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${Core.esc(skill.name)}</strong><small>${Core.esc(skill.rank)} · ${levelLabel} · ${masteryLabel}</small><span class="itemx2-codex-tags"><i>✨ ${Core.esc(skill.type)}</i><i>${Core.esc(skill.status)}</i>${skill.affinity ? `<i>${Core.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>${t('presentation.033')}</small><b>${Core.esc(skill.cost || t('ui-settings.150'))}</b><small>${t('presentation.031')}</small><b>${Core.esc(skill.cooldown || t('ui-settings.150'))}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
+  return `${codexListFx('skill', skillFxClasses(skill, rarityMode))}<span class="itemx2-codex-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx2-codex-copy"><strong>${Core.esc(skill.name)}</strong><small>${Core.esc(skill.rank)} · ${levelLabel} · ${masteryLabel}</small><span class="itemx2-codex-tags"><i>${Core.esc(skillTypeLabel(skill.type))}</i><i>${Core.esc(skillStatusLabel(skill.status))}</i>${skill.affinity && Renderer.affinities[skill.affinity] ? `<i>${Core.esc(Renderer.affinities[skill.affinity].name)}</i>` : skill.affinity ? `<i>${Core.esc(skill.affinity)}</i>` : ''}</span></span><span class="itemx2-skill-meta"><small>${t('presentation.033')}</small><b>${Core.esc(skill.cost || t('ui-settings.150'))}</b><small>${t('presentation.031')}</small><b>${Core.esc(skill.cooldown || t('ui-settings.150'))}</b></span><span class="itemx2-mastery">${Array.from({ length: 5 }, (_, index) => `<i class="${index < filled ? 'on' : ''}"></i>`).join('')}</span>`;
 }
 
+// Drawer pages use the chat card, opened, plus the change and review notes.
 export function skillPageHtml(skill, back, rarityMode = 'world') {
-  const knownMastery = skill.mastery != null && Number.isFinite(Number(skill.mastery));
-  const mastery = knownMastery ? Math.max(0, Math.min(10, Math.ceil(Number(skill.mastery) / 10))) : 0;
-  const levelLabel = skill.level == null ? t('presentation.009') : `Lv.${Number(skill.level)}`;
-  const masteryLabel = knownMastery ? `${Number(skill.mastery)}%` : t('presentation.009');
-  const effects =
-    (skill.effects || []).map((one) => `<i>${Core.esc(one)}</i>`).join('') || `<i>${t('ui-settings.059')}</i>`;
-  const affinity = skillTheme(skill),
-    tier = skillRankTier(skill.rank, rarityMode);
-  const fx = Renderer.renderSkillFx({ ...skill, affinity }, tier, effectsMotion());
-  const vars = Renderer.itemVars({ id: skill.id, name: skill.name, theme: 'arcane', rarity: tier, affinity });
-  return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-skill-hero craft-arcane ${skillFxClasses(skill, rarityMode)}" style="${vars}">${fx}<span class="itemx-codex-hero-glyph">${Core.esc(skillEmoji(skill))}</span><span class="itemx-codex-hero-copy"><small>✨ ARCANE SKILL RECORD</small><strong>${Core.esc(skill.name)}</strong><span>${Core.esc(skill.rank)} · ${Core.esc(skill.school || t('presentation.011'))} · ${Core.esc(skill.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>LEVEL</small><strong>${levelLabel}</strong></span><span class="itemx-codex-stat"><small>TYPE / TARGET</small><strong>${Core.esc(skill.type || t('presentation.011'))} · ${Core.esc(skill.target || t('presentation.009'))}</strong></span><span class="itemx-codex-stat"><small>COST</small><strong>${Core.esc(skill.cost || t('ui-settings.150'))}</strong></span><span class="itemx-codex-stat"><small>COOLDOWN</small><strong>${Core.esc(skill.cooldown || t('ui-settings.150'))}</strong></span></div><section class="itemx-codex-section"><h4>${t('ui-panel.109.1')} ${masteryLabel}</h4><span class="itemx-codex-mastery">${Array.from({ length: 10 }, (_, index) => `<i class="${index < mastery ? 'on' : ''}"></i>`).join('')}</span></section>${skill.description ? `<section class="itemx-codex-section"><h4>${t('ui-panel.115.1')}</h4><p>${Core.esc(skill.description)}</p></section>` : ''}<section class="itemx-codex-section"><h4>${t('ui-panel.109.2')}</h4><span class="itemx-codex-chip-row">${effects}</span></section><section class="itemx-codex-section"><h4>${t('ui-panel.109.3')}</h4><p>${Core.esc(skill.growth || t('ui-settings.059'))}</p><small>ID · ${Core.esc(skill.id)}</small></section>${detailAnnotations('skill', skill)}</div>`;
+  const card = renderSkillCard(skill, { motion: effectsMotion(), rarityMode, full: true });
+  return `<div class="itemx-codex-page itemx2-codex-page">${back}<div class="itemx2-detail-stack">${card}${detailAnnotations('skill', skill)}</div></div>`;
 }
 
 export function monsterSummaryHtml(monster, portrait = '') {
   const visual = portrait
     ? `<img src="${Core.esc(portrait)}" alt="">`
     : `<span class="itemx2-codex-glyph">${Core.esc(encounterEmoji(monster))}</span>`;
-  return `${codexListFx('encounter', encounterFxClasses(monster))}${visual}<span class="itemx2-codex-copy"><strong>${Core.esc(monster.name)}</strong><small>${Core.esc(monster.kind)} ${t('ui-panel.107.1')} ${Core.esc(monster.threat)} · ${Core.esc(monster.status)}</small><span class="itemx2-codex-tags"><i>⚔️ ${Core.esc(monster.relation)}</i>${(
+  return `${codexListFx('encounter', encounterFxClasses(monster))}${visual}<span class="itemx2-codex-copy"><strong>${Core.esc(monster.name)}</strong><small>${Core.esc(monster.kind)} ${t('ui-panel.107.1')} ${Core.esc(monster.threat)} · ${Core.esc(encounterStatusLabel(monster.status))}</small><span class="itemx2-codex-tags"><i>${Core.esc(relationLabel(monster.relation))}</i>${(
     monster.weaknesses || []
   )
     .slice(0, 2)
@@ -772,26 +766,8 @@ export function monsterSummaryHtml(monster, portrait = '') {
 }
 
 export function monsterPageHtml(monster, portrait, back) {
-  const visual = portrait
-    ? `<img class="itemx-monster-portrait" src="${Core.esc(portrait)}" alt="">`
-    : `<span class="itemx-codex-hero-glyph">${Core.esc(encounterEmoji(monster))}</span>`;
-  const chips = (label, values, fallback) =>
-    `<section class="itemx-codex-section"><h4>${label}</h4><span class="itemx-codex-chip-row">${(values || []).map((one) => `<i>${Core.esc(one)}</i>`).join('') || `<i>${fallback}</i>`}</span></section>`;
-  const outcomeLabels = {
-    ended: t('ui-panel.106'),
-    escaped: t('presentation.022'),
-    defeated: t('ui-panel.104'),
-    dead: t('presentation.020'),
-    unknown: t('ui-panel.100')
-  };
-  const outcomeStatus = themeText(monster.outcomeStatus || monster.status);
-  const outcome = monster.outcome
-    ? `<section class="itemx-codex-section itemx2-encounter-outcome"><span class="itemx2-encounter-outcome-head"><h4>${t('ui-panel.099.1')}</h4><i>${Core.esc(outcomeLabels[outcomeStatus] || t('ui-panel.100'))}${monster.outcomeEncounter ? t('ui-panel.101', Number(monster.outcomeEncounter)) : ''}</i></span><p>${Core.esc(monster.outcome)}</p></section>`
-    : '';
-  const lore = monster._lore
-    ? `<section class="itemx-codex-section"><small>${t('ui-panel.098.1')}</small></section>`
-    : '';
-  return `<div class="itemx-codex-page itemx2-codex-page">${back}<section class="itemx-codex-hero itemx-monster-hero ${encounterFxClasses(monster)}">${codexHeroFx('encounter')}<b class="itemx-threat-banner">⚠️ THREAT · ${Core.esc(monster.threat || t('presentation.009'))}</b>${visual}<span class="itemx-codex-hero-copy"><small>⚔️ ENCOUNTER ARCHIVE</small><strong>${Core.esc(monster.name)}</strong><span>${Core.esc(monster.kind || t('presentation.011'))} · ${Core.esc(monster.relation)} · ${Core.esc(monster.status)}</span></span></section><div class="itemx-codex-stat-grid"><span class="itemx-codex-stat"><small>ENCOUNTERS</small><strong>⚔️ ${Number(monster.encounterCount) || 1}${t('ui-panel.084.1')}</strong></span><span class="itemx-codex-stat"><small>COMBAT STATE</small><strong>${monster.active ? t('ui-panel.088') : t('ui-panel.087')}</strong></span></div>${outcome}${monster.description ? `<section class="itemx-codex-section"><h4>${t('ui-panel.089.1')}</h4><p>${Core.esc(monster.description)}</p></section>` : ''}${chips(t('ui-panel.091'), monster.aliases, t('ui-settings.150'))}${chips(t('ui-panel.093'), monster.weaknesses, t('presentation.009'))}${chips(t('ui-panel.095'), monster.resistances, t('presentation.009'))}${chips(t('ui-panel.097'), monster.moves, t('presentation.009'))}${lore}<section class="itemx-codex-section"><small>ID · ${Core.esc(monster.id)}</small></section>${detailAnnotations('monster', monster)}</div>`;
+  const card = renderEncounterCard(monster, { motion: effectsMotion(), portrait, full: true });
+  return `<div class="itemx-codex-page itemx2-codex-page">${back}<div class="itemx2-detail-stack">${card}${detailAnnotations('monster', monster)}</div></div>`;
 }
 
 export const unwrapCodexPage = (html) =>

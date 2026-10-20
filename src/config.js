@@ -11,10 +11,6 @@ export const ITEMX_VERSION_LABEL = beta ? `${beta[1]}.${beta[2]} · BETA ${beta[
 
 export const ITEMX_UPDATE_URL = 'https://raw.githubusercontent.com/canister2668/itemx2/main/dist/itemx2.plugin.js';
 
-export const ITEMX_UPDATE_CACHE_KEY = 'itemx2:update-check';
-
-export const ITEMX_UPDATE_CHECK_MS = 30 * 60 * 1000;
-
 export const ITEMX_AUX_SETTLE_MS = 1500;
 // Slow providers regularly pass 90 s; a timeout discards a reply the provider still bills.
 export const ITEMX_AUX_TIMEOUT_MS = 240000;
