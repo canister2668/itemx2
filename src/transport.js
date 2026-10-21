@@ -165,6 +165,8 @@ function anchorMarkers(text, { seed, doc, review = null, liveAnchor = null }) {
   const out = positioned.replace(TRANSPORT_MARKER_RE, (raw, prefix, code) => {
     const payload = (prefix === 'ITEMX2' ? Core : Codex).decodePayload(code);
     if (!payload?.event || payload.error) return '';
+    // A marker may stand in model text: it never carries reader authority.
+    payload.event = Core.modelEvent(payload.event);
     // The event, not its view: a later pass sees the committed state, so the
     // view and previous projections differ while the event is the same.
     const markerSeed = `${seed}|${ordinal++}|${Core.fnv1a(JSON.stringify(payload.event))}`;

@@ -1,6 +1,7 @@
 /* Parsed cards whose commit failed, kept in plugin storage until a later
  * commit lands them. Without this a failed write lost them on reload: the
  * message keeps only the anchors, and the parsed events lived in memory. */
+import * as Core from './engine/core.js';
 import { host } from './host.js';
 import { debugRecord } from './kernel.js';
 import { addPending, pendingRecord } from './session.js';
@@ -68,7 +69,7 @@ export async function restoreStoredPending(chatKey) {
   for (const [key, record] of Object.entries(rows)) {
     if (pendingRecord(key) || record?.chatKey !== chatKey || !record.event) continue;
     // Restored cards are old news: they render, but never animate as new.
-    addPending(key, { ...record, restored: true });
+    addPending(key, { ...record, event: Core.modelEvent(record.event), restored: true });
     keys.push(key);
   }
   if (keys.length) debugRecord('pending restored', { keys: keys.length });

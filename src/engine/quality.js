@@ -218,6 +218,8 @@ function acceptRepair(event, partialMap, registry) {
   const partial = partialMap.get(event.patch.id),
     keys = Object.keys(event.patch.fields || {});
   if (!partial || !keys.length || keys.some((key) => !partial.missing.includes(key))) return null;
+  // The engine would drop a locked field; accepting it would count a repair that never landed.
+  if (Core.openMissing(registry.items?.[event.patch.id], keys).length !== keys.length) return null;
   if (keys.some((key) => !repairFieldMatches(key, event.patch.fields[key], partial.evidence || {}))) return null;
   const scratch = Core.clone(registry);
   return Core.applyEvent(scratch, event) ? event : null;
@@ -236,7 +238,9 @@ function appraisalGaps(item) {
   // Only the player's own gear: an item merely seen (an NPC's weapon) is not worth an appraisal.
   if (!item || item.possession !== 'owned' || item.currency) return [];
   if (!(EQUIPMENT_TYPE.test(String(item.itemType || '')) || item.location === 'equipped' || item.slot)) return [];
-  const gaps = APPRAISAL_FIELDS.filter((key) => emptyField(item, key));
+  // A field the reader locked (even an empty one) is settled, not a gap.
+  const locked = Array.isArray(item.locked) ? item.locked : [];
+  const gaps = APPRAISAL_FIELDS.filter((key) => emptyField(item, key) && !locked.includes(key));
   // A plain item may rightly have no effect; it is thin only without any detail.
   if (item.rarity === 'normal' && gaps.length < APPRAISAL_FIELDS.length - 1) return [];
   return gaps.includes('effects') || (gaps.includes('required') && gaps.includes('durability')) ? gaps : [];
@@ -272,6 +276,7 @@ function acceptAppraisal(event, rows, registry) {
     fields = event.patch.fields || {},
     keys = Object.keys(fields);
   if (!row || !keys.length || keys.some((key) => !row.gaps.includes(key))) return null;
+  if (Core.openMissing(registry.items?.[event.patch.id], keys).length !== keys.length) return null;
   if (
     keys.some((key) => (key === 'effects' ? !Array.isArray(fields[key]) || !fields[key].length : !clean(fields[key])))
   )

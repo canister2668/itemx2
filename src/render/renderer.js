@@ -395,6 +395,12 @@ function eventKind(payload, domain = 'item') {
     : '';
 }
 
+// Choice labels of the reader's item editor.
+function editorLabels() {
+  const names = (table) => Object.fromEntries(Object.entries(table).map(([key, one]) => [key, one.name]));
+  return { affinity: names(affinities), theme: names(crafts), condition: { ...conditionLabels } };
+}
+
 // ── 2.6 card ──────────────────────────────────────────────────────────
 // One layout for chat and drawer; the effect layer is a pack: 'prism' (light,
 // grouped particles) or 'classic' (the 2.5 layer). Every class is ixp- prefixed.
@@ -655,5 +661,6 @@ export {
   changesHtml,
   reviewHtml,
   eventKind,
-  itemVars
+  itemVars,
+  editorLabels
 };

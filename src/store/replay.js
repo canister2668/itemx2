@@ -162,7 +162,8 @@ function findBase(doc, layout, start, upTo) {
 }
 
 function applyStep(state, step) {
-  const { event } = step;
+  // Only a manual row may carry reader authority (an edit or a lock).
+  const event = step.manual ? step.event : Core.modelEvent(step.event);
   const domain = step.domain === 'item' ? 'item' : event.domain;
   if (domain !== 'item' && !['skill', 'monster'].includes(domain)) return { view: null, previous: null, domain };
   const engine = domain === 'item' ? Core : Codex;

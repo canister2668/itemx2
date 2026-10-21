@@ -72,6 +72,7 @@ import {
   syncPowerUi
 } from './settings.js';
 import { SKIN_NAMES, ensureMainStyleAttached, fallbackDocumentHead, installMainStyle, mainDoc } from './style.js';
+import { isLocked, lockAllEvent, lockedNames, openItemEditor } from './item-editor.js';
 import { nativeElement, panelDocument } from './surface.js';
 import { uiState } from './view-state.js';
 import { checkForUpdate } from '../update-check.js';
@@ -148,7 +149,7 @@ export function detailAnnotations(domain, entity) {
   const changes = Renderer.changesHtml(record.previous, entity, domain);
   const review = Renderer.reviewHtml(record.review, entity);
   const repair =
-    domain === 'item' && record.review?.missing?.length
+    domain === 'item' && Core.openMissing(entity, record.review?.missing).length
       ? `<button class="itemx2-repair-one">${t('ui-panel.repair-one')}</button>`
       : '';
   return `${changes}${review}${repair}`;
@@ -199,9 +200,14 @@ export function entityDeleteHtml(domain, armed) {
     ? `<div class="itemx2-codex-delete"><span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-danger itemx2-entity-delete-yes" type="button">${t('ui-settings.confirm-yes-cleanup')}</button><button class="itemx2-root-setting-button itemx2-entity-delete-no" type="button">${t('ui-settings.confirm-no')}</button></span></span></div>`
     : `<div class="itemx2-codex-delete"><button class="itemx2-root-setting-button itemx2-entity-delete" type="button">${label}</button></div>`;
 }
+// The reader's editor sits beside the delete control; hand-edited fields are listed under it.
+export function itemEditHtml(item) {
+  const locked = lockedNames(item);
+  return `<div class="itemx2-codex-delete itemx2-item-edit-row">${locked ? `<small class="itemx2-item-locked">${Core.esc(t('ui-editor.locked', locked))}</small>` : ''}<button class="itemx2-root-setting-button itemx2-entity-lock${isLocked(item) ? ' itemx2-entity-lock-on' : ''}" type="button">${isLocked(item) ? t('ui-editor.item-unlock') : t('ui-editor.item-lock')}</button><button class="itemx2-root-setting-button itemx2-entity-edit" type="button">${t('ui-editor.open')}</button></div>`;
+}
 export function itemDetailBodyHtml(item) {
   // Inside the stack, under the card: as a sibling it became a second flex column.
-  const block = entityDeleteHtml('item', deleteArmed === `item:${item.id}`);
+  const block = itemEditHtml(item) + entityDeleteHtml('item', deleteArmed === `item:${item.id}`);
   return itemDetailHtml(item).replace(/<\/div>$/, () => `${block}</div>`);
 }
 export async function selectedCodexEntity(domain, loaded) {
@@ -274,6 +280,38 @@ export async function routeEntityDelete(event, loaded, domain) {
   if (!panelDocument()) return false;
   const target = await openDeleteTarget(loaded, domain);
   if (!target) return false;
+  if (domain === 'item' && (await hitInOpenDetail(event, target, 'itemx2-entity-edit'))) {
+    deleteArmed = '';
+    try {
+      await openItemEditor(loaded, target.entity);
+    } catch (error) {
+      await notifyUser(t('ui-editor.failed', error.message || error), 'error');
+    }
+    return true;
+  }
+  if (domain === 'item' && (await hitInOpenDetail(event, target, 'itemx2-entity-lock'))) {
+    deleteArmed = '';
+    const entity = target.entity,
+      locking = !isLocked(entity);
+    try {
+      await commitManualEvents(
+        loaded,
+        [lockAllEvent(entity, locking)],
+        locking ? t('ui-editor.lock-label') : t('ui-editor.unlock-label')
+      );
+      await showRootFeedback(
+        locking
+          ? t('ui-editor.locked-done', entity.name || entity.id)
+          : t('ui-editor.unlocked', entity.name || entity.id),
+        'success',
+        3200
+      );
+    } catch (error) {
+      await notifyUser(t('ui-editor.failed', error.message || error), 'error');
+    }
+    await openRootInventory({ open: true, tab: uiState.activeRootTab });
+    return true;
+  }
   const yes = await hitInOpenDetail(event, target, 'itemx2-entity-delete-yes');
   const no = !yes && (await hitInOpenDetail(event, target, 'itemx2-entity-delete-no'));
   const ask = !yes && !no && (await hitInOpenDetail(event, target, 'itemx2-entity-delete'));

@@ -834,6 +834,8 @@ export async function runItemModel(task, loaded, target = null, instruction = ''
     event.item.location = target.location;
     event.item.slot = target.slot || null;
     event.item.count = target.count;
+    // A reappraisal the reader asked for may rewrite fields they locked by hand.
+    event.reader = true;
   }
   return event;
 }
@@ -842,7 +844,7 @@ export async function repairOneItem(loaded, id) {
   if (!loaded?.itemsEnabled) throw new Error(t('aux.014'));
   if (!loaded || active) throw new Error(t('aux.013'));
   const record = presentationRecord('item', id);
-  const missing = record.review?.missing || [];
+  const missing = Core.openMissing(loaded.snapshot?.registry?.items?.[id], record.review?.missing);
   if (!missing.length) throw new Error(t('aux.012'));
 
   return (async () => {

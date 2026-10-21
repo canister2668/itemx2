@@ -9,13 +9,16 @@ const domains = ['item', 'skill', 'monster'];
 const fields = {
   // Derived from the item schema in core.js. A field added there is carried by
   // backups automatically instead of being silently dropped from every export.
-  item: Core.BACKUP_FIELDS.join(' '),
+  // `locked` is reader state (which fields were hand-edited), never a model transport field.
+  item: [...Core.BACKUP_FIELDS, 'locked'].join(' '),
   skill:
     'id name glyph rank school type status level mastery cost cooldown target affinity description effects growth _inferred _placeholder',
   monster:
     'id name glyph aliases kind threat relation status active portrait weaknesses resistances moves description encounterCount outcome outcomeStatus outcomeEncounter'
 };
-const arrays = new Set('effects augments aliases weaknesses resistances moves _inferred _placeholder'.split(' '));
+const arrays = new Set(
+  'effects augments locked aliases weaknesses resistances moves _inferred _placeholder'.split(' ')
+);
 const numbers = new Set('count level mastery encounterCount outcomeEncounter'.split(' '));
 const booleans = new Set(['pin', 'active', 'currency']);
 const nullable = new Set('level mastery slot affinity affinity2 condition'.split(' '));

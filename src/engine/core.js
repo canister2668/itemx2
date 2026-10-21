@@ -7,6 +7,56 @@ const RARITIES = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendar
 const THEMES = new Set(['arcane', 'forged', 'oriental', 'clockwork', 'synthetic', 'celestial', 'organic']);
 const AFFINITIES = new Set(['fire', 'ice', 'lightning', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void']);
 const CONDITIONS = new Set(['blessed', 'cursed', 'corrupted', 'glitched', 'sealed']);
+// Descriptive fields a reader may edit by hand. An edited field is listed in the
+// item's `locked`; model exams and patches keep their hands off it afterwards.
+const LOCKABLE = [
+  'name',
+  'itemType',
+  'emoji',
+  'rarity',
+  'displayRarity',
+  'power',
+  'required',
+  'durability',
+  'cost',
+  'trivia',
+  'theme',
+  'affinity',
+  'affinity2',
+  'condition',
+  'effects',
+  'augments'
+];
+// Puts the locked fields of `before` back after a model change, then settles what
+// normalization would have settled around them: a locked companion affinity wins over
+// a model's new primary one, and an unlocked emoji follows the kept type.
+function holdLocked(item, before, locked) {
+  for (const key of locked) item[key] = clone(before[key]);
+  if (item.affinity && item.affinity === item.affinity2) {
+    if (locked.includes('affinity2') && !locked.includes('affinity')) item.affinity = clone(before.affinity);
+    else item.affinity2 = null;
+  }
+  if (!locked.includes('emoji')) item.emoji = resolveItemEmoji(item);
+}
+// A model event as the engine may take it: `reader`, the lock list and the codex
+// `manual` purge belong to manual rows only, so they are stripped from anything a
+// transport, marker or store handed in.
+function modelEvent(event) {
+  if (!event || typeof event !== 'object') return event;
+  const out = { ...event };
+  delete out.reader;
+  delete out.manual;
+  if (out.patch && typeof out.patch === 'object') {
+    out.patch = { ...out.patch };
+    delete out.patch.lock;
+  }
+  if (out.item && typeof out.item === 'object') {
+    out.item = { ...out.item };
+    delete out.item.locked;
+  }
+  return out;
+}
+const lockList = (value) => (Array.isArray(value) ? LOCKABLE.filter((key) => value.includes(key)) : []);
 const POSSESSIONS = new Set(['observed', 'owned', 'removed']);
 const LOCATIONS = new Set(['inventory', 'equipped', 'storage', 'unknown']);
 const ACTIONS = new Set([
@@ -637,6 +687,12 @@ function normalizePatch(raw) {
   };
 }
 
+// Missing fields still open for an auxiliary repair: a field the reader locked is settled.
+function openMissing(item, missing) {
+  const locked = lockList(item?.locked);
+  return (missing || []).filter((key) => !locked.includes(key));
+}
+
 function newRegistry() {
   return { order: [], items: {}, diagnostics: [] };
 }
@@ -685,11 +741,12 @@ function slotConflict(reg, id, slot) {
     );
 }
 
-function applyExam(reg, source) {
+function applyExam(reg, source, reader = false) {
   const item = clone(source),
     prev = reg.items[item.id];
   const provided = new Set(item._provided || []);
   delete item._provided;
+  delete item.locked;
   if (prev) {
     // Omitted appraisal fields are not evidence that established details
     // became empty. Explicit patches remain the way to clear a field.
@@ -712,6 +769,12 @@ function applyExam(reg, source) {
     };
     for (const [property, provenance] of Object.entries(descriptive)) {
       if (!provided.has(provenance)) item[property] = clone(prev[property]);
+    }
+    // Fields the reader edited stay as written; a reader's own reappraisal may rewrite them.
+    const locked = lockList(prev.locked);
+    if (locked.length) {
+      item.locked = locked;
+      if (!reader) holdLocked(item, prev, locked);
     }
     // An exam describes/appraises an identity. Ownership transitions belong
     // to explicit patches so a reappraisal can never unequip, resurrect or
@@ -751,7 +814,15 @@ function applyFields(item, fields) {
   item.emoji = resolveItemEmoji(item);
 }
 
-function applyPatch(reg, patch) {
+// Drops the reader-locked fields from a model patch. Null when nothing is left to merge.
+function unlockedFields(item, fields) {
+  const locked = lockList(item.locked);
+  if (!locked.length) return fields;
+  const out = Object.fromEntries(Object.entries(fields || {}).filter(([key]) => !locked.includes(key)));
+  return Object.keys(out).length || !Object.keys(fields || {}).length ? out : null;
+}
+
+function applyPatch(reg, patch, reader = false) {
   if (
     !patch ||
     (patch.action && patch.op) ||
@@ -920,15 +991,28 @@ function applyPatch(reg, patch) {
     }
     return item;
   }
-  if (patch.op === 'merge') applyFields(item, patch.fields);
-  else if (patch.op === 'remove') {
+  const fields = reader ? patch.fields : unlockedFields(item, patch.fields);
+  if (fields === null || (fields && Object.keys(fields).length < Object.keys(patch.fields || {}).length))
+    diagnostic(reg, 'patch_locked_field', item.id);
+  const held = reader ? [] : lockList(item.locked);
+  const before = held.length ? clone(item) : null;
+  if (reader && Array.isArray(patch.lock)) {
+    const locked = lockList(patch.lock);
+    if (locked.length) item.locked = locked;
+    else delete item.locked;
+  }
+  if (patch.op === 'merge') {
+    if (fields) applyFields(item, fields);
+    if (before) holdLocked(item, before, held);
+  } else if (patch.op === 'remove') {
     item.possession = 'removed';
     item.location = 'unknown';
     item.slot = null;
     item.count = 0;
     item.removedReason = patch.reason;
   } else if (patch.op === 'restore') {
-    applyFields(item, patch.fields);
+    applyFields(item, fields || {});
+    if (before) holdLocked(item, before, held);
     if (!POSSESSIONS.has(item.possession) || item.possession === 'removed') item.possession = 'owned';
     if (!LOCATIONS.has(item.location) || item.location === 'unknown') item.location = 'inventory';
     if (item.location === 'equipped' && (!item.slot || slotConflict(reg, item.id, item.slot)))
@@ -942,7 +1026,9 @@ function applyPatch(reg, patch) {
 
 function applyEvent(reg, event) {
   if (!event || !event.kind) return null;
-  return event.kind === 'exam' ? applyExam(reg, event.item) : applyPatch(reg, event.patch);
+  // `reader` marks an edit or reappraisal the reader asked for; model transports never carry it.
+  const reader = event.reader === true;
+  return event.kind === 'exam' ? applyExam(reg, event.item, reader) : applyPatch(reg, event.patch, reader);
 }
 
 function collectTransports(text) {
@@ -1242,6 +1328,13 @@ export {
   VERSION,
   MARKER_RE,
   RARITY_LABELS,
+  LOCKABLE,
+  modelEvent,
+  openMissing,
+  RARITIES,
+  THEMES,
+  AFFINITIES,
+  CONDITIONS,
   esc,
   fnv1a,
   marker,

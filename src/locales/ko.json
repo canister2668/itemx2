@@ -748,5 +748,66 @@
   "codex.target-of": [
     "대상 ",
     ""
+  ],
+  "ui-editor.open": "✏️ 정보 수정",
+  "ui-editor.title": "아이템 정보 수정",
+  "ui-editor.close": "닫기",
+  "ui-editor.target": [
+    "",
+    " (id: ",
+    ")"
+  ],
+  "ui-editor.name": "이름",
+  "ui-editor.type": "분류",
+  "ui-editor.emoji": "이모지",
+  "ui-editor.rarity": "등급",
+  "ui-editor.display-rarity": "등급 표기",
+  "ui-editor.power": "위력",
+  "ui-editor.required": "요구 조건",
+  "ui-editor.durability": "내구도",
+  "ui-editor.cost": "가치",
+  "ui-editor.theme": "양식",
+  "ui-editor.affinity": "속성",
+  "ui-editor.affinity2": "보조 속성",
+  "ui-editor.condition": "상태",
+  "ui-editor.none": "없음",
+  "ui-editor.effects": "효과",
+  "ui-editor.augments": "강화·인챈트",
+  "ui-editor.list-hint": "한 줄에 하나씩 「이름 :: 설명」으로 적습니다. 설명은 빼도 됩니다.",
+  "ui-editor.trivia": "설명",
+  "ui-editor.lock-note": "🔒 잠긴 칸은 모델이 다시 감정하거나 고쳐 써도 바뀌지 않습니다. 칸을 고치면 자동으로 잠기고, 저장하기 전에 🔒를 눌러 풀 수 있습니다. 개수·장착·보유 상태는 잠금과 상관없이 이야기를 따라갑니다. 설정 탭 아이템 관리의 재감정은 잠긴 칸도 새로 씁니다.",
+  "ui-editor.locked": [
+    "🔒 잠긴 칸: ",
+    ""
+  ],
+  "ui-editor.save": "저장",
+  "ui-editor.saving": "저장하는 중입니다…",
+  "ui-editor.no-change": "바뀐 칸이 없습니다.",
+  "ui-editor.name-required": "이름은 비울 수 없습니다.",
+  "ui-editor.label": "직접 수정",
+  "ui-editor.unlock-label": "잠금 풀기",
+  "ui-editor.saved": [
+    "",
+    "의 정보를 고쳤습니다"
+  ],
+  "ui-editor.unlocked": [
+    "",
+    "의 잠금을 풀었습니다"
+  ],
+  "ui-editor.failed": [
+    "수정 실패: ",
+    ""
+  ],
+  "ui-editor.chat-changed": "채팅이 바뀌었습니다. 창을 닫고 다시 열어 주세요.",
+  "ui-editor.gone": "이 아이템이 원장에 없습니다. 창을 닫고 다시 열어 주세요.",
+  "ui-editor.lock-toggle": "이 칸 잠그기/풀기",
+  "ui-editor.lock-all": "🔒 전부 잠그기",
+  "ui-editor.unlock-all": "🔓 전부 풀기",
+  "ui-editor.item-lock": "🔒 잠그기",
+  "ui-editor.item-unlock": "🔓 잠금 풀기",
+  "ui-editor.lock-label": "잠금",
+  "ui-editor.locked-done": [
+    "",
+    "을(를) 잠갔습니다. 모델이 정보를 바꾸지 않습니다"
   ]
 }
