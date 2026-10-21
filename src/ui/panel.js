@@ -72,7 +72,7 @@ import {
   syncPowerUi
 } from './settings.js';
 import { SKIN_NAMES, ensureMainStyleAttached, fallbackDocumentHead, installMainStyle, mainDoc } from './style.js';
-import { isLocked, lockAllEvent, lockedNames, openItemEditor } from './item-editor.js';
+import { isLocked, lockAllEvent, lockedNames, openEntityEditor } from './item-editor.js';
 import { nativeElement, panelDocument } from './surface.js';
 import { uiState } from './view-state.js';
 import { checkForUpdate } from '../update-check.js';
@@ -200,14 +200,16 @@ export function entityDeleteHtml(domain, armed) {
     ? `<div class="itemx2-codex-delete"><span class="itemx2-confirm-row"><small>${question}</small><span class="itemx2-manager-actions"><button class="itemx2-root-setting-button itemx2-setting-danger itemx2-entity-delete-yes" type="button">${t('ui-settings.confirm-yes-cleanup')}</button><button class="itemx2-root-setting-button itemx2-entity-delete-no" type="button">${t('ui-settings.confirm-no')}</button></span></span></div>`
     : `<div class="itemx2-codex-delete"><button class="itemx2-root-setting-button itemx2-entity-delete" type="button">${label}</button></div>`;
 }
-// The reader's editor sits beside the delete control; hand-edited fields are listed under it.
-export function itemEditHtml(item) {
-  const locked = lockedNames(item);
-  return `<div class="itemx2-codex-delete itemx2-item-edit-row">${locked ? `<small class="itemx2-item-locked">${Core.esc(t('ui-editor.locked', locked))}</small>` : ''}<button class="itemx2-root-setting-button itemx2-entity-lock${isLocked(item) ? ' itemx2-entity-lock-on' : ''}" type="button">${isLocked(item) ? t('ui-editor.item-unlock') : t('ui-editor.item-lock')}</button><button class="itemx2-root-setting-button itemx2-entity-edit" type="button">${t('ui-editor.open')}</button></div>`;
+// The reader's editor and lock sit beside the delete control of items and skills; the locked
+// fields are listed beside them.
+export const EDITABLE_DOMAINS = new Set(['item', 'skill']);
+export function entityEditHtml(domain, entity) {
+  const locked = lockedNames(entity, domain);
+  return `<div class="itemx2-codex-delete itemx2-item-edit-row">${locked ? `<small class="itemx2-item-locked">${Core.esc(t('ui-editor.locked', locked))}</small>` : ''}<button class="itemx2-root-setting-button itemx2-entity-lock${isLocked(entity) ? ' itemx2-entity-lock-on' : ''}" type="button">${isLocked(entity) ? t('ui-editor.item-unlock') : t('ui-editor.item-lock')}</button><button class="itemx2-root-setting-button itemx2-entity-edit" type="button">${t('ui-editor.open')}</button></div>`;
 }
 export function itemDetailBodyHtml(item) {
   // Inside the stack, under the card: as a sibling it became a second flex column.
-  const block = itemEditHtml(item) + entityDeleteHtml('item', deleteArmed === `item:${item.id}`);
+  const block = entityEditHtml('item', item) + entityDeleteHtml('item', deleteArmed === `item:${item.id}`);
   return itemDetailHtml(item).replace(/<\/div>$/, () => `${block}</div>`);
 }
 export async function selectedCodexEntity(domain, loaded) {
@@ -280,23 +282,23 @@ export async function routeEntityDelete(event, loaded, domain) {
   if (!panelDocument()) return false;
   const target = await openDeleteTarget(loaded, domain);
   if (!target) return false;
-  if (domain === 'item' && (await hitInOpenDetail(event, target, 'itemx2-entity-edit'))) {
+  if (EDITABLE_DOMAINS.has(domain) && (await hitInOpenDetail(event, target, 'itemx2-entity-edit'))) {
     deleteArmed = '';
     try {
-      await openItemEditor(loaded, target.entity);
+      await openEntityEditor(loaded, target.entity, domain);
     } catch (error) {
       await notifyUser(t('ui-editor.failed', error.message || error), 'error');
     }
     return true;
   }
-  if (domain === 'item' && (await hitInOpenDetail(event, target, 'itemx2-entity-lock'))) {
+  if (EDITABLE_DOMAINS.has(domain) && (await hitInOpenDetail(event, target, 'itemx2-entity-lock'))) {
     deleteArmed = '';
     const entity = target.entity,
       locking = !isLocked(entity);
     try {
       await commitManualEvents(
         loaded,
-        [lockAllEvent(entity, locking)],
+        [lockAllEvent(entity, locking, domain)],
         locking ? t('ui-editor.lock-label') : t('ui-editor.unlock-label')
       );
       await showRootFeedback(
@@ -361,7 +363,7 @@ export async function hydrateCheckedCodexDetail(domain, loaded) {
     `itemx2-root-${domain}-detail-body-${index}`,
     `${codexDetailCacheKey(domain, entity, portrait, loaded.rarityMode)}:${deleting ? 'confirm' : ''}`,
     () =>
-      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}${entityDeleteHtml(domain, deleting)}`
+      `<span class="itemx2-codex-detail-index">${index}</span>${rootCodexDetailHtml(domain, entity, portrait, loaded.rarityMode)}${EDITABLE_DOMAINS.has(domain) ? entityEditHtml(domain, entity) : ''}${entityDeleteHtml(domain, deleting)}`
   );
 }
 

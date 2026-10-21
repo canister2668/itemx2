@@ -809,5 +809,22 @@
   "ui-editor.locked-done": [
     "",
     "을(를) 잠갔습니다. 모델이 정보를 바꾸지 않습니다"
-  ]
+  ],
+  "ui-editor.skill-title": "스킬 정보 수정",
+  "ui-editor.skill-rank": "등급",
+  "ui-editor.skill-school": "계통",
+  "ui-editor.skill-level": "레벨",
+  "ui-editor.skill-mastery": "숙련도",
+  "ui-editor.skill-cost": "소모",
+  "ui-editor.skill-cooldown": "재사용",
+  "ui-editor.skill-target": "대상",
+  "ui-editor.skill-type": "종류",
+  "ui-editor.skill-growth": "성장",
+  "ui-editor.lines-hint": "한 줄에 효과 하나씩 적습니다.",
+  "ui-editor.number-hint": [
+    "숫자 ",
+    "~",
+    ". 비우면 표시하지 않습니다."
+  ],
+  "ui-editor.skill-lock-note": "🔒 잠긴 칸은 모델이 다시 기록하거나 고쳐 써도 바뀌지 않습니다. 칸을 고치면 자동으로 잠기고, 저장하기 전에 🔒를 눌러 풀 수 있습니다. 습득·장착·봉인·소실 상태는 잠금과 상관없이 이야기를 따라갑니다. 레벨·숙련도를 잠그면 이야기 속 성장도 반영되지 않습니다."
 }

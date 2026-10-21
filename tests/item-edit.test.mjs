@@ -4,7 +4,15 @@ import { rt, setHost, Session, Ledger, Pipeline, Quality, Replay } from './helpe
 import { anchorKeys } from '../src/store/anchors.js';
 import { createFakeHost } from './helpers/fake-host.mjs';
 import { documentOf, itemExam, seedChat } from './helpers/ledger.mjs';
-import { editEvent, editedFields, isLocked, lockAllEvent, parseList, listText } from '../src/ui/item-editor.js';
+import {
+  editEvent,
+  editedFields,
+  isLocked,
+  lockAllEvent,
+  parseLines,
+  parseList,
+  listText
+} from '../src/ui/item-editor.js';
 
 const { core } = rt;
 const sword = (extra = {}) =>
@@ -292,4 +300,169 @@ test('locked empty fields are not appraisal gaps and a repair of them is refused
   const rows = new Map([['plain_ring', { item: reg.items.plain_ring, gaps: ['effects'] }]]);
   assert.equal(Quality.acceptAppraisal(fill, rows, reg), null);
   assert.deepEqual(core.openMissing(reg.items.plain_ring, ['effects', 'power']), ['power']);
+});
+
+const skillExam = (extra = {}) => ({
+  domain: 'skill',
+  kind: 'exam',
+  entity: {
+    id: 'fire_bolt',
+    name: '화염구',
+    glyph: '🔥',
+    rank: '중급',
+    school: '화염 마법',
+    type: 'active',
+    status: 'learned',
+    level: 3,
+    mastery: 40,
+    cost: '마나 10',
+    cooldown: '짧은 휴식',
+    target: '단일',
+    affinity: '화염',
+    description: '불덩이를 던진다.',
+    effects: ['화상 부여'],
+    growth: '',
+    ...extra,
+    // An exam only rewrites the fields it provides, as the transport parser marks them.
+    _provided: ['name', 'type', 'status', ...Object.keys(extra)]
+  }
+});
+const skillState = (...events) => {
+  const state = rt.codex.snapshot();
+  for (const event of events) assert.ok(rt.codex.applyEvent(state, event), JSON.stringify(event));
+  return state;
+};
+const skillOf = (state) => state.skills.entries.fire_bolt;
+
+test('a skill edit applies and locks; model exams and merges keep the locked fields', () => {
+  const state = skillState(
+    skillExam(),
+    editEvent({ id: 'fire_bolt' }, { effects: ['화상 부여', '폭발'], level: 7 }, ['effects', 'level'], 'skill')
+  );
+  assert.deepEqual(skillOf(state).effects, ['화상 부여', '폭발']);
+  assert.deepEqual(skillOf(state).locked, ['level', 'effects']);
+  rt.codex.applyEvent(state, skillExam({ effects: ['약화'], level: 2, description: '새 설명' }));
+  assert.deepEqual(skillOf(state).effects, ['화상 부여', '폭발']);
+  assert.equal(skillOf(state).level, 7);
+  assert.equal(skillOf(state).description, '새 설명');
+  rt.codex.applyEvent(state, {
+    domain: 'skill',
+    kind: 'patch',
+    patch: { id: 'fire_bolt', action: 'mastery', op: null, fields: { level: 9, mastery: 80 } }
+  });
+  assert.equal(skillOf(state).level, 7);
+  assert.equal(skillOf(state).mastery, 80);
+  assert.ok(state.skills.diagnostics.some((one) => one.code === 'patch_locked_field'));
+});
+
+test('skill status follows the story on a locked skill, and the one-tap lock round-trips', () => {
+  const state = skillState(skillExam(), lockAllEvent({ id: 'fire_bolt' }, true, 'skill'));
+  assert.deepEqual(skillOf(state).locked, rt.codex.SKILL_LOCKABLE);
+  rt.codex.applyEvent(state, {
+    domain: 'skill',
+    kind: 'patch',
+    patch: { id: 'fire_bolt', action: 'equip', op: null, fields: {} }
+  });
+  assert.equal(skillOf(state).status, 'equipped');
+  rt.codex.applyEvent(state, skillExam({ name: '대화염구' }));
+  assert.equal(skillOf(state).name, '화염구');
+  rt.codex.applyEvent(state, lockAllEvent({ id: 'fire_bolt' }, false, 'skill'));
+  assert.equal(isLocked(skillOf(state)), false);
+  rt.codex.applyEvent(state, skillExam({ name: '대화염구' }));
+  assert.equal(skillOf(state).name, '대화염구');
+});
+
+test('a smuggled skill marker cannot unlock, and skill editor helpers diff correctly', () => {
+  const state = skillState(skillExam(), lockAllEvent({ id: 'fire_bolt' }, true, 'skill'));
+  const forged = core.modelEvent({
+    domain: 'skill',
+    kind: 'patch',
+    reader: true,
+    patch: { id: 'fire_bolt', action: null, op: 'merge', fields: { name: '탈취' }, lock: [] }
+  });
+  rt.codex.applyEvent(state, forged);
+  assert.equal(skillOf(state).name, '화염구');
+  assert.ok(isLocked(skillOf(state)));
+  const skill = skillOf(skillState(skillExam()));
+  const form = Object.fromEntries(
+    [
+      'name',
+      'glyph',
+      'rank',
+      'school',
+      'level',
+      'mastery',
+      'cost',
+      'cooldown',
+      'target',
+      'affinity',
+      'type',
+      'effects',
+      'description',
+      'growth'
+    ].map((key) => [key, skill[key]])
+  );
+  assert.deepEqual(editedFields(skill, form, 'skill'), {});
+  assert.deepEqual(editedFields(skill, { ...form, level: null, effects: ['폭발'] }, 'skill'), {
+    level: null,
+    effects: ['폭발']
+  });
+  assert.deepEqual(parseLines('폭발\n\n 폭발 \n화상'), ['폭발', '화상']);
+});
+
+test('skill backups carry the lock list', () => {
+  const state = skillState(skillExam(), editEvent({ id: 'fire_bolt' }, { name: '불꽃' }, ['name'], 'skill'));
+  const value = rt.backup.capture({
+    character: { name: 'T' },
+    chat: { message: [], scriptstate: {} },
+    snapshot: { registry: core.newRegistry(), history: {} },
+    codexSnapshot: { skills: state.skills, monsters: state.monsters, history: { skill: {}, monster: {} } }
+  });
+  const row = value.records.skill.find((one) => one.entity.id === 'fire_bolt').entity;
+  assert.deepEqual(row.locked, ['name']);
+});
+
+test('a lock list smuggled in patch fields never unlocks, even for the next event', () => {
+  const rename = (name) => ({
+    domain: 'skill',
+    kind: 'patch',
+    patch: { id: 'fire_bolt', action: null, op: 'merge', fields: { name } }
+  });
+  const state = skillState(skillExam(), editEvent({ id: 'fire_bolt' }, { name: '불꽃' }, ['name'], 'skill'));
+  const smuggled = {
+    domain: 'skill',
+    kind: 'patch',
+    patch: { id: 'fire_bolt', action: null, op: 'merge', fields: { locked: [], description: '바뀐 설명' } }
+  };
+  rt.codex.applyEvent(state, smuggled);
+  rt.codex.applyEvent(state, rename('모델 이름'));
+  assert.equal(skillOf(state).name, '불꽃');
+  assert.deepEqual(skillOf(state).locked, ['name']);
+  assert.equal(core.modelEvent(smuggled).patch.fields.locked, undefined);
+
+  const reg = registryWith(sword(), edit({ name: '불꽃 검' }));
+  const merge = (fields) => ({ kind: 'patch', patch: { id: 'old_sword', action: null, op: 'merge', fields } });
+  core.applyEvent(reg, merge({ locked: [], trivia: '바뀜' }));
+  core.applyEvent(reg, merge({ name: '모델 이름' }));
+  assert.equal(reg.items.old_sword.name, '불꽃 검');
+  assert.deepEqual(reg.items.old_sword.locked, ['name']);
+});
+
+test('a refused level or mastery change keeps the estimate mark of the locked value', () => {
+  const state = skillState(skillExam(), lockAllEvent({ id: 'fire_bolt' }, true, 'skill'));
+  skillOf(state)._inferred = ['level', 'mastery'];
+  rt.codex.applyEvent(state, {
+    domain: 'skill',
+    kind: 'patch',
+    patch: { id: 'fire_bolt', action: 'mastery', op: null, fields: { level: 20, mastery: 99 } }
+  });
+  assert.equal(skillOf(state).level, 3);
+  assert.equal(skillOf(state).mastery, 40);
+  assert.deepEqual(skillOf(state)._inferred, ['level', 'mastery']);
+  rt.codex.applyEvent(state, skillExam({ level: 20, mastery: 99 }));
+  assert.equal(skillOf(state).level, 3);
+  assert.deepEqual([...skillOf(state)._inferred].sort(), ['level', 'mastery']);
+  // The reader's own number is not an estimate.
+  rt.codex.applyEvent(state, editEvent({ id: 'fire_bolt' }, { level: 5 }, rt.codex.SKILL_LOCKABLE, 'skill'));
+  assert.deepEqual(skillOf(state)._inferred, ['mastery']);
 });

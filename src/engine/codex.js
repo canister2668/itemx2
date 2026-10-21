@@ -11,6 +11,30 @@ const SKILL_ACTIONS = new Set(['learn', 'equip', 'unequip', 'mastery', 'seal', '
 const ITEMX_SKILL_RANKS = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
 const MONSTER_ACTIONS = new Set(['encounter', 'end', 'escape', 'defeat', 'kill', 'ally']);
 const OPS = new Set(['merge', 'remove', 'restore']);
+// Skill fields a reader may edit by hand. A locked field keeps the reader's value against
+// every later model event; the status (learned, equipped, sealed, lost) still follows the story.
+const SKILL_LOCKABLE = [
+  'name',
+  'glyph',
+  'rank',
+  'school',
+  'type',
+  'level',
+  'mastery',
+  'cost',
+  'cooldown',
+  'target',
+  'affinity',
+  'description',
+  'effects',
+  'growth'
+];
+const skillLocks = (value) => (Array.isArray(value) ? SKILL_LOCKABLE.filter((key) => value.includes(key)) : []);
+// Puts the locked skill fields of `before` back after a model event.
+function holdSkillLocks(entity, before, locked) {
+  for (const key of locked) entity[key] = clone(before[key]);
+  if (!locked.includes('glyph')) entity.glyph = Core.resolveSkillGlyph(entity);
+}
 // Diagnostics ride along in checkpoints and cloned state; keep the same cap as the item core.
 const pushDiagnostic = (reg, entry) => {
   reg.diagnostics.push(entry);
@@ -315,6 +339,8 @@ function put(reg, entity) {
 function applyEvent(state, event) {
   if (!event || !['skill', 'monster'].includes(event.domain)) return null;
   const reg = storeFor(state, event.domain);
+  // `reader` marks an edit the reader made; model transports never carry it.
+  const reader = event.reader === true;
   if (event.kind === 'exam') {
     if (!event.entity?.id || !ID_RE.test(event.entity.id)) {
       pushDiagnostic(reg, { code: 'exam_invalid' });
@@ -337,6 +363,7 @@ function applyEvent(state, event) {
       placeholders = new Set(next._placeholder || []);
     delete next._provided;
     delete next._placeholder;
+    delete next.locked;
     if (prior && event.domain === 'skill') {
       for (const key of placeholders) provided.delete(key);
       for (const key of [
@@ -358,6 +385,12 @@ function applyEvent(state, event) {
         if (!provided.has(key)) next[key] = clone(prior[key]);
       const inferred = new Set(next._inferred || []);
       for (const key of prior._inferred || []) if (!provided.has(key)) inferred.add(key);
+      // A locked level or mastery keeps the reader's value, and with it the old estimate mark.
+      if (!reader)
+        for (const key of skillLocks(prior.locked).filter((one) => one === 'level' || one === 'mastery')) {
+          if ((prior._inferred || []).includes(key)) inferred.add(key);
+          else inferred.delete(key);
+        }
       if (inferred.size) next._inferred = [...inferred];
       else delete next._inferred;
     }
@@ -365,6 +398,11 @@ function applyEvent(state, event) {
       next.cost = costValue(next.cost, next.type, next.status);
       next.cooldown = cooldownValue(next.cooldown, next.type, next.status);
       next.glyph = Core.resolveSkillGlyph(next);
+      const locked = skillLocks(prior?.locked);
+      if (locked.length) {
+        next.locked = locked;
+        if (!reader) holdSkillLocks(next, prior, locked);
+      }
     }
     if (prior && event.domain === 'monster') {
       for (const key of [
@@ -409,7 +447,12 @@ function applyEvent(state, event) {
     reg.order = reg.order.filter((id) => id !== entity.id);
     return removed;
   }
-  const { action = null, op = null, fields = {} } = event.patch || {};
+  const { action = null, op = null } = event.patch || {};
+  // The lock list is never a field: only a reader patch's `lock` sets it.
+  const fields = Object.fromEntries(Object.entries(event.patch?.fields || {}).filter(([key]) => key !== 'locked'));
+  const held = event.domain === 'skill' && !reader ? skillLocks(entity.locked) : [];
+  const before = held.length ? clone(entity) : null;
+  if (held.some((key) => key in (fields || {}))) pushDiagnostic(reg, { code: 'patch_locked_field', id: entity.id });
   const allowedActions = DOMAINS[event.domain]?.actions || new Set();
   if ((action && !allowedActions.has(action)) || (op && !OPS.has(op)) || (action && op) || (!action && !op)) {
     pushDiagnostic(reg, { code: 'patch_bad_operation', id: entity.id });
@@ -441,7 +484,10 @@ function applyEvent(state, event) {
   else if (action) Object.assign(entity, clone(fields));
   if (event.domain === 'skill') {
     if (entity._inferred && fields && ('level' in fields || 'mastery' in fields)) {
-      const explicitProgress = new Set(Object.keys(fields).filter((key) => key === 'level' || key === 'mastery'));
+      // A locked value keeps its estimate mark: the model's number was refused.
+      const explicitProgress = new Set(
+        Object.keys(fields).filter((key) => (key === 'level' || key === 'mastery') && !held.includes(key))
+      );
       entity._inferred = entity._inferred.filter((key) => !explicitProgress.has(key));
     }
     if (action === 'equip') entity.status = 'equipped';
@@ -458,6 +504,12 @@ function applyEvent(state, event) {
     entity.cost = costValue(entity.cost, entity.type, entity.status);
     entity.cooldown = cooldownValue(entity.cooldown, entity.type, entity.status);
     entity.glyph = Core.resolveSkillGlyph(entity);
+    if (before) holdSkillLocks(entity, before, held);
+    if (reader && Array.isArray(event.patch.lock)) {
+      const locked = skillLocks(event.patch.lock);
+      if (locked.length) entity.locked = locked;
+      else delete entity.locked;
+    }
   } else {
     if (action === 'encounter') {
       entity.status = 'active';
@@ -1137,6 +1189,8 @@ export {
   clone,
   marker,
   decodePayload,
+  SKILL_LOCKABLE,
+  SKILL_TYPES,
   registry,
   snapshot,
   applyEvent,

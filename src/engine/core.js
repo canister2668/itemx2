@@ -49,11 +49,16 @@ function modelEvent(event) {
   if (out.patch && typeof out.patch === 'object') {
     out.patch = { ...out.patch };
     delete out.patch.lock;
+    if (out.patch.fields && typeof out.patch.fields === 'object') {
+      out.patch.fields = { ...out.patch.fields };
+      delete out.patch.fields.locked;
+    }
   }
-  if (out.item && typeof out.item === 'object') {
-    out.item = { ...out.item };
-    delete out.item.locked;
-  }
+  for (const key of ['item', 'entity'])
+    if (out[key] && typeof out[key] === 'object') {
+      out[key] = { ...out[key] };
+      delete out[key].locked;
+    }
   return out;
 }
 const lockList = (value) => (Array.isArray(value) ? LOCKABLE.filter((key) => value.includes(key)) : []);
@@ -991,8 +996,10 @@ function applyPatch(reg, patch, reader = false) {
     }
     return item;
   }
-  const fields = reader ? patch.fields : unlockedFields(item, patch.fields);
-  if (fields === null || (fields && Object.keys(fields).length < Object.keys(patch.fields || {}).length))
+  // The lock list is never a field: only a reader patch's `lock` sets it.
+  const given = Object.fromEntries(Object.entries(patch.fields || {}).filter(([key]) => key !== 'locked'));
+  const fields = reader ? given : unlockedFields(item, given);
+  if (fields === null || (fields && Object.keys(fields).length < Object.keys(given).length))
     diagnostic(reg, 'patch_locked_field', item.id);
   const held = reader ? [] : lockList(item.locked);
   const before = held.length ? clone(item) : null;

@@ -12,7 +12,7 @@ const fields = {
   // `locked` is reader state (which fields were hand-edited), never a model transport field.
   item: [...Core.BACKUP_FIELDS, 'locked'].join(' '),
   skill:
-    'id name glyph rank school type status level mastery cost cooldown target affinity description effects growth _inferred _placeholder',
+    'id name glyph rank school type status level mastery cost cooldown target affinity description effects growth _inferred _placeholder locked',
   monster:
     'id name glyph aliases kind threat relation status active portrait weaknesses resistances moves description encounterCount outcome outcomeStatus outcomeEncounter'
 };
