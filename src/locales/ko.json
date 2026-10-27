@@ -733,14 +733,10 @@
     "",
     "번째"
   ],
-  "codex.weak": [
-    "약점 ",
-    ""
-  ],
-  "codex.resist": [
-    "내성 ",
-    ""
-  ],
+  "codex.weak": "약점",
+  "codex.resist": "내성",
+  "codex.effects": "효과",
+  "codex.moves": "기술",
   "codex.threat": [
     "위협 ",
     ""

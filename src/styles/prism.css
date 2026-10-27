@@ -158,6 +158,15 @@
   font-weight: 900;
   text-align: center;
 }
+.ixp-x.ixp-lv {
+  background: color-mix(in srgb, var(--p) 80%, #fff);
+  white-space: nowrap;
+}
+.ixp-x.ixp-lv.ixp-up {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 10px color-mix(in srgb, var(--p) 70%, transparent);
+}
 .ixp-title {
   min-width: 0;
 }
@@ -345,40 +354,116 @@
   );
   color: #fff;
 }
-.ixp-stats {
+/* 수치 행(B): 아이콘 + 작은 이름 + 값. 긴 값은 한 줄 전체(.ixp-wide).
+ * 호스트 본문 스타일(prose의 dd 들여쓰기·li 여백·p 여백)이 못 들어오게 .ixp 접두로 여백을 고정한다 */
+.ixp .ixp-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 8px;
-  margin: 14px 0 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
 }
-.ixp-stat {
-  padding: 10px 12px 11px;
+.ixp .ixp-stat {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  margin: 0;
+  padding: 9px 12px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.035);
   box-shadow: inset 0 0 0 1px var(--hair);
 }
-.ixp-stat dt {
+.ixp .ixp-stat.ixp-wide {
+  grid-column: 1 / -1;
+}
+.ixp-stat > i {
+  font-style: normal;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.ixp-stat > span {
+  min-width: 0;
+}
+.ixp-stat small {
+  display: block;
+  color: var(--mute);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.ixp-stat b {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.ixp-stat.ixp-wide b {
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+.ixp-stat b s {
+  margin-right: 5px;
+  color: var(--mute);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.ixp-stat b s::after {
+  content: ' →';
+}
+.ixp-stat.ixp-up {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a) 45%, transparent);
+}
+.ixp-stat.ixp-up b {
+  color: color-mix(in srgb, var(--a) 55%, var(--fg));
+}
+/* 이름 밑 게이지: 아이템 내구도, 스킬 숙련도 */
+.ixp-gauge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+  max-width: 260px;
+  margin-top: 7px;
+  color: var(--mute);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.ixp-gauge b {
+  color: var(--fg);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.ixp-gauge b small {
   color: var(--mute);
   font-size: 0.66rem;
   font-weight: 600;
 }
-.ixp-stat dd {
-  margin: 3px 0 0;
-  font-size: 1.02rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.ixp-stat dd small {
+.ixp-gauge b s {
+  margin-right: 4px;
   color: var(--mute);
-  font-size: 0.72rem;
   font-weight: 600;
+  text-decoration: none;
+}
+.ixp-gauge b s::after {
+  content: ' →';
 }
 .ixp-meter {
+  grid-column: 1 / -1;
+  display: block;
   height: 4px;
-  margin-top: 8px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 .ixp-meter i {
@@ -388,41 +473,51 @@
   border-radius: inherit;
   background: linear-gradient(90deg, var(--p), color-mix(in srgb, var(--a) 60%, #fff));
 }
-.ixp-meter.low i {
+.ixp-gauge.low .ixp-meter i {
   background: linear-gradient(90deg, #ff4d5e, #ff9a62);
 }
-.ixp-list {
-  display: grid;
-  gap: 2px;
+/* 목록 제목 + 번호 목록(효과·기술) */
+.ixp .ixp-sec {
   margin: 14px 0 0;
+  color: var(--mute);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+.ixp .ixp-list {
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
+  counter-reset: ixp-fx;
 }
-.ixp-list li {
+.ixp .ixp-list li {
   position: relative;
-  padding: 8px 0 8px 14px;
-  font-size: 0.8rem;
-  line-height: 1.55;
-  color: #c3c7d1;
+  margin: 0;
+  padding: 4px 0 4px 26px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #a9afbd;
 }
 .ixp-list li::before {
-  content: '';
+  counter-increment: ixp-fx;
+  content: counter(ixp-fx, decimal-leading-zero);
   position: absolute;
   left: 0;
-  top: 11px;
-  bottom: 11px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--p);
+  top: 6px;
+  color: var(--p);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 .ixp-list li.aug::before {
-  background: var(--s);
-  opacity: 0.7;
+  color: var(--s);
 }
 .ixp-list b {
   display: block;
   color: var(--fg);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 800;
 }
 .ixp-list li.aug b::after {
@@ -475,8 +570,10 @@
   content: '▼ ';
   font-size: 0.7em;
 }
-.ixp-lore {
-  margin: 14px 0 0;
+.ixp .ixp-lore {
+  margin: 12px 0 0;
+  padding: 11px 0 0;
+  border-top: 1px solid var(--hair);
   color: #868c9b;
   font-size: 0.76rem;
   line-height: 1.65;
@@ -509,7 +606,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ixp:not([open]) .ixp-sub {
+.ixp:not([open]) .ixp-sub,
+.ixp:not([open]) .ixp-gauge,
+.ixp:not([open]) .ixp-track {
   display: none;
 }
 .ixp:not([open]) .ixp-more {
@@ -623,7 +722,7 @@
   color: #e29bff;
 }
 .ixp-c-corrupted .ixp-list li::before {
-  background: linear-gradient(#c04cff, #5a1c78);
+  color: #c04cff;
 }
 .ixp-c-cursed .ixp-hero::after {
   background: radial-gradient(closest-side, rgba(200, 20, 50, 0.6), transparent);
@@ -695,7 +794,7 @@
 .ixp-t-synthetic .ixp-icon {
   border-radius: 8px;
 }
-.ixp-t-synthetic .ixp-stat dd {
+.ixp-t-synthetic .ixp-stat b {
   font-family: ui-monospace, 'JetBrains Mono', monospace;
   letter-spacing: -0.04em;
 }
@@ -750,9 +849,6 @@
   }
   .ixp-body {
     padding: 0 16px 16px;
-  }
-  .ixp-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1139,16 +1235,16 @@
 }
 
 /* 고등급 본문: 문양 위에서도 읽히게 수치 칸을 어둡게 */
-.ixp-r-epic .ixp-stat,
-.ixp-r-legendary .ixp-stat,
-.ixp-r-mythical .ixp-stat,
-.ixp-r-empyrean .ixp-stat {
+.ixp.ixp-r-epic .ixp-stat,
+.ixp.ixp-r-legendary .ixp-stat,
+.ixp.ixp-r-mythical .ixp-stat,
+.ixp.ixp-r-empyrean .ixp-stat {
   background: rgba(8, 8, 12, 0.55);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a) 22%, transparent);
 }
-.ixp-r-legendary .ixp-stat dd,
-.ixp-r-mythical .ixp-stat dd,
-.ixp-r-empyrean .ixp-stat dd {
+.ixp-r-legendary .ixp-stat b,
+.ixp-r-mythical .ixp-stat b,
+.ixp-r-empyrean .ixp-stat b {
   text-shadow: 0 0 12px color-mix(in srgb, var(--a) 45%, transparent);
 }
 
@@ -1460,7 +1556,7 @@
 .ixp-cfx > .itemx-cond {
   z-index: 0;
 }
-.ixp-classic .ixp-stat {
+.ixp.ixp-classic .ixp-stat {
   background: rgba(8, 8, 12, 0.5);
 }
 .ixp:not([open]) .ixp-cfx {
@@ -1568,26 +1664,6 @@
   height: 100%;
   object-fit: cover;
 }
-.ixp-codex .ixp-stat dd {
-  font-size: 0.92rem;
-  overflow-wrap: anywhere;
-}
-.ixp-codex .ixp-stat dd s {
-  margin-right: 5px;
-  color: var(--mute);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-.ixp-codex .ixp-stat dd s::after {
-  content: ' →';
-}
-.ixp-codex .ixp-stat.ixp-up {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a) 45%, transparent);
-}
-.ixp-codex .ixp-stat.ixp-up dd {
-  color: color-mix(in srgb, var(--a) 55%, var(--fg));
-}
 .ixp-codex .ixp-body > :first-child {
   margin-top: 0;
 }
@@ -1597,7 +1673,7 @@
 .ixp-codex .ixp-list b:only-child {
   font-weight: 700;
 }
-.ixp-note {
+.ixp .ixp-note {
   margin: 12px 0 0;
   padding: 10px 12px;
   border-left: 3px solid var(--p);
@@ -1614,27 +1690,25 @@
   font-size: 0.66rem;
   font-weight: 700;
 }
-.ixp-id {
+.ixp .ixp-id {
   margin: 12px 0 0;
   color: var(--mute);
   font-size: 0.66rem;
 }
-/* 조우 경과: 조우 ── 결과 */
+/* 조우 경과: 이름 밑 한 줄, 조우 ── 결과 */
 .ixp-track {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.035);
-  box-shadow: inset 0 0 0 1px var(--hair);
+  gap: 8px;
+  max-width: 280px;
+  margin-top: 8px;
 }
 .ixp-step {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   color: var(--mute);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
 }

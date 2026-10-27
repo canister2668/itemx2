@@ -548,24 +548,50 @@ function classicLayer(item, theme, rarity, motion) {
   return `<div class="${classes}" style="${itemVars(item)}"><div class="itemx-fx">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(item.affinity, 'primary', rarity, motion)}${affinityEffects(item.affinity2, 'secondary', rarity, motion)}</div></div><div class="itemx-cond"></div>${strong ? '<div class="itemx-edge" aria-hidden="true"></div>' : ''}</div>`;
 }
 
+// B layout value rows: icon, small label, value. Values longer than a short
+// token take the whole row so prose never folds into a narrow cell. All markup
+// is div/span so the host's prose styles for dl/dd/p cannot indent or pad it.
+const WIDE_STAT = 6;
+function statRow(icon, label, value, options = {}) {
+  if (value == null || String(value).trim() === '') return '';
+  const text = String(value).trim(),
+    from = options.from == null ? '' : String(options.from).trim();
+  const changed = from !== '' && from !== text;
+  const wide = options.wide || [...text].length + (changed ? [...from].length + 2 : 0) > WIDE_STAT;
+  return `<div class="ixp-stat${wide ? ' ixp-wide' : ''}${changed ? ' ixp-up' : ''}"><i>${icon}</i><span><small>${esc(label)}</small><b>${changed ? `<s>${esc(from)}</s>` : ''}${esc(text)}</b></span></div>`;
+}
+function statRows(rows) {
+  const html = rows.join('');
+  return html ? `<div class="ixp-stats">${html}</div>` : '';
+}
+// The gauge under the name: durability for items, mastery for skills.
+function heroGauge(label, value, percent, options = {}) {
+  const pct = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+  const from = options.from == null ? '' : String(options.from);
+  return `<span class="ixp-gauge${options.low ? ' low' : ''}"><span class="ixp-gl">${esc(label)}</span><b>${from && from !== String(value) ? `<s>${esc(from)}</s>` : ''}${esc(value)}${options.max == null ? '' : ` <small>/ ${esc(options.max)}</small>`}</b><span class="ixp-meter"><i style="--v:${pct}%"></i></span></span>`;
+}
+
+// "42/100" durability becomes the gauge; any other wording stays a row.
+function durabilityGauge(value) {
+  const gauge = String(value || '').match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+  return gauge && Number(gauge[2]) > 0 ? gauge : null;
+}
+
+function prismGauge(item) {
+  const gauge = durabilityGauge(item.durability);
+  if (!gauge) return '';
+  const pct = (Number(gauge[1]) / Number(gauge[2])) * 100;
+  return heroGauge(t('render.073'), gauge[1], pct, { max: gauge[2], low: pct < 35 });
+}
+
 function prismStats(item) {
-  const rows = [
-    [t('render.050'), item.power],
-    [t('render.072'), item.required],
-    [t('render.073'), item.durability],
-    [t('render.061'), item.cost]
-  ].filter(([, value]) => value);
-  if (!rows.length) return '';
-  return `<dl class="ixp-stats">${rows
-    .map(([label, value]) => {
-      const gauge = label === t('render.073') && String(value).match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
-      if (gauge && Number(gauge[2]) > 0) {
-        const pct = Math.max(0, Math.min(100, Math.round((Number(gauge[1]) / Number(gauge[2])) * 100)));
-        return `<div class="ixp-stat"><dt>${label}</dt><dd>${esc(gauge[1])} <small>/ ${esc(gauge[2])}</small></dd><div class="ixp-meter${pct < 35 ? ' low' : ''}"><i style="--v:${pct}%"></i></div></div>`;
-      }
-      return `<div class="ixp-stat"><dt>${label}</dt><dd>${esc(value)}</dd></div>`;
-    })
-    .join('')}</dl>`;
+  const gauge = durabilityGauge(item.durability);
+  return statRows([
+    statRow('💥', t('render.050'), item.power),
+    statRow('📏', t('render.072'), item.required),
+    gauge ? '' : statRow('🛡️', t('render.073'), item.durability),
+    statRow('💰', t('render.061'), item.cost)
+  ]);
 }
 
 function prismTags(item) {
@@ -587,7 +613,7 @@ function prismList(item) {
       (one) => `<li class="aug"><b>${esc(one.name)}<small>${t('render.055')}</small></b>${esc(one.desc)}</li>`
     )
   ];
-  return rows.length ? `<ul class="ixp-list" aria-label="${t('render.054')}">${rows.join('')}</ul>` : '';
+  return rows.length ? `<div class="ixp-sec">${t('render.054')}</div><ul class="ixp-list">${rows.join('')}</ul>` : '';
 }
 
 // options: motion 'full'|'lite'|'off', fx 'prism'|'classic', fold (inline: start
@@ -626,7 +652,7 @@ function renderCard(item, options = {}) {
         ? `<b class="ixp-x">×${Number(item.count)}</b>`
         : '';
   // The acquisition burst lives in the summary so a folded card still plays it.
-  const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(possession)} · ${esc(location)}</span>${state}</span></div><span class="ixp-more">${t('render.expand')}</span></summary>`;
+  const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(possession)} · ${esc(location)}</span>${state}</span>${prismGauge(item)}</div><span class="ixp-more">${t('render.expand')}</span></summary>`;
   const body = `<div class="ixp-body">${prismTags(item)}${prismStats(item)}${prismList(item)}${options.previous ? changesHtml(options.previous, item) : ''}${item.trivia ? `<p class="ixp-lore">${esc(item.trivia)}</p>` : ''}</div>`;
   return `<details class="${classes}" style="${vars}" data-itemx-id="${esc(item.id)}"${options.fold ? '' : ' open'}>${hero}${layers.back}${body}${layers.front}</details>`;
 }
@@ -653,6 +679,9 @@ export {
   particleBudget,
   renderCard,
   prismLayersFor,
+  statRow,
+  statRows,
+  heroGauge,
   renderTile,
   renderMarkerPayload,
   renderSkillFx,

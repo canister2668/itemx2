@@ -196,19 +196,8 @@ const knownNumber = (value) => (value != null && Number.isFinite(Number(value)) 
 const motionClass = (motion) => (motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '');
 const NO_LAYERS = { hero: '', back: '', front: '', fresh: '' };
 
-function stat(label, value, from, meter) {
-  if (value == null || String(value).trim() === '') return '';
-  const changed = from != null && String(from) !== '' && String(from) !== String(value);
-  const bar =
-    meter == null ? '' : `<div class="ixp-meter"><i style="--v:${Math.max(0, Math.min(100, meter))}%"></i></div>`;
-  return `<div class="ixp-stat${changed ? ' ixp-up' : ''}"><dt>${Core.esc(label)}</dt><dd>${changed ? `<s>${Core.esc(from)}</s>` : ''}${Core.esc(value)}</dd>${bar}</div>`;
-}
-const stats = (rows) => {
-  const html = rows.join('');
-  return html ? `<dl class="ixp-stats">${html}</dl>` : '';
-};
 // Skill effects are "name" or "name::description" strings.
-function effectList(values) {
+function effectList(values, heading) {
   const rows = (Array.isArray(values) ? values : [])
     .map((one) => String(one || '').trim())
     .filter(Boolean)
@@ -216,16 +205,18 @@ function effectList(values) {
       const [name, ...rest] = one.split('::');
       return `<li><b>${Core.esc(name.trim())}</b>${Core.esc(rest.join('::').trim())}</li>`;
     });
-  return rows.length ? `<ul class="ixp-list">${rows.join('')}</ul>` : '';
+  return rows.length ? `<div class="ixp-sec">${Core.esc(heading)}</div><ul class="ixp-list">${rows.join('')}</ul>` : '';
 }
 const tag = (color, text) => `<span class="ixp-tag" style="--c:${color}">${Core.esc(text)}</span>`;
 const tags = (list) => (list.length ? `<div class="ixp-tags">${list.join('')}</div>` : '');
 
-function frame({ classes, vars, open, icon, rank, name, sub, chip, layers, body }) {
-  return `<details class="${classes.filter(Boolean).join(' ')}" style="${vars}"${open ? ' open' : ''}><summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon${icon.portrait ? ' ixp-portrait' : ''}">${icon.html}</div><div class="ixp-title"><span class="ixp-rank">${Core.esc(rank)}</span><span class="ixp-name">${Core.esc(name)}</span><span class="ixp-sub">${sub
+function frame({ classes, vars, open, icon, rank, name, sub, under = '', chip, layers, body }) {
+  return `<details class="${classes.filter(Boolean).join(' ')}" style="${vars}"${open ? ' open' : ''}><summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon${icon.portrait ? ' ixp-portrait' : ''}">${icon.html}${icon.badge || ''}</div><div class="ixp-title"><span class="ixp-rank">${Core.esc(rank)}</span><span class="ixp-name">${Core.esc(name)}</span><span class="ixp-sub">${sub
     .filter(Boolean)
     .map((one) => `<span>${Core.esc(one)}</span>`)
-    .join('')}</span></div>${chip}</summary>${layers.back}<div class="ixp-body">${body}</div>${layers.front}</details>`;
+    .join(
+      ''
+    )}</span>${under}</div>${chip}</summary>${layers.back}<div class="ixp-body">${body}</div>${layers.front}</details>`;
 }
 
 // options: motion, open, state (event chip), previous, inline, full (drawer
@@ -255,18 +246,11 @@ export function renderSkillCard(skill, options = {}) {
         skill.target ? tag(tone, t('codex.target-of', skill.target)) : ''
       ].filter(Boolean)
     ),
-    stats([
-      stat(t('codex.level'), level == null ? null : `Lv.${level}`, priorLevel == null ? null : `Lv.${priorLevel}`),
-      stat(
-        t('presentation.035'),
-        mastery == null ? null : `${mastery}%`,
-        priorMastery == null ? null : `${priorMastery}%`,
-        mastery
-      ),
-      stat(t('presentation.033'), skill.cost, previous.cost),
-      stat(t('presentation.031'), skill.cooldown, previous.cooldown)
+    Renderer.statRows([
+      Renderer.statRow('💧', t('presentation.033'), skill.cost, { from: previous.cost }),
+      Renderer.statRow('⏳', t('presentation.031'), skill.cooldown, { from: previous.cooldown })
     ]),
-    effectList(skill.effects),
+    effectList(skill.effects, t('codex.effects')),
     skill.description ? `<p class="ixp-lore">${Core.esc(skill.description)}</p>` : '',
     options.full && skill.growth ? `<p class="ixp-note"><b>${t('codex.growth')}</b>${Core.esc(skill.growth)}</p>` : '',
     options.full ? `<p class="ixp-id">ID · ${Core.esc(skill.id)}</p>` : ''
@@ -284,10 +268,22 @@ export function renderSkillCard(skill, options = {}) {
     ],
     vars: `--p:${dim ? ENDED_TONE : tone};--s:${dim ? ENDED_TONE : tone}`,
     open: options.open !== false,
-    icon: { html: `<span>${Core.esc(skillEmoji(skill))}</span>` },
+    icon: {
+      html: `<span>${Core.esc(skillEmoji(skill))}</span>`,
+      badge:
+        level == null
+          ? ''
+          : `<b class="ixp-x ixp-lv${priorLevel != null && priorLevel !== level ? ' ixp-up' : ''}" title="${t('codex.level')}">${priorLevel != null && priorLevel !== level ? `Lv.${priorLevel}→${level}` : `Lv.${level}`}</b>`
+    },
     rank: skill.rank || Renderer.rarityLabels[tier],
     name: skill.name || skill.id,
     sub: [skill.school, `${skillTypeLabel(skill.type)} · ${skillStatusLabel(skill.status)}`],
+    under:
+      mastery == null
+        ? ''
+        : Renderer.heroGauge(t('presentation.035'), `${mastery}%`, mastery, {
+            from: priorMastery == null ? null : `${priorMastery}%`
+          }),
     chip: options.state ? `<span class="ixp-ev">${Core.esc(options.state)}</span>` : '',
     layers,
     body
@@ -331,17 +327,16 @@ export function renderEncounterCard(monster, options = {}) {
   // resultOnly: the card right after a meeting card already lists the rest.
   const detail = !options.resultOnly;
   const body = [
-    encounterTrack(monster),
     monster.outcome
       ? `<p class="ixp-note ixp-outcome"><b>${t('presentation.006')}</b>${Core.esc(monster.outcome)}</p>`
       : '',
     detail
-      ? tags([
-          ...list(monster.weaknesses).map((one) => tag('#5ee3a1', t('codex.weak', one))),
-          ...list(monster.resistances).map((one) => tag('#9aa1b2', t('codex.resist', one)))
+      ? Renderer.statRows([
+          Renderer.statRow('🎯', t('codex.weak'), list(monster.weaknesses).join(' · '), { wide: true }),
+          Renderer.statRow('🛡️', t('codex.resist'), list(monster.resistances).join(' · '), { wide: true })
         ])
       : '',
-    detail ? effectList(list(monster.moves).slice(0, options.full ? 12 : 3)) : '',
+    detail ? effectList(list(monster.moves).slice(0, options.full ? 12 : 3), t('codex.moves')) : '',
     detail && monster.description ? `<p class="ixp-lore">${Core.esc(monster.description)}</p>` : '',
     options.full && monster._lore ? `<p class="ixp-id">${t('ui-panel.098.1')}</p>` : '',
     options.full ? `<p class="ixp-id">ID · ${Core.esc(monster.id)}</p>` : ''
@@ -367,6 +362,7 @@ export function renderEncounterCard(monster, options = {}) {
       : { html: `<span>${Core.esc(encounterEmoji(monster))}</span>` },
     rank: t('codex.threat', monster.threat || t('presentation.009')),
     name: monster.name || monster.id,
+    under: encounterTrack(monster),
     sub: [
       monster.kind,
       relationLabel(relation),
