@@ -164,9 +164,14 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
     ],
     'main'
   );
-  assert.equal(request[0].role, 'system');
-  assert.match(request[0].content, /runtime_blade/);
-  assert.equal(request[1].content.includes('<!--ix:'), false);
+  // Default tail placement: right before the latest user turn, so the
+  // history prefix stays cacheable between turns.
+  assert.equal(request.length, 3);
+  assert.equal(request[0].role, 'assistant');
+  assert.equal(request[1].name, 'ITEMX_2_PROTOCOL');
+  assert.match(request[1].content, /runtime_blade/);
+  assert.equal(request[2].role, 'user');
+  assert.equal(request[0].content.includes('<!--ix:'), false);
   const readsBeforeCachedRequest = chatReads;
   const continuationRequest = await replacers.beforeRequest(
     [
@@ -212,7 +217,7 @@ test('API v3 runtime processes, commits, injects and renders one real turn', asy
   assert.equal(
     /<!--(?:ITEMX2|CODEX2)(?::|@)|<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b/i.test(
       request
-        .slice(1)
+        .filter((one) => one.name !== 'ITEMX_2_PROTOCOL')
         .map((one) => one.content)
         .join('\n')
     ),
@@ -372,4 +377,29 @@ test('chat cleanup removes ITEMX and CODEX transports while preserving unrelated
   assert.doesNotMatch(cleaned.chat.message[0].data, /ITEMX2|CODEX2/);
   assert.match(cleaned.chat.message[0].data, /<state>보존<\/state>/);
   assert.equal(cleaned.chat.scriptstate.unrelated, 'keep');
+});
+
+test('protocol placement keeps the history prefix stable for prompt caching', async () => {
+  const { injectRequestProtocol } = await import('../src/pipeline.js');
+  const history = [
+    { role: 'system', content: 'preset' },
+    { role: 'user', content: 'a' },
+    { role: 'assistant', content: 'b' },
+    { role: 'user', content: 'c' },
+    { role: 'system', content: 'post-history' }
+  ];
+  const tail = injectRequestProtocol(history, 'P');
+  assert.deepEqual(
+    tail.map((one) => one.content),
+    ['preset', 'a', 'b', 'P', 'c', 'post-history']
+  );
+  const head = injectRequestProtocol(history, 'P', 'head');
+  assert.equal(head[0].content, 'P');
+  const noUser = injectRequestProtocol([{ role: 'system', content: 'only' }], 'P');
+  assert.deepEqual(
+    noUser.map((one) => one.content),
+    ['only', 'P']
+  );
+  const continuation = injectRequestProtocol([...history.slice(0, 3)], 'P', 'tail');
+  assert.equal(continuation.at(-1).content, 'P', 'a request ending on a model turn still closes with the protocol');
 });

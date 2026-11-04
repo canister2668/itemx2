@@ -56,12 +56,23 @@ export function requestEndsWithModelTurn(messages) {
   return /^(?:assistant|model|char)$/i.test(role);
 }
 
-export function injectRequestProtocol(messages, instruction) {
+// `head` puts the protocol before the whole prompt, as before 2.6.8. Its
+// inventory snapshot changes every turn, so a head block breaks the provider
+// prompt cache for everything after it. `tail` (default) puts it right before
+// the latest user turn: the history prefix stays byte-identical between turns
+// and remains cacheable, while post-history instructions and the user turn
+// keep their places at the end.
+export function injectRequestProtocol(messages, instruction, position = 'tail') {
   const protocol = { role: 'system', content: instruction, name: 'ITEMX_2_PROTOCOL' };
   // Risu's Google formatter converts a non-leading system turn following a
   // model turn into a user turn. This preserves continuation semantics while
   // satisfying Gemini's requirement that requests never end with model.
-  return requestEndsWithModelTurn(messages) ? [...messages, protocol] : [protocol, ...messages];
+  if (requestEndsWithModelTurn(messages)) return [...messages, protocol];
+  if (position === 'head') return [protocol, ...messages];
+  let index = messages.length - 1;
+  while (index >= 0 && !/^(?:user|human)$/i.test(String(messages[index]?.role || ''))) index -= 1;
+  if (index < 0) return [...messages, protocol];
+  return [...messages.slice(0, index), protocol, ...messages.slice(index)];
 }
 
 // Seed of the anchor keys of the response being generated in `loaded`'s chat:
@@ -365,7 +376,7 @@ export const beforeRequest = async (messages, type) => {
       encounters: settings.encountersEnabled,
       messages: safeMessages.length
     });
-    return injectRequestProtocol(safeMessages, instruction);
+    return injectRequestProtocol(safeMessages, instruction, settings.protocolPosition);
   } catch (error) {
     fail('beforeRequest', error);
     return safeMessages;

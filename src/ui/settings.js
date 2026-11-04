@@ -154,6 +154,10 @@ export const MONEY_LABELS = {
   both: t('ui-settings.money-both'),
   wallet: t('ui-settings.money-wallet')
 };
+export const PROTOCOL_POSITION_LABELS = {
+  tail: t('ui-settings.inject-tail'),
+  head: t('ui-settings.inject-head')
+};
 export const AUX_LABELS = { off: t('ui-settings.147'), missing: t('ui-settings.146'), always: t('ui-settings.145') };
 
 export const RARITY_MODE_LABELS = { world: t('ui-settings.144'), itemx: t('ui-settings.143') };
@@ -441,6 +445,10 @@ export function settingsPanelHtml(loaded, skin, parts) {
     t('ui-settings.087'),
     setSegment(skin, 'rarity', Object.entries(RARITY_MODE_LABELS), loaded.rarityMode)
   )}${setCard(
+    t('ui-settings.inject-title'),
+    t('ui-settings.inject-note'),
+    setSegment(skin, 'inject', Object.entries(PROTOCOL_POSITION_LABELS), loaded.protocolPosition || 'tail')
+  )}${setCard(
     t('ui-settings.091'),
     t('ui-settings.090'),
     `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', t('ui-settings.089'))}</span>`
@@ -706,6 +714,15 @@ export function rootSettingActions() {
         async (loaded, value) => {
           await changeSettings(loaded.character, { rarityMode: value });
           setStatus(t('ui-settings.039', RARITY_MODE_LABELS[value]));
+        }
+      ],
+      [
+        'inject',
+        Object.keys(PROTOCOL_POSITION_LABELS),
+        async (loaded, value) => {
+          await changeSettings(loaded.character, { protocolPosition: value });
+          loaded.protocolPosition = value;
+          setStatus(t('ui-settings.inject-status', PROTOCOL_POSITION_LABELS[value]));
         }
       ],
       [

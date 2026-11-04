@@ -705,6 +705,14 @@
     "재화 표시: ",
     ""
   ],
+  "ui-settings.inject-title": "지침 주입 위치",
+  "ui-settings.inject-note": "ITEMX 지침과 현재 인벤토리를 요청의 어디에 넣을지 고릅니다. 인벤토리는 매 턴 바뀌므로 맨 앞에 두면 그 뒤 프롬프트 전체의 캐시가 매번 깨집니다. '마지막 입력 앞'은 대화 기록 캐시를 살립니다.",
+  "ui-settings.inject-tail": "마지막 입력 앞",
+  "ui-settings.inject-head": "맨 앞(이전 방식)",
+  "ui-settings.inject-status": [
+    "지침 주입 위치: ",
+    ""
+  ],
   "ui-settings.plugin-compat-title": "다른 플러그인과 함께 쓰기",
   "ui-settings.plugin-compat-note": "응답 본문을 고쳐 쓰는 플러그인과는 함께 쓰지 않기를 권합니다. ITEMX 태그나 카드 표식이 지워지거나 바뀌면 기록이 빠질 수 있고, 플러그인 목록 순서로는 처리 순서가 보장되지 않습니다.",
   "pipeline.commit-failed": [
