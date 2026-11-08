@@ -28,12 +28,12 @@ export const schema = Object.freeze({
   debugEnabled: false,
   effectsLevel: FX_MODES,
   fontScale: FONT_SCALES,
-  moduleAssetsEnabled: false,
+  moduleAssetsEnabled: true,
   lorebookEncounterEnabled: false,
   autoPruneEnabled: true,
   skin: SKIN_MODES,
   cardFx: CARD_FX_MODES,
-  cardOpenLatest: false,
+  cardOpenLatest: true,
   currencyDisplay: CURRENCY_DISPLAY_MODES,
   protocolPosition: PROTOCOL_POSITIONS
 });
