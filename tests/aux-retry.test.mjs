@@ -84,7 +84,7 @@ test('re-keyed anchors are the same narrative for the auxiliary pass', () => {
   assert.notEqual(Aux.narrativeHash(text), Aux.narrativeHash(text.replace('다음', '다른')));
 });
 
-test('a timed-out model request stays in flight until the provider answers', async (t) => {
+test('a timed-out model request leaves the count at once; its late answer is ignored', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   let answer;
   bot(() => new Promise((resolve) => (answer = resolve)));
@@ -94,10 +94,24 @@ test('a timed-out model request stays in flight until the provider answers', asy
   t.mock.timers.tick(240001);
   const error = await running;
   assert.match(String(error?.message || error), /.+/);
-  assert.equal(Aux.auxActive(), 1, 'the abandoned request is still billing');
+  assert.equal(Aux.auxActive(), 0, 'the main reply commit is no longer held back');
+  assert.equal(Aux.auxLast().state, 'failed');
   answer('NONE');
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(Aux.auxActive(), 0);
+  assert.equal(Aux.auxLast().state, 'failed', 'the late answer changes nothing');
+});
+
+test('a provider that never answers does not keep the count after the timeout', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  bot(() => new Promise(() => {}));
+  const running = Aux.runAuxModel('prompt').catch((error) => error);
+  await Promise.resolve();
+  assert.equal(Aux.auxActive(), 1);
+  t.mock.timers.tick(240001);
+  await running;
+  assert.equal(Aux.auxActive(), 0);
+  assert.equal(Aux.auxRunning(), false);
 });
 
 test('cancelling a running pass settles the message; the automatic pass never calls it again', async () => {
@@ -111,7 +125,7 @@ test('cancelling a running pass settles the message; the automatic pass never ca
   assert.equal(result.status, 'skip');
   assert.equal(result.reason, 'cancelled');
   assert.equal(Aux.auxRunning(), false, 'the user sees nothing running');
-  assert.equal(Aux.auxActive(), 1, 'the abandoned request still blocks a second paid request');
+  assert.equal(Aux.auxActive(), 0, 'the cancelled request no longer holds back the reply commit');
   assert.equal(documentOf(fake.state.chat).guards.aux.reply.state, 'cancelled');
   assert.equal(Pipeline.auxVerdict(result), true, 'a cancelled pass is not retried');
   answer('<itemExam><id>late</id><name>늦은 답</name></itemExam>');

@@ -26,7 +26,11 @@ const bad = () => {
   throw new Error(t('backup.001'));
 };
 const object = (x) => x && typeof x === 'object' && !Array.isArray(x);
-function entity(domain, raw) {
+// Text an item may hold as null in a chat written before `-` cleared a field to ''.
+// A nameless item keeps its id as the name.
+const legacyText = new Set('itemType emoji displayRarity power required durability cost trivia'.split(' '));
+function entity(domain, raw, stored = false) {
+  if (stored && domain === 'item' && object(raw) && raw.name == null) raw = { ...raw, name: raw.id };
   if (
     !object(raw) ||
     !/^[A-Za-z0-9_-]{1,80}$/.test(raw.id || '') ||
@@ -41,6 +45,11 @@ function entity(domain, raw) {
     if (value === undefined) continue;
     if (value === null && nullable.has(key)) {
       result[key] = null;
+      continue;
+    }
+    // Capture reads live state: one legacy null must not fail the whole chat's backup.
+    if (value === null && stored && domain === 'item' && legacyText.has(key)) {
+      result[key] = '';
       continue;
     }
     if (arrays.has(key)) {
@@ -128,7 +137,7 @@ function capture(loaded) {
   const records = {};
   for (const domain of domains)
     records[domain] = EntityHistory.entries(loaded, domain).map((row) => ({
-      entity: entity(domain, row.entity),
+      entity: entity(domain, row.entity, true),
       kept: row.kept,
       archived: row.archived,
       history: row.cycle ? { age: row.age, reason: row.reason } : null

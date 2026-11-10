@@ -80,9 +80,6 @@ export function encounterFxClasses(monster) {
 export const codexListFx = (domain, classes) =>
   `<span class="itemx2-codex-fx itemx2-codex-list-fx itemx2-${domain}-list-fx ${classes}" aria-hidden="true"></span>`;
 
-export const codexHeroFx = (domain) =>
-  `<span class="itemx2-codex-fx itemx2-codex-hero-fx itemx2-${domain}-hero-fx" aria-hidden="true"><i></i><b></b><em></em></span>`;
-
 export function codexInlineEventSignificant(payload) {
   const event = payload?.event;
   if (!event || !['skill', 'monster'].includes(event.domain)) return false;
@@ -138,7 +135,7 @@ const ENCOUNTER_STATUS = {
   unknown: () => t('presentation.009')
 };
 const labelOf = (labels, value, fallback = '') => {
-  const known = labels[themeText(value)];
+  const known = Renderer.own(labels, themeText(value));
   return known ? known() : String(value || '').trim() || fallback;
 };
 export const skillTypeLabel = (value) => labelOf(SKILL_TYPES, value, SKILL_TYPES.active());
@@ -185,7 +182,7 @@ function eventState(event, entity, domain) {
     if (encounterEnded(entity)) return encounterStatusLabel(entity.status);
     return entity.active || themeText(entity.status) === 'active' ? t('presentation.018') : t('presentation.017');
   }
-  const known = (domain === 'skill' ? SKILL_ACTIONS : ENCOUNTER_ACTIONS)[action];
+  const known = Renderer.own(domain === 'skill' ? SKILL_ACTIONS : ENCOUNTER_ACTIONS, action);
   if (known) return known();
   if (op === 'remove') return domain === 'skill' ? t('presentation.039') : t('presentation.016');
   if (op === 'restore') return t('presentation.015');
@@ -220,25 +217,26 @@ function frame({ classes, vars, open, icon, rank, name, sub, under = '', chip, l
 }
 
 // options: motion, open, state (event chip), previous, inline, full (drawer
-// extras), rarityMode.
+// extras), rarityMode, fresh (just learned: the one-shot burst).
 export function renderSkillCard(skill, options = {}) {
   if (!skill) return '';
   const motion = options.motion || 'full',
     previous = options.previous || {},
     tier = skillRankTier(skill.rank, options.rarityMode || 'world'),
-    affinity = Renderer.affinities[themeText(skill.affinity)] ? themeText(skill.affinity) : skillTheme(skill),
+    named = Renderer.own(Renderer.affinities, themeText(skill.affinity)),
+    affinity = named ? themeText(skill.affinity) : skillTheme(skill),
     tone = Renderer.affinities[affinity]?.c || Renderer.affinities.arcane.c,
     dim = ['sealed', 'lost'].includes(themeText(skill.status));
   const mastery = knownNumber(skill.mastery),
     priorMastery = knownNumber(previous.mastery),
     level = knownNumber(skill.level),
     priorLevel = knownNumber(previous.level);
-  const layers =
+  const prism =
     motion === 'off' || dim
       ? NO_LAYERS
       : Renderer.prismLayersFor({ id: skill.id, name: skill.name, affinity }, tier, motion);
-  const element =
-    Renderer.affinities[themeText(skill.affinity)] || (affinity !== 'arcane' && Renderer.affinities[affinity]);
+  const layers = options.fresh ? prism : { ...prism, fresh: '' };
+  const element = named || (affinity !== 'arcane' && Renderer.affinities[affinity]);
   const body = [
     tags(
       [
@@ -263,6 +261,7 @@ export function renderSkillCard(skill, options = {}) {
       'ixp-codex',
       'ixp-skill',
       dim ? 'ixp-ended' : '',
+      options.fresh ? 'ixp-fresh' : '',
       motionClass(motion),
       options.inline ? 'itemx-inline-card' : ''
     ],
@@ -273,7 +272,7 @@ export function renderSkillCard(skill, options = {}) {
       badge:
         level == null
           ? ''
-          : `<b class="ixp-x ixp-lv${priorLevel != null && priorLevel !== level ? ' ixp-up' : ''}" title="${t('codex.level')}">${priorLevel != null && priorLevel !== level ? `Lv.${priorLevel}→${level}` : `Lv.${level}`}</b>`
+          : `<b class="ixp-x ixp-lv${priorLevel != null && priorLevel !== level ? ' ixp-up' : ''}" title="${t('codex.level')}">${priorLevel != null && priorLevel !== level ? `Lv.${Renderer.countShort(priorLevel)}→${Renderer.countShort(level)}` : `Lv.${Renderer.countShort(level)}`}</b>`
     },
     rank: skill.rank || Renderer.rarityLabels[tier],
     name: skill.name || skill.id,
@@ -292,36 +291,48 @@ export function renderSkillCard(skill, options = {}) {
 
 // The encounter's course: met, then fighting or its result. A card for a
 // fight that started and ended in one response shows both steps at once.
-function encounterTrack(monster) {
-  const count = Number(monster.encounterCount) || 1;
-  const met = `<span class="ixp-step on"><i></i><b>${t('ui-panel.061')}</b>${count > 1 ? `<small>${t('codex.encounter-nth', count)}</small>` : ''}</span>`;
+// `past`: the fight is already over in a later card, so nothing here is live.
+function encounterTrack(monster, past = false) {
+  const times = Number(monster.encounterCount),
+    count = Number.isFinite(times) && times >= 1 ? Math.floor(times) : 1;
+  const met = `<span class="ixp-step on"><i></i><b>${t('ui-panel.061')}</b>${count > 1 ? `<small>${t('codex.encounter-nth', Renderer.countShort(count))}</small>` : ''}</span>`;
   const ended = encounterEnded(monster),
     status = themeText(monster.status);
   const result = ended
     ? `<span class="ixp-step on end"><i></i><b>${Core.esc(encounterStatusLabel(status))}</b></span>`
-    : status === 'active' || monster.active
-      ? `<span class="ixp-step live"><i></i><b>${t('presentation.018')}</b></span>`
-      : `<span class="ixp-step"><i></i><b>${Core.esc(encounterStatusLabel(status))}</b></span>`;
+    : past
+      ? `<span class="ixp-step on"><i></i><b>${t('presentation.024')}</b></span>`
+      : status === 'active' || monster.active
+        ? `<span class="ixp-step live"><i></i><b>${t('presentation.018')}</b></span>`
+        : `<span class="ixp-step"><i></i><b>${Core.esc(encounterStatusLabel(status))}</b></span>`;
   return `<div class="ixp-track">${met}<span class="ixp-link"></span>${result}</div>`;
 }
 
-// options: motion, open, state, previous, portrait, inline, full.
+// options: motion, open, state, previous, portrait, inline, full, resultOnly,
+// past (a step already superseded by the next card: no live pulse, no layers).
 export function renderEncounterCard(monster, options = {}) {
   if (!monster) return '';
   const ended = encounterEnded(monster),
+    past = options.past === true && !ended,
     relation = themeText(monster.relation),
-    motion = ended ? 'off' : options.motion || 'full',
+    motion = options.motion || 'full',
     tier = ['normal', 'rare', 'epic', 'legendary'][encounterThreatLevel(monster.threat)] || 'normal',
-    tone = ended ? ENDED_TONE : RELATION_TONE[relation] || RELATION_TONE.unknown,
-    live = !ended && (monster.active || themeText(monster.status) === 'active');
+    tone = ended ? ENDED_TONE : Renderer.own(RELATION_TONE, relation) || RELATION_TONE.unknown,
+    live = !ended && !past && (monster.active || themeText(monster.status) === 'active');
+  // An ended or past card has no effect layers, but keeps the reader's motion
+  // class: `motion-off` would also hide the one-shot "resolved" sweep.
+  // The celebration layers are never armed for an encounter, so they are left out.
   const layers =
-    motion === 'off'
+    motion === 'off' || ended || past
       ? NO_LAYERS
-      : Renderer.prismLayersFor(
-          { id: monster.id, name: monster.name, affinity: relation === 'hostile' ? 'blood' : '' },
-          tier,
-          motion
-        );
+      : {
+          ...Renderer.prismLayersFor(
+            { id: monster.id, name: monster.name, affinity: relation === 'hostile' ? 'blood' : '' },
+            tier,
+            motion
+          ),
+          fresh: ''
+        };
   const aliases = Array.isArray(monster.aliases) ? monster.aliases.filter(Boolean) : [];
   const list = (values) => (Array.isArray(values) ? values.filter(Boolean) : []);
   // resultOnly: the card right after a meeting card already lists the rest.
@@ -352,6 +363,7 @@ export function renderEncounterCard(monster, options = {}) {
       'ixp-codex',
       'ixp-encounter',
       ended ? 'ixp-ended' : '',
+      past ? 'ixp-past' : '',
       motionClass(motion),
       options.inline ? 'itemx-inline-card' : ''
     ],
@@ -362,7 +374,7 @@ export function renderEncounterCard(monster, options = {}) {
       : { html: `<span>${Core.esc(encounterEmoji(monster))}</span>` },
     rank: t('codex.threat', monster.threat || t('presentation.009')),
     name: monster.name || monster.id,
-    under: encounterTrack(monster),
+    under: encounterTrack(monster, past),
     sub: [
       monster.kind,
       relationLabel(relation),
@@ -388,12 +400,15 @@ export function codexInlineEventHtml(payload, options = {}) {
     previous: payload.previous || {},
     inline: true
   };
-  if (domain === 'skill') return renderSkillCard(entity, common);
+  if (domain === 'skill')
+    return renderSkillCard(entity, { ...common, fresh: Renderer.eventKind(payload, 'skill') === 'learned' });
   const portrait = options.portrait || '';
   // A fight registered with its result already set began and ended in one
   // response: show the meeting first, then the result, as two cards.
   if (event.kind !== 'exam' || !encounterEnded(entity)) return renderEncounterCard(entity, { ...common, portrait });
-  const met = { ...entity, status: 'active', active: true };
+  // The meeting is already history when the result follows it: a static step,
+  // not a card that keeps pulsing "in combat" above its own result.
+  const met = { ...entity, status: 'active', active: false };
   delete met.outcome;
-  return `${renderEncounterCard(met, { ...common, portrait, state: t('presentation.018'), previous: {} })}${renderEncounterCard(entity, { ...common, portrait, resultOnly: true })}`;
+  return `${renderEncounterCard(met, { ...common, portrait, state: t('presentation.024'), previous: {}, past: true })}${renderEncounterCard(entity, { ...common, portrait, resultOnly: true })}`;
 }

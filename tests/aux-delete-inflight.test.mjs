@@ -25,7 +25,7 @@ async function automaticPass(t) {
       characters: {
         'auto-delete': {
           enabled: true,
-          auxOutput: 'missing',
+          auxOutput: 'always',
           itemsEnabled: true,
           skillsEnabled: false,
           encountersEnabled: false

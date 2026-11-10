@@ -1,5 +1,6 @@
 /* Update check: reads the version line of the published bundle once per page
- * load and announces the result on the `update` event. */
+ * load (a failed read is tried once more on a later chat entry) and announces
+ * the result on the `update` event. */
 import { ITEMX_PLUGIN_VERSION, ITEMX_UPDATE_URL } from './config.js';
 import { setUpdateState, updateState } from './connection.js';
 import { emit } from './events.js';
@@ -38,13 +39,29 @@ export function compareVersions(left, right) {
 }
 
 // Once per page load: the first chat after a refresh reads the published
-// version line; later chat switches reuse the answer.
-let checkedThisLoad = false;
+// version line; later chat switches reuse the answer. A read that failed
+// (offline, a slow first request) is tried once more when a chat is entered
+// later: at most two requests per load.
+const MAX_ATTEMPTS = 2;
+let attempts = 0,
+  answered = false;
+
+// A fresh page load starts with nothing checked; tests reset it the same way.
+export function resetUpdateCheck() {
+  attempts = 0;
+  answered = false;
+}
 
 export async function checkForUpdate() {
-  if (checkedThisLoad || updateState().checking || !activeContextKey() || typeof host().nativeFetch !== 'function')
+  if (
+    answered ||
+    attempts >= MAX_ATTEMPTS ||
+    updateState().checking ||
+    !activeContextKey() ||
+    typeof host().nativeFetch !== 'function'
+  )
     return;
-  checkedThisLoad = true;
+  attempts += 1;
   setUpdateState({ checking: true });
   try {
     const response = await withTimeout(
@@ -60,6 +77,7 @@ export async function checkForUpdate() {
     const header = String((await response.text()) || '');
     const latest = header.match(/^\/\/@version\s+([^\s]+)\s*$/m)?.[1] || '';
     if (!latest) throw new Error(t('ui-settings.148'));
+    answered = true;
     setUpdateState({ checkedAt: Date.now(), latest, available: compareVersions(latest, ITEMX_PLUGIN_VERSION) > 0 });
     await emit('update', updateState());
   } catch (error) {

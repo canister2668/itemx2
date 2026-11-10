@@ -4,9 +4,18 @@
 import * as Codex from './engine/codex.js';
 import * as Core from './engine/core.js';
 import { ITEMX_PROTOCOL_TEXT } from './config.js';
-import { combinedPortraitAssets } from './portraits.js';
-import { pendingRecord } from './session.js';
-import { TRANSPORT_MARKER_RE, allocateKey, anchor, requestText, stripTransport } from './store/anchors.js';
+import { protocolPortraitAssets } from './portraits.js';
+import { activeContextKey, cachedLoaded, pendingRecord } from './session.js';
+import { cachedSettings } from './settings.js';
+import {
+  TRANSPORT_MARKER_RE,
+  allocateKey,
+  anchor,
+  plainKoreanAlias,
+  requestText,
+  shieldPlainText,
+  stripTransport
+} from './store/anchors.js';
 
 export function itemxProtocolText(rarityMode = 'world') {
   const policy =
@@ -26,24 +35,47 @@ export const stripItemTransport = (content) =>
 export const RAW_TRANSPORT_RE =
   /<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
 
+// Whether ITEMX is turned off for the bot of the open chat, from memory only
+// (the display hook asks on every render). The projection is dropped by every
+// write, so the character it named is remembered per chat. Unknown counts as
+// enabled.
+let disabledProbe = { key: '', character: null };
+export function itemxDisabled() {
+  const key = activeContextKey();
+  const loaded = cachedLoaded();
+  if (key && loaded?.key === key && loaded.character) disabledProbe = { key, character: loaded.character };
+  if (!key || disabledProbe.key !== key) return false;
+  return cachedSettings(disabledProbe.character)?.enabled === false;
+}
+
 // A transport tag inside a planning block or `inline code` is a mention, never
-// a transport: the parsers leave it in place, so treating it as pending raw
-// output would re-run the commit on every catch-up.
-const PLANNING_BLOCK_RE =
-  /<(Thoughts|Thought|think|thinking|DSThink|reasoning|analysis)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi;
+// a transport, and a Korean `[아이템: …]` line without an id= / name= field is
+// story text: the parsers leave all of them in place, so treating one as
+// pending raw output would re-run the commit on every catch-up. The text is
+// therefore judged exactly as the parsers will see it. With ITEMX turned off
+// for the bot nothing is a transport: its messages are left as they are.
 export function hasRawTransport(text) {
-  const visible = String(text || '')
-    .replace(PLANNING_BLOCK_RE, '')
-    .replace(/`[^`\n]*`/g, '');
+  if (itemxDisabled()) return false;
+  const source = String(text || '');
+  if (!RAW_TRANSPORT_RE.test(source)) return false;
+  let visible = shieldPlainText(source).text;
+  Core.protectPlanning(visible, (masked) => {
+    visible = masked;
+    return { content: '' };
+  });
   return RAW_TRANSPORT_RE.test(visible);
 }
 
 // What the model is shown of a stored or streamed text: no anchors, no old
-// markers, no transport of any kind.
+// markers, no transport of any kind. With ITEMX turned off for the bot only
+// its own anchors are taken out.
 export function requestSafeText(content) {
+  if (itemxDisabled()) return requestText(content);
   const source = requestText(Core.stripInventoryEcho(content));
   if (!RAW_TRANSPORT_RE.test(source) && !/<!--(?:ITEMX2|CODEX2):/.test(source)) return source;
-  return stripTransport(source).replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
+  return stripTransport(source).replace(/\[(itemx|아이템)\s*:([^\]\r\n]{0,2048})\]/gi, (raw, tag, body) =>
+    tag.toLowerCase() !== 'itemx' && plainKoreanAlias(body) ? raw : ''
+  );
 }
 
 export function protocolForSettings(settings, character, moduleAssets = [], options = {}) {
@@ -52,7 +84,7 @@ export function protocolForSettings(settings, character, moduleAssets = [], opti
   const domains = enabledCodexDomains(settings);
   if (domains.length) {
     const portraitRows = domains.includes('monster')
-      ? combinedPortraitAssets(character, moduleAssets, Codex.ASSET_CATALOG_MAX)
+      ? protocolPortraitAssets(character, moduleAssets, Codex.ASSET_CATALOG_MAX)
       : [];
     const names = Codex.portraitProtocolNames(portraitRows, {
       narrative: options.narrative || '',
@@ -72,6 +104,32 @@ const normalizedName = (value) =>
   String(value || '')
     .toLocaleLowerCase()
     .replace(/[\s\p{P}\p{S}]+/gu, '');
+
+// Paragraphs that lie inside a code fence or an HTML block (a status window,
+// a table): `true` where a piece starts or ends inside one. A card placed
+// after such a piece would land inside the block, and a name written there is
+// not narrative. A block that opens and closes within one piece encloses
+// nothing.
+const FENCE_LINE_RE = /^[ \t]*(?:`{3,}|~{3,})/;
+const BLOCK_TAG_RE =
+  /<(\/?)(?:div|table|details|section|article|aside|pre|blockquote|ul|ol|figure|fieldset|form|style|script|svg)\b[^>]*>/gi;
+export function enclosedPieces(pieces) {
+  let fence = false,
+    depth = 0;
+  return pieces.map((piece, index) => {
+    const startedInside = fence || depth > 0;
+    if (index % 2 === 0 && (piece.includes('<') || piece.includes('```') || piece.includes('~~~')))
+      for (const line of piece.split('\n')) {
+        if (FENCE_LINE_RE.test(line)) fence = !fence;
+        else if (!fence)
+          for (const tag of line.matchAll(BLOCK_TAG_RE)) {
+            if (tag[0].endsWith('/>')) continue;
+            depth = tag[1] ? Math.max(0, depth - 1) : depth + 1;
+          }
+      }
+    return startedInside || fence || depth > 0;
+  });
+}
 
 // Moves each transport marker to the paragraph that names its entity, or keeps
 // its relative position, and never below a trailing status block.
@@ -110,6 +168,15 @@ export function positionMarkersByNarrative(content) {
   // Each paragraph is normalized once, not once per marker: streaming runs
   // this on every flush over the whole response.
   const normalizedPieces = pieces.map((piece, index) => (index % 2 ? '' : normalizedName(piece)));
+  const enclosed = enclosedPieces(pieces);
+  // The nearest paragraph outside every block: before the block first, so the
+  // card stays above a status window that closes the response.
+  const outside = (index) => {
+    if (!enclosed[index]) return index;
+    for (let at = index - 2; at >= 0; at -= 2) if (!enclosed[at]) return at;
+    for (let at = index + 2; at < pieces.length; at += 2) if (!enclosed[at]) return at;
+    return index;
+  };
   for (const marker of markers) {
     const item =
       marker.prefix === 'ITEMX2'
@@ -139,7 +206,7 @@ export function positionMarkersByNarrative(content) {
       after = -1;
     for (let index = 0; index < pieces.length; index += 2) {
       const paragraph = normalizedPieces[index];
-      if (!paragraph || STATUS_PIECE_RE.test(pieces[index])) continue;
+      if (!paragraph || enclosed[index] || STATUS_PIECE_RE.test(pieces[index])) continue;
       const exactHit = exact.length >= 2 && paragraph.includes(exact);
       const hits = terms.filter((term) => paragraph.includes(term)).length;
       const enoughTerms = terms.length > 1 ? hits >= Math.min(2, terms.length) : hits === 1;
@@ -149,6 +216,7 @@ export function positionMarkersByNarrative(content) {
     }
     let bestIndex = before >= 0 ? before : after >= 0 ? after : ownIndex;
     if (trailerIndex >= 0 && bestIndex >= trailerIndex) bestIndex = Math.max(0, trailerIndex - 2);
+    bestIndex = outside(bestIndex);
     const list = placements.get(bestIndex) || [];
     list.push(marker);
     placements.set(bestIndex, list);
@@ -209,15 +277,17 @@ export function anchorize(
   { state, settings, seed, doc, review = { source: 'main', checked: false }, liveAnchor = null }
 ) {
   const text = String(content || '');
+  // Story text the engine would take for transport is shielded while parsing.
+  const shield = shieldPlainText(text);
   const items = settings.itemsEnabled
-    ? Core.extractResponse(text, state.registry)
-    : { content: stripItemTransport(text), events: [], errors: [] };
+    ? Core.extractResponse(shield.text, state.registry)
+    : { content: stripItemTransport(shield.text), events: [], errors: [] };
   const codex = Codex.extractResponse(items.content, state.codex, {
     enabledDomains: enabledCodexDomains(settings),
     rarityMode: settings.rarityMode,
     skillEvidenceText: text
   });
-  const anchored = anchorMarkers(codex.content, { seed, doc, review, liveAnchor });
+  const anchored = anchorMarkers(shield.restore(codex.content), { seed, doc, review, liveAnchor });
   return {
     content: anchored.content,
     records: anchored.records,

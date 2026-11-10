@@ -91,6 +91,38 @@ export function project(ctx, settings = {}) {
   };
 }
 
+// The state the tags of a response are parsed against: the projection, minus
+// the response's own pending cards. A rebuild while the response streams
+// reads its message with the anchors of the earlier flushes and folds their
+// pending records in; parsing the same tags against that state would apply
+// each event twice, and one that cannot repeat (consume all, remove) would
+// fail and lose its anchor. A pending card whose anchor already stands in
+// `content` (a continued message) stays part of the state.
+export function parseBaseline(loaded, content) {
+  const full = { registry: loaded.snapshot.registry, codex: loaded.codexSnapshot };
+  const messages = loaded.chat?.message || [];
+  const last = messages[messages.length - 1];
+  if (!last || /^(?:user|human)$/i.test(String(last.role || ''))) return full;
+  const standing = new Set(anchorKeys(content));
+  const own = messageKeys(last).filter(
+    (key) => !standing.has(key) && !loaded.doc.events[key] && pendingRecord(key)?.chatKey === loaded.key
+  );
+  if (!own.length) return full;
+  const id = own.join(',');
+  if (loaded.parseBase?.id !== id) {
+    const skipped = new Set(own);
+    const pending = (key) =>
+      !skipped.has(key) && pendingRecord(key)?.chatKey === loaded.key ? pendingRecord(key) : null;
+    const folded = fold(loaded.chat, loaded.doc, { pending });
+    folded.codex.fingerprint = folded.chain;
+    const codex = Object.keys(loaded.doc.lore.rows).length
+      ? Lorebook.apply(folded.codex, loaded.doc.lore)
+      : folded.codex;
+    loaded.parseBase = { id, state: { registry: folded.item.registry, codex } };
+  }
+  return loaded.parseBase.state;
+}
+
 const asPayload = (row) =>
   row?.view
     ? { event: row.event, view: row.view, previous: row.previous, review: row.review, domain: row.domain }
@@ -249,23 +281,30 @@ export function stampFrom(doc, chat, index) {
 // write nothing. The write lands only if the chat is still the one read.
 const bytesOf = (doc) => new TextEncoder().encode(JSON.stringify(doc)).length;
 
+// A prune that removed nothing is not tried again (it serializes and rewrites
+// every frozen card of a document over the limit) until the document gains
+// events or the number of messages changes.
+let pruneIdle = { key: '', at: '' };
+
 export async function writeDocument(ctx, change, { idle = true } = {}) {
   workQueue.assertCurrent();
   const latest = await readChat(ctx.characterIndex, ctx.chatIndex);
   if (!latest) throw new Error(t('ledger.006'));
-  if (idle && chatIsStreaming(latest)) throw new Error(t('ledger.025'));
+  if (idle && chatIsStreaming(latest)) throw Object.assign(new Error(t('ledger.busy')), { code: 'CHAT_STREAMING' });
   const doc = readDocument(latest);
   const result = await change(doc, latest);
   if (result === false) return null;
   const chat = result?.chat || latest;
   // At the storage limit a write prunes what is provably gone, when it can and
   // the bot has not turned automatic cleanup off.
+  const pruneAt = `${doc.seq}:${chat.message?.length ?? 0}`;
   if (
+    !(pruneIdle.key === ctx.key && pruneIdle.at === pruneAt) &&
     bytesOf(doc) >= ITEMX_STORAGE_WARNING_BYTES &&
     !pruneBlocker(chat) &&
     (!ctx.character || (await settingsFor(ctx.character)).autoPruneEnabled)
   )
-    pruneDocument(doc, chat);
+    pruneIdle = pruneDocument(doc, chat) ? { key: '', at: '' } : { key: ctx.key, at: pruneAt };
   const next = withDocument(chat, doc);
   const written = await saveChat(ctx.characterIndex, ctx.chatIndex, next, latest);
   if (activeContextKey() === ctx.key) invalidateLoaded();

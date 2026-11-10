@@ -83,24 +83,6 @@ test('unknown prior values do not become invented zero deltas and model text is 
   assert.equal(renderer.eventKind({ previous: item, view: { ...item, power: '420' } }), 'enhanced');
 });
 
-test('skill forms are conservative and add at most one material layer without reducing weapon particles', () => {
-  for (const [name, form] of [
-    ['화염 참격', 'slash'],
-    ['빙결 방벽', 'ward'],
-    ['성광 치유', 'heal'],
-    ['어둠 잠행', 'shadow'],
-    ['정체불명의 힘', 'default']
-  ]) {
-    assert.equal(renderer.skillForm({ name }), form);
-    const before = renderer.renderSkillFx({ id: 'skill', name: '기술', affinity: 'fire' }, 'epic');
-    const html = renderer.renderSkillFx({ id: 'skill', name, affinity: 'fire' }, 'epic');
-    assert.equal((html.match(/class="craft-mote/g) || []).length, (before.match(/class="craft-mote/g) || []).length);
-    assert.equal((html.match(/itemx2-technique-material/g) || []).length, form === 'default' ? 0 : 1);
-    assert.ok(!renderer.renderSkillFx({ name }, 'epic', 'off').includes('itemx2-technique-material'));
-  }
-  assert.equal(renderer.skillForm({ name: '기술', description: '검술과 치유를 모두 다룬다' }), 'default');
-});
-
 test('blend styling does not invent effects or add repeating particle elements', () => {
   const html = renderer.renderCard({ ...item, affinity: 'fire', affinity2: 'ice' }, { fx: 'classic' });
   assert.match(html, /itemx2-blend-fire-ice/);
@@ -261,7 +243,11 @@ test('an encounter fought and ended in one response shows the meeting card, then
   const cards = html.split('<details').slice(1);
   assert.equal(cards.length, 2);
   assert.doesNotMatch(cards[0], /ixp-ended/);
-  assert.match(cards[0], /class="ixp-ev ixp-ev-live">교전 중/);
+  // The meeting is already over when its result follows: a static past step,
+  // not a card left pulsing "in combat" forever.
+  assert.match(cards[0], /ixp-codex ixp-encounter ixp-past/);
+  assert.match(cards[0], /class="ixp-ev">교전 개시/);
+  assert.doesNotMatch(cards[0], /ixp-ev-live|ixp-step live|교전 중/);
   assert.doesNotMatch(cards[0], /일격에 쓰러졌다/, 'the meeting card does not know the result yet');
   assert.match(cards[1], /ixp-codex ixp-encounter[^"]*ixp-ended/);
   assert.match(cards[1], /class="ixp-ev ixp-ev-seal">사망/);

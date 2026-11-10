@@ -3,6 +3,14 @@ import * as Core from './core.js';
 const VERSION = 1;
 const MARKER_RE = /<!--CODEX2:([A-Za-z0-9_-]+)-->/g;
 const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+// Same rule as the item core: a name every object carries (`__proto__`, `constructor`,
+// `toString`, ...) is never an id, and entries are read as own properties only.
+const validId = (value) =>
+  typeof value === 'string' && ID_RE.test(value) && value !== 'prototype' && !(value in Object.prototype);
+const own = (object, key) =>
+  object != null && typeof key === 'string' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
 const SKILL_TYPES = new Set(['active', 'passive', 'sealed']);
 const SKILL_STATUS = new Set(['learned', 'equipped', 'sealed', 'lost']);
 const RELATIONS = new Set(['hostile', 'sparring', 'neutral', 'allied', 'unknown']);
@@ -68,6 +76,7 @@ const TAG_ROUTE = new Map(
     [DOMAINS[name].patch.toLowerCase(), { domain: name, kind: 'patch' }]
   ])
 );
+const TRANSPORT_TEST_RE = new RegExp(`</?(?:${TRANSPORT_ALT})\\b`, 'i');
 const routeTag = (tag) => TAG_ROUTE.get(String(tag).toLowerCase()) || null;
 const storeFor = (state, domain) => DOMAINS[domain]?.store(state);
 const ASSET_CATALOG_MAX = 30000;
@@ -132,11 +141,12 @@ function scalar(body, a, key) {
   return clean(a[key] || field(body, key));
 }
 function normalizeId(value, prefix, seed) {
-  return ID_RE.test(value || '') ? value : `${prefix}_${fnv(seed)}`;
+  return validId(value) ? value : `${prefix}_${fnv(seed)}`;
 }
 function boundedNumber(value, min, max) {
   if (value == null || String(value).trim() === '') return null;
-  const n = Number(value);
+  // Models decorate numbers (`60%`, `Lv.4`, `3 / 10`): the first number written is the value.
+  const n = Number(typeof value === 'number' ? value : String(value).match(/-?\d+(?:\.\d+)?/)?.[0]);
   return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : null;
 }
 const mastery = (value) => boundedNumber(value, 0, 100);
@@ -212,7 +222,7 @@ function normalizeMonsterExam(raw, seed) {
   };
 }
 function normalizePatch(domain, raw) {
-  const id = ID_RE.test(raw.id || '') ? raw.id : null;
+  const id = validId(raw.id) ? raw.id : null;
   if (!id) return { error: `${domain}_patch_no_id` };
   const allowedActions = domain === 'skill' ? SKILL_ACTIONS : MONSTER_ACTIONS;
   const action = allowedActions.has(raw.action) ? raw.action : null,
@@ -332,7 +342,7 @@ function snapshot() {
   return { schema: VERSION, skills: registry(), monsters: registry(), fingerprint: '', updatedAt: Date.now() };
 }
 function put(reg, entity) {
-  if (!reg.entries[entity.id]) reg.order.push(entity.id);
+  if (!own(reg.entries, entity.id)) reg.order.push(entity.id);
   reg.entries[entity.id] = entity;
   return entity;
 }
@@ -342,7 +352,7 @@ function applyEvent(state, event) {
   // `reader` marks an edit the reader made; model transports never carry it.
   const reader = event.reader === true;
   if (event.kind === 'exam') {
-    if (!event.entity?.id || !ID_RE.test(event.entity.id)) {
+    if (!validId(event.entity?.id)) {
       pushDiagnostic(reg, { code: 'exam_invalid' });
       return null;
     }
@@ -357,7 +367,7 @@ function applyEvent(state, event) {
       pushDiagnostic(reg, { code: 'exam_bad_enum', id: event.entity.id });
       return null;
     }
-    const prior = reg.entries[event.entity.id],
+    const prior = own(reg.entries, event.entity.id),
       next = clone(event.entity),
       provided = new Set(next._provided || []),
       placeholders = new Set(next._placeholder || []);
@@ -435,7 +445,7 @@ function applyEvent(state, event) {
     }
     return put(reg, next);
   }
-  const entity = reg.entries[event.patch?.id];
+  const entity = own(reg.entries, event.patch?.id);
   if (!entity) {
     pushDiagnostic(reg, { code: 'patch_missing', id: event.patch?.id });
     return null;
@@ -694,7 +704,13 @@ function reconcileSkillEvent(event, evidenceText = '', options = {}) {
       provided.delete('mastery');
       inferred.delete('mastery');
     }
-    if (level != null) {
+    // The tag's own number is the model's settled value. A number in the prose near the
+    // skill's name (an enemy's `Lv.30`) only fills in for a tag that gave none, or gave
+    // the novice default (level 1, mastery 0) that scans emit for established skills.
+    const taggedLevel = provided.has('level') && entity.level > 1;
+    const taggedMastery = provided.has('mastery') && entity.mastery > 0;
+    if (taggedLevel) inferred.delete('level');
+    else if (level != null) {
       entity.level = level;
       provided.add('level');
       inferred.delete('level');
@@ -703,7 +719,8 @@ function reconcileSkillEvent(event, evidenceText = '', options = {}) {
       provided.add('level');
       inferred.add('level');
     } else if (entity.level != null && !provided.has('level')) inferred.add('level');
-    if (masteryValue != null) {
+    if (taggedMastery) inferred.delete('mastery');
+    else if (masteryValue != null) {
       entity.mastery = masteryValue;
       provided.add('mastery');
       inferred.delete('mastery');
@@ -724,8 +741,11 @@ function reconcileSkillEvent(event, evidenceText = '', options = {}) {
 function extractResponse(content, base = snapshot(), options = {}) {
   const protectedResult = Core.protectPlanning(content, (masked) => extractResponse(masked, base, options));
   if (protectedResult) return protectedResult;
-  const text = String(content || ''),
-    state = clone(base),
+  const text = String(content || '');
+  // Called on every streamed flush: text without a transport costs no snapshot copy.
+  // The caller's snapshot comes back as it is; nothing here or downstream writes to it.
+  if (!TRANSPORT_TEST_RE.test(text)) return { content: text, snapshot: base, events: [], errors: [] };
+  const state = clone(base),
     parts = collect(text),
     output = [],
     events = [],
@@ -748,8 +768,6 @@ function extractResponse(content, base = snapshot(), options = {}) {
   };
   if (options.reconcileExistingSkills) Object.values(state.skills.entries).forEach(indexSkill);
   let cursor = 0;
-  if (!parts.length && !new RegExp(`</?(?:${TRANSPORT_ALT})\\b`, 'i').test(text))
-    return { content: text, snapshot: state, events, errors };
   parts.forEach((part, index) => {
     output.push(text.slice(cursor, part.start));
     const domain = routeTag(part.tag)?.domain;
@@ -771,7 +789,7 @@ function extractResponse(content, base = snapshot(), options = {}) {
     }
     if (options.reconcileExistingSkills && parsed.event?.domain === 'skill') {
       const event = parsed.event;
-      if (event.kind === 'exam' && !state.skills.entries[event.entity.id]) {
+      if (event.kind === 'exam' && !own(state.skills.entries, event.entity.id)) {
         const incoming = event.entity;
         const provided = new Set(incoming._provided || []);
         const known = (value) => value && !/^(?:none|unknown|미상|미분류)$/i.test(String(value).trim());
@@ -795,19 +813,23 @@ function extractResponse(content, base = snapshot(), options = {}) {
           parsed.event = null;
           parsed.error = 'skill_identity_ambiguous';
         }
-      } else if (event.kind === 'patch' && !state.skills.entries[event.patch.id] && skillAliases.has(event.patch.id)) {
+      } else if (
+        event.kind === 'patch' &&
+        !own(state.skills.entries, event.patch.id) &&
+        skillAliases.has(event.patch.id)
+      ) {
         event.patch.id = skillAliases.get(event.patch.id);
       }
     }
     if (parsed.event?.domain === 'skill')
       parsed.event = reconcileSkillEvent(parsed.event, options.skillEvidenceText ?? text, {
         ...options,
-        priorSkill: state.skills.entries[parsed.event.entity?.id]
+        priorSkill: own(state.skills.entries, parsed.event.entity?.id)
       });
     if (parsed.event) {
       const reg = storeFor(state, parsed.event.domain);
       const id = parsed.event.kind === 'exam' ? parsed.event.entity?.id : parsed.event.patch?.id;
-      const previous = id && reg.entries[id] ? clone(reg.entries[id]) : null;
+      const previous = own(reg.entries, id) ? clone(reg.entries[id]) : null;
       const view = clone(applyEvent(state, parsed.event));
       if (view) {
         if (options.reconcileExistingSkills && parsed.event.domain === 'skill') indexSkill(view);

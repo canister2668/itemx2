@@ -2,6 +2,31 @@
 import * as Core from '../engine/core.js';
 import { t } from '../i18n.js';
 const esc = Core.esc;
+// Table lookups by a model-supplied key: own entries only, so `constructor`
+// or `__proto__` never resolves to something from Object.prototype.
+const own = (table, key) => (typeof key === 'string' && Object.hasOwn(table, key) ? table[key] : undefined);
+const plain = (value) => (value == null ? '' : String(value).trim());
+// Counts come from the model: clamp to a finite, exactly representable number.
+const COUNT_LIMIT = Number.MAX_SAFE_INTEGER;
+function countNumber(value) {
+  const number = typeof value === 'number' ? value : Number(String(value ?? '').replace(/[,_\s]/g, ''));
+  return Number.isNaN(number) ? 0 : Math.max(-COUNT_LIMIT, Math.min(COUNT_LIMIT, number));
+}
+const grouped = (number) => number.toLocaleString('en-US', { maximumFractionDigits: 2 });
+const countFull = (value) => grouped(countNumber(value));
+// 1,520 stays as written; from `limit` up it is cut (never rounded up) to 12.3억.
+const COUNT_UNITS = [
+  [1e12, t('render.unit-trillion')],
+  [1e8, t('render.unit-hundred-million')],
+  [1e4, t('render.unit-ten-thousand')]
+];
+function countShort(value, limit = 1e7) {
+  const number = countNumber(value),
+    size = Math.abs(number);
+  if (size < limit) return grouped(number);
+  const [unit, suffix] = COUNT_UNITS.find(([floor]) => size >= floor) || [1, ''];
+  return `${number < 0 ? '-' : ''}${grouped(Math.floor((size / unit) * 10) / 10)}${suffix}`;
+}
 const affinities = {
   fire: { name: t('render.001'), icon: '🔥', c: '#ff7a3d', g: 'rgba(255,122,61,.42)' },
   ice: { name: t('render.002'), icon: '❄️', c: '#58cbf5', g: 'rgba(88,203,245,.40)' },
@@ -154,7 +179,7 @@ const removedLabels = {
 };
 // The sub line of a removed item: how it left and why, never a location.
 function removedLine(item, action) {
-  const label = removedLabels[action] || possessionLabels.removed;
+  const label = own(removedLabels, action) || possessionLabels.removed;
   const reason = String(item.removedReason || '').trim();
   return reason && !/^[a-z_]+$/.test(reason) ? `${label} · ${reason}` : label;
 }
@@ -171,21 +196,21 @@ const rarityColors = {
 
 const keyFor = (a, b) => [a, b].sort().join('+');
 const reactionFor = (a, b) =>
-  reactions[keyFor(a, b)] || [
+  own(reactions, keyFor(a, b)) || [
     t('render.048'),
-    t('render.dual-resonance-desc', affinities[a]?.name || a, affinities[b]?.name || b)
+    t('render.dual-resonance-desc', own(affinities, a)?.name || a, own(affinities, b)?.name || b)
   ];
 const itemVars = (item) => {
-  const craft = crafts[item.theme] || crafts.arcane,
-    primary = affinities[item.affinity] || { c: craft.accent, g: craft.glow },
-    secondary = affinities[item.affinity2] || primary;
-  return `--p:${primary.c};--pg:${primary.g};--s:${secondary.c};--sg:${secondary.g};--rk:${rarityColors[item.rarity] || rarityColors.normal}`;
+  const craft = own(crafts, item.theme) || crafts.arcane,
+    primary = own(affinities, item.affinity) || { c: craft.accent, g: craft.glow },
+    secondary = own(affinities, item.affinity2) || primary;
+  return `--p:${primary.c};--pg:${primary.g};--s:${secondary.c};--sg:${secondary.g};--rk:${own(rarityColors, item.rarity) || rarityColors.normal}`;
 };
 
 function currentEffects(item, motion = 'full') {
   if (motion === 'off') return '';
-  const craft = crafts[item.theme] || crafts.arcane,
-    rarity = item.rarity || 'normal';
+  const craft = own(crafts, item.theme) || crafts.arcane,
+    rarity = own(rarityLabels, item.rarity) ? item.rarity : 'normal';
   const level = ambientLevel[rarity] || 1,
     count = motion === 'lite' ? Math.min(3, particleBudget[rarity] || 4) : particleBudget[rarity] || 4;
   let rays = '';
@@ -219,10 +244,10 @@ function currentEffects(item, motion = 'full') {
 const bodyLayers = { wind: 'wind', earth: 'earth', dark: 'dark', arcane: 'arcane', blood: 'blood', void: 'void' };
 
 function affinityEffects(kind, role, rarity, motion = 'full') {
-  if (!kind || !affinities[kind] || motion === 'off') return '';
+  if (!kind || !own(affinities, kind) || motion === 'off') return '';
   const a = affinities[kind],
     tag = kind === 'lightning' ? 'b' : 'i',
-    budgetScale = Math.max(0.28, (particleBudget[rarity] || 4) / 16);
+    budgetScale = Math.max(0.28, (own(particleBudget, rarity) || 4) / 16);
   let count =
     kind === 'lightning'
       ? 10
@@ -258,7 +283,7 @@ function affinityEffects(kind, role, rarity, motion = 'full') {
             ? `<div class="poison-miasma${secondary}" style="--ac:${a.c}"></div>`
             : kind === 'light'
               ? `<div class="light-veilfall${secondary}" style="--ac:${a.c}"></div><div class="light-ground${secondary}" style="--ac:${a.c}"></div>`
-              : bodyLayers[kind]
+              : own(bodyLayers, kind)
                 ? `<div class="affinity-body body-${bodyLayers[kind]}${secondary}" style="--ac:${a.c}"></div>`
                 : '';
   const movingSignature = ['fire', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void'].includes(kind);
@@ -267,34 +292,6 @@ function affinityEffects(kind, role, rarity, motion = 'full') {
       ? ''
       : `<div class="affinity-signature sig-${kind}${secondary}" style="--ac:${a.c}">${movingSignature ? '<span class="affinity-signature-visual"></span>' : ''}</div>`;
   return `${signature}${extra}<div class="afx afx-${kind}${role === 'secondary' ? ' afx-secondary' : ''}" style="--ac:${a.c}">${bits}</div>`;
-}
-
-function renderSkillFx(skill, rarity = 'normal', motion = 'full') {
-  const affinity = affinities[skill?.affinity] ? skill.affinity : 'arcane';
-  const item = {
-    id: skill?.id || skill?.name || 'skill',
-    name: skill?.name || t('ui-settings.045'),
-    theme: 'arcane',
-    rarity: rarityLabels[rarity] ? rarity : 'normal',
-    affinity
-  };
-  const form = skillForm(skill);
-  return `<div class="itemx-fx itemx2-skill-weapon-fx itemx2-skill-form-${form}">${currentEffects(item, motion)}<div class="affinity-fx">${affinityEffects(affinity, 'primary', item.rarity, motion)}</div>${motion !== 'off' && form !== 'default' ? `<span class="itemx2-codex-fx itemx2-technique-material" aria-hidden="true"></span>` : ''}</div>`;
-}
-
-function skillForm(skill) {
-  const classify = (value) => {
-    const text = String(value || '').toLowerCase();
-    const groups = [
-      ['slash', /검술|참격|발도|베기|도법|검법|swordplay|slash|swordsmanship/],
-      ['ward', /방어술|결계|방벽|보호막|shield|barrier|ward/],
-      ['heal', /치유|회복술|치료술|회복 마법|healing|restoration/],
-      ['shadow', /은신|잠행|저주|stealth|concealment|curse/]
-    ].filter(([, pattern]) => pattern.test(text));
-    return groups.length === 1 ? groups[0][0] : 'default';
-  };
-  const named = classify(skill?.name);
-  return named !== 'default' ? named : classify(`${skill?.school || ''} ${skill?.description || ''}`);
 }
 
 const reviewLabels = {
@@ -461,9 +458,9 @@ function seeded(text) {
 const pick = (list, r) => list[Math.floor(r() * list.length)];
 
 function prismSparks(item, count, bokeh) {
-  const p = prismMotion[item.affinity];
+  const p = own(prismMotion, item.affinity);
   if (!p || !count) return '';
-  const q = prismMotion[item.affinity2] || p,
+  const q = own(prismMotion, item.affinity2) || p,
     r = seeded(`${item.id || item.name}#p`);
   let out = '';
   for (let i = 0; i < count; i++) {
@@ -481,8 +478,8 @@ function prismSparks(item, count, bokeh) {
 // group moves with a single transform+opacity animation.
 function prismSwarms(item, count) {
   if (!count) return '';
-  const p = prismMotion[item.affinity],
-    palette = p ? [...p.cl, ...(prismMotion[item.affinity2]?.cl || [])] : ['#fff6d8', '#ffffff'],
+  const p = own(prismMotion, item.affinity),
+    palette = p ? [...p.cl, ...(own(prismMotion, item.affinity2)?.cl || [])] : ['#fff6d8', '#ffffff'],
     kind = p ? p.k : 'rise',
     r = seeded(`${item.id || item.name}#s`);
   let out = '';
@@ -507,7 +504,7 @@ function prismSwarms(item, count) {
 }
 
 function prismBurst(item) {
-  const p = prismMotion[item.affinity],
+  const p = own(prismMotion, item.affinity),
     palette = p ? [...p.cl, '#ffffff'] : ['#ffffff', '#fff1c2'],
     r = seeded(`${item.id || item.name}#b`),
     dots = [];
@@ -526,7 +523,7 @@ function prismLayers(item, rank, motion) {
   const lite = motion === 'lite',
     sig =
       rank >= 4
-        ? `<div class="ixp-sig ixp-sig-${prismMotion[item.affinity] && item.affinity !== 'arcane' ? item.affinity : 'none'}"></div>`
+        ? `<div class="ixp-sig ixp-sig-${own(prismMotion, item.affinity) && item.affinity !== 'arcane' ? item.affinity : 'none'}"></div>`
         : '',
     rim = rank >= 4 ? '<div class="ixp-rim"></div>' : '',
     edge = rank >= 4 ? '<div class="ixp-edge"></div>' : '',
@@ -544,7 +541,8 @@ function prismLayers(item, rank, motion) {
 }
 
 // The prism effect layers for a card that is not an item (skills, encounters):
-// `seed` carries id/name/affinity, `rarity` one of the item grades.
+// `seed` carries id/name/affinity, `rarity` one of the item grades. `fresh` is
+// the one-shot celebration; the caller keeps it only for a card that earns it.
 function prismLayersFor(seed, rarity, motion) {
   return prismLayers(seed, Math.max(0, RANKS.indexOf(rarity)), motion);
 }
@@ -557,9 +555,9 @@ function classicLayer(item, theme, rarity, motion) {
     `craft-${theme}`,
     `rarity-${rarity}`,
     strong ? 'itemx2-strong' : '',
-    item.condition ? `condition-${item.condition}` : '',
+    own(conditionLabels, item.condition) ? `condition-${item.condition}` : '',
     motion === 'lite' ? 'motion-lite' : '',
-    item.affinity && item.affinity2 && item.affinity !== item.affinity2
+    own(affinities, item.affinity) && own(affinities, item.affinity2) && item.affinity !== item.affinity2
       ? `itemx2-blend-${keyFor(item.affinity, item.affinity2).replace('+', '-')}`
       : ''
   ]
@@ -615,73 +613,133 @@ function prismStats(item) {
 }
 
 function prismTags(item) {
-  const primary = affinities[item.affinity];
+  const primary = own(affinities, item.affinity);
   if (!primary) return '';
-  const secondary = item.affinity2 && item.affinity2 !== item.affinity ? affinities[item.affinity2] : null;
+  const secondary = item.affinity2 !== item.affinity ? own(affinities, item.affinity2) : null;
   let out = `<span class="ixp-tag" style="--c:${primary.c}">${primary.icon} ${esc(primary.name)}</span>`;
   if (secondary)
     out += `<span class="ixp-tag" style="--c:${secondary.c}">${secondary.icon} ${esc(secondary.name)}</span><span class="ixp-tag ixp-combo">✦ ${esc(reactionFor(item.affinity, item.affinity2)[0])}</span>`;
   return `<div class="ixp-tags">${out}</div>`;
 }
 
+// Effects and augments as the model wrote them: objects, bare strings, or junk.
+function listEntries(values) {
+  return (Array.isArray(values) ? values : [])
+    .map((one) =>
+      typeof one === 'string'
+        ? { name: one.trim(), desc: '' }
+        : one && typeof one === 'object'
+          ? { name: plain(one.name), desc: plain(one.desc ?? one.description) }
+          : null
+    )
+    .filter((one) => one && (one.name || one.desc));
+}
+
 function prismList(item) {
-  const effects = Array.isArray(item.effects) ? item.effects : [],
-    augments = Array.isArray(item.augments) ? item.augments : [];
   const rows = [
-    ...effects.map((one) => `<li><b>${esc(one.name)}</b>${esc(one.desc)}</li>`),
-    ...augments.map(
+    ...listEntries(item.effects).map((one) => `<li>${one.name ? `<b>${esc(one.name)}</b>` : ''}${esc(one.desc)}</li>`),
+    ...listEntries(item.augments).map(
       (one) => `<li class="aug"><b>${esc(one.name)}<small>${t('render.055')}</small></b>${esc(one.desc)}</li>`
     )
   ];
   return rows.length ? `<div class="ixp-sec">${t('render.054')}</div><ul class="ixp-list">${rows.join('')}</ul>` : '';
 }
 
+// The small chip beside the grade: what this record did to the item. A folded
+// card is otherwise only "grade + name" whether it was gained, changed or lost.
+function itemEventChip(payload) {
+  const view = payload?.view;
+  if (!view || !payload.event) return null;
+  if (view.possession === 'removed')
+    return { label: own(removedLabels, payload.event.patch?.action) || possessionLabels.removed, tone: 'loss' };
+  const owned = view.possession === 'owned';
+  if (!payload.previous || (owned && payload.previous.possession !== 'owned'))
+    return owned
+      ? { label: t('ui-panel.badge-gain'), tone: 'gain' }
+      : { label: possessionLabels.observed, tone: 'seen' };
+  return { label: t('render.changed'), tone: 'change' };
+}
+
 // options: motion 'full'|'lite'|'off', fx 'prism'|'classic', fold (inline: start
-// closed), previous (the item before this event, for the change note).
+// closed), previous (the item before this event, for the change note), chip
+// ({label, tone} event chip), fresh (first registration: the one-shot burst).
 function renderCard(item, options = {}) {
   if (!item) return '';
-  const theme = crafts[item.theme] ? item.theme : 'arcane',
-    rarity = rarityLabels[item.rarity] ? item.rarity : 'normal',
+  const theme = own(crafts, item.theme) ? item.theme : 'arcane',
+    rarity = own(rarityLabels, item.rarity) ? item.rarity : 'normal',
+    condition = own(conditionLabels, item.condition) ? item.condition : '',
     rank = RANKS.indexOf(rarity),
     motion = options.motion || 'full',
     pack = options.fx === 'classic' ? 'classic' : 'prism';
+  const layers =
+    pack === 'prism'
+      ? prismLayers(item, rank, motion)
+      : { hero: '', back: classicLayer(item, theme, rarity, motion), front: '', fresh: '' };
+  // The celebration belongs to a first registration, not to every later event.
+  const fresh = options.fresh ? layers.fresh : '';
   const classes = [
     'ixp',
     `ixp-${pack}`,
     `ixp-r-${rarity}`,
     `ixp-t-${theme}`,
-    item.condition && conditionLabels[item.condition] ? `ixp-c-${item.condition}` : '',
+    condition ? `ixp-c-${condition}` : '',
+    options.fresh ? 'ixp-fresh' : '',
     motion === 'off' ? 'motion-off' : motion === 'lite' ? 'motion-lite' : '',
     options.inline ? 'itemx-inline-card' : ''
   ]
     .filter(Boolean)
     .join(' ');
-  const primary = affinities[item.affinity],
-    secondary = affinities[item.affinity2] || primary,
+  const primary = own(affinities, item.affinity),
+    secondary = own(affinities, item.affinity2) || primary,
     vars = `--p:${primary ? primary.c : 'var(--a)'};--s:${secondary ? secondary.c : 'var(--a)'}`;
-  const layers =
-    pack === 'prism'
-      ? prismLayers(item, rank, motion)
-      : { hero: '', back: classicLayer(item, theme, rarity, motion), front: '', fresh: '' };
-  const possession = possessionLabels[item.possession] || item.possession || t('ui-panel.049'),
-    location = locationLabels[item.location] || item.location || t('render.044'),
-    state = conditionLabels[item.condition] ? `<span class="ixp-state">${conditionLabels[item.condition]}</span>` : '',
-    count = Core.isCurrency(item)
-      ? `<b class="ixp-x">${Number(item.count || 0).toLocaleString('en-US')}</b>`
-      : Number(item.count) > 1
-        ? `<b class="ixp-x">×${Number(item.count)}</b>`
-        : '';
+  const currency = Core.isCurrency(item),
+    amount = countNumber(item.count),
+    possession = own(possessionLabels, item.possession) || plain(item.possession) || t('ui-panel.049'),
+    location = own(locationLabels, item.location) || plain(item.location) || t('render.044'),
+    state = condition ? `<span class="ixp-state">${conditionLabels[condition]}</span>` : '',
+    shown = countShort(amount),
+    // A shortened count keeps its exact figure as the tooltip.
+    badge = (text) =>
+      `<b class="ixp-x"${shown === countFull(amount) ? '' : ` title="${countFull(amount)}"`}>${text}</b>`,
+    count = currency ? badge(shown) : amount > 1 ? badge(`×${shown}`) : '';
+  const chip =
+    options.chip && options.chip.label
+      ? `<span class="ixp-ev ixp-ev-in${['gain', 'change', 'loss', 'seen'].includes(options.chip.tone) ? ` ixp-ev-${options.chip.tone}` : ''}">${esc(options.chip.label)}</span>`
+      : '';
+  // A folded card hides the icon badge, so a balance is repeated beside the grade.
+  const balance = currency ? `<span class="ixp-bal">${countShort(amount, 1e9)}</span>` : '';
   // The acquisition burst lives in the summary so a folded card still plays it.
-  const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(item.possession === 'removed' ? removedLine(item, options.removedAs) : `${possession} · ${location}`)}</span>${state}</span>${prismGauge(item)}</div><span class="ixp-more">${t('render.expand')}</span></summary>`;
-  const body = `<div class="ixp-body">${prismTags(item)}${prismStats(item)}${prismList(item)}${options.previous ? changesHtml(options.previous, item) : ''}${item.trivia ? `<p class="ixp-lore">${esc(item.trivia)}</p>` : ''}</div>`;
+  const hero = `<summary class="ixp-hero">${fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span>${chip}${balance}<span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(item.possession === 'removed' ? removedLine(item, options.removedAs) : `${possession} · ${location}`)}</span>${state}</span>${prismGauge(item)}</div><span class="ixp-more">${t('render.expand')}</span></summary>`;
+  // A shortened balance keeps its exact figure in the body.
+  const exact =
+    currency && shown !== countFull(amount)
+      ? statRows([statRow('🪙', t('render.060'), countFull(amount), { wide: true })])
+      : '';
+  const body = `<div class="ixp-body">${prismTags(item)}${exact}${prismStats(item)}${prismList(item)}${options.previous ? changesHtml(options.previous, item) : ''}${item.trivia ? `<p class="ixp-lore">${esc(item.trivia)}</p>` : ''}</div>`;
   return `<details class="${classes}" style="${vars}" data-itemx-id="${esc(item.id)}"${options.fold ? '' : ' open'}>${hero}${layers.back}${body}${layers.front}</details>`;
 }
 
+// The drawer tile. The outer element must stay one <button ...>...</button>:
+// the drawer rewrites exactly that pair into a <span> inside its own label.
 function renderTile(item) {
-  const icons = [item.affinity && affinities[item.affinity]?.icon, item.affinity2 && affinities[item.affinity2]?.icon]
+  const rarity = own(rarityLabels, item.rarity) ? item.rarity : 'normal',
+    icons = [...new Set([own(affinities, item.affinity)?.icon, own(affinities, item.affinity2)?.icon])].filter(Boolean),
+    currency = Core.isCurrency(item),
+    amount = countNumber(item.count),
+    equipped = item.location === 'equipped';
+  const classes = [
+    'itemx-tile',
+    `rarity-${rarity}`,
+    equipped ? 'itemx-tile-on' : '',
+    icons.length ? `itemx-tile-aff-${icons.length}` : ''
+  ]
     .filter(Boolean)
-    .join('');
-  return `<button class="itemx-tile rarity-${esc(item.rarity || 'normal')}" style="${itemVars(item)}" data-item-id="${esc(item.id)}"><span class="itemx-tile-bar"></span>${item.location === 'equipped' ? '<span class="itemx-tile-eq"></span>' : ''}${icons ? `<span class="itemx-tile-aff">${icons}</span>` : ''}<span class="itemx-tile-em">${esc(Core.resolveItemEmoji(item))}</span><span class="itemx-tile-nm">${esc(item.name || '???')}</span><span class="itemx-tile-meta"><span class="itemx-tile-rk">${esc(item.displayRarity || rarityLabels[item.rarity] || rarityLabels.normal)}</span><span class="itemx-tile-lc">${esc(Core.isCurrency(item) ? Number(item.count || 0).toLocaleString('en-US') : item.itemType || t('render.item-type-other'))}</span></span></button>`;
+    .join(' ');
+  const mark = equipped
+    ? `<span class="itemx-tile-eqp" title="${esc(locationLabels.equipped)}" aria-label="${esc(locationLabels.equipped)}">E</span>`
+    : '';
+  const quantity = !currency && amount > 1 ? `<span class="itemx-tile-qty">×${countShort(amount, 1e4)}</span>` : '';
+  return `<button class="${classes}" style="${itemVars(item)}" data-item-id="${esc(item.id)}"><span class="itemx-tile-bar"></span>${icons.length ? `<span class="itemx-tile-aff">${icons.join('')}</span>` : ''}<span class="itemx-tile-em">${esc(Core.resolveItemEmoji(item))}${mark}${quantity}</span><span class="itemx-tile-nm">${esc(item.name || '???')}</span><span class="itemx-tile-meta"><span class="itemx-tile-rk">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="itemx-tile-lc">${esc(currency ? countShort(amount, 1e9) : item.itemType || t('render.item-type-other'))}</span></span></button>`;
 }
 
 function renderMarkerPayload(payload, options = {}) {
@@ -690,7 +748,9 @@ function renderMarkerPayload(payload, options = {}) {
     return renderCard(payload.view, {
       ...options,
       previous: payload.previous,
-      removedAs: payload.event?.patch?.action || ''
+      removedAs: payload.event?.patch?.action || '',
+      chip: itemEventChip(payload),
+      fresh: eventKind(payload, 'item') === 'acquired' && payload.view.possession !== 'removed'
     });
   const id = payload.event?.patch?.id;
   return id ? `<span class="itemx-event-chip">ITEMX · ${esc(id)} ${t('render.changed')}</span>` : '';
@@ -698,6 +758,8 @@ function renderMarkerPayload(payload, options = {}) {
 
 export {
   affinities,
+  own,
+  countShort,
   crafts,
   rarityLabels,
   reactions,
@@ -709,8 +771,6 @@ export {
   heroGauge,
   renderTile,
   renderMarkerPayload,
-  renderSkillFx,
-  skillForm,
   changes,
   changesHtml,
   reviewHtml,

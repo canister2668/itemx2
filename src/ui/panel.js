@@ -63,6 +63,7 @@ import {
   SETTINGS_SKINS,
   openBackupPanel,
   rootSettingActions,
+  SETTINGS_SECTIONS,
   settingsDebugLog,
   settingsDomainControls,
   settingsFontChoices,
@@ -113,7 +114,15 @@ export function inventoryLayout(loaded) {
   );
   const held = (item) => item.possession === 'owned' && Core.isCurrency(item);
   const money = listed.filter(held);
-  const items = listed.filter((item) => !held(item) && matches(item)).slice(0, 60);
+  // The filter is applied before paging: hiding tiles of the drawn page in CSS left
+  // an empty grid whenever the matches sat on another page.
+  const base = listed.filter((item) => !held(item) && matches(item)).slice(0, 60);
+  const items =
+    uiState.itemFilter === 'owned'
+      ? base.filter((item) => item.possession === 'owned')
+      : uiState.itemFilter === 'equipped'
+        ? base.filter((item) => item.location === 'equipped')
+        : base;
   const mode = CURRENCY_DISPLAY_MODES.includes(loaded?.currencyDisplay) ? loaded.currencyDisplay : 'grid';
   const pageCount = Math.max(1, Math.ceil(items.length / ITEMX_ROOT_PAGE_SIZE));
   uiState.rootItemPage = Math.max(0, Math.min(pageCount - 1, uiState.rootItemPage));
@@ -121,6 +130,7 @@ export function inventoryLayout(loaded) {
   const pinned = mode === 'wallet' ? [] : money;
   return {
     money,
+    base,
     items,
     pageCount,
     start,
@@ -638,7 +648,7 @@ export async function setRootOpen(open) {
       // A pending yes / no question does not survive closing the drawer.
       uiState.cleanupArmed = false;
       uiState.storageCleanupArmed = false;
-      uiState.storageCleanupArmed = false;
+      deleteArmed = '';
       uiState.allowDrawerOverSettings = false;
       invalidateHostSettingsVisibility();
       await syncHostSettingsVisibility();
@@ -1139,11 +1149,11 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
     .filter(matches)
     .slice(0, 60);
   const monsters = codexEntries(loaded, 'monster');
+  const counted = tab === 'settings' ? all : layout.base;
   const counts = {
-    all: all.length,
-    owned: all.filter((item) => item.possession === 'owned').length,
-    equipped: all.filter((item) => item.location === 'equipped').length,
-    removed: all.filter((item) => item.possession === 'removed').length
+    all: counted.length,
+    owned: counted.filter((item) => item.possession === 'owned').length,
+    equipped: counted.filter((item) => item.location === 'equipped').length
   };
   const filters = [
     ['all', t('ui-panel.052')],
@@ -1153,7 +1163,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
   const controls = filters
     .map(
       ([key]) =>
-        `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === 'all' ? 'checked' : ''}>`
+        `<input class="itemx2-root-control itemx2-root-filter-${key}" id="itemx2-filter-${key}" name="itemx2-filter" type="radio" ${key === ITEM_FILTERS.find((name) => name === uiState.itemFilter || name === 'all') ? 'checked' : ''}>`
     )
     .join('');
   // CSS-only, like the tab radios: the header label flips this and the search
@@ -1249,7 +1259,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
       ? `<span class="itemx2-root-pager"><button class="itemx2-root-page-prev" type="button" ${uiState.rootItemPage === 0 ? 'disabled' : ''}>‹</button><b>${uiState.rootItemPage + 1} / ${pageCount}</b><button class="itemx2-root-page-next" type="button" ${uiState.rootItemPage >= pageCount - 1 ? 'disabled' : ''}>›</button></span>`
       : '';
   const shownEnd = Math.min(all.length, pageStart + inventoryPage.length - layout.pinned);
-  const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsLevel !== 'off' ? t('ui-panel.035') : t('ui-panel.034')}</span><span class="itemx-search">${t('ui-panel.033.1')}</span></div>${walletBarHtml(layout.wallet)}<div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}${t('ui-panel.033.2')}${layout.money.length ? t('ui-panel.money-count', layout.money.length) : ''}${itemsOf(loaded.snapshot).length > 60 ? t('ui-panel.036') : ''}</span>${pager}</footer></div>`;
+  const inventoryContent = `<div class="itemx2-root-inventory"><nav class="itemx-seg itemx2-root-filters">${filters.map(([key, label]) => `<label class="itemx-seg-i itemx2-filter-chip-${key}" for="itemx2-filter-${key}">${label} <span class="itemx-seg-n">${counts[key]}</span></label>`).join('')}</nav><div class="itemx-tools itemx2-root-tools"><span class="itemx-tool">${loaded.effectsLevel !== 'off' ? t('ui-panel.035') : t('ui-panel.034')}</span><span class="itemx-search">${t('ui-panel.033.1')}</span></div>${walletBarHtml(layout.wallet)}<div class="itemx-body"><div class="itemx-grid">${list}</div></div><footer class="itemx-pf"><span>${all.length ? `${pageStart + 1}-${shownEnd}` : '0'} / ${all.length}${t('ui-panel.033.2')}${layout.money.length ? t('ui-panel.money-count', layout.money.length) : ''}${itemsOf(loaded.snapshot).length > 60 ? t('ui-panel.036') : ''}</span>${pager}</footer></div>`;
   const skillsContent = `<div class="itemx2-root-skills itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-skill-none" name="itemx2-skill-detail" type="radio" checked><div class="itemx2-codex-note">${t('ui-panel.032.1')}</div>${skillList}</div>`;
   const bestiaryContent = `<div class="itemx2-root-bestiary itemx2-root-tab-active"><input class="itemx2-root-control" id="itemx2-monster-none" name="itemx2-monster-detail" type="radio" checked><div class="itemx2-codex-note">${t('ui-panel.031.1')}</div>${monsterList}</div>`;
   const activeContent =
@@ -1285,7 +1295,7 @@ export const rootInventoryHtml = (loaded, open = true, tab = 'inventory') => roo
 
 // Owned and equipped counts of the listed items, shown in the header.
 function listedItemCounts(loaded, tab) {
-  const listed = tab === 'settings' ? itemsOf(loaded.snapshot).slice(0, 60) : inventoryLayout(loaded).items;
+  const listed = tab === 'settings' ? itemsOf(loaded.snapshot).slice(0, 60) : inventoryLayout(loaded).base;
   return {
     owned: listed.filter((item) => item.possession === 'owned').length,
     equipped: listed.filter((item) => item.location === 'equipped').length
@@ -1417,6 +1427,8 @@ export async function buildHitTable(classNames) {
   return new Map(unique.map((name, index) => [name, rects[index]]));
 }
 const ROOT_TABS = ['inventory', 'skills', 'bestiary', 'settings'];
+// 'all' is last so an unknown stored value falls back to it.
+const ITEM_FILTERS = ['owned', 'equipped', 'all'];
 // The controls a click on the drawer can reach, given the open tab: the table
 // is filtered by tab so the settings rows are measured only on that tab.
 export function hitCandidates(tab = uiState.activeRootTab) {
@@ -1429,9 +1441,16 @@ export function hitCandidates(tab = uiState.activeRootTab) {
     'itemx2-setting-backup',
     ...ROOT_TABS.map((name) => `itemx2-root-tab-${name}`),
     ...actions.filter((action) => action.header).map((action) => action.hook),
-    ...(tab === 'inventory' ? ['itemx2-root-page-prev', 'itemx2-root-page-next', 'itemx2-repair-one'] : []),
+    ...(tab === 'inventory'
+      ? ['itemx2-root-page-prev', 'itemx2-root-page-next', ...ITEM_FILTERS.map((key) => `itemx2-filter-chip-${key}`)]
+      : []),
     ...(tab === 'settings'
-      ? ['itemx2-manager-fold', 'itemx2-manager-create-button', ...actions.map((action) => action.hook)]
+      ? [
+          'itemx2-manager-fold',
+          'itemx2-manager-create-button',
+          ...SETTINGS_SECTIONS.map((key) => `itemx2-set-chip-${key}`),
+          ...actions.map((action) => action.hook)
+        ]
       : [])
   ];
 }
@@ -1533,6 +1552,23 @@ export async function installRootClickRouter(owner) {
         await openRootInventory({ open: true, tab: uiState.activeRootTab });
         return;
       }
+      if (uiState.activeRootTab === 'inventory' && !uiState.historyView.open) {
+        for (const key of ITEM_FILTERS) {
+          if (!(await eventHitsMainClass(event, `itemx2-filter-chip-${key}`))) continue;
+          if (uiState.itemFilter === key) return;
+          uiState.itemFilter = key;
+          uiState.rootItemPage = 0;
+          await openRootInventory({ open: true, tab: 'inventory' });
+          return;
+        }
+      }
+      if (uiState.activeRootTab === 'settings' && !uiState.historyView.open) {
+        for (const key of SETTINGS_SECTIONS) {
+          if (!(await eventHitsMainClass(event, `itemx2-set-chip-${key}`))) continue;
+          uiState.settingsSection = key;
+          return;
+        }
+      }
       // Header actions are handled before tab and body controls.
       for (const action of rootSettingActions()) {
         if (!action.header) continue;
@@ -1605,22 +1641,22 @@ export async function installRootClickRouter(owner) {
       }
       if (uiState.activeRootTab === 'inventory') {
         const loaded = freshLoaded() || (await cachedOrRebuildCurrent());
-        if (loaded && (await eventHitsMainClass(event, 'itemx2-repair-one'))) {
-          const items = rootPageItems(loaded);
-          for (let index = 0; index < items.length; index++) {
-            if (!(await panelDocument().querySelector(`#itemx2-detail-${index}:checked`))) continue;
-            try {
-              const refreshed = await repairOneItem(loaded, items[index].id);
-              const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
-              const item = refreshed?.snapshot?.registry?.items?.[items[index].id];
-              if (activeContextKey() === loaded.key && detail && item)
-                await detail.setInnerHTML(itemDetailBodyHtml(item));
-              forgetDetailBodies();
-            } catch (error) {
-              await notifyUser(error.message || String(error), 'error');
-            }
-            return;
+        // Measured inside the open detail: an earlier detail stays in the DOM, hidden, with its
+        // own repair button, and the first match in the document would never take the click.
+        const repairTarget = loaded && panelDocument() ? await openDeleteTarget(loaded, 'item') : null;
+        if (repairTarget && (await hitInOpenDetail(event, repairTarget, 'itemx2-repair-one'))) {
+          const index = rootPageItems(loaded).findIndex((item) => item.id === repairTarget.entity.id);
+          try {
+            const refreshed = await repairOneItem(loaded, repairTarget.entity.id);
+            const detail = await queryMainClass(`itemx2-root-detail-body-${index}`);
+            const item = refreshed?.snapshot?.registry?.items?.[repairTarget.entity.id];
+            if (activeContextKey() === loaded.key && detail && item)
+              await detail.setInnerHTML(itemDetailBodyHtml(item));
+            forgetDetailBodies();
+          } catch (error) {
+            await notifyUser(error.message || String(error), 'error');
           }
+          return;
         }
         if (loaded && loaded.key === activeContextKey()) {
           // SafeElement listeners are document-level. While this async

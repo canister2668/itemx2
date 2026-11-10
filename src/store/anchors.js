@@ -56,11 +56,129 @@ export function requestText(text) {
   return stripped === source ? source : tidy(stripped);
 }
 
+// Plain text the parsers must leave alone. The engine reads every `[아이템: …]`
+// line and every bracket tag in `inline code` as a transport, and drops each
+// bare ``` line of a reply that carries a tag. Before parsing:
+//   - a Korean alias without an id= / name= field is a status line of the
+//     story, and a bracket tag inside inline code is a mention: both get a
+//     guard character the engine's patterns do not match;
+//   - each bare fence line is replaced by a token on its own line.
+// `restore` takes the guards out again and puts the fences back, except
+// around a block that only wrapped transport tags.
+const GUARD = '\uE83A';
+const FENCE_MARK = '\uE83B';
+const GUARDED_RE = /(\[(?:itemx|아이템))\uE83A/gi;
+const KOREAN_ALIAS_RE = /(\[아이템)(\s*:([^\]\r\n]*)\])/g;
+const IDENTITY_FIELD_RE = /(?:^|\|)\s*(?:id|name|이름)\s*=/i;
+const BRACKET_OPEN_RE = /(\[(?:itemx|아이템))(?=\s*:)/gi;
+const INLINE_CODE_RE = /``(?!`)[^\n]*?``(?!`)|`[^`\n]+`/g;
+const XML_TRANSPORT_SPAN_RE =
+  /<(itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b[^>]*>(?:(?!<\1\b)[\s\S])*?<\/\1\s*>/gi;
+const RAW_TAG_RE =
+  /<\/?(?:itemExam|itemPatch|itemx|skillExam|skillPatch|monsterExam|monsterPatch)\b|\[(?:itemx|아이템)\s*:/i;
+const ANY_FENCE_RE = /^[ \t]*(?:`{3,}|~{3,})/;
+// The fence lines the engine removes.
+const BARE_FENCE_RE = /^\s*```(?:xml)?\s*$/i;
+const MARKER_ONLY_RE = /^(?:\s|<!--(?:ITEMX2|CODEX2):[A-Za-z0-9_-]+-->)*$/;
+
+// A Korean alias line counts as a transport only with an id= or name= field.
+export const plainKoreanAlias = (body) => !IDENTITY_FIELD_RE.test(String(body || ''));
+
+function guardBrackets(source) {
+  // Inside a complete XML transport the text is a field value: left as it is.
+  const spans = [];
+  XML_TRANSPORT_SPAN_RE.lastIndex = 0;
+  for (let m; (m = XML_TRANSPORT_SPAN_RE.exec(source));) spans.push([m.index, XML_TRANSPORT_SPAN_RE.lastIndex]);
+  const inSpan = (at) => spans.some(([start, end]) => at >= start && at < end);
+  return source
+    .replace(INLINE_CODE_RE, (code, at) =>
+      inSpan(at) ? code : code.replace(BRACKET_OPEN_RE, (_, head) => head + GUARD)
+    )
+    .replace(KOREAN_ALIAS_RE, (raw, head, rest, body, at) =>
+      inSpan(at) || !plainKoreanAlias(body) ? raw : head + GUARD + rest
+    );
+}
+
+function maskFences(source) {
+  const lines = source.split('\n');
+  const blocks = [];
+  let open = null,
+    count = 0;
+  const token = () => `${FENCE_MARK}${count++}${FENCE_MARK}`;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!ANY_FENCE_RE.test(lines[index])) continue;
+    const bare = BARE_FENCE_RE.test(lines[index]);
+    if (!open) {
+      open = { start: index, token: bare ? token() : '', line: lines[index] };
+      if (bare) lines[index] = open.token;
+      continue;
+    }
+    // Whether the block held a tag is decided on the original text: an empty
+    // fenced block of the story is not ours to remove.
+    const tagged = RAW_TAG_RE.test(lines.slice(open.start + 1, index).join('\n'));
+    const close = bare ? token() : '';
+    if (open.token || close)
+      blocks.push({ open: open.token, openLine: open.line, close, closeLine: lines[index], tagged });
+    if (bare) lines[index] = close;
+    open = null;
+  }
+  // A fence still open at the end (a reply being streamed).
+  if (open?.token)
+    blocks.push({
+      open: open.token,
+      openLine: open.line,
+      close: '',
+      closeLine: '',
+      tagged: RAW_TAG_RE.test(lines.slice(open.start + 1).join('\n'))
+    });
+  return { text: lines.join('\n'), blocks };
+}
+
+function restoreFences(content, blocks) {
+  let out = content,
+    dropped = false;
+  const drop = (token) => {
+    out = out.replace(new RegExp(`[ \\t]*${token}[ \\t]*\\n?`), '');
+    dropped = true;
+  };
+  for (const block of blocks) {
+    const start = block.open ? out.indexOf(block.open) : -1;
+    const end = block.close ? out.indexOf(block.close) : -1;
+    // Dropped only when both ends are ours and nothing but cards is left
+    // between them.
+    const ours = block.tagged && start >= 0 && (block.close ? end > start : true);
+    const inner = ours ? out.slice(start + block.open.length, block.close ? end : out.length) : '';
+    if (ours && MARKER_ONLY_RE.test(inner)) {
+      if (block.close) drop(block.close);
+      drop(block.open);
+      continue;
+    }
+    if (start >= 0) out = out.replace(block.open, () => block.openLine);
+    if (end >= 0) out = out.replace(block.close, () => block.closeLine);
+  }
+  return dropped ? out.replace(/\n{3,}/g, '\n\n').trim() : out;
+}
+
+export function shieldPlainText(text) {
+  const source = String(text || '');
+  if (source.includes(GUARD) || source.includes(FENCE_MARK)) return { text: source, restore: (content) => content };
+  const guarded = /\[(?:itemx|아이템)\s*:/i.test(source) ? guardBrackets(source) : source;
+  const fenced = /```|~~~/.test(guarded) ? maskFences(guarded) : { text: guarded, blocks: [] };
+  if (fenced.text === source) return { text: source, restore: (content) => content };
+  return {
+    text: fenced.text,
+    restore: (content) => restoreFences(String(content ?? ''), fenced.blocks).replace(GUARDED_RE, '$1')
+  };
+}
+
 // Model transport tags (<itemExam>, [itemx: …], …) and transport markers,
 // parsed and dropped: nothing of them reaches stored or requested text.
 export function stripTransport(text) {
-  const items = Core.extractResponse(String(text || ''), Core.newRegistry()).content.replace(Core.MARKER_RE, '');
-  return Codex.extractResponse(items, Codex.snapshot(), { enabledDomains: [] }).content.replace(Codex.MARKER_RE, '');
+  const shield = shieldPlainText(text);
+  const items = Core.extractResponse(shield.text, Core.newRegistry()).content.replace(Core.MARKER_RE, '');
+  return shield.restore(
+    Codex.extractResponse(items, Codex.snapshot(), { enabledDomains: [] }).content.replace(Codex.MARKER_RE, '')
+  );
 }
 
 const base36 = (hex) => parseInt(hex, 16).toString(36).padStart(7, '0');

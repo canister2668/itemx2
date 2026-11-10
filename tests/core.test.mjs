@@ -272,14 +272,6 @@ test('rarity particle budgets keep rare and below restrained', () => {
   );
 });
 
-test('skill detail reuses the item weapon FX engine with its resolved affinity', () => {
-  const html = renderer.renderSkillFx({ id: 'skill_flame', name: '홍련참', affinity: 'fire' }, 'legendary', 'full');
-  assert.match(html, /itemx2-skill-weapon-fx/);
-  assert.match(html, /current-fx/);
-  assert.match(html, /affinity-fx/);
-  assert.match(html, /afx-fire/);
-});
-
 test('filtered ambient and moving affinity visuals use static child layers without reducing effects', () => {
   const item = core.normalizeItem({
     id: 'layered',

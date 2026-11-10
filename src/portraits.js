@@ -14,6 +14,7 @@ let inlinePortraitCatalog = null;
 let moduleAssetCache = { key: '', at: 0, rows: [] };
 let characterAssetCache = { key: '', at: 0, rows: [] };
 let combinedAssetCache = { key: '', at: 0, rows: [] };
+const PORTRAIT_BATCH = 20;
 
 // A context switch or a module-asset toggle makes every cached catalog stale.
 export function resetPortraitContext() {
@@ -38,7 +39,7 @@ export function inlinePortraitImages(entities, contextKey) {
     cached = inlinePortraitCatalog;
   if (cached?.contextKey !== contextKey) return portraits;
   for (const entity of entities) {
-    const asset = Codex.assetForEntity(cached.catalog, entity, cached.narrative);
+    const asset = entityPortraitAsset(cached.catalog, entity, cached.narrative, cached.character);
     if (!asset) continue;
     const image = portraitThumbnailCache.get(`${cached.characterId}:${asset.id}:${asset.ext || ''}`);
     if (typeof image === 'string' && image) portraits[entity.id] = image;
@@ -61,6 +62,109 @@ export function characterPortraitAssets(character, max = Codex.ASSET_CATALOG_MAX
   Codex.portraitAssetIndex(rows);
   characterAssetCache = { key, at: Date.now(), rows };
   return rows;
+}
+
+// The catalog without the bot's own emotion images (neutral, serious, …):
+// they are faces of the bot, not portraits of whoever it meets. Cached per
+// catalog array (the catalogs themselves are cached, and each array carries
+// its own index).
+const withoutEmotion = new WeakMap();
+export function portraitCandidates(rows, character) {
+  if (!rows?.length || !character?.emotionImages?.length) return rows || [];
+  const hit = withoutEmotion.get(rows);
+  if (hit) return hit;
+  // A name an additional or cc asset also carries belongs to that asset.
+  const own = new Set(Codex.assetCatalog(character, Codex.ASSET_CATALOG_MAX, false).map((row) => row.name));
+  const emotion = new Set(
+    Codex.assetCatalog({ additionalAssets: character.emotionImages }, Codex.ASSET_CATALOG_MAX, false)
+      .map((row) => row.name)
+      .filter((name) => !own.has(name))
+  );
+  const kept = emotion.size ? rows.filter((row) => !emotion.has(row.name)) : rows;
+  const out = kept.length === rows.length ? rows : kept;
+  if (out !== rows) Codex.portraitAssetIndex(out);
+  withoutEmotion.set(rows, out);
+  return out;
+}
+
+// The asset list the model is offered as portrait names: never the bot's own
+// emotion images, or an enemy is given the bot's face.
+export function protocolPortraitAssets(character, moduleAssets = [], max = Codex.ASSET_CATALOG_MAX) {
+  return portraitCandidates(combinedPortraitAssets(character, moduleAssets, max), character);
+}
+
+const ASSET_SEPARATOR_RE = /[_\s-]+/;
+const assetWords = (value) =>
+  String(value || '')
+    .split(ASSET_SEPARATOR_RE)
+    .filter(Boolean);
+const lastSeparator = (stem) => Math.max(stem.lastIndexOf('_'), stem.lastIndexOf('-'), stem.lastIndexOf(' '));
+const containsWords = (words, wanted) => {
+  for (let at = 0; at <= words.length - wanted.length; at += 1)
+    if (wanted.every((word, index) => words[at + index] === word)) return true;
+  return false;
+};
+
+// The encounter's assets without the standing poses of an outfit or a scene,
+// or null when it has none of those. `reimu_swimsuit_standing` beside
+// `reimu_smile` or `reimu_default` is such a pose: its name without the pose
+// word extends the base name another asset of the same encounter has. Cached
+// per catalog and encounter identity: the display hook asks on every render.
+const plainPools = new WeakMap();
+function plainPortraitPool(rows, entity) {
+  const identities = [entity?.id, entity?.name, ...(entity?.aliases || [])]
+    .map((value) => Codex.normalizeAssetName(value, true))
+    .filter((value) => value.length >= 2);
+  const id = identities.join('|');
+  let memo = plainPools.get(rows);
+  if (!memo) plainPools.set(rows, (memo = new Map()));
+  if (memo.has(id)) return memo.get(id);
+  const index = Codex.portraitAssetIndex(rows);
+  // Every asset sharing a name word with the encounter: a short list.
+  const pool = new Set();
+  const wanted = identities.map(assetWords).filter((words) => words.length);
+  for (const words of wanted)
+    for (const word of words) if (word.length >= 3) for (const one of index.byToken.get(word) || []) pool.add(one);
+  // The base of an asset is its name without the last word (pose or emotion).
+  const bases = [...pool]
+    .map((one) => ({ one, base: one.kind ? one.family : one.stem.slice(0, Math.max(0, lastSeparator(one.stem))) }))
+    .filter(({ base }) => base && wanted.some((words) => containsWords(assetWords(base), words)));
+  const posed = (one) =>
+    one.kind === 'standing' &&
+    bases.some(
+      ({ one: other, base }) =>
+        other !== one &&
+        one.family.length > base.length &&
+        one.family.startsWith(base) &&
+        ASSET_SEPARATOR_RE.test(one.family[base.length])
+    );
+  const plain = [...pool].filter((one) => !posed(one)).map((one) => one.row);
+  const result = plain.length && plain.length < pool.size ? plain : null;
+  if (memo.size >= 256) memo.clear();
+  memo.set(id, result);
+  return result;
+}
+
+// The portrait of one encounter. A portrait the record names is looked up in
+// the whole catalog. Without one the default comes from the catalog without
+// the bot's emotion images, and a standing pose of an outfit is not taken for
+// the plain portrait while the encounter has any other asset.
+export function entityPortraitAsset(catalog, entity, narrative = '', character = null) {
+  const explicit = String(entity?.portrait || '').trim();
+  const named = explicit && explicit.toUpperCase() !== 'NONE';
+  if (named) {
+    const row = Codex.assetLookup(catalog, explicit);
+    if (row) return row;
+  }
+  const rows = portraitCandidates(catalog, character);
+  const unnamed = named ? { ...entity, portrait: 'NONE' } : entity;
+  const picked = Codex.assetForEntity(rows, unnamed, narrative);
+  if (!picked) return null;
+  const prep = Codex.portraitAssetIndex(rows).byStem.get(Codex.normalizeAssetName(picked.name, true));
+  if (prep?.row !== picked || prep.kind !== 'standing') return picked;
+  const plain = plainPortraitPool(rows, entity);
+  if (!plain || plain.includes(picked)) return picked;
+  return Codex.assetForEntity(plain, unnamed, narrative) || picked;
 }
 
 export function combinedPortraitAssets(character, moduleAssets = [], max = Codex.ASSET_CATALOG_MAX) {
@@ -271,10 +375,16 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
       binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
     return `data:${mime};base64,${btoa(binary)}`;
   };
-  const monsters = (codexSnapshot?.monsters?.order || [])
-    .map((id) => codexSnapshot.monsters.entries[id])
-    .filter(Boolean)
-    .slice(0, 20);
+  // One pass loads at most 20 portraits: the encounters still active first,
+  // then the newest (the registry lists them oldest first).
+  const known = (codexSnapshot?.monsters?.order || []).map((id) => codexSnapshot.monsters.entries[id]).filter(Boolean);
+  const monsters =
+    known.length <= PORTRAIT_BATCH
+      ? known
+      : [...known.filter((one) => one.active), ...known.filter((one) => !one.active).reverse()].slice(
+          0,
+          PORTRAIT_BATCH
+        );
   const narrative = (chat?.message || [])
     .slice(-8)
     .map((message) => Core.messageText(message))
@@ -283,6 +393,7 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
     inlinePortraitCatalog = {
       contextKey: ownerKey,
       characterId: character?.chaId || character?.id || 'character',
+      character,
       catalog,
       narrative
     };
@@ -290,7 +401,7 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
   // they never hold up the commit lane's model hooks.
   const missingAssets = new Map();
   for (const monster of monsters) {
-    const asset = Codex.assetForEntity(catalog, monster, narrative);
+    const asset = entityPortraitAsset(catalog, monster, narrative, character);
     if (!asset) continue;
     const key = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
     if (!(inlineOnly && portraitThumbnailCache.has(key)) && !portraitCache.has(key)) missingAssets.set(asset.id, asset);
@@ -332,7 +443,7 @@ export async function loadCodexPortraits(character, chat, codexSnapshot, setting
   const loadNextPortrait = async () => {
     while (portraitCursor < monsters.length) {
       const monster = monsters[portraitCursor++];
-      const asset = Codex.assetForEntity(catalog, monster, narrative);
+      const asset = entityPortraitAsset(catalog, monster, narrative, character);
       if (!asset) continue;
       const cacheKey = `${character?.chaId || character?.id || 'character'}:${asset.id}:${asset.ext || ''}`;
       if (inlineOnly && portraitThumbnailCache.has(cacheKey)) {

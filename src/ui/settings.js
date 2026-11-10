@@ -407,6 +407,15 @@ export async function patchSettingsCard(hook) {
   return true;
 }
 
+export const SETTINGS_SECTIONS = ['record', 'screen', 'data', 'advanced'];
+// Literal keys: the catalog test checks every t() key statically.
+const SECTION_LABELS = {
+  record: t('ui-settings.sec-record'),
+  screen: t('ui-settings.sec-screen'),
+  data: t('ui-settings.sec-data'),
+  advanced: t('ui-settings.sec-advanced')
+};
+
 export function settingsPanelHtml(loaded, skin, parts) {
   const cards = confirmCards(skin, parts);
   const connection = parts.connection;
@@ -424,72 +433,88 @@ export function settingsPanelHtml(loaded, skin, parts) {
       ` itemx2-root-setting-button-primary${workQueue.isActive('connect') ? ' itemx2-root-setting-button-busy' : ''}`
     )
   ).replace('</small>', `</small><span class="itemx2-status-row">${parts.chips}</span>`);
-  return `<div class="itemx2-root-settings"><h4 class="itemx2-set-group">${t('ui-settings.074.1')}</h4>${connectionCards}${setCard(
+  const auxStatus = setCard(
     t('ui-settings.077'),
     Core.esc(auxStatusText()),
     `<button class="itemx2-root-setting-button${skin.hook('aux-run')}" type="button"${skin.data('aux-run')}>${auxRunning() ? t('ui-settings.aux-cancel') : t('ui-settings.075')}</button>`,
     ' class="itemx2-aux-setting-status"'
-  )}<h4 class="itemx2-set-group">${t('ui-panel.058.1')}</h4>${setCard(
-    t('ui-settings.079'),
-    t('ui-settings.078')
-  )}<div class="itemx2-domain-grid">${parts.domainControls}</div>${setCard(
-    t('ui-settings.084'),
-    t('ui-settings.083'),
-    setSwitch(skin, 'main-output', loaded.mainOutput)
-  )}${setCard(
-    t('ui-settings.086'),
-    `${t('ui-settings.085.1')} <b>${t('ui-settings.085.2')}</b>${t('ui-settings.085.3')}`,
-    setSegment(skin, 'aux', Object.entries(AUX_LABELS), loaded.auxOutput)
-  )}${setCard(
-    t('ui-settings.088'),
-    t('ui-settings.087'),
-    setSegment(skin, 'rarity', Object.entries(RARITY_MODE_LABELS), loaded.rarityMode)
-  )}${setCard(
-    t('ui-settings.inject-title'),
-    t('ui-settings.inject-note'),
-    setSegment(skin, 'inject', Object.entries(PROTOCOL_POSITION_LABELS), loaded.protocolPosition || 'tail')
-  )}${setCard(
-    t('ui-settings.091'),
-    t('ui-settings.090'),
-    `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', t('ui-settings.089'))}</span>`
-  )}${setCard(
-    t('ui-settings.093'),
-    t('ui-settings.092'),
-    setSwitch(skin, 'module-assets', loaded.moduleAssetsEnabled)
-  )}${setCard(t('ui-settings.plugin-compat-title'), t('ui-settings.plugin-compat-note'))}<h4 class="itemx2-set-group">${t('ui-settings.074.3')}</h4>${setCard(
-    t('ui-settings.095'),
-    t('ui-settings.094'),
-    setSegment(
-      skin,
-      'skin',
-      SKIN_MODES.map((mode) => [mode, SKIN_LABELS[mode]]),
-      loaded.skin || 'dark'
-    )
-  )}${setCard(
-    t('ui-settings.fx-title'),
-    t('ui-settings.fx-note'),
-    setSegment(skin, 'fx', Object.entries(FX_LABELS), loaded.effectsLevel)
-  )}${setCard(
-    t('ui-settings.card-fx-title'),
-    t('ui-settings.card-fx-note'),
-    setThumbs(
-      skin,
-      'cardfx',
-      CARD_FX_MODES.map((mode) => [mode, CARD_FX_LABELS[mode], CARD_FX_THUMBS[mode]]),
-      loaded.cardFx || 'prism'
-    )
-  )}${setCard(
-    t('ui-settings.card-open-title'),
-    t('ui-settings.card-open-note'),
-    setSwitch(skin, 'card-open-latest', loaded.cardOpenLatest)
-  )}${setCard(
-    t('ui-settings.money-title'),
-    t('ui-settings.money-note'),
-    setSegment(skin, 'money', Object.entries(MONEY_LABELS), loaded.currencyDisplay || 'grid')
-  )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
-    t('ui-settings.101'),
-    t('ui-settings.100')
-  )}<div class="itemx2-position-grid">${parts.positionChoices}</div>${parts.manager}<h4 class="itemx2-set-group">${t('ui-settings.074.4')}</h4>${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${setCard(t('ui-settings.auto-prune-title'), t('ui-settings.auto-prune-note'), setSwitch(skin, 'auto-prune', loaded.autoPruneEnabled))}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}</div>`;
+  );
+  const group = (label) => `<h4 class="itemx2-set-group">${label}</h4>`;
+  // Four sections, one visible at a time: the full list ran to nearly six phone
+  // screens. The radios switch them in CSS; the click router only remembers the
+  // choice so a re-render keeps the reader on the same section.
+  const sections = {
+    record: `${group(t('ui-settings.074.1'))}${connectionCards}${auxStatus}${group(t('ui-panel.058.1'))}${setCard(
+      t('ui-settings.079'),
+      t('ui-settings.078')
+    )}<div class="itemx2-domain-grid">${parts.domainControls}</div>${setCard(
+      t('ui-settings.084'),
+      t('ui-settings.083'),
+      setSwitch(skin, 'main-output', loaded.mainOutput)
+    )}${setCard(
+      t('ui-settings.086'),
+      `${t('ui-settings.085.1')} <b>${t('ui-settings.085.2')}</b>${t('ui-settings.085.3')}`,
+      setSegment(skin, 'aux', Object.entries(AUX_LABELS), loaded.auxOutput)
+    )}${setCard(
+      t('ui-settings.091'),
+      t('ui-settings.090'),
+      `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', t('ui-settings.089'))}</span>`
+    )}${setCard(t('ui-settings.093'), t('ui-settings.092'), setSwitch(skin, 'module-assets', loaded.moduleAssetsEnabled))}`,
+    screen: `${setCard(
+      t('ui-settings.095'),
+      t('ui-settings.094'),
+      setSegment(
+        skin,
+        'skin',
+        SKIN_MODES.map((mode) => [mode, SKIN_LABELS[mode]]),
+        loaded.skin || 'dark'
+      )
+    )}${setCard(t('ui-settings.099'), t('ui-settings.098'))}<div class="itemx2-font-grid">${parts.fontChoices}</div>${setCard(
+      t('ui-settings.fx-title'),
+      t('ui-settings.fx-note'),
+      setSegment(skin, 'fx', Object.entries(FX_LABELS), loaded.effectsLevel)
+    )}${setCard(
+      t('ui-settings.card-fx-title'),
+      t('ui-settings.card-fx-note'),
+      setThumbs(
+        skin,
+        'cardfx',
+        CARD_FX_MODES.map((mode) => [mode, CARD_FX_LABELS[mode], CARD_FX_THUMBS[mode]]),
+        loaded.cardFx || 'prism'
+      )
+    )}${setCard(
+      t('ui-settings.card-open-title'),
+      t('ui-settings.card-open-note'),
+      setSwitch(skin, 'card-open-latest', loaded.cardOpenLatest)
+    )}${setCard(
+      t('ui-settings.money-title'),
+      t('ui-settings.money-note'),
+      setSegment(skin, 'money', Object.entries(MONEY_LABELS), loaded.currencyDisplay || 'grid')
+    )}${setCard(t('ui-settings.101'), t('ui-settings.100'))}<div class="itemx2-position-grid">${parts.positionChoices}</div>`,
+    data: `${parts.manager}${backupSettingsHtml()}${confirmCard(cards, 'itemx2-setting-storage-cleanup')}${setCard(t('ui-settings.auto-prune-title'), t('ui-settings.auto-prune-note'), setSwitch(skin, 'auto-prune', loaded.autoPruneEnabled))}<div class="itemx2-danger-zone"><h4>${t('ui-settings.074.5')}</h4>${confirmCard(cards, 'itemx2-setting-cleanup')}</div>`,
+    advanced: `${setCard(
+      t('ui-settings.088'),
+      t('ui-settings.087'),
+      setSegment(skin, 'rarity', Object.entries(RARITY_MODE_LABELS), loaded.rarityMode)
+    )}${setCard(
+      t('ui-settings.inject-title'),
+      t('ui-settings.inject-note'),
+      setSegment(skin, 'inject', Object.entries(PROTOCOL_POSITION_LABELS), loaded.protocolPosition || 'tail')
+    )}${setCard(t('ui-settings.plugin-compat-title'), t('ui-settings.plugin-compat-note'))}${parts.debugPanel}${setCard(t('ui-settings.111'), `ITEMX ${ITEMX_PLUGIN_VERSION}`)}`
+  };
+  const current = SETTINGS_SECTIONS.includes(uiState.settingsSection) ? uiState.settingsSection : 'record';
+  const radios = SETTINGS_SECTIONS.map(
+    (key) =>
+      `<input class="itemx2-root-control itemx2-set-tab-${key}" id="itemx2-set-tab-${key}" name="itemx2-set-tab" type="radio"${key === current ? ' checked' : ''}>`
+  ).join('');
+  const chips = SETTINGS_SECTIONS.map(
+    (key) =>
+      `<label class="itemx2-set-chip itemx2-set-chip-${key}" for="itemx2-set-tab-${key}">${SECTION_LABELS[key]}</label>`
+  ).join('');
+  const body = SETTINGS_SECTIONS.map(
+    (key) => `<div class="itemx2-set-sec itemx2-set-sec-${key}">${sections[key]}</div>`
+  ).join('');
+  return `<div class="itemx2-root-settings">${radios}<nav class="itemx2-set-chips">${chips}</nav>${body}</div>`;
 }
 
 export function settingsDomainControls(loaded, skin) {

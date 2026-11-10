@@ -73,10 +73,13 @@ function eligible(entry) {
 
 function publicFields(entry) {
   const source = entryContent(entry);
-  if (!PUBLIC_MARKER_RE.test(source)) return {};
+  const marker = PUBLIC_MARKER_RE.exec(source);
+  if (!marker) return {};
+  // Only what the author wrote below the marker is public; lines above it stay private.
+  const block = source.slice(marker.index + marker[0].length);
   const fields = {};
   const aliases = [];
-  for (const line of source.split(/\r?\n/).slice(0, 80)) {
+  for (const line of block.split(/\r?\n/).slice(0, 80)) {
     const match = line.match(
       /^\s*(?:[-*]\s*)?(aliases?|별칭|kind|type|종류|portrait|초상화|description|소개|설명)\s*[:：]\s*(.+?)\s*$/i
     );
@@ -137,7 +140,7 @@ function match(monster, lookup) {
 function safeFields(monster, row) {
   const existing = new Set(identity(monster).map(normalize));
   const aliases = [row.comment, ...(row.fields.aliases || [])]
-    .filter((one) => !existing.has(normalize(one)))
+    .filter((one) => normalize(one) && !existing.has(normalize(one)))
     .slice(0, 8);
   const fields = {};
   if (aliases.length) fields.aliases = [...new Set(aliases)];

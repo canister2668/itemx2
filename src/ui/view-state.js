@@ -4,6 +4,8 @@ export const uiState = {
   rootDrawer: null,
   rootOpen: false,
   activeRootTab: 'inventory',
+  settingsSection: 'record',
+  itemFilter: 'all',
   rootItemPage: 0,
   rootClickBindings: [],
   panelOpen: false,

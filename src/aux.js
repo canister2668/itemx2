@@ -2,6 +2,7 @@
 import * as Codex from './engine/codex.js';
 import * as Core from './engine/core.js';
 import * as Quality from './engine/quality.js';
+import { outputActive } from './activity.js';
 import { chatIsStreaming, context, readChat } from './chat-io.js';
 import {
   ITEMX_AUX_AUTO_ATTEMPTS,
@@ -13,7 +14,7 @@ import { isUnloading } from './connection.js';
 import { emit } from './events.js';
 import { host } from './host.js';
 import { t } from './i18n.js';
-import { debugRecord, fail, withTimeout, workQueue } from './kernel.js';
+import { debugRecord, delay, fail, workQueue } from './kernel.js';
 import {
   commitManualEvents,
   commitRecords,
@@ -63,19 +64,19 @@ export function auxiliaryProviderError(value) {
   return error;
 }
 
-// Model-call state, private to this module. `active` counts calls in flight;
-// `last` is the latest outcome shown by the side indicator and settings card.
+// Model-call state, private to this module. `active` counts the calls this
+// runtime still waits for; `last` is the latest outcome shown by the side
+// indicator and settings card. The stock API cannot abort a model call, so a
+// cancelled or timed-out request is abandoned: it leaves the count at once
+// (the commit of the main reply waits for a count of zero and must not wait
+// for a provider that may never answer) and its late answer is ignored.
 let active = 0;
 let last = { state: 'idle', label: '', at: 0, events: null };
-// Requests the user cancelled. The stock API cannot abort a model call, so a
-// cancelled request is abandoned: its answer is ignored, and it stays counted
-// in `active` until the provider answers so no automatic pass starts beside it.
-let abandoned = 0;
 const cancellers = new Set();
 
 export const auxActive = () => active;
-// What the user sees as running: requests nobody has cancelled.
-export const auxRunning = () => active - abandoned > 0;
+// What the user sees as running.
+export const auxRunning = () => active > 0;
 export const auxLast = () => ({ ...last });
 
 export const isAuxCancelled = (error) => error?.code === 'AUX_CANCELLED';
@@ -96,9 +97,8 @@ export async function setAuxOutcome(state, label, events = null) {
   await emit('aux', { active, last: { ...last }, outcome: true });
 }
 
-// A timed-out request is abandoned, not cancelled: the provider keeps working
-// (and billing) until it answers. It stays counted in `active` until then, so
-// no automatic pass starts a second paid request beside it.
+// A timed-out request is abandoned like a cancelled one: the provider may
+// keep working (and billing), but nothing here waits for it any longer.
 export async function runAuxModel(prompt, label = t('aux.041')) {
   if (typeof host().runLLMModel !== 'function') throw new Error(t('aux.022'));
   active += 1;
@@ -113,39 +113,34 @@ export async function runAuxModel(prompt, label = t('aux.041')) {
   } catch (error) {
     request = Promise.reject(error);
   }
-  const report = async () => {
-    if (active === 0) await setAuxOutcome(last.state, last.label, last.events);
-    else await emit('aux', { active, last: { ...last }, outcome: false });
+  // A late rejection of an abandoned request has no reader.
+  request.catch(() => {});
+  let released = false,
+    cancel = null,
+    timer = null;
+  // Runs as soon as the call is answered, times out or is cancelled.
+  const release = () => {
+    if (released) return;
+    released = true;
+    globalThis.clearTimeout(timer);
+    cancellers.delete(cancel);
+    active = Math.max(0, active - 1);
   };
-  let settled = false,
-    returned = false,
-    cancelled = false,
-    cancel = null;
+  const timeout = new Promise((_, reject) => {
+    timer = globalThis.setTimeout(() => reject(new Error(t('aux.039'))), ITEMX_AUX_TIMEOUT_MS);
+  });
+  timeout.catch(() => {});
   const cancellation = new Promise((_, reject) => {
     cancel = () => {
-      if (cancelled || settled) return;
-      cancelled = true;
-      abandoned += 1;
-      cancellers.delete(cancel);
+      if (released) return;
       reject(Object.assign(new Error(t('aux.cancelled')), { code: 'AUX_CANCELLED' }));
+      release();
     };
   });
   cancellation.catch(() => {});
   cancellers.add(cancel);
-  void request
-    .catch(() => {})
-    .then(async () => {
-      settled = true;
-      cancellers.delete(cancel);
-      if (cancelled) abandoned = Math.max(0, abandoned - 1);
-      active = Math.max(0, active - 1);
-      // After a timeout the caller is long gone; report the late answer here.
-      if (returned) await report();
-    });
   try {
-    const result = await workQueue.external(() =>
-      Promise.race([withTimeout(request, ITEMX_AUX_TIMEOUT_MS, t('aux.039')), cancellation])
-    );
+    const result = await workQueue.external(() => Promise.race([request, timeout, cancellation]).finally(release));
     const providerError = auxiliaryProviderError(result);
     if (providerError) throw providerError;
     workQueue.forget('aux-provider');
@@ -158,9 +153,9 @@ export async function runAuxModel(prompt, label = t('aux.041')) {
     last = { state: 'failed', label: t('aux.037'), at: Date.now(), events: null };
     throw providerError;
   } finally {
-    returned = true;
-    cancellers.delete(cancel);
-    if (settled) await report();
+    release();
+    if (active === 0) await setAuxOutcome(last.state, last.label, last.events);
+    else await emit('aux', { active, last: { ...last }, outcome: false });
   }
 }
 
@@ -431,6 +426,52 @@ export function itemEventState(reg, event) {
   return eventValueKey(ids.map((id) => reg.items[id] || null));
 }
 
+// "Missing" mode calls the recovery model only for a reply that produced no
+// ITEMX record and reads as if something changed. The engine has no cue
+// detector of its own (quality.js only checks a known item against its
+// evidence), so this is a keyword screen per enabled domain: deliberately
+// broad, because a miss costs a lost event and a false hit one model call.
+const ITEM_CUE_RE =
+  /얻|획득|습득|입수|주웠|주워|줍|받았|받아|건네|구매|구입|샀|팔았|판매|지불|지급|보상|전리품|드롭|장착|착용|장비|해제|벗었|부서|부쉈|파괴|깨졌|잃|분실|도난|소모|사용했|마셨|먹었|제작|강화|수리|감정|골드|금화|은화|동화|코인|아이템|인벤토리|소지품|배낭|가방|\b(?:obtain|acquir|receiv|pick(?:s|ed)? up|loot|found|bought|buy|purchas|sold|sell|paid|pay|reward|equip|unequip|wield|wear|wore|broke|broken|shatter|destroy|lost|lose|stolen|consum|drank|drink|ate|craft|forg|repair|apprais|gold|silver|coins?|inventory|items?|potion|weapon|armor)/i;
+const SKILL_CUE_RE =
+  /스킬|기술|마법|주문|능력|권능|이능|비기|오의|배웠|배워|익혔|익혀|터득|각성|숙련|봉인|해금|계약|\b(?:skill|spell|abilit|technique|magic|learn|master|unlock|awaken|seal|contract)/i;
+const ENCOUNTER_CUE_RE =
+  /전투|교전|습격|기습|덮쳐|덮쳤|공격|반격|몬스터|마물|괴물|마수|적이|적을|적의|적들|쓰러뜨|쓰러졌|처치|격파|토벌|물리쳤|도망|도주|대련|결투|보스|\b(?:combat|battle|fight|fought|attack|ambush|enem|monster|beast|defeat|slain|slay|kill|flee|fled|spar|duel|boss)/i;
+export function recoveryCue(narrative, settings) {
+  const text = String(narrative || '');
+  return Boolean(
+    (settings.itemsEnabled && ITEM_CUE_RE.test(text)) ||
+    (settings.skillsEnabled && SKILL_CUE_RE.test(text)) ||
+    (settings.encountersEnabled && ENCOUNTER_CUE_RE.test(text))
+  );
+}
+
+// The reader may send the next message while the model works. A write is
+// refused while a reply streams, so the finished result is held until the
+// stream ends instead of being thrown away: the output window is watched from
+// memory, and the chat is read again only once it has closed. Bounded; the
+// write's own hash check still decides whether the message is the same.
+const AUX_HOLD_MS = 120000;
+const AUX_HOLD_STEP_MS = 500;
+const AUX_HOLD_RETRY_MS = 2000;
+async function writeAfterStream(ctx, change) {
+  const deadline = Date.now() + AUX_HOLD_MS;
+  for (;;) {
+    const last = Date.now() >= deadline;
+    let wait = AUX_HOLD_STEP_MS;
+    if (last || !outputActive()) {
+      try {
+        return await writeDocument(ctx, change);
+      } catch (error) {
+        if (last || error?.code !== 'CHAT_STREAMING') throw error;
+        wait = AUX_HOLD_RETRY_MS;
+      }
+    }
+    // The lane is yielded: the output hook of the streaming reply must run.
+    await workQueue.external(() => delay(wait));
+  }
+}
+
 // One auxiliary pass over the latest (or given) response. The result says what
 // happened: `ok` (events, possibly none, committed with their guard), `skip`
 // (nothing to do or not allowed now), `conflict` (the chat changed under us;
@@ -479,6 +520,12 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       .map((row) => row.e);
     const committedNarrative = clipAuxiliaryText(auxiliaryVisibleText(messageData(current.message[index])), 14000);
     if (!committedNarrative && !force) return skip('empty');
+    // "Always" reviews every reply. "Missing" recovers only a reply without
+    // any ITEMX record whose text reads as if something changed; the
+    // appraisal of gear the reply shows runs in both modes.
+    const recover =
+      force || settings.auxOutput !== 'missing' || (!represented.length && recoveryCue(committedNarrative, settings));
+    if (!recover && !settings.itemsEnabled) return skip('no-cue');
     const conversation = auxiliaryConversationContext(current, index);
     const domains = enabledCodexDomains(settings);
     const requested = [
@@ -488,7 +535,8 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     ]
       .filter(Boolean)
       .join(', ');
-    const moduleAssets = settings.encountersEnabled ? await modulePortraitAssets(settings, ctx.character, current) : [];
+    const moduleAssets =
+      recover && settings.encountersEnabled ? await modulePortraitAssets(settings, ctx.character, current) : [];
     const protocolOptions = {
       narrative: [conversation.triggeringUser, conversation.recent, committedNarrative].filter(Boolean).join('\n'),
       entities: encounterEntities(codexSnapshot)
@@ -500,11 +548,13 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       ? `Recover settled changes only for enabled CODEX domains, plus first discovery of an already-owned persistent player skill absent from CURRENT ACTIVE SKILLS. Skills include owned, usable character-bound powers, command authorities, supernatural marks, contract rights, transformations and summoning faculties. Finite or rechargeable charges belong in cost/state; they do not make the enduring capability transient, and individual charges are not items or skills. One-use consumables remain items; decorative marks or lore facts without usable effects stay excluded. Emit one skillExam for a confirmed missing capability and reuse existing ids. A bracketed word or generic action alone is not proof. Keep NPC or opponent techniques only in encounter moves unless the player acquires them. Track later learning, mastery, equipment, sealing or loss. For encounters, track actual hostility, combat or accepted sparring; never register mere mentions, rumors, passive NPCs or unaccepted challenges.`
       : '';
     const prompt = `${protocolForSettings(settings, ctx.character, moduleAssets, protocolOptions)}\n\nYou are the ITEMX context-aware auxiliary regeneration pass. Enabled domains: ${requested}. Read the triggering user turn, recent narrative continuity, committed assistant output, authoritative registries, and non-ITEMX state evidence together. Output transport for enabled domains only, with no prose or code fence. Recover every settled change omitted by the main output. ${itemRecoveryRules} ${codexRecoveryRules} Multiple events must be emitted as separate blocks in narrative order. The committed assistant output decides what actually happened; earlier context resolves identity, continuity, ownership, prior damage and user intent. Do not merely catch or copy nouns, do not invent plausible events, do not repeat events already represented in the authoritative registries, and output exactly NONE when nothing is missing.\n\n${settings.itemsEnabled ? `CURRENT INVENTORY:\n${Core.anchor(snapshot)}` : 'ITEM DOMAIN DISABLED'}\n\n${domains.length ? `CURRENT ACTIVE SKILLS AND ENCOUNTERS:\n${Codex.anchor(codexSnapshot, committedNarrative, 9000, { enabledDomains: domains })}` : 'CODEX DOMAINS DISABLED'}\n\nTRIGGERING USER TURN:\n${conversation.triggeringUser}\n\nRECENT NARRATIVE CONTEXT (oldest to newest):\n${conversation.recent}\n\nCOMMITTED ASSISTANT OUTPUT (visible narrative only):\n${committedNarrative}\n\nNON-ITEMX STATE EVIDENCE:\n${stateItemEvidence(current)}`;
-    setStatus(t('aux.036'));
-    called = true;
-    const response = await runAuxModel(prompt, t('aux.035'));
-    const raw = modelText(response);
-    if (!raw) throw new Error(t('aux.034'));
+    let raw = '';
+    if (recover) {
+      setStatus(t('aux.036'));
+      called = true;
+      raw = modelText(await runAuxModel(prompt, t('aux.035')));
+      if (!raw) throw new Error(t('aux.034'));
+    }
     const itemReconciler = auxiliaryEventReconciler(
       'item',
       snapshot.registry,
@@ -600,8 +650,10 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
         if (gaps.length && (force || !tried.has(id)) && !unresolvedPartials.some((one) => one.event.item.id === id))
           rows.set(id, { item, gaps });
       }
+      if (!recover && !rows.size) return skip('no-cue');
       if (rows.size) {
         appraisalTried.push(...rows.keys());
+        called = true;
         try {
           const appraisalRaw = modelText(
             await runAuxModel(Quality.appraisalPrompt([...rows.values()], itemEvidenceContext), t('aux.appraise'))
@@ -672,7 +724,7 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     }
     if (valid.length) prepareInlinePortraits(ctx, codexReg, settings);
     let records = [];
-    const written = await writeDocument(ctx, async (doc, latest) => {
+    const written = await writeAfterStream(ctx, async (doc, latest) => {
       const message = latest.message?.[index];
       if (!message || narrativeHash(messageData(message)) !== sourceHash) return false;
       if (!valid.length) {
@@ -758,7 +810,11 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
     fail('auxiliary recovery', error);
     if (activeContextKey() === ctx.key) {
       setStatus(t('aux.024'));
-      await setAuxOutcome('failed', t('aux.023', String(error?.message || error).slice(0, 80)));
+      // The result waited for the next reply to finish and ran out of time.
+      await setAuxOutcome(
+        'failed',
+        error?.code === 'CHAT_STREAMING' ? t('aux.held') : t('aux.023', String(error?.message || error).slice(0, 80))
+      );
     }
     // A missing provider is quarantined for the session, never retried or counted.
     if (error?.code === 'AUX_PROVIDER_UNAVAILABLE') return skip('provider');

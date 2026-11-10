@@ -156,8 +156,9 @@ function create({ clock = () => Date.now() } = {}) {
   async function attempt(kind, key, work, accept = () => true, ttl = Infinity, giveUpAfter = Infinity) {
     const previous = records.get(kind);
     if (previous?.key === key && previous.failures >= giveUpAfter) return { skipped: true, exhausted: true };
+    // `done` tells a settled key from one that only waits for its retry time.
     if (previous?.key === key && ((previous.done && clock() - previous.at < ttl) || clock() < previous.retryAt))
-      return { skipped: true };
+      return { skipped: true, done: Boolean(previous.done) };
     let value, error;
     try {
       value = await work();

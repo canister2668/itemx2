@@ -18,12 +18,21 @@ import { hookState, isUnloading } from './connection.js';
 import { emit } from './events.js';
 import { t } from './i18n.js';
 import { debugRecord, dispatch, fail, workQueue } from './kernel.js';
-import { cachedOrRebuildCurrent, commitRecords, rebuildCurrent, stampFrom, writeDocument } from './ledger.js';
+import {
+  cachedOrRebuildCurrent,
+  commitRecords,
+  parseBaseline,
+  rebuildCurrent,
+  stampFrom,
+  writeDocument
+} from './ledger.js';
 import { enrichLore, scanLorebookEncounters } from './lore-sync.js';
 import { encounterEntities, modulePortraitAssets, prepareInlinePortraits } from './portraits.js';
 import {
   activeContextKey,
   addPending,
+  cachedLoaded,
+  currentGeneration,
   currentLatestKeys,
   dropPending,
   freshLoaded,
@@ -32,13 +41,20 @@ import {
   setPendingOwner,
   setLatestKeys
 } from './session.js';
-import { isEnabled, settingsFor } from './settings.js';
+import { cachedSettings, isEnabled, settingsFor } from './settings.js';
 import { setStatus } from './status.js';
-import { anchorKeys, messageKeys, stripTransport } from './store/anchors.js';
+import { anchorKeys, messageKeys, requestText, stripTransport } from './store/anchors.js';
 import { readDocument } from './store/document.js';
 import { forgetStoredPending, restoreStoredPending, storePending } from './pending-store.js';
 import { fold, stampStart } from './store/replay.js';
-import { anchorize, enabledCodexDomains, hasRawTransport, protocolForSettings, requestSafeText } from './transport.js';
+import {
+  anchorize,
+  enabledCodexDomains,
+  hasRawTransport,
+  itemxDisabled,
+  protocolForSettings,
+  requestSafeText
+} from './transport.js';
 
 export function mainRequestType(type) {
   return !/(translate|emotion|memory|otherax|aux|submodel|image|tts)/i.test(String(type || ''));
@@ -126,28 +142,26 @@ export function lostAnchors(chatKey, source, latest = currentLatestKeys()) {
   return ours.filter((key) => !present.has(key));
 }
 
-// Pending records of earlier messages whose own commit failed (in this
-// session, or restored after a reload). Each remembers its owner message id,
-// so only that message is looked up, from the end and within a short window:
-// a long chat is never scanned, and an owner further back is left alone.
+// Pending records of earlier messages that never reached the document: their
+// commit failed (in this session, or restored after a reload) or was skipped
+// (an auxiliary call in flight, scrolling, the next reply already streaming)
+// and a later reply committed first. A record is an orphan while its anchor
+// still stands in one of the newest messages; only that short window is read,
+// so a long chat is never scanned and an anchor further back is left alone.
 const ORPHAN_WINDOW = 24;
-function orphanPending(ctx, latestIndex) {
-  const owners = new Map();
-  for (const [key, record] of pendingEntries(ctx.key))
-    if (record.owner) owners.set(record.owner, [...(owners.get(record.owner) || []), key]);
-  if (!owners.size) return [];
+function orphanPending(ctx, latestIndex, own = []) {
+  const waiting = new Set(pendingEntries(ctx.key).map(([key]) => key));
+  for (const key of own) waiting.delete(key);
+  if (!waiting.size) return [];
   const messages = ctx.chat.message || [];
   const rows = [];
   for (
     let index = messages.length - 1;
-    index >= Math.max(0, messages.length - ORPHAN_WINDOW) && owners.size;
+    index >= Math.max(0, messages.length - ORPHAN_WINDOW) && waiting.size;
     index -= 1
   ) {
-    const keys = owners.get(messages[index]?.chatId);
-    if (!keys || index === latestIndex) continue;
-    owners.delete(messages[index].chatId);
-    const present = messageKeys(messages[index]);
-    for (const key of keys) if (present.includes(key)) rows.push({ key, index });
+    if (index === latestIndex) continue;
+    for (const key of messageKeys(messages[index])) if (waiting.delete(key)) rows.push({ key, index });
   }
   return rows;
 }
@@ -173,7 +187,7 @@ export async function commitLatestOutput(ctx) {
     void emit('notify', { message: t('pipeline.anchor-changed', lost.length), tone: 'error' });
   }
   const raw = hasRawTransport(source);
-  const orphans = orphanPending(ctx, index);
+  const orphans = orphanPending(ctx, index, anchorKeys(source));
   // Without new cards the pass may still owe the chat its state entries: a
   // chat from before them, or entries a reroll or deletion left behind.
   const restamp = pending.length || raw || orphans.length ? -1 : stampStart(ctx.chat, readDocument(ctx.chat));
@@ -181,7 +195,8 @@ export async function commitLatestOutput(ctx) {
   const settings = await settingsFor(ctx.character);
   let events = 0,
     errors = 0,
-    landed = [];
+    landed = [],
+    repaired = raw;
   let result;
   try {
     result = await writeDocument(ctx, async (doc, latest) => {
@@ -222,6 +237,13 @@ export async function commitLatestOutput(ctx) {
         text = anchored.content;
         events = anchored.events;
         errors = anchored.errors;
+        // Raw-looking text the parsers left as it is, with nothing else to
+        // commit: no write, apart from state entries the chat is still owed.
+        if (text === source && !anchored.records.length && !pending.length && !orphans.length) {
+          repaired = false;
+          const start = stampStart(latest, doc);
+          return start >= 0 && stampFrom(doc, latest, start) ? {} : false;
+        }
       }
       const field = typeof message.data === 'string' ? 'data' : 'content';
       const chat =
@@ -258,12 +280,12 @@ export async function commitLatestOutput(ctx) {
   if (stillActive) {
     workQueue.remember('host-settling', ctx.key);
     void emit('data-reset');
-    if (raw) setStatus(errors ? t('pipeline.010', errors) : t('pipeline.009', events));
+    if (repaired) setStatus(errors ? t('pipeline.010', errors) : t('pipeline.009', events));
   }
   debugRecord('commit output', {
     committed: pending.length,
     orphans: landed.length - pending.length,
-    repaired: raw,
+    repaired,
     events,
     errors
   });
@@ -275,20 +297,61 @@ export async function commitLatestOutput(ctx) {
 export const auxVerdict = (result) =>
   result.status === 'ok' || result.status === 'skip' ? true : result.called ? false : 'retry';
 
-export async function catchUpLatestOutput({ syncUi = true } = {}) {
-  if (!activeContextKey() || auxActive() > 0 || scrollActive()) return;
+// The idle watchdog reads the whole chat and parses the whole ledger, so it
+// runs only when something may have changed since the last pass that found
+// nothing left to do: an output flush, the host's commit listener, another
+// chat, a new projection (any rebuild or write), or changed settings. The
+// first tick after load always runs.
+let catchUpDirty = true;
+let catchUpSeen = { key: null, generation: -1, loaded: null, character: null, settings: null };
+export function markCatchUpDirty() {
+  catchUpDirty = true;
+}
+export function catchUpPending() {
+  if (catchUpDirty || catchUpSeen.key !== activeContextKey()) return true;
+  if (catchUpSeen.generation !== currentGeneration() || catchUpSeen.loaded !== cachedLoaded()) return true;
+  return Boolean(catchUpSeen.character) && cachedSettings(catchUpSeen.character) !== catchUpSeen.settings;
+}
+
+export async function catchUpLatestOutput(options) {
+  catchUpDirty = false;
+  const seen = { key: activeContextKey(), character: null };
+  let settled = false;
+  try {
+    settled = (await catchUpPass(options || {}, seen)) === true;
+  } finally {
+    if (settled)
+      catchUpSeen = {
+        ...seen,
+        generation: currentGeneration(),
+        loaded: cachedLoaded(),
+        settings: seen.character ? cachedSettings(seen.character) : null
+      };
+    else catchUpDirty = true;
+  }
+}
+
+// Returns true when the pass left nothing for a later tick: no card of the
+// latest response waiting, no raw tag standing, the auxiliary pass settled.
+async function catchUpPass({ syncUi = true }, seen) {
+  if (!activeContextKey()) return true;
+  if (auxActive() > 0 || scrollActive()) return false;
   let ctx = await context();
-  if (!ctx || !(await isEnabled(ctx.character))) return;
+  if (!ctx) return false;
+  seen.character = ctx.character;
+  if (!(await isEnabled(ctx.character))) return true;
   const index = assistantMessageIndex(ctx.chat);
-  if (index < 0) return;
+  if (index < 0) return true;
   const source = Core.messageText(ctx.chat.message[index]);
-  if (!automaticAuxReady(ctx.chat, index, source)) return;
+  if (!automaticAuxReady(ctx.chat, index, source)) return false;
   // The finished response is committed at once; only the auxiliary pass waits
   // for the text to settle.
   const committed = await commitLatestOutput(ctx);
   ctx = committed.ctx;
-  if (activeContextKey() !== ctx.key) return;
-  if (!automaticAuxSettled(ctx, index, Core.messageText(ctx.chat.message[index]))) {
+  if (activeContextKey() !== ctx.key) return false;
+  const text = Core.messageText(ctx.chat.message[index]);
+  const owed = anchorKeys(text).some((key) => pendingRecord(key)?.chatKey === ctx.key) || hasRawTransport(text);
+  if (!automaticAuxSettled(ctx, index, text)) {
     // The first sighting never counts as settled. Without this re-check the listener path
     // waits for the 45 s watchdog before the auxiliary pass runs.
     workQueue.schedule(
@@ -297,7 +360,7 @@ export async function catchUpLatestOutput({ syncUi = true } = {}) {
       ITEMX_AUX_SETTLE_MS + 150
     );
     if (committed.changed && syncUi) await syncAfterCommit();
-    return;
+    return false;
   }
   const messageId = ctx.chat.message?.[index]?.chatId || `idx-${index}`;
   const attempt = await workQueue.attempt(
@@ -308,8 +371,11 @@ export async function catchUpLatestOutput({ syncUi = true } = {}) {
     Infinity,
     ITEMX_AUX_AUTO_ATTEMPTS
   );
-  if ((attempt.skipped || !attempt.value?.events.length) && !committed.changed) return;
+  // A failed or raced auxiliary pass is tried again by a later tick.
+  const auxDone = attempt.skipped ? Boolean(attempt.exhausted || attempt.done) : auxVerdict(attempt.value) === true;
+  if ((attempt.skipped || !attempt.value?.events.length) && !committed.changed) return auxDone && !owed;
   if (syncUi) await syncAfterCommit();
+  return auxDone && !owed;
 }
 
 // After a commit: rebuild the projection, apply lorebook enrichment, and let the
@@ -322,6 +388,7 @@ export async function syncAfterCommit() {
 }
 
 export function scheduleCommittedOutputSync() {
+  markCatchUpDirty();
   return dispatch(
     'committed-output',
     async () => {
@@ -337,27 +404,41 @@ export function armCatchUpWatchdog() {
   if (isUnloading()) return;
   workQueue.clearTimer('catchUpTimer');
   const interval = hookState('listener') === true ? 45000 : 4500;
-  workQueue.schedule(
-    'catchUpTimer',
-    () => {
-      return catchUpLatestOutput().catch((error) => fail('latest output catch-up', error));
-    },
-    interval,
-    true
-  );
+  workQueue.schedule('catchUpTimer', () => catchUpTick(), interval, true);
+}
+
+export function catchUpTick() {
+  if (!catchUpPending()) return Promise.resolve();
+  return catchUpLatestOutput().catch((error) => fail('latest output catch-up', error));
 }
 
 export const beforeRequest = async (messages, type) => {
   // Translation is a view of the original response, not a new world-state
   // request; its text is left as the host built it.
   if (/translate/i.test(String(type || ''))) return messages || [];
-  const safeMessages = (messages || []).map((message) =>
-    typeof message?.content === 'string' ? { ...message, content: requestSafeText(message.content) } : message
-  );
-  if (!mainRequestType(type)) return safeMessages;
+  const main = mainRequestType(type);
+  let loaded = null,
+    disabled = false,
+    failure = null;
   try {
-    const loaded = await cachedOrRebuildCurrent();
-    if (!loaded || !(await isEnabled(loaded.character))) return safeMessages;
+    if (main) loaded = await cachedOrRebuildCurrent();
+    disabled = loaded ? !(await isEnabled(loaded.character)) : itemxDisabled();
+  } catch (error) {
+    failure = error;
+  }
+  // With ITEMX off for the bot only its own anchors leave the request: a
+  // status line such as `[아이템: …]` is the bot's text, not transport.
+  const clean = disabled ? requestText : requestSafeText;
+  const safeMessages = (messages || []).map((message) =>
+    typeof message?.content === 'string' ? { ...message, content: clean(message.content) } : message
+  );
+  if (!main) return safeMessages;
+  if (failure) {
+    fail('beforeRequest', failure);
+    return safeMessages;
+  }
+  try {
+    if (!loaded || disabled) return safeMessages;
     const settings = await settingsFor(loaded.character);
     if (!settings.mainOutput) return safeMessages;
     if (!settings.itemsEnabled && !settings.skillsEnabled && !settings.encountersEnabled) return safeMessages;
@@ -387,8 +468,13 @@ export const processHandler = async (content) => requestSafeText(content);
 
 // Anchors a model response. The parsed records wait in the session until the
 // finished response is committed; the display hook renders them meanwhile.
+// The tags are parsed against the state before the response: a projection
+// rebuilt while it streams already holds the response's own pending cards.
 export async function processOutput(content, type) {
   if (!mainRequestType(type)) return content;
+  // With ITEMX off for the bot its replies are left exactly as they are.
+  if (itemxDisabled()) return content;
+  const original = content;
   content = Core.stripInventoryEcho(content);
   // Without a raw tag there is nothing to parse.
   if (!hasRawTransport(content)) return content;
@@ -397,9 +483,10 @@ export async function processOutput(content, type) {
     // is still fresh, so a flush reads nothing from the host.
     const loaded = freshLoaded() || (await cachedOrRebuildCurrent());
     if (!loaded) return content;
-    if (!(await isEnabled(loaded.character)) || !loaded.mainOutput) return stripTransport(content);
+    if (!(await isEnabled(loaded.character))) return original;
+    if (!loaded.mainOutput) return stripTransport(content);
     const result = anchorize(content, {
-      state: { registry: loaded.snapshot.registry, codex: loaded.codexSnapshot },
+      state: parseBaseline(loaded, content),
       settings: loaded,
       seed: turnSeed(loaded),
       doc: loaded.doc,
@@ -419,8 +506,10 @@ export async function processOutput(content, type) {
     }
     return result.content;
   } catch (error) {
+    // The tags stay in the text: the display hook hides them and the commit
+    // repair can still read them. Stripping here would lose the records.
     fail('processOutput', error);
-    return stripTransport(content);
+    return original;
   }
 }
 
@@ -430,6 +519,7 @@ export const afterRequest = async (content, type) => processOutput(content, type
 // for a non-streamed main response; each run keeps the output window open.
 export const outputFallback = async (content) => {
   markOutputFlush();
+  markCatchUpDirty();
   const processed = await processOutput(content, 'main');
   if (hookState('listener') === 'unsupported' && auxActive() === 0) scheduleLegacyCommitRecovery();
   return processed;

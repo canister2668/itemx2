@@ -3,6 +3,14 @@
 const VERSION = 2;
 const MARKER_RE = /<!--ITEMX2:([A-Za-z0-9_-]+)-->/g;
 const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+// Ids key plain objects. A name every object already carries (`__proto__`, `constructor`,
+// `toString`, ...) is never an id: it would read or overwrite the prototype.
+const reservedKey = (value) => value === 'prototype' || String(value) in Object.prototype;
+const validId = (value) => typeof value === 'string' && ID_RE.test(value) && !reservedKey(value);
+const own = (object, key) =>
+  object != null && typeof key === 'string' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
 const RARITIES = new Set(['normal', 'magic', 'rare', 'unique', 'epic', 'legendary', 'mythical', 'empyrean']);
 const THEMES = new Set(['arcane', 'forged', 'oriental', 'clockwork', 'synthetic', 'celestial', 'organic']);
 const AFFINITIES = new Set(['fire', 'ice', 'lightning', 'wind', 'earth', 'light', 'dark', 'poison', 'blood', 'void']);
@@ -131,7 +139,7 @@ function currencyMatches(reg, keys) {
 function resolveCurrencyEvent(reg, event) {
   if (event.kind === 'exam') {
     const item = event.item;
-    if (reg.items[item.id] || !isCurrency(item)) return event;
+    if (own(reg.items, item.id) || !isCurrency(item)) return event;
     const found = currencyMatches(reg, new Set([currencyWord(item.name), currencyStem(item.id)].filter(Boolean)));
     if (found.length > 1) return { error: 'currency_ambiguous' };
     if (!found.length) return event;
@@ -139,7 +147,7 @@ function resolveCurrencyEvent(reg, event) {
   }
   const patch = event.patch;
   const resolve = (id) => {
-    if (!id || reg.items[id]) return id;
+    if (!id || own(reg.items, id)) return id;
     const stem = currencyStem(id);
     const found = stem ? currencyMatches(reg, new Set([stem])) : [];
     return found.length === 1 ? found[0] : id;
@@ -277,8 +285,12 @@ const ITEM_FIELDS = [
   { key: 'equip', transport: 'equip', tags: ['equip'] },
   { key: 'unequip', transport: 'unequip', tags: ['unequip'] }
 ];
-const FIELD_ALIASES = Object.fromEntries(
-  ITEM_FIELDS.flatMap((field) => [field.transport, ...(field.aliases || [])].map((name) => [name, field.transport]))
+// No prototype: a model-written key such as `constructor` must not resolve to a field.
+const FIELD_ALIASES = Object.assign(
+  Object.create(null),
+  Object.fromEntries(
+    ITEM_FIELDS.flatMap((field) => [field.transport, ...(field.aliases || [])].map((name) => [name, field.transport]))
+  )
 );
 const TRANSPORT_TAG_ALT = ITEM_FIELDS.flatMap((field) => field.tags || []).join('|');
 // Membership comes from the schema; the orders below are presentation and are
@@ -396,11 +408,12 @@ function itemEmojiFallback(item = {}) {
     [/(?:방패|갑옷|방어구|shield|armor)/, '🛡️'],
     [/(?:활|석궁|bow|crossbow)/, '🏹'],
     [/(?:지팡이|완드|staff|wand)/, '🪄'],
-    [/(?:총|포|gun|rifle|cannon)/, '🔫'],
+    [/(?:물약|포션|약품|potion|elixir)/, '🧪'],
+    // 포 alone is a cannon only as a whole word or a word ending (대포, 마도포), not 포션 or 포대.
+    [/(?:총|포(?![\p{L}\p{N}])|gun|rifle|cannon)/u, '🔫'],
     [/(?:반지|ring)/, '💍'],
     [/(?:목걸이|부적|necklace|amulet|talisman)/, '📿'],
     [/(?:장화|신발|boots?|shoes?)/, '👢'],
-    [/(?:물약|포션|약품|potion|elixir)/, '🧪'],
     [/(?:책|서|두루마리|book|tome|scroll)/, '📖'],
     [/(?:광석|금속|재료|원석|ore|ingot|material|stone)/, '🧱']
   ];
@@ -514,9 +527,8 @@ function normalizeItem(raw, seed = '') {
   const _provided = providedFields(raw);
   const name = clean(f.name, 160);
   if (!name) return { error: 'exam_no_name' };
-  if (placeholderValue(name) && (!ID_RE.test(f.id || '') || placeholderValue(f.id)))
-    return { error: 'exam_placeholder_name' };
-  const id = ID_RE.test(f.id || '') ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
+  if (placeholderValue(name) && (!validId(f.id) || placeholderValue(f.id))) return { error: 'exam_placeholder_name' };
+  const id = validId(f.id) ? f.id : `itmx_${fnv1a(seed || JSON.stringify(f))}`;
   const rarity = RARITIES.has((f.internalrarity || '').toLowerCase()) ? f.internalrarity.toLowerCase() : 'normal';
   const theme = THEMES.has((f.theme || '').toLowerCase()) ? f.theme.toLowerCase() : 'arcane';
   const affinity = AFFINITIES.has((f.affinity || '').toLowerCase()) ? f.affinity.toLowerCase() : null;
@@ -574,17 +586,24 @@ function normalizeItem(raw, seed = '') {
 function parseXml(tag, attrText, body, seed) {
   const a = attrs(attrText);
   const raw = { ...a };
+  // Effect and augment blocks carry their own <name>/<desc>; scalar fields are read around them.
+  const scalars = String(body).replace(/<(effects?|augments?)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ');
   for (const key of Object.keys(FIELD_ALIASES)) {
     if (/^[A-Za-z]/.test(key)) {
-      const value = field(body, key);
+      const value = field(/^(?:effects?|augments?)$/.test(key) ? body : scalars, key);
       if (value) raw[key] = value;
     }
   }
   const effects = nestedPairs(body, 'effect');
   const augments = nestedPairs(body, 'augment');
-  if (effects.length || /<effects?\b/i.test(body)) raw.effects = effects;
-  if (augments.length || /<augments?\b/i.test(body)) raw.augments = augments;
-  const visual = field(body, 'visual') ? body.match(/<visual\b[^>]*>([\s\S]*?)<\/visual\s*>/i)?.[1] || '' : body;
+  // A block without nested entries may still hold the flat `name::desc ;; name::desc` text.
+  if (effects.length || /<effects?\b/i.test(body))
+    raw.effects = effects.length ? effects : listPairs(raw.effects || raw.effect);
+  if (augments.length || /<augments?\b/i.test(body))
+    raw.augments = augments.length ? augments : listPairs(raw.augments || raw.augment);
+  const visual = field(scalars, 'visual')
+    ? scalars.match(/<visual\b[^>]*>([\s\S]*?)<\/visual\s*>/i)?.[1] || ''
+    : scalars;
   for (const key of ['theme', 'craft', 'affinity', 'affinity2', 'condition']) {
     const value = field(visual, key);
     if (value) raw[key] = value;
@@ -619,7 +638,7 @@ function parseItemList(value) {
   const out = [];
   for (const part of String(value).split(',')) {
     const [id, amount] = part.trim().split(':');
-    if (!ID_RE.test(id || '') || !/^\d+$/.test(amount || '') || Number(amount) < 1) return null;
+    if (!validId(id) || !/^\d+$/.test(amount || '') || Number(amount) < 1) return null;
     out.push({ id, quantity: Number(amount) });
   }
   return out.length ? out : null;
@@ -627,7 +646,7 @@ function parseItemList(value) {
 
 function normalizePatch(raw) {
   const f = canonicalFields(raw);
-  const id = ID_RE.test(f.id || '') ? f.id : null;
+  const id = validId(f.id) ? f.id : null;
   const action = ACTIONS.has((f.action || '').toLowerCase()) ? f.action.toLowerCase() : null;
   const op = OPS.has((f.op || '').toLowerCase()) ? f.op.toLowerCase() : null;
   if (f.action && !action) return { error: `patch_bad_action:${clean(f.action, 80)}` };
@@ -656,7 +675,14 @@ function normalizePatch(raw) {
     count: 'count',
     slot: 'slot'
   };
-  for (const [from, to] of Object.entries(map)) if (f[from] != null) fields[to] = f[from] === '-' ? null : f[from];
+  // `-` clears a field: text to '', an optional enum or state field to null. An item always
+  // keeps a name, a type, a rarity and a theme, so clearing those is refused.
+  for (const [from, to] of Object.entries(map)) {
+    if (f[from] == null) continue;
+    if (f[from] !== '-') fields[to] = f[from];
+    else if (TEXT_FIELDS.has(to)) fields[to] = '';
+    else if (!KEPT_FIELDS.has(to)) fields[to] = null;
+  }
   if (f.currency != null) fields.currency = flag(f.currency);
   if (Array.isArray(raw.effects)) fields.effects = raw.effects;
   if (Array.isArray(raw.augments)) fields.augments = raw.augments;
@@ -668,8 +694,7 @@ function normalizePatch(raw) {
   const inputs = parseItemList(f.inputs),
     outputs = parseItemList(f.outputs);
   if (action === 'transform' && (!inputs || !outputs)) return { error: 'patch_transform_shape' };
-  if (action === 'swap' && (!ID_RE.test(f.equip || '') || !ID_RE.test(f.unequip || '') || !f.slot))
-    return { error: 'patch_swap_shape' };
+  if (action === 'swap' && (!validId(f.equip) || !validId(f.unequip) || !f.slot)) return { error: 'patch_swap_shape' };
   if (action === 'set') {
     if (parseAmount(f.count) == null) return { error: 'patch_set_shape' };
     fields.count = parseAmount(f.count);
@@ -702,7 +727,7 @@ function newRegistry() {
   return { order: [], items: {}, diagnostics: [] };
 }
 function insert(reg, item) {
-  if (!reg.items[item.id]) reg.order.push(item.id);
+  if (!own(reg.items, item.id)) reg.order.push(item.id);
   reg.items[item.id] = item;
 }
 function diagnostic(reg, code, detail = '') {
@@ -747,8 +772,12 @@ function slotConflict(reg, id, slot) {
 }
 
 function applyExam(reg, source, reader = false) {
+  if (!source || reservedKey(source.id)) {
+    diagnostic(reg, 'exam_invalid_id');
+    return null;
+  }
   const item = clone(source),
-    prev = reg.items[item.id];
+    prev = own(reg.items, item.id);
   const provided = new Set(item._provided || []);
   delete item._provided;
   delete item.locked;
@@ -808,9 +837,33 @@ function applyExam(reg, source, reader = false) {
   return item;
 }
 
+// Text a patch may empty, fields it may never empty, and enum fields with their value sets.
+const TEXT_FIELDS = new Set(['emoji', 'displayRarity', 'power', 'required', 'durability', 'cost', 'trivia']);
+const KEPT_FIELDS = new Set(['name', 'itemType', 'rarity', 'theme']);
+const ENUM_FIELDS = {
+  rarity: RARITIES,
+  theme: THEMES,
+  affinity: AFFINITIES,
+  affinity2: AFFINITIES,
+  condition: CONDITIONS
+};
 function applyFields(item, fields) {
-  for (const [key, value] of Object.entries(fields || {})) item[key] = clone(value);
+  for (const [key, value] of Object.entries(fields || {})) {
+    if (reservedKey(key)) continue;
+    const empty = value == null || value === '';
+    if (Object.prototype.hasOwnProperty.call(ENUM_FIELDS, key)) {
+      // Enums are stored lowercase. A value outside the enum keeps what the item had;
+      // only an explicit clear empties an optional one.
+      const word = typeof value === 'string' ? value.trim().toLowerCase() : value;
+      if (ENUM_FIELDS[key].has(word)) item[key] = word;
+      else if (empty && !KEPT_FIELDS.has(key)) item[key] = null;
+    } else if (empty && KEPT_FIELDS.has(key)) continue;
+    // Events stored before `-` cleared to '' carry null in text fields.
+    else if (value == null && TEXT_FIELDS.has(key)) item[key] = '';
+    else item[key] = clone(value);
+  }
   if (!RARITIES.has(item.rarity)) item.rarity = 'normal';
+  if (!item.displayRarity) item.displayRarity = RARITY_LABELS[item.rarity];
   if (!THEMES.has(item.theme)) item.theme = 'arcane';
   if (!AFFINITIES.has(item.affinity)) item.affinity = null;
   if (!AFFINITIES.has(item.affinity2) || item.affinity2 === item.affinity) item.affinity2 = null;
@@ -843,18 +896,36 @@ function applyPatch(reg, patch, reader = false) {
       (rows || []).reduce((totals, row) => totals.set(row.id, (totals.get(row.id) || 0) + row.quantity), new Map());
     const inputs = aggregate(patch.inputs),
       outputs = aggregate(patch.outputs);
+    // `fresh` lists outputs the same response appraises for the first time (see
+    // extractResponse): the transform makes them, so their count is its amount.
+    const fresh = new Set(Array.isArray(patch.fresh) ? patch.fresh.filter(validId) : []);
     if (
       !inputs.size ||
       !outputs.size ||
-      [...inputs].some(([id, quantity]) => available(reg.items[id]) < quantity) ||
-      [...outputs.keys()].some((id) => !reg.items[id])
+      [...inputs].some(([id, quantity]) => available(own(reg.items, id)) < quantity)
     ) {
       diagnostic(reg, 'action_invalid_transform');
       return null;
     }
+    const unknown = [...outputs.keys()].find((id) => !own(reg.items, id) && !fresh.has(id));
+    if (unknown !== undefined) {
+      diagnostic(reg, 'action_transform_unknown_output', String(unknown));
+      return null;
+    }
     const affected = new Map(
-      [...new Set([...inputs.keys(), ...outputs.keys()])].map((id) => [id, clone(reg.items[id])])
+      [...new Set([...inputs.keys(), ...outputs.keys()])].map((id) => [id, clone(own(reg.items, id))])
     );
+    // An output appraised later in the response starts as a bare entry; that exam fills it in.
+    for (const id of outputs.keys()) {
+      if (affected.get(id)) continue;
+      const made = normalizeItem({ id, name: id, possession: 'owned', location: 'inventory' }).item;
+      if (!made) {
+        diagnostic(reg, 'action_transform_unknown_output', id);
+        return null;
+      }
+      delete made._provided;
+      affected.set(id, made);
+    }
     for (const [id, quantity] of inputs)
       if (!removeQuantity(affected.get(id), quantity)) {
         diagnostic(reg, 'action_invalid_transform');
@@ -862,7 +933,7 @@ function applyPatch(reg, patch, reader = false) {
       }
     for (const [id, quantity] of outputs) {
       const item = affected.get(id),
-        have = item.possession === 'owned' ? available(item) : 0;
+        have = item.possession === 'owned' && !fresh.has(id) ? available(item) : 0;
       if (!validAmount(have + quantity)) {
         diagnostic(reg, 'action_invalid_transform');
         return null;
@@ -873,12 +944,12 @@ function applyPatch(reg, patch, reader = false) {
       item.slot = null;
       item.removedReason = null;
     }
-    for (const [id, item] of affected) reg.items[id] = item;
-    return reg.items[patch.outputs[0]?.id] || null;
+    for (const item of affected.values()) insert(reg, item);
+    return own(reg.items, patch.outputs[0]?.id) || null;
   }
   if (patch.action === 'swap') {
-    const oldItem = reg.items[patch.unequip],
-      newItem = reg.items[patch.equip];
+    const oldItem = own(reg.items, patch.unequip),
+      newItem = own(reg.items, patch.equip);
     if (
       !oldItem ||
       !newItem ||
@@ -904,7 +975,7 @@ function applyPatch(reg, patch, reader = false) {
     newItem.slot = patch.slot;
     return newItem;
   }
-  const item = patch.id && reg.items[patch.id];
+  const item = own(reg.items, patch.id);
   if (!item) {
     diagnostic(reg, 'patch_unknown_id', patch.id || patch.action);
     return null;
@@ -1012,11 +1083,13 @@ function applyPatch(reg, patch, reader = false) {
     if (fields) applyFields(item, fields);
     if (before) holdLocked(item, before, held);
   } else if (patch.op === 'remove') {
-    item.possession = 'removed';
-    item.location = 'unknown';
+    // Money never leaves the wallet: losing all of it is a held balance of 0.
+    const money = isCurrency(item);
+    item.possession = money ? 'owned' : 'removed';
+    item.location = money ? 'inventory' : 'unknown';
     item.slot = null;
     item.count = 0;
-    item.removedReason = patch.reason;
+    item.removedReason = money ? null : patch.reason;
   } else if (patch.op === 'restore') {
     applyFields(item, fields || {});
     if (before) holdLocked(item, before, held);
@@ -1126,7 +1199,7 @@ function stripInventoryEcho(content) {
   const lines = source.match(/[^\n]*\n|[^\n]+$/g) || [];
   const header = /^\s*\[ITEMX(?: v2| 2 · CURRENT INVENTORY · authoritative)\]\s*$/;
   const row = (line) => {
-    if (line.trim().startsWith(WALLET_PREFIX)) return true;
+    if (line.trim().startsWith(WALLET_PREFIX) || OMITTED_RE.test(line.trim())) return true;
     const cells = line
       .trim()
       .replace(/^[-*]\s+/, '')
@@ -1153,8 +1226,8 @@ function stripInventoryEcho(content) {
       ID_RE.test(fields.id || '') &&
       !!fields.name &&
       RARITIES.has(fields.rarity) &&
-      /^(observed|owned|removed)$/.test(fields.possession || '') &&
-      /^(inventory|equipped|storage|unknown)$/.test(fields.location || '') &&
+      /^(observed|owned|removed)$/.test(fields.possession || 'owned') &&
+      /^(inventory|equipped|storage|unknown)$/.test(fields.location || 'inventory') &&
       /^\d+$/.test(fields.count || '')
     );
   };
@@ -1179,7 +1252,7 @@ function stripInventoryEcho(content) {
       out.push(lines[i]);
       continue;
     }
-    if (lines[end]?.trim() === 'Use existing ids. Emit events only for settled item creation or change.') end++;
+    if (ANCHOR_RULES.includes(lines[end]?.trim())) end++;
     if (
       lines[end]?.trim() ===
       'Read-only context: never copy this inventory table or its header into the response. Output only settled event transports beside the narrative.'
@@ -1232,20 +1305,29 @@ function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
   const protectedResult = protectPlanning(content, (masked) => extractResponse(masked, baseRegistry, options));
   if (protectedResult) return protectedResult;
   const text = stripInventoryEcho(content);
+  // Called on every streamed flush: text without a transport costs no registry copy.
+  // The caller's registry comes back as it is; nothing here or downstream writes to it.
+  if (!/(?:<\/?(?:itemExam|itemPatch|itemx)\b|\[(?:itemx|아이템)\s*:)/i.test(text))
+    return { content: text, registry: baseRegistry || newRegistry(), events: [], errors: [] };
   const reg = clone(baseRegistry || newRegistry());
   const transports = collectTransports(text);
-  if (!transports.length && !/(?:<\/?(?:itemExam|itemPatch|itemx)\b|\[(?:itemx|아이템)\s*:)/i.test(text))
-    return { content: text, registry: reg, events: [], errors: [] };
   const out = [];
   const events = [];
   const errors = [];
   let cursor = 0;
+  const parsedParts = transports.map((part, index) =>
+    part.kind === 'xml'
+      ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
+      : parseBracket(part.body, `${part.raw}:${index}`)
+  );
+  // Ids this response appraises for the first time. A transform that makes one of them
+  // may stand before or after its exam; the mark travels with the event so replay agrees.
+  const appraisedHere = new Set(
+    parsedParts.filter((one) => one.item && !own(reg.items, one.item.id)).map((one) => one.item.id)
+  );
   transports.forEach((part, index) => {
     out.push(text.slice(cursor, part.start));
-    const parsed =
-      part.kind === 'xml'
-        ? parseXml(part.tag, part.attrs, part.body, `${part.raw}:${index}`)
-        : parseBracket(part.body, `${part.raw}:${index}`);
+    const parsed = parsedParts[index];
     let event = parsed.item
       ? { kind: 'exam', item: parsed.item }
       : parsed.patch
@@ -1259,10 +1341,18 @@ function extractResponse(content, baseRegistry = newRegistry(), options = {}) {
         return;
       }
     }
+    if (!event.error && event.kind === 'patch' && event.patch.action === 'transform') {
+      const fresh = [...new Set((event.patch.outputs || []).map((row) => row.id))].filter((id) =>
+        appraisedHere.has(id)
+      );
+      // Only the first transform makes it; a second one adds to what is then there.
+      for (const id of fresh) appraisedHere.delete(id);
+      if (fresh.length) event = { kind: 'patch', patch: { ...event.patch, fresh } };
+    }
     const view = event.error
       ? null
       : (() => {
-          const previous = comparisonView(reg.items[event.kind === 'exam' ? event.item.id : event.patch.id]);
+          const previous = comparisonView(own(reg.items, event.kind === 'exam' ? event.item.id : event.patch.id));
           const applied = clone(applyEvent(reg, event));
           return applied ? { applied, previous } : null;
         })();
@@ -1290,41 +1380,55 @@ function requestView(text) {
     return item ? `[${resolveItemEmoji(item)} ${item.name} | id=${item.id}]` : '';
   });
 }
+// Rows of the request anchor. A row prints possession and location only when they differ
+// from the usual owned / inventory; ANCHOR_RULE says so. stripInventoryEcho knows every line.
+const ANCHOR_RULE =
+  'Rows without possession/location are owned, in inventory. Use existing ids. Emit events only for settled item creation or change.';
+const ANCHOR_RULES = [ANCHOR_RULE, 'Use existing ids. Emit events only for settled item creation or change.'];
+const OMITTED_RE = /^- \(\d+ older items? not listed\)$/;
+function anchorRow(item) {
+  const bits = [`id=${item.id}`, `name=${item.name}`, `type=${item.itemType}`, `rarity=${item.rarity}`];
+  if (item.possession !== 'owned') bits.push(`possession=${item.possession}`);
+  if (item.location !== 'inventory') bits.push(`location=${item.location}`);
+  bits.push(`count=${item.count || 0}`);
+  // Continuity only: the model patches by id and never re-appraises, so
+  // effect descriptions and the visual theme stay in the ledger, not in
+  // every request.
+  for (const key of ANCHOR_OPTIONAL) if (key !== 'theme' && item[key]) bits.push(`${key}=${item[key]}`);
+  if (item.effects?.length)
+    bits.push(
+      `effects=${item.effects
+        .slice(0, 3)
+        .map((one) => one.name)
+        .join(' ;; ')}`
+    );
+  return `- ${bits.join(' | ')}`;
+}
 function anchor(snapshot, max = 12000) {
   const reg = snapshot?.registry || newRegistry();
-  const items = reg.order
+  // Held money is the WALLET line; it is not listed a second time as a row.
+  const rows = reg.order
     .map((id) => reg.items[id])
-    .filter(Boolean)
-    .sort((a, b) => Number(b.location === 'equipped') - Number(a.location === 'equipped'));
+    .filter((item) => item && !(item.possession === 'owned' && isCurrency(item)))
+    .map((item) => ({ equipped: item.location === 'equipped', line: anchorRow(item) }));
   const lines = ['[ITEMX 2 · CURRENT INVENTORY · authoritative]', walletLine(reg)];
-  let length = lines.join('\n').length;
-  for (const item of items) {
-    const bits = [
-      `id=${item.id}`,
-      `name=${item.name}`,
-      `type=${item.itemType}`,
-      `rarity=${item.rarity}`,
-      `possession=${item.possession}`,
-      `location=${item.location}`,
-      `count=${item.count || 0}`
-    ];
-    // Continuity only: the model patches by id and never re-appraises, so
-    // effect descriptions and the visual theme stay in the ledger, not in
-    // every request.
-    for (const key of ANCHOR_OPTIONAL) if (key !== 'theme' && item[key]) bits.push(`${key}=${item[key]}`);
-    if (item.effects?.length)
-      bits.push(
-        `effects=${item.effects
-          .slice(0, 3)
-          .map((one) => one.name)
-          .join(' ;; ')}`
-      );
-    const line = `- ${bits.join(' | ')}`;
-    if (length + line.length + 1 > max) break;
-    lines.push(line);
-    length += line.length + 1;
-  }
-  lines.push('Use existing ids. Emit events only for settled item creation or change.');
+  // Over budget, the oldest rows give way (worn gear last): the newest items are the ones
+  // the model is about to patch. What stays keeps its order, worn gear first.
+  let length = lines.join('\n').length + rows.reduce((sum, row) => sum + row.line.length + 1, 0);
+  let omitted = 0;
+  const note = () => (omitted ? `- (${omitted} older item${omitted > 1 ? 's' : ''} not listed)`.length + 1 : 0);
+  for (const worn of [false, true])
+    for (const row of rows) {
+      if (length + note() <= max) break;
+      if (row.equipped !== worn) continue;
+      row.omitted = true;
+      omitted += 1;
+      length -= row.line.length + 1;
+    }
+  for (const worn of [true, false])
+    for (const row of rows) if (row.equipped === worn && !row.omitted) lines.push(row.line);
+  if (omitted) lines.push(`- (${omitted} older item${omitted > 1 ? 's' : ''} not listed)`);
+  lines.push(ANCHOR_RULE);
   lines.push(
     'Read-only context: never copy this inventory table or its header into the response. Output only settled event transports beside the narrative.'
   );

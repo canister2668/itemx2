@@ -32,7 +32,7 @@ async function bootWithOutput(data, options = {}) {
         JSON.stringify({
           v: 1,
           global: { badgePosition: 'rm' },
-          characters: options.freshDefaults ? {} : { 'char-guard': { auxOutput: 'missing' } }
+          characters: options.freshDefaults ? {} : { 'char-guard': { auxOutput: 'always' } }
         })
       ]
     ]),
@@ -159,7 +159,9 @@ test('fresh installs do not auto-call an unverified auxiliary provider', async (
   assert.equal(result.chatWrites, 0);
 });
 
-test('missing mode still reviews partially tagged output for omitted sibling items', async () => {
+// "Missing" mode no longer reviews a reply that already carries a record; see
+// tests/review-pipeline-aux.test.mjs for that mode.
+test('always mode reviews partially tagged output for omitted sibling items', async () => {
   const payload = Buffer.from(
     JSON.stringify({
       v: 2,
