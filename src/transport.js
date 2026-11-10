@@ -64,6 +64,10 @@ export function protocolForSettings(settings, character, moduleAssets = [], opti
   return parts.join('\n\n');
 }
 
+// A status/state block or a bracket-only line is not narrative: a name in it
+// never decides where a card goes.
+const STATUS_PIECE_RE = /^\s*(?:\[(?:status|state|route)\b|<(?:state|status|route|risu[-_])|\[[^\]\n]*\]\s*$)/i;
+
 const normalizedName = (value) =>
   String(value || '')
     .toLocaleLowerCase()
@@ -119,26 +123,31 @@ export function positionMarkersByNarrative(content) {
       .split(/[\s·:()[\]{}〈〉《》「」『』/\\,_-]+/u)
       .map(normalizedName)
       .filter((term) => term.length >= 2);
-    let bestIndex = -1,
-      bestScore = 0;
+    // The paragraph the model put the marker after. The protocol asks for the
+    // marker right after the paragraph where the event happens, so a name
+    // match may only pull it back to the nearest earlier mention: an
+    // encounter foreshadowed in the opening (or named in a status header) must
+    // not show its card above the fight. A marker on its own lines leaves only
+    // blank lines behind, which the split merges into the preceding gap.
+    const prefixText = source.slice(0, marker.index).replace(Core.MARKER_RE, '').replace(Codex.MARKER_RE, '');
+    const ownParagraphs = prefixText.trimEnd() ? prefixText.trimEnd().split(/\n{2,}/).length : 1;
+    let ownIndex = Math.min((ownParagraphs - 1) * 2, Math.max(0, pieces.length - 1));
+    if (ownIndex % 2) ownIndex -= 1;
+    // Nearness wins over match quality: the opening may use the full name
+    // and the fight a short one, and the card still belongs to the fight.
+    let before = -1,
+      after = -1;
     for (let index = 0; index < pieces.length; index += 2) {
       const paragraph = normalizedPieces[index];
-      if (!paragraph) continue;
+      if (!paragraph || STATUS_PIECE_RE.test(pieces[index])) continue;
       const exactHit = exact.length >= 2 && paragraph.includes(exact);
       const hits = terms.filter((term) => paragraph.includes(term)).length;
       const enoughTerms = terms.length > 1 ? hits >= Math.min(2, terms.length) : hits === 1;
       if (!exactHit && !enoughTerms) continue;
-      const score = (exactHit ? 10000 : 0) + hits * 100;
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = index;
-      }
+      if (index <= ownIndex) before = index;
+      else if (after < 0) after = index;
     }
-    if (bestIndex < 0) {
-      const prefixText = source.slice(0, marker.index).replace(Core.MARKER_RE, '').replace(Codex.MARKER_RE, '');
-      bestIndex = Math.min(Math.max(0, (prefixText.split(/\n{2,}/).length - 1) * 2), Math.max(0, pieces.length - 1));
-      if (bestIndex % 2) bestIndex -= 1;
-    }
+    let bestIndex = before >= 0 ? before : after >= 0 ? after : ownIndex;
     if (trailerIndex >= 0 && bestIndex >= trailerIndex) bestIndex = Math.max(0, trailerIndex - 2);
     const list = placements.get(bestIndex) || [];
     list.push(marker);

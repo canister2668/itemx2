@@ -14,7 +14,8 @@ import { inlinePortraitImages } from '../portraits.js';
 import { codexInlineEventHtml } from '../render/codex-cards.js';
 import { activeContextKey, currentLatestKeys } from '../session.js';
 import { CARD_FX_MODES, FX_MODES, SKIN_MODES } from '../settings.js';
-import { ANCHOR_RE, anchorKeys, hasAnchor, messageKeys } from '../store/anchors.js';
+import { ANCHOR_RE, anchorKeys, hasAnchor, messageKeys, stripTransport } from '../store/anchors.js';
+import { hasRawTransport } from '../transport.js';
 import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
 const bursts = new Map();
@@ -218,11 +219,20 @@ function renderCodexCard(key, payload, motion, open, portrait) {
   return html;
 }
 
+// A stored message can still hold raw model tags: another script's setChat
+// (an Aux image pass, a module's onOutput rewrite) may write back the text it
+// read before ITEMX anchored it, until the catch-up anchors it again. The
+// reader never sees transport; the cards appear once the anchors are back.
+function hideRawTransport(source) {
+  if (!hasRawTransport(source)) return source;
+  return stripTransport(source).replace(/\[(?:itemx|아이템)\s*:[^\]\r\n]{0,2048}\]/gi, '');
+}
+
 // The display hook. Anchors become cards from the
 // loaded ledger, which is awaited once per chat. An anchor nothing resolves
 // renders as nothing.
 export async function displayHandler(content) {
-  const source = Core.stripInventoryEcho(content);
+  const source = hideRawTransport(Core.stripInventoryEcho(content));
   if (!hasAnchor(source)) return source;
   const loaded = await displayProjection(anchorKeys(source));
   const rows = visibleAnchors(source, loaded);

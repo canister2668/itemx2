@@ -146,6 +146,18 @@ const locationLabels = {
   unknown: t('render.044')
 };
 const possessionLabels = { observed: t('ui-panel.049'), owned: t('ui-panel.051'), removed: t('ui-panel.badge-loss') };
+// How a removed item left: the action of the event that removed it.
+const removedLabels = {
+  transfer: t('render.removed-transfer'),
+  consume: t('render.removed-consume'),
+  destroy: t('render.removed-destroy')
+};
+// The sub line of a removed item: how it left and why, never a location.
+function removedLine(item, action) {
+  const label = removedLabels[action] || possessionLabels.removed;
+  const reason = String(item.removedReason || '').trim();
+  return reason && !/^[a-z_]+$/.test(reason) ? `${label} · ${reason}` : label;
+}
 const rarityColors = {
   normal: '#5c6577',
   magic: '#6fa8e8',
@@ -298,6 +310,9 @@ const reviewLabels = {
 };
 const known = (value) =>
   value != null && String(value).trim() !== '' && !/^(?:미상|미분류|unknown|none)$/i.test(String(value));
+// A count reads with thousands separators: 5,000,000, not 5000000.
+const changeValue = (key, value) =>
+  key === 'count' && /^\d+$/.test(String(value)) ? Number(value).toLocaleString('en-US') : String(value);
 function changes(previous, current, domain = 'item') {
   if (!previous || !current) return [];
   const keys =
@@ -326,7 +341,12 @@ function changes(previous, current, domain = 'item') {
           ];
   const out = keys
     .filter(([key]) => known(previous[key]) && known(current[key]) && String(previous[key]) !== String(current[key]))
-    .map(([key, label]) => ({ key, label, before: String(previous[key]), after: String(current[key]) }));
+    .map(([key, label]) => ({
+      key,
+      label,
+      before: changeValue(key, previous[key]),
+      after: changeValue(key, current[key])
+    }));
   const effects = (entity) =>
     (Array.isArray(entity.effects) ? entity.effects : [])
       .map((one) => (typeof one === 'string' ? one : one?.name))
@@ -652,7 +672,7 @@ function renderCard(item, options = {}) {
         ? `<b class="ixp-x">×${Number(item.count)}</b>`
         : '';
   // The acquisition burst lives in the summary so a folded card still plays it.
-  const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(possession)} · ${esc(location)}</span>${state}</span>${prismGauge(item)}</div><span class="ixp-more">${t('render.expand')}</span></summary>`;
+  const hero = `<summary class="ixp-hero">${layers.fresh}${layers.hero}<div class="ixp-icon"><span>${esc(Core.resolveItemEmoji(item))}</span>${count}</div><div class="ixp-title"><span class="ixp-rank">${esc(item.displayRarity || rarityLabels[rarity])}</span><span class="ixp-name">${esc(item.name || '???')}</span><span class="ixp-sub"><span>${esc(item.itemType || t('render.item-type-other'))}</span><span>${esc(item.possession === 'removed' ? removedLine(item, options.removedAs) : `${possession} · ${location}`)}</span>${state}</span>${prismGauge(item)}</div><span class="ixp-more">${t('render.expand')}</span></summary>`;
   const body = `<div class="ixp-body">${prismTags(item)}${prismStats(item)}${prismList(item)}${options.previous ? changesHtml(options.previous, item) : ''}${item.trivia ? `<p class="ixp-lore">${esc(item.trivia)}</p>` : ''}</div>`;
   return `<details class="${classes}" style="${vars}" data-itemx-id="${esc(item.id)}"${options.fold ? '' : ' open'}>${hero}${layers.back}${body}${layers.front}</details>`;
 }
@@ -666,7 +686,12 @@ function renderTile(item) {
 
 function renderMarkerPayload(payload, options = {}) {
   if (!payload || payload.error) return '';
-  if (payload.view) return renderCard(payload.view, { ...options, previous: payload.previous });
+  if (payload.view)
+    return renderCard(payload.view, {
+      ...options,
+      previous: payload.previous,
+      removedAs: payload.event?.patch?.action || ''
+    });
   const id = payload.event?.patch?.id;
   return id ? `<span class="itemx-event-chip">ITEMX · ${esc(id)} ${t('render.changed')}</span>` : '';
 }
