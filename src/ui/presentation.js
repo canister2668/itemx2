@@ -16,6 +16,7 @@ import { activeContextKey, currentLatestKeys } from '../session.js';
 import { CARD_FX_MODES, FX_MODES, SKIN_MODES } from '../settings.js';
 import { ANCHOR_RE, anchorKeys, hasAnchor, messageKeys, stripTransport } from '../store/anchors.js';
 import { hasRawTransport } from '../transport.js';
+import { findAppraisalLines } from './appraisal-line.js';
 import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
 const bursts = new Map();
@@ -251,12 +252,27 @@ export async function displayHandler(content) {
   // full card would need its ~80 KB stylesheet inline in every message; a
   // compact chip with a few hundred bytes of style stands in instead.
   const full = mainStyleInstalled();
+  // The narrative's appraisal line of an item becomes a system window; its card
+  // then stays folded, the window already shows what the card would.
+  const appraisals = full
+    ? findAppraisalLines(
+        source,
+        rows.filter((row) => !row.hidden && row.payload && payloadDomain(row.payload) === 'item'),
+        (row) => row.payload.view?.name || row.payload.event?.item?.name || ''
+      )
+    : [];
+  const appraised = new Set(appraisals.map((one) => one.key));
+  const pieces = [...rows, ...appraisals.map((one) => ({ ...one, appraisal: true }))].sort((a, b) => a.start - b.start);
   let chips = false,
     cursor = 0,
     rendered = '';
-  for (const row of rows) {
+  for (const row of pieces) {
     rendered += source.slice(cursor, row.start);
     cursor = row.end;
+    if (row.appraisal) {
+      rendered += row.html;
+      continue;
+    }
     const payload = row.payload;
     if (row.hidden || !payload) continue;
     const item = payloadDomain(payload) === 'item';
@@ -265,7 +281,12 @@ export async function displayHandler(content) {
     const html = !full
       ? ''
       : item
-        ? renderItemCard(row.key, payload, motion(row.key), cardOpenLatest && isLatest(row.key))
+        ? renderItemCard(
+            row.key,
+            payload,
+            motion(row.key),
+            cardOpenLatest && isLatest(row.key) && !appraised.has(row.key)
+          )
         : renderCodexCard(
             row.key,
             payload,

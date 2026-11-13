@@ -1807,3 +1807,73 @@
 .itemx-inline-card {
   margin: 0.5rem auto 0.75rem;
 }
+
+/* 본문 감정 줄(시스템 창). 정적 상자: 애니메이션·blur·filter 없음.
+   리스 본문의 행간(최대 3.75rem)과 prose 여백을 이어받지 않게 모두 고정한다. */
+.ixs {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  margin: 0.75rem 0;
+  border: 1px solid rgba(120, 170, 255, 0.38);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(40, 70, 120, 0.32), rgba(14, 22, 38, 0.55));
+  color: #cfd6e2;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  text-align: left;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.ixs-h {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(120, 170, 255, 0.25);
+  background: rgba(90, 140, 230, 0.16);
+  line-height: 1.4;
+}
+.ixs-h > b {
+  flex: 1;
+  min-width: 0;
+  color: #f2f4f8;
+  font-weight: 700;
+}
+.ixs-k {
+  flex: 0 0 auto;
+  color: #8fb6ff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.ixs-r {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border: 1px solid rgba(170, 180, 195, 0.35);
+  border-radius: 999px;
+  background: rgba(170, 180, 195, 0.18);
+  color: #c9d1dc;
+  font-size: 0.7rem;
+  line-height: 18px;
+}
+.ixs-row {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 5px 10px;
+}
+.ixs-row + .ixs-row {
+  border-top: 1px dashed rgba(120, 170, 255, 0.15);
+}
+.ixs-row > span {
+  flex: 0 0 3.4em;
+  color: #8a97ab;
+}
+.ixs-row > b {
+  flex: 1;
+  min-width: 0;
+  color: #eef1f6;
+  font-weight: 500;
+}
