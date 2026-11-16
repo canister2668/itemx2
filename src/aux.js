@@ -34,6 +34,7 @@ import { anchorKeys, requestText } from './store/anchors.js';
 import { readDocument } from './store/document.js';
 import {
   anchorTransport,
+  authorNoteBlock,
   enabledCodexDomains,
   itemxProtocolText,
   protocolForSettings,
@@ -41,6 +42,11 @@ import {
 } from './transport.js';
 
 const messageData = (message) => Core.messageText(message);
+// Every auxiliary prompt that judges item values carries the reader's author note.
+const withAuthorNote = (prompt, settings) => {
+  const note = authorNoteBlock(settings);
+  return note ? `${prompt}\n\n${note}` : prompt;
+};
 const GUARD_LIMIT = 128;
 
 export function modelText(result) {
@@ -608,7 +614,10 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
       const partialMap = new Map(partials.map((one) => [one.event.item.id, one]));
       const repaired = new Map();
       try {
-        const repairResponse = await runAuxModel(Quality.repairPrompt(partials, committedNarrative), t('aux.033'));
+        const repairResponse = await runAuxModel(
+          withAuthorNote(Quality.repairPrompt(partials, committedNarrative), settings),
+          t('aux.033')
+        );
         const repairRaw = modelText(repairResponse);
         const repairParsed = repairRaw ? Core.extractResponse(repairRaw, validationRegistry) : { events: [] };
         for (const event of repairParsed.events) {
@@ -656,7 +665,10 @@ export async function recoverAuxiliaryOutputNow({ messageIndex = null, force = f
         called = true;
         try {
           const appraisalRaw = modelText(
-            await runAuxModel(Quality.appraisalPrompt([...rows.values()], itemEvidenceContext), t('aux.appraise'))
+            await runAuxModel(
+              withAuthorNote(Quality.appraisalPrompt([...rows.values()], itemEvidenceContext), settings),
+              t('aux.appraise')
+            )
           );
           const appraisalParsed = appraisalRaw
             ? Core.extractResponse(appraisalRaw, validationRegistry)
@@ -871,7 +883,7 @@ export async function runItemModel(task, loaded, target = null, instruction = ''
   if (!settings.itemsEnabled) throw new Error(t('aux.021'));
   const targetJson = target ? JSON.stringify(target) : 'null';
   const prompt = `${itemxProtocolText(settings.rarityMode)}\n\nYou are running a manual ITEMX management transaction. Output ITEMX transport only; no prose and no code fence.\n${task === 'create' ? 'Create exactly one genuinely new item from the user description. Emit exactly one complete itemExam with a new snake_case id.' : 'Reappraise exactly the supplied existing item. Emit exactly one complete itemExam, keep its id, possession, location, slot and count, and update descriptive/appraisal fields according to the instruction. Never remove it and never create another id.'}\n\nCURRENT INVENTORY:\n${Core.anchor(loaded.snapshot)}\n\nTARGET ITEM JSON:\n${targetJson}\n\nUSER INSTRUCTION:\n${instruction || (task === 'create' ? 'Create a fitting new item.' : 'Roll a fresh appraisal while preserving established facts not contradicted by context.')}`;
-  const response = await runAuxModel(prompt, task === 'create' ? t('aux.020') : t('aux.019'));
+  const response = await runAuxModel(withAuthorNote(prompt, settings), task === 'create' ? t('aux.020') : t('aux.019'));
   const raw = modelText(response);
   if (!raw) throw new Error(t('aux.018'));
   const parsed = Core.extractResponse(raw, loaded.snapshot.registry);
@@ -927,7 +939,10 @@ export async function repairOneItem(loaded, id) {
     const found = Quality.detectItemEvidence(narrative, item, Object.values(reg.items));
     if (!found.segment) throw new Error(t('aux.008'));
     const partial = { event: { kind: 'exam', item }, missing, evidence: found };
-    const raw = modelText(await runAuxModel(Quality.repairPrompt([partial], narrative), t('aux.007', item.name)));
+    const settings = await settingsFor(loaded.character);
+    const raw = modelText(
+      await runAuxModel(withAuthorNote(Quality.repairPrompt([partial], narrative), settings), t('aux.007', item.name))
+    );
     const parsed = Core.extractResponse(raw, reg);
     const partialMap = new Map([[id, partial]]);
     const events = parsed.events.map((event) => Quality.acceptRepair(event, partialMap, reg)).filter(Boolean);

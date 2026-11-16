@@ -15,6 +15,10 @@ export const FONT_SCALES = ['small', 'medium', 'large'];
 export const CARD_FX_MODES = ['prism', 'classic'];
 export const CURRENCY_DISPLAY_MODES = ['grid', 'both', 'wallet'];
 export const PROTOCOL_POSITIONS = ['tail', 'head'];
+// The reader's own guidance for ITEMX records (like an author's note): plain text,
+// trimmed and capped so a pasted wall of text cannot swell every request.
+export const AUTHOR_NOTE_MAX = 1500;
+const TEXT = Object.freeze({ text: AUTHOR_NOTE_MAX });
 export const DOMAIN_KEYS = { items: 'itemsEnabled', skills: 'skillsEnabled', encounters: 'encountersEnabled' };
 
 export const schema = Object.freeze({
@@ -35,20 +39,25 @@ export const schema = Object.freeze({
   cardFx: CARD_FX_MODES,
   cardOpenLatest: true,
   currencyDisplay: CURRENCY_DISPLAY_MODES,
-  protocolPosition: PROTOCOL_POSITIONS
+  protocolPosition: PROTOCOL_POSITIONS,
+  authorNote: TEXT
 });
+
+const textValue = (value, max) => (typeof value === 'string' ? value.replace(/\r\n?/g, '\n').trim().slice(0, max) : '');
 
 export function normalize(value = {}) {
   return Object.fromEntries(
     Object.entries(schema).map(([key, rule]) => [
       key,
-      Array.isArray(rule)
-        ? rule.includes(value[key])
-          ? value[key]
-          : rule[0]
-        : typeof value[key] === 'boolean'
-          ? value[key]
-          : rule
+      rule?.text
+        ? textValue(value[key], rule.text)
+        : Array.isArray(rule)
+          ? rule.includes(value[key])
+            ? value[key]
+            : rule[0]
+          : typeof value[key] === 'boolean'
+            ? value[key]
+            : rule
     ])
   );
 }

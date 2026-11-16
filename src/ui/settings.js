@@ -22,7 +22,9 @@ import {
 import { scanLorebookEncounters } from '../lore-sync.js';
 import { enableModuleAssets } from '../portraits.js';
 import { invalidateLoaded, setActiveContextKey } from '../session.js';
+import { openTextPrompt } from './text-prompt.js';
 import {
+  AUTHOR_NOTE_MAX,
   CARD_FX_MODES,
   CURRENCY_DISPLAY_MODES,
   DOMAIN_KEYS,
@@ -455,7 +457,7 @@ export function settingsPanelHtml(loaded, skin, parts) {
       t('ui-settings.086'),
       `${t('ui-settings.085.1')} <b>${t('ui-settings.085.2')}</b>${t('ui-settings.085.3')}`,
       setSegment(skin, 'aux', Object.entries(AUX_LABELS), loaded.auxOutput)
-    )}${setCard(
+    )}${authorNoteCard(loaded, skin)}${setCard(
       t('ui-settings.091'),
       t('ui-settings.090'),
       `<span class="itemx2-manager-actions">${setSwitch(skin, 'lorebook-toggle', loaded.lorebookEncounterEnabled)}${setButton(skin, 'lorebook-scan', t('ui-settings.089'))}</span>`
@@ -515,6 +517,18 @@ export function settingsPanelHtml(loaded, skin, parts) {
     (key) => `<div class="itemx2-set-sec itemx2-set-sec-${key}">${sections[key]}</div>`
   ).join('');
   return `<div class="itemx2-root-settings">${radios}<nav class="itemx2-set-chips">${chips}</nav>${body}</div>`;
+}
+
+export function authorNotePreview(note) {
+  const text = String(note || '').trim();
+  if (!text) return t('ui-settings.author-note-empty');
+  const line = text.replace(/\s+/g, ' ');
+  return Core.esc(line.length > 90 ? `${line.slice(0, 90)}…` : line);
+}
+
+function authorNoteCard(loaded, skin) {
+  const note = loaded.authorNote || '';
+  return `<section class="itemx2-root-setting-card itemx2-author-note-card"><span><strong>${t('ui-settings.author-note-title')}${note ? ` <em class="itemx2-status-chip itemx2-status-chip-warn">${t('ui-settings.author-note-on')}</em>` : ''}</strong><small>${t('ui-settings.author-note-note')}</small><small class="itemx2-author-note-preview">${authorNotePreview(note)}</small></span>${setButton(skin, 'author-note', note ? t('ui-settings.author-note-edit') : t('ui-settings.author-note-write'))}</section>`;
 }
 
 export function settingsDomainControls(loaded, skin) {
@@ -834,6 +848,32 @@ export function rootSettingActions() {
         loaded.autoPruneEnabled = value;
         setStatus(t('ui-settings.auto-prune-status', value ? 'ON' : 'OFF'));
         await updateRootSwitch('.x-risu-itemx2-setting-auto-prune', value);
+      }
+    },
+    {
+      hook: 'itemx2-setting-author-note',
+      run: async () => {
+        const loaded = await cachedOrRebuildCurrent();
+        if (!loaded) return;
+        const current = cachedSettings(loaded.character) || (await settingsFor(loaded.character));
+        await openTextPrompt({
+          title: t('ui-settings.author-note-title'),
+          note: t('ui-settings.author-note-help'),
+          value: current.authorNote || '',
+          placeholder: t('ui-settings.author-note-placeholder'),
+          max: AUTHOR_NOTE_MAX,
+          rows: 9,
+          submitLabel: t('ui-settings.author-note-save'),
+          clearLabel: t('ui-settings.author-note-clear'),
+          tab: 'settings',
+          onSubmit: async (text) => {
+            const saved = await changeSettings(loaded.character, { authorNote: text });
+            loaded.authorNote = saved.authorNote;
+            invalidateLoaded();
+            setStatus(saved.authorNote ? t('ui-settings.author-note-saved') : t('ui-settings.author-note-cleared'));
+            await openRootInventory({ open: true, tab: 'settings' });
+          }
+        });
       }
     },
     {

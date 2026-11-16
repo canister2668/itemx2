@@ -75,6 +75,7 @@ import {
 import { SKIN_NAMES, ensureMainStyleAttached, fallbackDocumentHead, installMainStyle, mainDoc } from './style.js';
 import { isLocked, lockAllEvent, lockedNames, openEntityEditor } from './item-editor.js';
 import { nativeElement, panelDocument } from './surface.js';
+import { openTextPrompt } from './text-prompt.js';
 import { uiState } from './view-state.js';
 import { checkForUpdate } from '../update-check.js';
 
@@ -1129,7 +1130,7 @@ export async function routeHistoryControls(event) {
 }
 
 export function searchControlsHtml() {
-  return `<!--ITEMX2-SEARCH-START--><div class="itemx2-search-controls"><div class="itemx2-search-query" contenteditable="true" role="textbox" aria-label="${t('ui-panel.054.1')}" data-placeholder="${t('ui-panel.054.2')}">${Core.esc(uiState.query)}</div><button class="itemx2-search-apply" type="button">${t('ui-panel.054.3')}</button><button class="itemx2-search-clear" type="button">${t('ui-panel.054.4')}</button></div><!--ITEMX2-SEARCH-END-->`;
+  return `<!--ITEMX2-SEARCH-START--><div class="itemx2-search-controls"><button class="itemx2-search-query${uiState.query ? '' : ' itemx2-search-empty'}" type="button" aria-label="${t('ui-panel.054.1')}">${Core.esc(uiState.query || t('ui-panel.054.2'))}</button><button class="itemx2-search-clear" type="button">${t('ui-panel.054.4')}</button></div><!--ITEMX2-SEARCH-END-->`;
 }
 
 export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
@@ -1230,7 +1231,7 @@ export function rootInventoryParts(loaded, open = true, tab = 'inventory') {
                   )
                   .join('') || `<div class="itemx2-root-empty">${t('ui-panel.041.1')}</div>`
               : '';
-          const manager = `<details class="itemx2-manager-fold"><summary>${t('ui-panel.040.1')} <small>${t('ui-panel.040.2')}</small></summary><div class="itemx2-manager-body"><label class="itemx2-manager-label">${t('ui-panel.040.3')}<div class="itemx2-manager-editor itemx2-manager-note" contenteditable="true" role="textbox" aria-label="${t('ui-panel.040.4')}"></div></label><div class="itemx2-manager-list">${managerRows}</div><div class="itemx2-manager-create"><label class="itemx2-manager-label">${t('ui-panel.040.5')}<div class="itemx2-manager-editor itemx2-manager-create-note" contenteditable="true" role="textbox" aria-label="${t('ui-panel.040.5')}"></div></label><button class="itemx2-root-setting-button itemx2-manager-create-button" type="button">${t('ui-panel.040.7')}</button></div></div></details>`;
+          const manager = `<details class="itemx2-manager-fold"><summary>${t('ui-panel.040.1')} <small>${t('ui-panel.040.2')}</small></summary><div class="itemx2-manager-body"><p class="itemx2-manager-label">${t('ui-panel.040.3')}</p><div class="itemx2-manager-list">${managerRows}</div><div class="itemx2-manager-create"><button class="itemx2-root-setting-button itemx2-manager-create-button" type="button">${t('ui-panel.040.7')}</button></div></div></details>`;
           const connection = connectionSummary();
           const chips = [
             ['hook', connection.hook],
@@ -1384,6 +1385,7 @@ export const rootStateFingerprint = (loaded) =>
     Number(loaded.lorebookEncounterEnabled),
     Number(loaded.autoPruneEnabled),
     Number(loaded.debugEnabled),
+    loaded.authorNote || '',
     JSON.stringify(EntityHistory.preferences(loaded.prefs)),
     loaded.turn || 0
   ].join(':');
@@ -1435,7 +1437,7 @@ export function hitCandidates(tab = uiState.activeRootTab) {
   const actions = rootSettingActions();
   return [
     'itemx2-root-close',
-    'itemx2-search-apply',
+    'itemx2-search-query',
     'itemx2-search-clear',
     'itemx2-history-open',
     'itemx2-setting-backup',
@@ -1537,19 +1539,28 @@ export async function installRootClickRouter(owner) {
           return;
         }
       }
-      if (
-        (await eventHitsMainClass(event, 'itemx2-search-apply')) ||
-        (await eventHitsMainClass(event, 'itemx2-search-clear'))
-      ) {
-        const clear = await eventHitsMainClass(event, 'itemx2-search-clear');
-        const input = await queryMainClass('itemx2-search-query');
-        uiState.query = clear
-          ? ''
-          : String((await input?.textContent()) || '')
-              .trim()
-              .slice(0, 200);
+      if (await eventHitsMainClass(event, 'itemx2-search-clear')) {
+        uiState.query = '';
         uiState.rootItemPage = 0;
         await openRootInventory({ open: true, tab: uiState.activeRootTab });
+        return;
+      }
+      if (await eventHitsMainClass(event, 'itemx2-search-query')) {
+        const tab = uiState.activeRootTab;
+        await openTextPrompt({
+          title: t('ui-panel.054.1'),
+          note: t('ui-panel.054.2'),
+          value: uiState.query,
+          max: 200,
+          rows: 2,
+          submitLabel: t('ui-panel.054.3'),
+          tab,
+          onSubmit: async (text) => {
+            uiState.query = text;
+            uiState.rootItemPage = 0;
+            await openRootInventory({ open: true, tab });
+          }
+        });
         return;
       }
       if (uiState.activeRootTab === 'inventory' && !uiState.historyView.open) {
@@ -1708,17 +1719,25 @@ export async function installRootClickRouter(owner) {
             if (index >= 0) {
               const target = managedItems[index];
               if (await eventHitsMainClass(event, `itemx2-manager-reroll-${index}`)) {
-                const noteElement = await queryMainClass('itemx2-manager-note');
-                const note = (await noteElement?.textContent())?.trim() || '';
-                setStatus(note ? t('ui-panel.017') : t('aux.019'));
-                try {
-                  const itemEvent = await runItemModel('reroll', loaded, target, note);
-                  await commitManualEvents(loaded, [itemEvent], note ? t('ui-panel.015') : t('ui-panel.014'));
-                } catch (error) {
-                  setStatus(t('ui-panel.013'));
-                  await notifyUser(`ITEMX: ${error.message || error}`, 'error');
-                }
-                await openRootInventory({ open: true, tab: 'settings' });
+                await openTextPrompt({
+                  title: `${t('ui-panel.014')} · ${target.name}`,
+                  note: t('ui-panel.040.3'),
+                  placeholder: t('ui-panel.040.4'),
+                  max: 1000,
+                  submitLabel: t('ui-panel.014'),
+                  tab: 'settings',
+                  onSubmit: async (note) => {
+                    setStatus(note ? t('ui-panel.017') : t('aux.019'));
+                    try {
+                      const itemEvent = await runItemModel('reroll', loaded, target, note);
+                      await commitManualEvents(loaded, [itemEvent], note ? t('ui-panel.015') : t('ui-panel.014'));
+                    } catch (error) {
+                      setStatus(t('ui-panel.013'));
+                      await notifyUser(`ITEMX: ${error.message || error}`, 'error');
+                    }
+                    await openRootInventory({ open: true, tab: 'settings' });
+                  }
+                });
                 return;
               }
               if (await eventHitsMainClass(event, `itemx2-manager-money-${index}`)) {
@@ -1786,21 +1805,26 @@ export async function installRootClickRouter(owner) {
               }
             }
             if (await eventHitsMainClass(event, 'itemx2-manager-create-button')) {
-              const createNoteElement = await queryMainClass('itemx2-manager-create-note');
-              const createNote = (await createNoteElement?.textContent())?.trim() || '';
-              if (!createNote) {
-                await notifyUser(t('ui-panel.009'), 'error');
-                return;
-              }
-              setStatus(t('aux.020'));
-              try {
-                const itemEvent = await runItemModel('create', loaded, null, createNote);
-                await commitManualEvents(loaded, [itemEvent], t('ui-panel.007'));
-              } catch (error) {
-                setStatus(t('ui-panel.006'));
-                await notifyUser(`ITEMX: ${error.message || error}`, 'error');
-              }
-              await openRootInventory({ open: true, tab: 'settings' });
+              await openTextPrompt({
+                title: t('ui-panel.040.7'),
+                note: t('ui-panel.040.5'),
+                placeholder: t('ui-panel.040.6'),
+                max: 1000,
+                required: t('ui-panel.009'),
+                submitLabel: t('ui-panel.040.7'),
+                tab: 'settings',
+                onSubmit: async (createNote) => {
+                  setStatus(t('aux.020'));
+                  try {
+                    const itemEvent = await runItemModel('create', loaded, null, createNote);
+                    await commitManualEvents(loaded, [itemEvent], t('ui-panel.007'));
+                  } catch (error) {
+                    setStatus(t('ui-panel.006'));
+                    await notifyUser(`ITEMX: ${error.message || error}`, 'error');
+                  }
+                  await openRootInventory({ open: true, tab: 'settings' });
+                }
+              });
               return;
             }
           }

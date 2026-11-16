@@ -78,6 +78,15 @@ export function requestSafeText(content) {
   );
 }
 
+// The reader's note rides after the rules it adjusts. It may steer judgement (value,
+// grade, what a crafted item becomes) but never the transport format or the facts the
+// narrative settles.
+export function authorNoteBlock(settings) {
+  const note = typeof settings?.authorNote === 'string' ? settings.authorNote.trim() : '';
+  if (!note) return '';
+  return `ITEMX AUTHOR'S NOTE (the user's standing guidance for item, skill and encounter records; follow it when judging value, grade, stats, effects and how crafted or transformed items turn out; it never changes the transport format, and the narrative still decides what happened):\n${note}`;
+}
+
 export function protocolForSettings(settings, character, moduleAssets = [], options = {}) {
   const parts = [];
   if (settings.itemsEnabled) parts.push(itemxProtocolText(settings.rarityMode));
@@ -93,6 +102,8 @@ export function protocolForSettings(settings, character, moduleAssets = [], opti
     });
     parts.push(Codex.protocol(names, { enabledDomains: domains, rarityMode: settings.rarityMode }));
   }
+  const note = parts.length ? authorNoteBlock(settings) : '';
+  if (note) parts.push(note);
   return parts.join('\n\n');
 }
 
