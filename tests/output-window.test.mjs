@@ -19,7 +19,7 @@ await Presentation.installBodyEffectGovernor();
 Session.resetSession('ow:chat');
 await Ledger.rebuildCurrent();
 const body = fake.dom.body();
-const streaming = () => body.classes.includes('x-risu-itemx-body-streaming');
+const streaming = () => body.classes.includes('x-risu-ixb-streaming');
 let idle = 0;
 // main.js wires the same subscription.
 on('output-idle', () => {
@@ -41,8 +41,8 @@ function reset(t) {
 
 test('the main style pauses card motion under the streaming class exactly like scrolling', () => {
   const css = Style.mainStyleText();
-  const scroll = css.match(/body\.x-risu-itemx-body-scrolling[^{]*\{animation-play-state:paused!important\}/)[0];
-  assert.ok(css.includes(scroll.replaceAll('x-risu-itemx-body-scrolling', 'x-risu-itemx-body-streaming')));
+  const scroll = css.match(/body\.x-risu-ixb-scrolling[^{]*\{animation-play-state:paused!important\}/)[0];
+  assert.ok(css.includes(scroll.replaceAll('x-risu-ixb-scrolling', 'x-risu-ixb-streaming')));
 });
 
 test('flushes keep the window open; it closes once after the idle gap and drops the body class', async (t) => {
@@ -101,4 +101,15 @@ test('closing without deferred work schedules nothing', async (t) => {
   markOutputFlush();
   endOutputWindow();
   assert.equal(workQueue.hasTimer('hostSyncTimer'), false);
+});
+
+test('classes ITEMX sets on the host body never contain "itemx" (themes skip [class*="itemx"] subtrees)', () => {
+  const css = Style.mainStyleText();
+  for (const name of [Style.BODY_CLASS.scrolling, Style.BODY_CLASS.streaming, Style.BODY_CLASS.effectsOff, Style.BODY_CLASS.skin('frost')]) {
+    assert.ok(!name.includes('itemx'), name);
+  }
+  assert.ok(!/body\.x-risu-itemx/.test(css), 'no body.x-risu-itemx… selector left');
+  assert.ok(css.includes(`body.${Style.BODY_CLASS.scrolling} `), 'scroll pause rule targets the body class');
+  assert.ok(css.includes(`.${Style.BODY_CLASS.skin('frost')}`), 'skin rules also match the body skin class');
+  assert.ok(css.includes('.x-risu-itemx2-skin-frost'), 'skin rules still match the drawer class');
 });

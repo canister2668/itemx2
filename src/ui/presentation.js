@@ -17,7 +17,7 @@ import { CARD_FX_MODES, FX_MODES, SKIN_MODES } from '../settings.js';
 import { ANCHOR_RE, anchorKeys, hasAnchor, messageKeys, stripTransport } from '../store/anchors.js';
 import { hasRawTransport } from '../transport.js';
 import { findAppraisalLines } from './appraisal-line.js';
-import { ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
+import { BODY_CLASS, ITEMX_CHIP_STYLE, SKIN_NAMES, mainDoc, mainStyleInstalled } from './style.js';
 
 const bursts = new Map();
 const burstSeen = new Set();
@@ -329,7 +329,7 @@ export async function resetScrollEffects() {
   bodyFxSawScroll = false;
   if (wasActive && bodyFxClassOwner) {
     try {
-      await bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling');
+      await bodyFxClassOwner.removeClass(BODY_CLASS.scrolling);
     } catch {}
   }
 }
@@ -341,7 +341,7 @@ export function outputWindowChanged(active) {
   if (bodyFxClassOwner) {
     const owner = bodyFxClassOwner;
     void (
-      active ? owner.addClass('x-risu-itemx-body-streaming') : owner.removeClass('x-risu-itemx-body-streaming')
+      active ? owner.addClass(BODY_CLASS.streaming) : owner.removeClass(BODY_CLASS.streaming)
     ).catch(() => {});
   }
   if (!active) void emit('output-idle');
@@ -365,7 +365,7 @@ export function activateBodyScrollEffects() {
   if (isUnloading()) return;
   if (scrollActive() || !bodyFxClassOwner) return;
   setScrollActive(true);
-  void bodyFxClassOwner.addClass('x-risu-itemx-body-scrolling').catch(() => {});
+  void bodyFxClassOwner.addClass(BODY_CLASS.scrolling).catch(() => {});
 }
 
 export function continueBodyScrollEffects() {
@@ -397,7 +397,7 @@ export function endBodyScrollEffects(delayMs = 0, continuing = false) {
     scrollStopTimer = null;
     if (!scrollActive()) return;
     setScrollActive(false);
-    if (bodyFxClassOwner) void bodyFxClassOwner.removeClass('x-risu-itemx-body-scrolling').catch(() => {});
+    if (bodyFxClassOwner) void bodyFxClassOwner.removeClass(BODY_CLASS.scrolling).catch(() => {});
     void emit('scroll-idle');
     workQueue.wake();
   }, delayMs);
@@ -458,11 +458,11 @@ export async function syncMainEffectsState() {
   try {
     const body = await root.querySelector('body');
     if (!body) return;
-    if (visualEffectsEnabled) await body.removeClass('x-risu-itemx2-effects-off');
-    else await body.addClass('x-risu-itemx2-effects-off');
+    if (visualEffectsEnabled) await body.removeClass(BODY_CLASS.effectsOff);
+    else await body.addClass(BODY_CLASS.effectsOff);
     for (const name of SKIN_NAMES) {
-      if (visualSkin === name) await body.addClass(`x-risu-itemx2-skin-${name}`);
-      else await body.removeClass(`x-risu-itemx2-skin-${name}`);
+      if (visualSkin === name) await body.addClass(BODY_CLASS.skin(name));
+      else await body.removeClass(BODY_CLASS.skin(name));
     }
   } catch (error) {
     debugRecord('effect setting sync', error?.message || String(error));

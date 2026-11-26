@@ -13,7 +13,7 @@ setHost(fake.api);
 await Style.installMainStyle();
 await Presentation.installBodyEffectGovernor();
 const body = fake.dom.body();
-const scrolling = () => body.classes.includes('x-risu-itemx-body-scrolling');
+const scrolling = () => body.classes.includes('x-risu-ixb-scrolling');
 let idle = 0;
 on('scroll-idle', () => idle++);
 

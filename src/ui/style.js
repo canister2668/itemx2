@@ -544,7 +544,29 @@ export const skinStyleSheet = () => SKIN_NAMES.map(skinCss).join('\n');
 let mainStyle = null;
 export const mainStyleText = () => (mainStyle ??= dedupeCss(buildMainStyle()));
 const buildMainStyle = () =>
-  `${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CHIP_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyStreamingStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}`;
+  bodyClassCss(
+    `${prefixRisuClasses(`${ITEMX_CHAT_STYLE}\n${ITEMX_CHIP_STYLE}\n${rootDrawerStyle()}`)}\n${prefixRisuClasses(ITEMX_CONTROL_STYLE)}\n${bodyScrollStyle}\n${bodyStreamingStyle}\n${bodyEffectsStyle}\n${prefixRisuClasses(skinStyleSheet())}`
+  );
+
+// Classes ITEMX puts on the host <body>. They must not contain "itemx": chat
+// themes commonly skip module UI with `:not(:where([class*="itemx"] *))`, and a
+// body class matching that test turns off every quote/bold rule of the theme
+// (it showed only while scrolling). The stylesheet keeps its readable
+// itemx-named selectors and is rewritten here to the body names.
+export const BODY_CLASS = {
+  scrolling: 'x-risu-ixb-scrolling',
+  streaming: 'x-risu-ixb-streaming',
+  effectsOff: 'x-risu-ixb-effects-off',
+  skin: (name) => `x-risu-ixb-skin-${name}`
+};
+export function bodyClassCss(css) {
+  return css
+    .replaceAll('x-risu-itemx-body-scrolling', BODY_CLASS.scrolling)
+    .replaceAll('x-risu-itemx-body-streaming', BODY_CLASS.streaming)
+    .replaceAll('body.x-risu-itemx2-effects-off', `body.${BODY_CLASS.effectsOff}`)
+    .replace(/\.x-risu-itemx2-effects-off(?![\w-])/g, `:is(.x-risu-itemx2-effects-off,.${BODY_CLASS.effectsOff})`)
+    .replace(/\.x-risu-itemx2-skin-([a-z0-9]+)(?![\w-])/g, (_, name) => `:is(.x-risu-itemx2-skin-${name},.${BODY_CLASS.skin(name)})`);
+}
 
 // The main document connection. Private: other modules ask through mainDoc()
 // and are told about a (re)connection by the `main-document` event.
